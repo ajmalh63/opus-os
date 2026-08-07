@@ -77,10 +77,12 @@ clientsRouter.get('/:id', async (c) => {
 });
 
 const signUploadPath = async (secret: string, clientId: string, filename: string, expires: number): Promise<string> => {
+  // Fail-closed (A-4): no hardcoded fallback secret
+  if (!secret) throw new Error("BETTER_AUTH_SECRET not configured — cannot sign upload URL");
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(secret || 'default-secret-key-32-chars-long-minimum'),
+    encoder.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
@@ -88,6 +90,14 @@ const signUploadPath = async (secret: string, clientId: string, filename: string
   const data = `${clientId}:${filename}:${expires}`;
   const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
   return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+// Constant-time hex compare (Workers has no timingSafeEqual)
+const timingSafeEqualHex = (a: string, b: string): boolean => {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+  return diff === 0;
 };
 
 clientsRouter.get('/:id/documents/presigned', async (c) => {
@@ -127,7 +137,7 @@ clientsRouter.put('/:id/documents/upload', async (c) => {
 
   const secret = c.env.BETTER_AUTH_SECRET;
   const expectedSig = await signUploadPath(secret, id, filename, expires);
-  if (signature !== expectedSig) {
+  if (!timingSafeEqualHex(signature, expectedSig)) {
     return c.json({ error: "Invalid upload signature" }, 400);
   }
 

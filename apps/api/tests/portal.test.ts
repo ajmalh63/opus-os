@@ -128,9 +128,9 @@ describe('Public Client Portal & Partner Referral Tracking Integration Tests', (
     expect(partner.pan_number).toBe("******234F");
   });
 
-  it('POST /api/partners/referrals should link client referral to partner', async () => {
-    // Register Hyderabad partner in database
-    const partnerId = " Hyderabad-Partner-UUID";
+  it('POST /api/public/partners/referrals links a referral but requires the partner token (A-3)', async () => {
+    // Register Hyderabad partner in database with a token
+    const partnerId = "Hyderabad-Partner-UUID";
     mockD1.tables.partners.push({
       id: partnerId,
       name: "Hyderabad Consultants",
@@ -138,16 +138,35 @@ describe('Public Client Portal & Partner Referral Tracking Integration Tests', (
       bank_account: "bank-acc",
       ifsc_code: "ifsc",
       status: "active",
+      api_token: "tok-hyd-123",
       created_at: 0
     });
 
+    // No token -> 401
+    const noAuth = await app.request('/api/public/partners/referrals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partnerId, clientId: "OP-2026-5555", commissionRate: 8 })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(noAuth.status).toBe(401);
+
+    // Wrong token -> 401
+    const badToken = await app.request('/api/public/partners/referrals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer wrong' },
+      body: JSON.stringify({ partnerId, clientId: "OP-2026-5555", commissionRate: 8 })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(badToken.status).toBe(401);
+
+    // Valid token -> 200
     const res = await app.request('/api/public/partners/referrals', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer tok-hyd-123',
       },
       body: JSON.stringify({
-        partnerId: partnerId,
+        partnerId,
         clientId: "OP-2026-5555",
         commissionRate: 8
       })
@@ -164,6 +183,27 @@ describe('Public Client Portal & Partner Referral Tracking Integration Tests', (
     expect(ref.partner_id).toBe(partnerId);
     expect(ref.client_id).toBe("OP-2026-5555");
     expect(ref.commission_rate).toBe(8);
+  });
+
+  it('GET /api/public/partners/:id/commissions is token-scoped (A-3)', async () => {
+    const partnerId = "Commission-Partner-UUID";
+    mockD1.tables.partners.push({
+      id: partnerId, name: "Com Partner", pan_number: "******", bank_account: "acc",
+      ifsc_code: "ifsc", status: "active", api_token: "tok-comm-1", created_at: 0
+    });
+    mockD1.tables.referrals.push({ id: "ref-c1", partner_id: partnerId, client_id: "C-1", commission_rate: 5, created_at: 0 });
+    mockD1.tables.commission_ledger.push({ id: "led-c1", referral_id: "ref-c1", amount: 5000, status: "matured", created_at: 0 });
+
+    const unauthorized = await app.request(`/api/public/partners/${partnerId}/commissions`, {}, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(unauthorized.status).toBe(401);
+
+    const ok = await app.request(`/api/public/partners/${partnerId}/commissions`, {
+      headers: { 'Authorization': 'Bearer tok-comm-1' }
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(ok.status).toBe(200);
+    const body = await ok.json() as any;
+    expect(body.commissions.length).toBe(1);
+    expect(body.commissions[0].amount).toBe(5000);
   });
 
   it('GET /api/public/portal/session returns journeys for the authenticated client', async () => {

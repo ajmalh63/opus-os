@@ -71,6 +71,13 @@
       "when": 1786120535576,
       "tag": "0009_outstanding_blink",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1786123287325,
+      "tag": "0010_groovy_scalphunter",
+      "breakpoints": true
     }
   ]
 }

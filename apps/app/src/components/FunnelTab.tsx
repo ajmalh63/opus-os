@@ -2,7 +2,13 @@ import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import gsap from 'gsap';
 
-const AUTH = { 'Cookie': 'better-auth.session_token=token-admin' };
+// A-5: session-driven auth — read the live better-auth cookie; no forged admin token.
+const AUTH = {
+  get Cookie() {
+    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
+    return s || '';
+  }
+} as Record<string, string>;
 
 interface FunnelStage { stage: string; count: number; reachedStage: number; conversionRate: number; }
 interface StaleLead { clientId: string; name: string; phone: string; division: string; stageKey: string; ageDays: number; lastTouchAt: number | null; outstandingBalance: number; }

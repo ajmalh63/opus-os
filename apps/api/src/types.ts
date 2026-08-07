@@ -26,6 +26,9 @@ export interface OpusEnv {
   // Razorpay gateway (Section 44)
   RAZORPAY_KEY_ID?: string;
   RAZORPAY_KEY_SECRET?: string;
+  // Razorpay webhook uses its OWN dashboard secret (never the API key secret).
+  // Required for the public webhook to operate; fails closed (503) when unset.
+  RAZORPAY_WEBHOOK_SECRET?: string;
 
   // Turnstile
   TURNSTILE_SECRET_KEY?: string;

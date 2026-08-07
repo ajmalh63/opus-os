@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -83,7 +83,7 @@ describe('Razorpay Integration (Section 44)', () => {
         clientId: 'OP-2026-1001', engagementId: 'eng-rzp-1',
         razorpay_order_id: 'order_123', razorpay_payment_id: 'pay_abc', razorpay_signature: signature
       })
-    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', RAZORPAY_KEY_SECRET: 'sec' });
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', RAZORPAY_KEY_ID: 'rzp_test_key', RAZORPAY_KEY_SECRET: 'sec' });
 
     expect(res.status).toBe(200);
     const data = await res.json() as any;
@@ -102,7 +102,7 @@ describe('Razorpay Integration (Section 44)', () => {
         clientId: 'OP-2026-1001', engagementId: 'eng-rzp-1',
         razorpay_order_id: 'order_123', razorpay_payment_id: 'pay_abc', razorpay_signature: 'deadbeef'
       })
-    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', RAZORPAY_KEY_SECRET: 'sec' });
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', RAZORPAY_KEY_ID: 'rzp_test_key', RAZORPAY_KEY_SECRET: 'sec' });
     expect(res.status).toBe(403);
   });
 
@@ -112,7 +112,7 @@ describe('Razorpay Integration (Section 44)', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-razorpay-signature': 'wrongsig' },
       body
-    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', RAZORPAY_KEY_SECRET: 'sec' });
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', RAZORPAY_WEBHOOK_SECRET: 'whsec' });
     expect(res.status).toBe(403);
   });
 
@@ -121,17 +121,55 @@ describe('Razorpay Integration (Section 44)', () => {
       event: 'payment.captured',
       payload: { payment: { entity: { id: 'pay_wh_1', amount: 2500000, notes: { engagementId: 'eng-rzp-1', clientId: 'OP-2026-1001' } } } }
     });
-    const signature = await hmacHex('sec', body);
+    const signature = await hmacHex('whsec', body);
     const res = await app.request('/api/public/payments/razorpay/webhook', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-razorpay-signature': signature },
       body
-    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', RAZORPAY_KEY_SECRET: 'sec' });
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', RAZORPAY_WEBHOOK_SECRET: 'whsec' });
 
     expect(res.status).toBe(200);
     const data = await res.json() as any;
     expect(data.ok).toBe(true);
     expect(mockD1.tables.payments.some(p => p.reference_number === 'pay_wh_1')).toBe(true);
     expect(mockD1.tables.engagements[0].outstanding_balance).toBe(5900000 - 2500000);
+  });
+
+  it('webhook is idempotent â€” replaying the same payment does not double-credit', async () => {
+    const body = JSON.stringify({
+      event: 'payment.captured',
+      payload: { payment: { entity: { id: 'pay_dup_1', amount: 1000000, notes: { engagementId: 'eng-rzp-1', clientId: 'OP-2026-1001' } } } }
+    });
+    const signature = await hmacHex('whsec', body);
+    const env = { DB: mockD1, BETTER_AUTH_SECRET: 'x', RAZORPAY_WEBHOOK_SECRET: 'whsec' };
+
+    await app.request('/api/public/payments/razorpay/webhook', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-razorpay-signature': signature }, body
+    }, env);
+    const second = await app.request('/api/public/payments/razorpay/webhook', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-razorpay-signature': signature }, body
+    }, env);
+    expect(second.status).toBe(200);
+    const onlyOne = mockD1.tables.payments.filter((p: any) => p.reference_number === 'pay_dup_1');
+    expect(onlyOne.length).toBe(1);
+  });
+
+  it('webhook fails closed (503) when RAZORPAY_WEBHOOK_SECRET is unset', async () => {
+    const body = JSON.stringify({ event: 'payment.captured', payload: { payment: { entity: { id: 'pay_1', amount: 1000 } } } });
+    const res = await app.request('/api/public/payments/razorpay/webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-razorpay-signature': 'anything' },
+      body
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(503);
+  });
+
+  it('order fails closed (503) when Razorpay creds are unset', async () => {
+    const res = await app.request('/api/payments/razorpay/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Cookie': 'better-auth.session_token=token-admin' },
+      body: JSON.stringify({ clientId: 'OP-2026-1001', engagementId: 'eng-rzp-1', amount: 5900000 })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(503);
   });
 });

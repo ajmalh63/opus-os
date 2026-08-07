@@ -29,6 +29,9 @@ export default function PartnerDashboard() {
   const [partnerName, setPartnerName] = useState<string>(() => {
     return localStorage.getItem('opus_partner_name') || '';
   });
+  const [partnerToken, setPartnerToken] = useState<string>(() => {
+    return localStorage.getItem('opus_partner_token') || '';
+  });
 
   // Login Input State
   const [partnerIdInput, setPartnerIdInput] = useState('');
@@ -48,7 +51,9 @@ export default function PartnerDashboard() {
     queryKey: ['partnerCommissions', partnerId],
     queryFn: async () => {
       if (!partnerId) return { commissions: [] };
-      const res = await fetch(`/api/public/partners/${partnerId}/commissions`);
+      const res = await fetch(`/api/public/partners/${partnerId}/commissions`, {
+        headers: { 'Authorization': `Bearer ${partnerToken}` }
+      });
       if (!res.ok) {
         throw new Error(await res.text() || 'Failed to fetch commissions ledger.');
       }
@@ -76,6 +81,10 @@ export default function PartnerDashboard() {
       if (data.success && data.partnerId) {
         localStorage.setItem('opus_partner_id', data.partnerId);
         localStorage.setItem('opus_partner_name', kycName);
+        if (data.apiToken) {
+          localStorage.setItem('opus_partner_token', data.apiToken);
+          setPartnerToken(data.apiToken);
+        }
         setPartnerId(data.partnerId);
         setPartnerName(kycName);
         showToast('Affiliate KYC registered and account activated!');
@@ -98,6 +107,7 @@ export default function PartnerDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${partnerToken}`,
         },
         body: JSON.stringify(payload),
       });

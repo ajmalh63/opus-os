@@ -15,6 +15,17 @@ function maskPAN(pan: string): string {
   return "******" + pan.substring(pan.length - 4);
 }
 
+// Partner-scoped auth (A-3): bearer token from the 'Authorization' header must
+// match the partner's stored apiToken. Returns the matched partner or null.
+async function authPartner(db: ReturnType<typeof getDb>, id: string, c: { req: { header: (name: string) => string | undefined } }): Promise<any | null> {
+  const auth = c.req.header('Authorization') || '';
+  const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  if (!bearer) return null;
+  const partner = await db.select().from(partners).where(eq(partners.id, id)).get();
+  if (!partner || partner.status !== 'active') return null;
+  return partner.apiToken && bearer === partner.apiToken ? partner : null;
+}
+
 // POST /api/public/partners (Register Partner with KYC - PUBLIC signup, Section 39)
 partnerRouter.post('/', async (c) => {
   if (!c.env || !c.env.DB) {
@@ -33,6 +44,8 @@ partnerRouter.post('/', async (c) => {
     const trimmedPan = String(body.panNumber).trim();
     const maskedPan = maskPAN(trimmedPan);
     const partnerId = crypto.randomUUID();
+    // Partner-scoped bearer token (A-3): returned at signup, required on referrals/commissions
+    const apiToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
 
     await db.insert(partners).values({
       id: partnerId,
@@ -41,12 +54,15 @@ partnerRouter.post('/', async (c) => {
       bankAccount: body.bankAccount,
       ifscCode: body.ifscCode,
       status: 'active',
+      referralCode: body.referralCode || null,
+      apiToken,
       createdAt: Math.floor(Date.now() / 1000)
     });
 
     return c.json({
       success: true,
       partnerId,
+      apiToken,
       maskedPan,
       message: "Partner registered successfully with KYC validation."
     });
@@ -56,7 +72,7 @@ partnerRouter.post('/', async (c) => {
   }
 });
 
-// POST /api/public/partners/referrals (Log Partner Referral) - owner/manager authenticated via RBAC mount
+// POST /api/public/partners/referrals (Log Partner Referral) - partner-token required
 partnerRouter.post('/referrals', async (c) => {
   if (!c.env || !c.env.DB) {
     return c.json({ error: "DB not available" }, 500);
@@ -70,10 +86,9 @@ partnerRouter.post('/referrals', async (c) => {
       return c.json({ error: "Missing required fields: partnerId, clientId" }, 400);
     }
 
-    const partnerRecord = await db.select().from(partners).where(eq(partners.id, body.partnerId)).get();
-    if (!partnerRecord) {
-      return c.json({ error: "Partner not found" }, 404);
-    }
+    // A-3: only the authenticated partner may log their own referral
+    const authed = await authPartner(db, body.partnerId, c);
+    if (!authed) return c.json({ error: "Unauthorized: valid partner token required" }, 401);
 
     const clientRecord = await db.select().from(clients).where(eq(clients.id, body.clientId)).get();
     if (!clientRecord) {
@@ -95,7 +110,7 @@ partnerRouter.post('/referrals', async (c) => {
   }
 });
 
-// GET /api/public/partners/:id/commissions (Partner Commission Ledger)
+// GET /api/public/partners/:id/commissions (Partner Commission Ledger) - partner-token bound
 partnerRouter.get('/:id/commissions', async (c) => {
   const partnerId = c.req.param('id');
 
@@ -106,6 +121,10 @@ partnerRouter.get('/:id/commissions', async (c) => {
   const db = getDb(c.env.DB);
 
   try {
+    // A-3: only the authenticated partner may read their own commissions
+    const authed = await authPartner(db, partnerId, c);
+    if (!authed) return c.json({ error: "Unauthorized: valid partner token required" }, 401);
+
     const partnerReferrals = await db.select().from(referrals).where(eq(referrals.partnerId, partnerId)).all();
     if (partnerReferrals.length === 0) {
       return c.json({ commissions: [] });

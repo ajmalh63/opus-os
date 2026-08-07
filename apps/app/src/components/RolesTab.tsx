@@ -4,7 +4,13 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 interface Permission { code: string; family: string; label: string; ownerOnly: boolean; }
 interface Role { id: string; name: string; code: string; description: string | null; permissionsJson: string; system: boolean; editable: boolean; color: string; }
 
-const AUTH = { 'Cookie': 'better-auth.session_token=token-admin' };
+// A-5: session-driven auth — read the live better-auth cookie; no forged admin token.
+const AUTH = {
+  get Cookie() {
+    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
+    return s || '';
+  }
+} as Record<string, string>;
 
 export default function RolesTab() {
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);

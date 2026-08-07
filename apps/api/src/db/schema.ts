@@ -291,6 +291,7 @@ export const partners = sqliteTable('partners', {
   ifscCode: text('ifsc_code').notNull(),
   status: text('status', { enum: ['active', 'blocked'] }).notNull().default('active'),
   referralCode: text('referral_code').unique(), // OPUS-affiliate short code for ?ref= tracking
+  apiToken: text('api_token'), // partner-scoped bearer token for referrals/commissions (A-3)
   createdAt: integer('created_at').notNull()
 });
 

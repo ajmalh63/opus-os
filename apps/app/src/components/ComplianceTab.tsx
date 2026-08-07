@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 
-const AUTH = { 'Cookie': 'better-auth.session_token=token-admin' };
+// A-5: session-driven auth — read the live better-auth cookie; no forged admin token.
+const AUTH = {
+  get Cookie() {
+    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
+    return s || '';
+  }
+} as Record<string, string>;
 const nowPeriod = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
 const rs = (n?: number) => `₹${((n || 0) / 100).toFixed(2)}`;
 

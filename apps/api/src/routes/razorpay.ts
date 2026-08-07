@@ -14,10 +14,24 @@ const RZR_BASE = 'https://api.razorpay.com/v1';
 
 type RzBindings = { RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string; BETTER_AUTH_SECRET?: string };
 
+// Fail-CLOSED (A-1): never fall back to a public constant. If gateway creds are
+// unset we refuse to operate rather than silently using test keys in prod.
 function basicAuth(c: { env: RzBindings }): string {
-  const key = c.env.RAZORPAY_KEY_ID || 'rzp_test_mock_key';
-  const secret = c.env.RAZORPAY_KEY_SECRET || 'mock_secret';
+  const key = c.env.RAZORPAY_KEY_ID;
+  const secret = c.env.RAZORPAY_KEY_SECRET;
+  if (!key || !secret) {
+    throw new Error('Razorpay credentials not configured (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET)');
+  }
   return 'Basic ' + btoa(`${key}:${secret}`);
+}
+
+// Constant-time hex comparison (Workers has no timingSafeEqual). Same runtime
+// regardless of where the first mismatch lands, so timing cannot leak the key.
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+  return diff === 0;
 }
 
 // POST /api/payments/razorpay/order  { engagementId, amount, method? , clientId }
@@ -36,6 +50,9 @@ razorpayRouter.post('/order', zValidator('json', orderSchema), async (c) => {
   const db = getDb(c.env.DB);
 
   try {
+    if (!c.env.RAZORPAY_KEY_ID || !c.env.RAZORPAY_KEY_SECRET) {
+      return c.json({ error: "Razorpay not configured — set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
+    }
     // 1. Verify engagement exists and amount matches known ledger balance owed
     const eng = await db.select().from(engagements).where(eq(engagements.id, data.engagementId)).get();
     if (!eng) return c.json({ error: "Engagement not found" }, 404);
@@ -71,7 +88,7 @@ razorpayRouter.post('/order', zValidator('json', orderSchema), async (c) => {
       order,
       amount_paise: data.amount,
       currency: 'INR',
-      key: c.env.RAZORPAY_KEY_ID || 'rzp_test_mock_key',
+      key: c.env.RAZORPAY_KEY_ID,
       order_id: order.id,
       clientId: data.clientId,
       engagementId: data.engagementId,
@@ -98,19 +115,27 @@ async function verifySignature(orderId: string, paymentId: string, signature: st
   const keyData = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', keyData, enc.encode(body));
   const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return hex === signature;
+  return timingSafeEqualHex(hex, signature);
 }
 
 razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
   const data = c.req.valid('json');
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
-  const secret = c.env.RAZORPAY_KEY_SECRET || 'mock_secret';
+  // Fail-closed (A-1): no public fallback secret
+  const secret = c.env.RAZORPAY_KEY_SECRET;
+  if (!secret || !c.env.RAZORPAY_KEY_ID) return c.json({ error: "Razorpay not configured — set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
 
   try {
     const ok = await verifySignature(data.razorpay_order_id, data.razorpay_payment_id, data.razorpay_signature, secret);
     if (!ok) {
       return c.json({ error: "Signature mismatch - payment not confirmed" }, 403);
+    }
+
+    // Idempotency (A-2): a receipt for this razorpay payment must not be double-credited
+    const existing = await db.select().from(payments).where(eq(payments.referenceNumber, data.razorpay_payment_id)).get();
+    if (existing) {
+      return c.json({ success: true, id: existing.id, razorpay_payment_id: data.razorpay_payment_id, verified: true, message: "Payment already recorded." });
     }
 
     // Fetch payment from Razorpay to confirm captured (authoritative)
@@ -163,24 +188,29 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
 });
 
 export const razorpayWebhookRouter = new Hono<{
-  Bindings: { DB: D1Database; RAZORPAY_KEY_SECRET?: string }
+  Bindings: { DB: D1Database; RAZORPAY_WEBHOOK_SECRET?: string }
 }>();
 
 // POST /api/public/payments/razorpay/webhook  (HMAC X-Razorpay-Signature verified; event payment.captured)
+// A-1/A-2 hardening: webhook secret is its OWN dashboard secret (never the API
+// key), fail-closed if unset, timing-safe comparison, dedupe by entity.id so
+// replayed deliveries can never double-credit.
 razorpayWebhookRouter.post('/', async (c) => {
   const rawBody = await c.req.text();
   const signature = c.req.header('x-razorpay-signature') || '';
 
   if (!c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const secret = c.env.RAZORPAY_WEBHOOK_SECRET;
+  if (!secret) return c.json({ error: "Razorpay webhook not configured — set RAZORPAY_WEBHOOK_SECRET" }, 503);
   const db = getDb(c.env.DB);
 
-  // HMAC over raw body
+  // HMAC over raw body, timing-safe compare (A-2)
   const enc = new TextEncoder();
-  const keyData = await crypto.subtle.importKey('raw', enc.encode(c.env.RAZORPAY_KEY_SECRET || 'mock_secret'), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const keyData = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', keyData, enc.encode(rawBody));
   const hexSig = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-  if (hexSig !== signature) {
+  if (!timingSafeEqualHex(hexSig, signature)) {
     return c.json({ error: "Invalid webhook signature" }, 403);
   }
 
@@ -190,6 +220,12 @@ razorpayWebhookRouter.post('/', async (c) => {
     const notes = entity.notes || {};
     const engagementId = notes.engagementId;
     const clientId = notes.clientId;
+
+    // Idempotency: dedupe by the razorpay payment id (A-2 replay protection)
+    const existing = await db.select().from(payments).where(eq(payments.referenceNumber, entity.id)).get();
+    if (existing) {
+      return c.json({ ok: true, message: 'duplicate' });
+    }
 
     if (engagementId) {
       const amount = entity.amount || 0;
