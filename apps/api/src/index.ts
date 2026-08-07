@@ -11,6 +11,7 @@ import { transitRouter } from './routes/transit.js';
 import { manpowerRouter } from './routes/manpower.js';
 import { portalRouter } from './routes/portal.js';
 import { partnerRouter } from './routes/partner.js';
+import { tasksRouter } from './routes/tasks.js';
 import { adminRouter } from './routes/admin.js';
 
 const app = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string } }>();
@@ -53,6 +54,9 @@ app.use('/api/transit/*', rbacMiddleware(['super_admin', 'manager', 'counselor',
 app.use('/api/manpower', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/manpower/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 
+app.use('/api/tasks', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.use('/api/tasks/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+
 app.use('/api/admin', rbacMiddleware(['super_admin'], true));
 app.use('/api/admin/*', rbacMiddleware(['super_admin'], true));
 
@@ -64,6 +68,7 @@ app.route('/api/payments', paymentsRouter);
 app.route('/api/umrah', umrahRouter);
 app.route('/api/transit', transitRouter);
 app.route('/api/manpower', manpowerRouter);
+app.route('/api/tasks', tasksRouter);
 app.route('/api/admin', adminRouter);
 
 // Health check endpoint

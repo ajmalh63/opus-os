@@ -52,6 +52,22 @@ interface CommunicationLog {
   createdAt: number;
 }
 
+interface TaskRecord {
+  id: string;
+  clientId: string | null;
+  engagementId: string | null;
+  assigneeId: string | null;
+  title: string;
+  description: string | null;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'open' | 'in_progress' | 'done' | 'cancelled';
+  dueDate: number | null;
+  recurrence: 'none' | 'daily' | 'weekly' | 'monthly';
+  createdAt: number;
+  updatedAt: number;
+  completedAt: number | null;
+}
+
 interface ClientData {
   id: string;
   name: string;
@@ -178,7 +194,7 @@ export default function Client360() {
   const [sessionToken, setSessionToken] = useState<string>('token-manager');
 
   // Navigation tabs state
-  const [activeTab, setActiveTab] = useState<'vault' | 'agreements' | 'payments' | 'umrah' | 'courier'>('vault');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'vault' | 'agreements' | 'payments' | 'umrah' | 'courier'>('tasks');
 
   // Timeline Filter State
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'whatsapp' | 'email' | 'system'>('all');
@@ -272,6 +288,59 @@ export default function Client360() {
     }
   });
   const clientAgreements = agreementsData?.agreements?.filter(a => a.clientId === clientId) || [];
+
+  // D0. Fetch client tasks (Section 8.2 - Tasks & Calendar)
+  const { data: tasksData, refetch: refetchTasks } = useQuery<{ tasks: TaskRecord[] }>({
+    queryKey: ['clientTasks', clientId, sessionToken],
+    queryFn: async () => {
+      const res = await fetch(`/api/tasks/client/${clientId}`, {
+        headers: { 'Cookie': `better-auth.session_token=${sessionToken}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch tasks');
+      return res.json();
+    },
+    enabled: !!clientId,
+  });
+  const clientTasks = tasksData?.tasks || [];
+
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [newTaskDue, setNewTaskDue] = useState('');
+
+  const createTaskMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
+        body: JSON.stringify({
+          clientId,
+          title: newTaskTitle,
+          priority: newTaskPriority,
+          dueDate: newTaskDue ? Math.floor(new Date(newTaskDue).getTime() / 1000) : undefined,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text() || 'Failed to create task');
+      return res.json();
+    },
+    onSuccess: () => {
+      setNewTaskTitle('');
+      setNewTaskDue('');
+      refetchTasks();
+    },
+  });
+
+  const toggleTaskStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: TaskRecord['status'] }) => {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error(await res.text() || 'Failed to update task');
+      return res.json();
+    },
+    onSuccess: () => refetchTasks(),
+  });
 
   // D. Fetch Milestones List
   const { data: milestonesData, refetch: refetchMilestones } = useQuery<{ milestones: Milestone[] }>({
@@ -1000,6 +1069,7 @@ export default function Client360() {
             {/* TAB SELECTOR BAR */}
             <div className="flex border-b border-slate-900 gap-1 bg-slate-950 p-1 rounded-lg">
               {[
+                { id: 'tasks', label: 'Tasks' },
                 { id: 'vault', label: 'Document Vault' },
                 { id: 'agreements', label: 'Service Agreements' },
                 { id: 'payments', label: 'Milestones & GST' },
@@ -1019,6 +1089,107 @@ export default function Client360() {
                 </button>
               ))}
             </div>
+
+            {/* ==========================================
+                TAB 0: TASKS (Section 8.2)
+                ========================================== */}
+            {activeTab === 'tasks' && (
+              <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md flex flex-col gap-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-display font-bold text-sm text-brand-gold">Client Tasks</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Assignments, reminders and follow-ups for this client.</p>
+                  </div>
+                  <span className="text-[10px] uppercase bg-slate-950 text-slate-300 px-2.5 py-1 rounded font-bold">
+                    {clientTasks.filter(t => t.status !== 'done').length} open
+                  </span>
+                </div>
+
+                {/* Create task */}
+                <form
+                  onSubmit={(e) => { e.preventDefault(); if (newTaskTitle.trim()) createTaskMutation.mutate(); }}
+                  className="flex flex-wrap gap-2"
+                >
+                  <input
+                    type="text"
+                    placeholder="New task title..."
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    className="flex-1 min-w-[180px] bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-brand-gold focus:outline-none"
+                  />
+                  <select
+                    value={newTaskPriority}
+                    onChange={(e) => setNewTaskPriority(e.target.value as any)}
+                    className="bg-slate-950 border border-slate-800 rounded px-2 py-2 text-xs text-white focus:border-brand-gold focus:outline-none"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                  <input
+                    type="date"
+                    value={newTaskDue}
+                    onChange={(e) => setNewTaskDue(e.target.value)}
+                    className="bg-slate-950 border border-slate-800 rounded px-2 py-2 text-xs text-white focus:border-brand-gold focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-4 py-2 rounded text-xs font-bold transition"
+                  >
+                    Add Task
+                  </button>
+                </form>
+
+                <div className="space-y-2">
+                  {clientTasks.length === 0 && (
+                    <p className="text-xs text-slate-500 text-center py-6">No tasks for this client yet.</p>
+                  )}
+                  {clientTasks.map((task) => {
+                    const isOverdue = task.dueDate && task.dueDate < Math.floor(Date.now() / 1000) && task.status !== 'done';
+                    return (
+                      <div
+                        key={task.id}
+                        className={`flex items-center justify-between gap-3 bg-slate-950 border rounded-lg px-3 py-2.5 text-xs ${
+                          isOverdue ? 'border-brand-error/50' : 'border-slate-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleTaskStatus.mutate({ id: task.id, status: task.status === 'done' ? 'open' : 'done' })}
+                            className={`w-5 h-5 rounded border flex items-center justify-center transition shrink-0 ${
+                              task.status === 'done' ? 'bg-brand-success border-brand-success text-white' : 'border-slate-600 hover:border-brand-gold'
+                            }`}
+                            title={task.status === 'done' ? 'Mark open' : 'Mark done'}
+                          >
+                            {task.status === 'done' ? '✓' : ''}
+                          </button>
+                          <div className="min-w-0">
+                            <p className={`font-semibold text-white truncate ${task.status === 'done' ? 'line-through opacity-50' : ''}`}>
+                              {task.title}
+                            </p>
+                            {task.dueDate && (
+                              <p className={`text-[10px] ${isOverdue ? 'text-brand-error font-bold' : 'text-slate-500'}`}>
+                                {isOverdue ? 'Overdue · ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 ${
+                          task.priority === 'urgent' ? 'bg-brand-error/20 text-brand-error'
+                          : task.priority === 'high' ? 'bg-brand-warning/20 text-brand-warning'
+                          : task.priority === 'medium' ? 'bg-brand-gold/15 text-brand-gold'
+                          : 'bg-slate-700 text-slate-300'
+                        }`}>
+                          {task.priority}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* ==========================================
                 TAB 1: DOCUMENT VAULT

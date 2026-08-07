@@ -21,7 +21,8 @@
     transit_shipments: [] as any[],
     partners: [] as any[],
     referrals: [] as any[],
-    commission_ledger: [] as any[]
+    commission_ledger: [] as any[],
+    tasks: [] as any[]
   };
 
   private getTableName(sql: string): string {

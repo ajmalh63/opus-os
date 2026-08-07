@@ -310,6 +310,25 @@ export const commissionLedger = sqliteTable('commission_ledger', {
   createdAt: integer('created_at').notNull()
 });
 
+// ==========================================
+// 20. STAFF TASKS (Section 8.2 - tasks & calendar)
+// ==========================================
+export const tasks = sqliteTable('tasks', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').references(() => clients.id), // optional - task may be client-bound
+  engagementId: text('engagement_id').references(() => engagements.id), // optional linked engagement
+  assigneeId: text('assignee_id').references(() => users.id), // null = unassigned pool
+  title: text('title').notNull(),
+  description: text('description'),
+  priority: text('priority', { enum: ['low', 'medium', 'high', 'urgent'] }).notNull().default('medium'),
+  status: text('status', { enum: ['open', 'in_progress', 'done', 'cancelled'] }).notNull().default('open'),
+  dueDate: integer('due_date'), // epoch seconds; null = no deadline
+  recurrence: text('recurrence', { enum: ['none', 'daily', 'weekly', 'monthly'] }).notNull().default('none'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+  completedAt: integer('completed_at')
+});
+
 
 
 
