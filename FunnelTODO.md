@@ -12,16 +12,18 @@ Built (this set, committed):
 - Agreement sign → matures referred commission at `commissionRate%` of realized payments.
 - **15-min speed-to-lead SLA task** on every lead: round-robin to the least-loaded
   counselor allowed for the lead's division (empty user_divisions = all divisions).
+- **Stale-lead reactivation**: `POST /api/marketing/stale/:clientId/reactivate` → 24h
+  high-priority re-engagement task (shared `services/leadAssignment.ts`) + `stale_reactivated`
+  scoring event that exits the lead from the stale queue. Reactivate button in FunnelTab.
 
 ## Not yet built (next sessions)
 
 1. ~~**15-min speed-to-lead SLA task**~~ ✅ DONE (leads.ts)
-2. **Stale-lead recovery action** — convert the funnel `stale` queue into an auto task /
-   re-nurture sequence (WhatsApp/email template) instead of just listing them.
-3. **FunnelTab UI** in AdminConsole — stage bars, conversion %, stale queue, velocity,
-   affiliate leaderboard with GSAP entrance. Backend endpoints already exist.
+2. ~~**Stale-lead recovery action**~~ ✅ DONE (marketing.ts + FunnelTab button)
+3. **FunnelTab UI** ✅ DONE (AdminConsole "Sales Funnel" tab)
 4. **WhatsApp-centric messaging** — the business runs on WhatsApp; add click-to-chat CTA
-   + WhatsApp-consented nurture into the funnel flow (ensures DPDP-compliant).
+   + WhatsApp-consented re-nurture sequence (multi-touch: Day 1 value, Day 3 case study,
+   Day 5 consultation offer) wired into stale reactivation. Needs Listmonk/OpenWA on VPC.
 5. **A/B tests** — subject lines / lead form variants via `ab-test-setup` skill.
 
 ## Design references
