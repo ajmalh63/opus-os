@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { clients, engagements, agreements, interactionPoints, scoringEvents, segments, partners, referrals, commissionLedger } from '../db/schema.js';
+import { clients, engagements, agreements, interactionPoints, scoringEvents, segments, partners, referrals, commissionLedger, experiments, experimentAssignments } from '../db/schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 
@@ -368,5 +368,102 @@ marketingRouter.post('/stale/:clientId/reactivate', async (c) => {
     return c.json({ success: true, taskId, assigneeId, message: `Re-engagement task created for ${client.name}.` });
   } catch (error: any) {
     return c.json({ error: "Reactivation failed", details: error.message }, 500);
+  }
+});
+
+// ===================== A/B EXPERIMENTS (FunnelTODO #5, ab-test-setup skill) =====================
+// Harness only: creation REQUIRES hypothesis, primaryMetric, baselineRate and
+// mde (the skill's "commit before launch" gate), so a live test can't be
+// launched without a locked, measurable hypothesis.
+
+const createExperimentSchema = z.object({
+  key: z.string().min(2).max(60),
+  name: z.string().min(2),
+  hypothesis: z.string().min(10),
+  primaryMetric: z.string().min(3),
+  baselineRate: z.number().min(0).max(1),
+  mde: z.number().min(0.001).max(0.5),
+  variantA: z.string().min(1),
+  variantB: z.string().min(1),
+});
+
+// POST /api/marketing/experiments  (manager+)
+marketingRouter.post('/experiments', zValidator('json', createExperimentSchema), async (c) => {
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  const data = c.req.valid('json');
+  try {
+    const existing = await db.select().from(experiments).where(eq(experiments.key, data.key)).get();
+    if (existing) return c.json({ error: "Experiment key already exists" }, 409);
+    await db.insert(experiments).values({
+      id: crypto.randomUUID(),
+      key: data.key,
+      name: data.name,
+      hypothesis: data.hypothesis,
+      primaryMetric: data.primaryMetric,
+      baselineRate: data.baselineRate,
+      mde: data.mde,
+      variantA: data.variantA,
+      variantB: data.variantB,
+      status: 'draft',
+      createdAt: Math.floor(Date.now() / 1000),
+    });
+    return c.json({ success: true, key: data.key, status: 'draft', message: "Experiment created (draft). Lock hypothesis + activate before launch." });
+  } catch (error: any) {
+    return c.json({ error: "Experiment creation failed", details: error.message }, 500);
+  }
+});
+
+// POST /api/marketing/experiments/:key/activate  — only from a locked draft
+marketingRouter.post('/experiments/:key/activate', async (c) => {
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const key = c.req.param('key');
+    const exp = await db.select().from(experiments).where(eq(experiments.key, key)).get();
+    if (!exp) return c.json({ error: "Experiment not found" }, 404);
+    if (exp.status === 'active') return c.json({ success: true, message: "Already active" });
+    await db.update(experiments).set({ status: 'active', startedAt: Math.floor(Date.now() / 1000) }).where(eq(experiments.key, key));
+    return c.json({ success: true, key, status: 'active', message: "Experiment live. No peeking — run to conclusion." });
+  } catch (error: any) {
+    return c.json({ error: "Activation failed", details: error.message }, 500);
+  }
+});
+
+// GET /api/marketing/experiments  — list + per-variant assignment/conversion stats
+marketingRouter.get('/experiments', async (c) => {
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const list = await db.select().from(experiments).all();
+    const assignments = await db.select().from(experimentAssignments).all();
+    const signed = await db.select().from(agreements).all();
+    const signedClientIds = new Set((signed as any[]).filter((a) => a.status === 'signed').map((a) => a.clientId));
+
+    const rows = (list as any[]).map((e) => {
+      const ofKey = assignments.filter((a: any) => a.experimentKey === e.key);
+      const a = ofKey.filter((x: any) => x.variant === 'A');
+      const b = ofKey.filter((x: any) => x.variant === 'B');
+      const stat = (arr: any[]) => {
+        const converted = arr.filter((x) => signedClientIds.has(x.clientId)).length;
+        return { assigned: arr.length, converted, rate: arr.length ? Math.round((converted / arr.length) * 1000) / 10 : 0 };
+      };
+      return {
+        key: e.key,
+        name: e.name,
+        hypothesis: e.hypothesis,
+        primaryMetric: e.primaryMetric,
+        baselineRate: e.baselineRate,
+        mde: e.mde,
+        variantA: e.variantA,
+        variantB: e.variantB,
+        status: e.status,
+        startedAt: e.startedAt,
+        variants: { A: stat(a), B: stat(b) },
+      };
+    });
+    return c.json({ experiments: rows });
+  } catch (error: any) {
+    return c.json({ error: "Experiment list failed", details: error.message }, 500);
   }
 });

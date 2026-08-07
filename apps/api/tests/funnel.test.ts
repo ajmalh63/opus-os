@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+﻿import { describe, it, expect, beforeAll, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -42,7 +42,7 @@ const leadPayload = (over: any = {}) => ({
   ...over
 });
 
-describe('Marketing automation interlock — funnel + partner affiliate (Sections 26/39)', () => {
+describe('Marketing automation interlock â€” funnel + partner affiliate (Sections 26/39)', () => {
   let mockD1: MockD1Database;
 
   beforeAll(() => {
@@ -193,7 +193,7 @@ describe('Marketing automation interlock — funnel + partner affiliate (Section
 
     const ledger = mockD1.tables.commission_ledger.find((l: any) => l.id === 'led-5');
     expect(ledger.status).toBe('matured');
-    expect(ledger.amount).toBe(5000); // 5% of ₹1000 (100000 paise)
+    expect(ledger.amount).toBe(5000); // 5% of â‚¹1000 (100000 paise)
   });
 
   it('intake creates a 15-min SLA task routed round-robin to a division-matched counselor', async () => {
@@ -285,5 +285,92 @@ describe('Marketing automation interlock — funnel + partner affiliate (Section
     }, { DB: mock5, BETTER_AUTH_SECRET: 'test-secret' });
     const fd = await funnel.json() as any;
     expect(fd.stale.some((s: any) => s.clientId === 'C-STALE2')).toBe(false);
+  });
+
+  it('nurture plan creates a 4-stage WhatsApp sequence only when consent granted', async () => {
+    let mock6 = new MockD1Database();
+    mock6.tables.clients.push({ id: 'C-N1', name: 'Nurture One', phone: '1', email: 'n1@b.c', createdAt: 1, updatedAt: 1 });
+    mock6.tables.consents.push({ id: 'c1', clientId: 'C-N1', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
+
+    const res = await app.request('/api/marketing/nurture/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
+      body: JSON.stringify({ clientId: 'C-N1' })
+    }, { DB: mock6, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.status).toBe('planned');
+    expect(data.count).toBe(4);
+
+    const touches = mock6.tables.nurture_touches.filter((t: any) => t.client_id === 'C-N1');
+    expect(touches.length).toBe(4);
+    expect(touches.every((t: any) => t.channel === 'whatsapp')).toBe(true);
+    expect(touches.map((t: any) => t.stage)).toEqual(expect.arrayContaining(['value', 'case_study', 'offer', 'final']));
+
+    const due = await app.request('/api/marketing/nurture/due?now=' + (Math.floor(Date.now() / 1000) + 1), {
+      headers: { 'cookie': 'better-auth.session_token=token-manager' }
+    }, { DB: mock6, BETTER_AUTH_SECRET: 'test-secret' });
+    const dueData = await due.json() as any;
+    expect(dueData.touches.length).toBe(4);
+
+    const mark = await app.request(`/api/marketing/nurture/${touches[0].id}/send`, {
+      method: 'POST',
+      headers: { 'cookie': 'better-auth.session_token=token-manager' }
+    }, { DB: mock6, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(mark.status).toBe(200);
+    expect(mock6.tables.nurture_touches.find((t: any) => t.id === touches[0].id).status).toBe('sent');
+  });
+
+  it('nurture plan is skipped without WhatsApp consent (DPDP-safe)', async () => {
+    let mock7 = new MockD1Database();
+    mock7.tables.clients.push({ id: 'C-N2', name: 'No Consent', phone: '2', email: 'n2@b.c', createdAt: 1, updatedAt: 1 });
+    const res = await app.request('/api/marketing/nurture/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
+      body: JSON.stringify({ clientId: 'C-N2' })
+    }, { DB: mock7, BETTER_AUTH_SECRET: 'test-secret' });
+    const data = await res.json() as any;
+    expect(data.status).toBe('skipped');
+    expect(mock7.tables.nurture_touches.length).toBe(0);
+  });
+
+  it('experiment creation enforces the hypothesis gate; active experiment assigns sticky variants', async () => {
+    let mock8 = new MockD1Database();
+    const bad = await app.request('/api/marketing/experiments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
+      body: JSON.stringify({ key: 'lead-cta', name: 'T' })
+    }, { DB: mock8, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(bad.status).toBe(400);
+
+    const ok = await app.request('/api/marketing/experiments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
+      body: JSON.stringify({
+        key: 'lead-cta', name: 'Lead CTA', hypothesis: 'WhatsApp-first heading lifts lead->customer conversion',
+        primaryMetric: 'lead_to_customer', baselineRate: 0.12, mde: 0.05,
+        variantA: 'control', variantB: 'whatsapp-first'
+      })
+    }, { DB: mock8, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(ok.status).toBe(200);
+
+    const act = await app.request('/api/marketing/experiments/lead-cta/activate', {
+      method: 'POST',
+      headers: { 'cookie': 'better-auth.session_token=token-manager' }
+    }, { DB: mock8, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(act.status).toBe(200);
+
+    const v1 = await app.request('/api/public/portal/experiments/lead-cta/variant?clientId=C-X1', {}, { DB: mock8, BETTER_AUTH_SECRET: 'test-secret' });
+    const v1d = await v1.json() as any;
+    expect(['A', 'B']).toContain(v1d.variant);
+    expect(v1d.sticky).toBe(false);
+
+    const v2 = await app.request('/api/public/portal/experiments/lead-cta/variant?clientId=C-X1', {}, { DB: mock8, BETTER_AUTH_SECRET: 'test-secret' });
+    const v2d = await v2.json() as any;
+    expect(v2d.variant).toBe(v1d.variant);
+    expect(v2d.sticky).toBe(true);
+
+    const inactive = await app.request('/api/public/portal/experiments/nope/variant?clientId=C-X1', {}, { DB: mock8, BETTER_AUTH_SECRET: 'test-secret' });
+    expect((await inactive.json() as any).variant).toBe('none');
   });
 });

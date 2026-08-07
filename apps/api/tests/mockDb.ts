@@ -42,7 +42,10 @@
     purchase_invoices: [] as any[],
     tds_records: [] as any[],
     tcs_records: [] as any[],
-    rate_limit: [] as any[]
+    rate_limit: [] as any[],
+    nurture_touches: [] as any[],
+    experiments: [] as any[],
+    experiment_assignments: [] as any[]
   };
 
   private getTableName(sql: string): string {

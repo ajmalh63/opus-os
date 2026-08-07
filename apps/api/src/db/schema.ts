@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 // ==========================================
 // 1. USERS & STAFF accounts (RBAC system)
@@ -513,6 +513,53 @@ export const payoutStatements = sqliteTable('payout_statements', {
   net: integer('net').notNull().default(0),
   status: text('status', { enum: ['draft', 'approved', 'paid'] }).notNull().default('draft'),
   approvedBy: text('approved_by'),
+  createdAt: integer('created_at').notNull()
+});
+
+// ==========================================
+// 29. NURTURE TOUCHES (WhatsApp re-nurture, Section 26.4)
+// Provider-agnostic sequence engine: rows are staged outbound touches due at
+// day offsets. A future Listmonk/OpenWA consumer picks up `due` rows and marks
+// them `sent`. DPDP-safe: only created when the client granted whatsapp-updates.
+// ==========================================
+export const nurtureTouches = sqliteTable('nurture_touches', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  engagementId: text('engagement_id').references(() => engagements.id),
+  channel: text('channel', { enum: ['whatsapp', 'email'] }).notNull().default('whatsapp'),
+  stage: text('stage', { enum: ['value', 'case_study', 'offer', 'final'] }).notNull(),
+  body: text('body').notNull(), // message template (personalized at send time by consumer)
+  dueAt: integer('due_at').notNull(), // epoch seconds
+  status: text('status', { enum: ['scheduled', 'sent', 'skipped'] }).notNull().default('scheduled'),
+  sentAt: integer('sent_at'),
+  createdAt: integer('created_at').notNull()
+});
+
+// ==========================================
+// 30. A/B EXPERIMENTS (Section 26.5 — ab-test-setup skill gates)
+// The hypothesis + primary metric + baseline + MDE are REQUIRED fields, forcing
+// the "commit before launch" discipline before an experiment can go active.
+// ==========================================
+export const experiments = sqliteTable('experiments', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(), // e.g. 'lead-form-cta'
+  name: text('name').notNull(),
+  hypothesis: text('hypothesis').notNull(),
+  primaryMetric: text('primary_metric').notNull(), // e.g. 'lead_to_customer'
+  baselineRate: real('baseline_rate').notNull(), // decimal 0-1
+  mde: real('mde').notNull(), // minimum detectable effect, decimal
+  variantA: text('variant_a').notNull(),
+  variantB: text('variant_b').notNull(),
+  status: text('status', { enum: ['draft', 'active', 'concluded'] }).notNull().default('draft'),
+  startedAt: integer('started_at'),
+  createdAt: integer('created_at').notNull()
+});
+
+export const experimentAssignments = sqliteTable('experiment_assignments', {
+  id: text('id').primaryKey(),
+  experimentKey: text('experiment_key').notNull().references(() => experiments.key),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  variant: text('variant', { enum: ['A', 'B'] }).notNull(),
   createdAt: integer('created_at').notNull()
 });
 

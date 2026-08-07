@@ -1,7 +1,7 @@
 ﻿import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
 import { getAuth } from '../auth.js';
-import { clients, engagements, consents, documents, payments } from '../db/schema.js';
+import { clients, engagements, consents, documents, payments, experiments, experimentAssignments } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
 
@@ -158,5 +158,43 @@ portalRouter.post('/claim', async (c) => {
     });
   } catch (error: any) {
     return c.json({ error: "Portal claim transaction failed", details: error.message }, 500);
+  }
+});
+
+// GET /api/public/experiments/:key/variant?clientId=
+// Deterministic A/B assignment for a client (sticky — first call wins). Returns
+// 'none' if the experiment isn't active or no clientId given. Public: called by
+// the lead form BEFORE a client record exists, so it accepts clientId lazily.
+portalRouter.get('/experiments/:key/variant', async (c) => {
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  const key = c.req.param('key');
+  const clientId = c.req.query('clientId');
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const exp = await db.select().from(experiments).where(eq(experiments.key, key)).get();
+    if (!exp) return c.json({ success: true, variant: 'none' });
+    if (exp.status !== 'active') return c.json({ success: true, variant: 'none' });
+
+    if (clientId) {
+      const existing = await db.select().from(experimentAssignments)
+        .where(and(eq(experimentAssignments.experimentKey, key), eq(experimentAssignments.clientId, clientId)))
+        .get();
+      if (existing) return c.json({ success: true, key, experimentId: exp.id, variant: existing.variant, sticky: true });
+
+      const variant = (exp.id.charCodeAt(0) + (clientId.length || 0)) % 2 === 0 ? 'A' : 'B';
+      await db.insert(experimentAssignments).values({
+        id: crypto.randomUUID(),
+        experimentKey: key,
+        clientId,
+        variant,
+        createdAt: now,
+      });
+      return c.json({ success: true, key, experimentId: exp.id, variant, sticky: false });
+    }
+
+    return c.json({ success: true, key, experimentId: exp.id, variant: 'none', message: 'Pass clientId to lock in an assignment.' });
+  } catch (error: any) {
+    return c.json({ error: "Variant lookup failed", details: error.message }, 500);
   }
 });

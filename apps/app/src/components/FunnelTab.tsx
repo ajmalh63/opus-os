@@ -13,6 +13,12 @@ interface FunnelData {
   partnerAttribution: PartnerAttr[];
 }
 interface PartnerRow { partnerId: string; name: string; referralCode: string | null; status: string; referrals: number; converted: number; conversionRate: number; commissionPaise: number; commissionPendingCount: number; }
+interface ExperimentRow {
+  key: string; name: string; hypothesis: string; primaryMetric: string;
+  baselineRate: number; mde: number; variantA: string; variantB: string;
+  status: string; startedAt: number | null;
+  variants: { A: { assigned: number; converted: number; rate: number }; B: { assigned: number; converted: number; rate: number } };
+}
 
 const STAGE_LABELS: Record<string, string> = {
   lead: 'Lead', qualified: 'Qualified', documents: 'Documents', processing: 'Processing', complete: 'Complete'
@@ -42,6 +48,11 @@ export default function FunnelTab() {
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['funnelOverview'] }); },
     onError: (e: any) => console.error((e as Error).message),
+  });
+
+  const { data: expData } = useQuery<{ experiments?: ExperimentRow[] }>({
+    queryKey: ['experiments'],
+    queryFn: async () => { const r = await fetch('/api/marketing/experiments', { headers: AUTH }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   useEffect(() => {
@@ -218,6 +229,55 @@ export default function FunnelTab() {
                     <td className="p-4 text-slate-300">{p.converted}</td>
                     <td className="p-4 text-slate-300">{p.conversionRate}%</td>
                     <td className="p-4 text-brand-gold font-bold">{inr(p.commissionPaise)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* A/B experiments (Funnel#5) */}
+      <div className="panel-entrance bg-[#1C2541]/50 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">A/B Experiments</h3>
+          <span className="text-[10px] text-slate-500">locked hypothesis · no peeking</span>
+        </div>
+        {!expData || !expData.experiments || expData.experiments.length === 0 ? (
+          <p className="p-8 text-center text-xs text-slate-400">No experiments yet. Create one with a locked hypothesis + baseline + MDE.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-[#0b132b] border-b border-slate-800 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                  <th className="p-4">Experiment</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4">Variant A</th>
+                  <th className="p-4">Variant B</th>
+                  <th className="p-4">Primary Metric</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expData.experiments.map((e) => (
+                  <tr key={e.key} className="border-b border-slate-800/60 last:border-0 hover:bg-[#0B132B]/50">
+                    <td className="p-4">
+                      <p className="text-slate-200 font-semibold">{e.name}</p>
+                      <p className="text-[10px] text-slate-500 max-w-md">{e.hypothesis}</p>
+                    </td>
+                    <td className="p-4">
+                      <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${e.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-300'}`}>
+                        {e.status}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <p className="text-slate-300">{e.variantA}</p>
+                      <p className="text-[10px] text-brand-gold">{e.variants.A.assigned} assigned · {e.variants.A.rate}% {e.primaryMetric}</p>
+                    </td>
+                    <td className="p-4">
+                      <p className="text-slate-300">{e.variantB}</p>
+                      <p className="text-[10px] text-brand-gold">{e.variants.B.assigned} assigned · {e.variants.B.rate}% {e.primaryMetric}</p>
+                    </td>
+                    <td className="p-4 text-slate-400">{e.primaryMetric}</td>
                   </tr>
                 ))}
               </tbody>
