@@ -226,4 +226,64 @@ describe('Marketing automation interlock — funnel + partner affiliate (Section
     // Both counselors match study-abroad; assignment must be one of them, not the manager
     expect(['counc-a', 'counc-b']).toContain(task.assignee_id);
   });
+
+  it('reactivate creates a 24h re-engagement task + logs stale_reactivated scoring', async () => {
+    let mock3 = new MockD1Database();
+    mock3.tables.users.push(
+      { id: 'counc-a', name: 'A', email: 'a@o.com', role: 'counselor', userDivisions: '["study-abroad"]', email_verified: 1, created_at: 1, updated_at: 1 }
+    );
+    mock3.tables.clients.push({ id: 'C-STALE', name: 'Stale Sam', phone: '999', email: 's@b.c', createdAt: 1, updatedAt: 1 });
+    mock3.tables.engagements.push({ id: 'eng-stale', clientId: 'C-STALE', division: 'study-abroad', title: 'US', stageKey: 'lead', status: 'active', createdAt: 1, updatedAt: 1, outstandingBalance: 0 });
+
+    const res = await app.request('/api/marketing/stale/C-STALE/reactivate', {
+      method: 'POST',
+      headers: { 'cookie': 'better-auth.session_token=token-manager' }
+    }, { DB: mock3, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.taskId).toBeTruthy();
+    expect(data.assigneeId).toBe('counc-a');
+
+    const task = mock3.tables.tasks.find((t: any) => t.id === data.taskId);
+    expect(task).toBeTruthy();
+    expect(task.priority).toBe('high');
+    expect(task.status).toBe('open');
+    expect(task.assignee_id).toBe('counc-a');
+    const dueIn = task.due_date - Math.floor(Date.now() / 1000);
+    expect(dueIn).toBeGreaterThan(23 * 3600);
+    expect(dueIn).toBeLessThanOrEqual(24 * 3600 + 2);
+
+    const event = mock3.tables.scoring_events.find((e: any) => e.client_id === 'C-STALE' && e.interaction_code === 'stale_reactivated');
+    expect(event).toBeTruthy();
+    expect(event.points).toBe(5);
+  });
+
+  it('reactivate on unknown client returns 404', async () => {
+    let mock4 = new MockD1Database();
+    const res = await app.request('/api/marketing/stale/NOPE-999/reactivate', {
+      method: 'POST',
+      headers: { 'cookie': 'better-auth.session_token=token-manager' }
+    }, { DB: mock4, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(res.status).toBe(404);
+  });
+
+  it('reactivated lead exits the stale queue in the funnel view', async () => {
+    let mock5 = new MockD1Database();
+    mock5.tables.users.push(
+      { id: 'counc-a', name: 'A', email: 'a@o.com', role: 'counselor', userDivisions: '[]', email_verified: 1, created_at: 1, updated_at: 1 }
+    );
+    mock5.tables.clients.push({ id: 'C-STALE2', name: 'Stale Two', phone: '888', email: 's2@b.c', createdAt: 1, updatedAt: 1 });
+    mock5.tables.engagements.push({ id: 'eng-stale2', clientId: 'C-STALE2', division: 'visa', title: 'Visa', stageKey: 'lead', status: 'active', createdAt: 1, updatedAt: 1, outstandingBalance: 0 });
+
+    await app.request('/api/marketing/stale/C-STALE2/reactivate', {
+      method: 'POST',
+      headers: { 'cookie': 'better-auth.session_token=token-manager' }
+    }, { DB: mock5, BETTER_AUTH_SECRET: 'test-secret' });
+
+    const funnel = await app.request('/api/marketing/funnel', {
+      headers: { 'cookie': 'better-auth.session_token=token-manager' }
+    }, { DB: mock5, BETTER_AUTH_SECRET: 'test-secret' });
+    const fd = await funnel.json() as any;
+    expect(fd.stale.some((s: any) => s.clientId === 'C-STALE2')).toBe(false);
+  });
 });

@@ -2,9 +2,10 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { leadIntakeSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
-import { clients, consents, engagements, interactionPoints, scoringEvents, partners, referrals, commissionLedger, tasks, users } from '../db/schema.js';
+import { clients, consents, engagements, interactionPoints, scoringEvents, partners, referrals, commissionLedger } from '../db/schema.js';
 import { and, eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
+import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 
 export const leadsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -99,41 +100,19 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
     const now = Math.floor(Date.now() / 1000);
     let slaTaskId: string | null = null;
     try {
-      const allUsers = await db.select().from(users).all();
-      const candidates = allUsers
-        .filter((u: any) => u.role === 'counselor')
-        .filter((u: any) => {
-          const divs = JSON.parse(u.userDivisions || '[]');
-          return divs.length === 0 || divs.includes(data.division);
-        });
-      let assigneeId: string | null = null;
-      if (candidates.length > 0) {
-        const openTasks = await db.select().from(tasks).all();
-        // least-loaded first (fewest open tasks); ties resolved by id order (stable round-robin)
-        const load = new Map<string, number>();
-        for (const t of openTasks) {
-          if (t.status === 'open' && t.assigneeId) {
-            load.set(t.assigneeId, (load.get(t.assigneeId) || 0) + 1);
-          }
-        }
-        candidates.sort((a: any, b: any) => (load.get(a.id) || 0) - (load.get(b.id) || 0) || a.id.localeCompare(b.id));
-        assigneeId = candidates[0].id;
-      }
+      const assigneeId = await pickCounselorForDivision(db, data.division);
       if (assigneeId) {
         slaTaskId = crypto.randomUUID();
-        await db.insert(tasks).values({
-          id: slaTaskId,
+        await createAssignmentTask(db, {
+          taskId: slaTaskId,
           clientId: token,
           engagementId,
           assigneeId,
           title: `⏱ Reach out to ${data.name} (${data.division.toUpperCase()}) within 15 min`,
           description: `New lead ${token} — contact via phone/WhatsApp immediately. Context: division ${data.division}, qualification ${data.highestQualification}.`,
           priority: 'high',
-          status: 'open',
-          dueDate: now + 15 * 60,
-          recurrence: 'none',
-          createdAt: now,
-          updatedAt: now
+          dueInSeconds: 15 * 60,
+          now
         });
       }
     } catch (slaErr: any) {

@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { clients, engagements, agreements, interactionPoints, scoringEvents, segments, partners, referrals, commissionLedger } from '../db/schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
+import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 
 export const marketingRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
 
@@ -318,5 +319,54 @@ marketingRouter.get('/partners', async (c) => {
     return c.json({ partners: rows });
   } catch (error: any) {
     return c.json({ error: "Affiliate leaderboard failed", details: error.message }, 500);
+  }
+});
+
+// POST /api/marketing/stale/:clientId/reactivate — revive a lead untouched >7 days:
+// creates a high-priority 24h re-engagement task (least-loaded division counselor)
+// and logs a stale_reactivated scoring event so it exits the stale queue.
+// Gold standard (SiriusDecisions): 25% of dead leads revive in 12 months; cost is
+// 30-50% of new acquisition. Action beats a passive list.
+marketingRouter.post('/stale/:clientId/reactivate', async (c) => {
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  const clientId = c.req.param('clientId');
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const client = await db.select().from(clients).where(eq(clients.id, clientId)).get();
+    if (!client) return c.json({ error: "Client not found" }, 404);
+    const eng = await db.select().from(engagements).where(eq(engagements.clientId, clientId)).get();
+    const division = eng?.division || 'study-abroad';
+
+    const assigneeId = await pickCounselorForDivision(db, division);
+    const taskId = crypto.randomUUID();
+    await createAssignmentTask(db, {
+      taskId,
+      clientId,
+      engagementId: eng?.id || null,
+      assigneeId,
+      title: `♻️ Re-engage stale lead ${client.name} (${division.toUpperCase()})`,
+      description: `Lead ${clientId} untouched >7 days (age ~${eng ? Math.floor((now - eng.createdAt) / 86400) : 0}d). Re-engage via phone/WhatsApp with fresh value + a new trigger. Previous context: ${(client as any).intakeContext || 'none'}.`,
+      priority: 'high',
+      dueInSeconds: 24 * 3600,
+      now
+    });
+
+    await db.insert(scoringEvents).values({
+      id: crypto.randomUUID(),
+      clientId,
+      interactionCode: 'stale_reactivated',
+      points: 5,
+      source: 'stale-recovery',
+      createdAt: now
+    });
+
+    if (eng) {
+      await db.update(engagements).set({ updatedAt: now }).where(eq(engagements.id, eng.id));
+    }
+
+    return c.json({ success: true, taskId, assigneeId, message: `Re-engagement task created for ${client.name}.` });
+  } catch (error: any) {
+    return c.json({ error: "Reactivation failed", details: error.message }, 500);
   }
 });

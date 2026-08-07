@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import gsap from 'gsap';
 
 const AUTH = { 'Cookie': 'better-auth.session_token=token-admin' };
@@ -22,6 +22,7 @@ const inr = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { sty
 
 export default function FunnelTab() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery<FunnelData>({
     queryKey: ['funnelOverview'],
@@ -31,6 +32,16 @@ export default function FunnelTab() {
   const { data: partnerData } = useQuery<{ partners: PartnerRow[] }>({
     queryKey: ['affiliateLeaderboard'],
     queryFn: async () => { const r = await fetch('/api/marketing/partners', { headers: AUTH }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+  });
+
+  const reactivate = useMutation({
+    mutationFn: async (clientId: string) => {
+      const r = await fetch(`/api/marketing/stale/${clientId}/reactivate`, { method: 'POST', headers: AUTH });
+      if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Reactivation failed'); }
+      return r.json();
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['funnelOverview'] }); },
+    onError: (e: any) => console.error((e as Error).message),
   });
 
   useEffect(() => {
@@ -146,6 +157,7 @@ export default function FunnelTab() {
                   <th className="p-4">Stage</th>
                   <th className="p-4">Age</th>
                   <th className="p-4">Outstanding</th>
+                  <th className="p-4">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -159,6 +171,15 @@ export default function FunnelTab() {
                     <td className="p-4"><span className="text-[10px] uppercase font-bold px-2 py-1 rounded-full bg-slate-800 text-slate-300">{s.stageKey}</span></td>
                     <td className={`p-4 font-bold ${s.ageDays > 14 ? 'text-rose-400' : 'text-amber-400'}`}>{s.ageDays}d</td>
                     <td className="p-4 text-slate-300">{inr(s.outstandingBalance)}</td>
+                    <td className="p-4">
+                      <button
+                        onClick={() => reactivate.mutate(s.clientId)}
+                        disabled={reactivate.isPending}
+                        className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-brand-gold/10 border border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-navy transition-all disabled:opacity-40"
+                      >
+                        {reactivate.isPending ? '…' : 'Reactivate'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
