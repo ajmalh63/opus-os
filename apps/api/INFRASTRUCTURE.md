@@ -41,6 +41,32 @@ wrangler vectorize create opusos-embeddings --dimensions 768 --metric cosine
 - `src/infra/kv.ts` — `kvGetJson`, `kvSetJson`, `flagEnabled`, `setFlag`
 - `src/routes/infra.ts` — `GET /api/infrastructure/health` (owner-only) live status of every backend service
 
+## Rate limiting (Section 18.2.1 / 18.2.2 / 38.3)
+
+Three layers, cheapest first (verified 2026 free-tier):
+
+1. **PRIMARY — in-app (this repo).** `src/middleware/rateLimit.ts` enforces sliding-window counters
+   in the `rate_limit` D1 table (`key = hash(bucket|windowStart|identity)`, atomic
+   `ON CONFLICT DO UPDATE SET count = count + 1`). Fail-open on infra error, returns
+   `429 + Retry-After` with `X-RateLimit-*` headers. Wired onto:
+   - auth: OTP 5/5min, sign-in 8/5min (per session)
+   - `POST /api/public/leads` — 5/hour/IP
+   - `GET /api/public/portal/lookup` — 10/hour/IP
+   - `POST /api/public/partners` — 8/hour/IP
+2. **SECONDARY — Cloudflare WAF edge rules** (free tier ≈ 5 custom rules). Add the snippet below
+   in **Security → WAF → Custom rules** so traffic is dropped *before* it reaches the Worker:
+3. **TERTIARY — Turnstile** on public forms (lead intake, partner signup) for bot-resistant UX.
+
+```js
+// WAF custom rule — rate limit public lead form per IP (1 req / 10s burst, 20/hr sustained)
+(
+  http.request.uri.path eq "/api/public/leads" and
+  ip.src in { ... } and
+  cf.threat_score lt 10
+)
+// action: block; expression: see above; mitigation timeout: 10 minutes
+```
+
 ## Monitoring
 
 - `GET /api/infrastructure/health` returns up/down per service — call it from Uptime Kuma on the VPC

@@ -41,7 +41,8 @@
     business_profile: [] as any[],
     purchase_invoices: [] as any[],
     tds_records: [] as any[],
-    tcs_records: [] as any[]
+    tcs_records: [] as any[],
+    rate_limit: [] as any[]
   };
 
   private getTableName(sql: string): string {
@@ -93,6 +94,34 @@
   }
 
   private async execute(sql: string, tableName: string, params: any[]) {
+    // 1a. INSERT ... ON CONFLICT (Drizzle upsert) — increment count atomically for rate_limit
+    if (sql.toUpperCase().startsWith('INSERT') && sql.toLowerCase().includes('on conflict')) {
+      const parts = sql.split(/values/i);
+      const conflictTarget = (sql.match(/on conflict\s*\(([^)]+)\)/i) || [])[1]?.replace(/\W/g, '');
+      const setMatch = sql.match(/do update\s+set\s+([\w_]+)\s*=/i);
+      const incrementCol = setMatch ? setMatch[1] : '';
+
+      if (conflictTarget && incrementCol) {
+        const colsMatch = parts[0].match(/\(([^)]+)\)/);
+        if (colsMatch) {
+          const columns = colsMatch[1].split(',').map(c => c.trim());
+          const conflictIdx = columns.indexOf(conflictTarget);
+          if (conflictIdx >= 0 && params[conflictIdx] !== undefined) {
+            const existing = (this.tables as any)[tableName].find(
+              (r: any) => String(r[conflictTarget]) === String(params[conflictIdx])
+            );
+            if (existing) {
+              const camelKey = incrementCol.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+              const cur = Number(existing[incrementCol] ?? existing[camelKey]) || 0;
+              existing[incrementCol] = cur + 1;
+              existing[camelKey] = cur + 1;
+              return { success: true, results: [existing] };
+            }
+          }
+        }
+      }
+    }
+
     // 1. INSERT INTO
     if (sql.toUpperCase().startsWith('INSERT')) {
       const parts = sql.split(/values/i);

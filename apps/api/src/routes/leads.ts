@@ -4,8 +4,12 @@ import { leadIntakeSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
 import { clients, consents, engagements } from '../db/schema.js';
 import { and, eq } from 'drizzle-orm';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 export const leadsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
+
+// Public lead-intake spam protection (Section 18.2.2): 5 submissions / hour / IP.
+leadsRouter.use('/', rateLimit({ bucket: 'lead-form', windowSeconds: 3600, limit: 5 }));
 
 leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
   const data = c.req.valid('json');

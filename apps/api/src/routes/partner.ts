@@ -2,8 +2,12 @@ import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
 import { clients, partners, referrals, commissionLedger } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 export const partnerRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
+
+// Public partner signup spam protection (Section 18.2.2): 8 registrations / hour / IP.
+partnerRouter.use('/', rateLimit({ bucket: 'partner-signup', windowSeconds: 3600, limit: 8 }));
 
 // KYC masking for PAN (Section 39: masked at rest, never plaintext PII stored)
 function maskPAN(pan: string): string {

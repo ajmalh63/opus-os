@@ -3,8 +3,12 @@ import { getDb } from '../db/client.js';
 import { getAuth } from '../auth.js';
 import { clients, engagements, consents, documents, payments } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 export const portalRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string } }>();
+
+// Anti-abuse on the public journey lookup (Section 18.2.2): 10 lookups / hour / IP.
+portalRouter.use('/lookup', rateLimit({ bucket: 'lookup', windowSeconds: 3600, limit: 10 }));
 
 function buildJourney(client: any, engs: any[], cons: any[], docs: any[], pays: any[]) {
   return {

@@ -438,6 +438,17 @@ export const tcsRecords = sqliteTable('tcs_records', {
 });
 
 // ==========================================
+// 24. RATE LIMITING (Section 18.2.1 / 38.3) - in-app sliding-window counters
+// ==========================================
+export const rateLimit = sqliteTable('rate_limit', {
+  key: text('key').primaryKey(), // hash(bucket|windowStart|identity)
+  bucket: text('bucket').notNull(),
+  windowStart: integer('window_start').notNull(),
+  identity: text('identity').notNull(),
+  count: integer('count').notNull().default(1)
+});
+
+// ==========================================
 // 22. SATE (Section 26 - marketing interaction scoring)
 // ==========================================
 export const interactionPoints = sqliteTable('interaction_points', {
