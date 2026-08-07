@@ -20,7 +20,6 @@ import { complianceRouter } from './routes/compliance.js';
 import { infraRouter } from './routes/infra.js';
 import { OpusEnv } from './types.js';
 import { adminRouter } from './routes/admin.js';
-import { esignRouter, esignWebhookRouter } from './routes/esign.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
@@ -41,8 +40,6 @@ app.route('/api/public/portal', portalRouter);
 app.route('/api/public/partners', partnerRouter);
 // Razorpay webhook (Section 44) - gateway POSTs here with HMAC; no session auth
 app.route('/api/public/payments/razorpay/webhook', razorpayWebhookRouter);
-// Aadhaar eSign provider callback (Section 11) - ESP POSTs signed result; no session auth
-app.route('/api/public/esign/callback', esignWebhookRouter);
 
 // ===== PROTECTED (session + RBAC) =====
 app.use('/api/clients', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
@@ -80,8 +77,6 @@ app.use('/api/compliance/*', rbacMiddleware(['super_admin', 'manager'], true));
 
 app.use('/api/infrastructure', rbacMiddleware(['super_admin'], true));
 app.use('/api/infrastructure/*', rbacMiddleware(['super_admin'], true));
-// eSign init/status rides on the agreements RBAC scope (same staff who can sign)
-app.use('/api/agreements/*/esign*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 // Staff self-view of their own incentive accrual (Section 29.2#8 transparency)
 app.use('/api/staff/incentives', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
 app.use('/api/staff/incentives/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
@@ -96,7 +91,6 @@ app.use('/api/admin/rbac', rbacMiddleware(['super_admin'], true));
 app.route('/api/clients', clientsRouter);
 app.route('/api/kanban', kanbanRouter);
 app.route('/api/agreements', agreementsRouter);
-app.route('/api/agreements', esignRouter);
 app.route('/api/payments', paymentsRouter);
 app.route('/api/payments/razorpay', razorpayRouter);
 app.route('/api/umrah', umrahRouter);

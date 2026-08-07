@@ -64,24 +64,6 @@ export const signAgreementSchema = z.object({
   esignMethod: z.enum(['aadhaar', 'otp', 'wet_ink'])
 });
 
-// 5a. Aadhaar eSign init (Section 11 — provider-agnostic, CCA-compliant)
-export const esignInitSchema = z.object({
-  esignMethod: z.enum(['aadhaar', 'otp']),
-  // Optional signer CID (last 4 of Aadhaar) the provider may echo back for masking
-  signerDocFingerprint: z.string().max(16).optional()
-});
-
-// 5b. eSign callback from provider (POST to /api/public/esign/callback)
-export const esignCallbackSchema = z.object({
-  agreementId: z.string().min(1),
-  // Provider requestId — must match the token we issued on init
-  requestId: z.string().min(1),
-  status: z.enum(['signed', 'failed', 'refused']),
-  // sha256(agreementId|requestId|status|ESIGN_SALT) — mirror of CCA/Veri5 hash scheme
-  signature: z.string().min(1),
-  signedDocKey: z.string().optional()
-});
-
 // 6. Create Payment Ledger Schema
 export const createPaymentSchema = z.object({
   clientId: z.string().min(1, { message: "Client ID is required" }),

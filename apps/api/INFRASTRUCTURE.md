@@ -67,27 +67,6 @@ Three layers, cheapest first (verified 2026 free-tier):
 // action: block; expression: see above; mitigation timeout: 10 minutes
 ```
 
-## Aadhaar eSign (Section 11 — CCA / IT Act 2000)
-
-Provider-agnostic adapter (`src/routes/esign.ts`) for any CCA-licensed Aadhaar
-eSign Service Provider (ESP). The MeitY/CCA eSign API is the standard all ESPs
-implement; there is no one-off "government SDK" — you onboard as an ASP with an
-ESP who then issues credentials. Backed by Second Schedule / §3A IT Act 2000.
-
-- **Flow:** `POST /api/agreements/:id/esign/init` (hash-signed requestId) →
-  redirect signer to `esignUrl` → ESP POSTs result to
-  `POST /api/public/esign/callback` → we verify `sha256(agreementId|requestId|status|ESIGN_SALT)`
-  → finalize (`status:'signed'`, DPDP consent, SHA-256 hash of content).
-- **Hash scheme:** mirrors Veri5/CCA (`saCode|api|requestId|timestamp|salt`).
-  Callback **fails closed** — no `ESIGN_SALT`, no verification.
-- **Env:** `ESIGN_PROVIDER` | `ESIGN_BASE_URL` | `ESIGN_API_KEY` | `ESIGN_SALT` | `ESIGN_CALLBACK_URL`
-  (e.g. `surepass`/`esign-client.surepass.io`).
-- **State machine on `agreements`:** `esign_status ∈ none|pending|signed|failed|refused`,
-  `esign_token` = provider requestId, `esign_signed_doc_key` = R2 key of signed PDF.
-- Provider SDKs this adapter mirrors: SurePass (the GitHub you reviewed — its widget
-  is just a popup; use redirect mode instead), Protean (ex-NSDL) eSign, eMudhra
-  (official Java SDK), Veri5/Khosla Labs.
-
 ## Monitoring
 
 - `GET /api/infrastructure/health` returns up/down per service — call it from Uptime Kuma on the VPC
