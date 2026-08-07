@@ -14,6 +14,8 @@ import { partnerRouter } from './routes/partner.js';
 import { tasksRouter } from './routes/tasks.js';
 import { rbacRouter } from './routes/rbac.js';
 import { razorpayRouter, razorpayWebhookRouter } from './routes/razorpay.js';
+import { marketingRouter } from './routes/marketing.js';
+import { incentivesRouter, staffIncentivesRouter } from './routes/incentives.js';
 import { adminRouter } from './routes/admin.js';
 
 const app = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string } }>();
@@ -61,6 +63,15 @@ app.use('/api/manpower/*', rbacMiddleware(['super_admin', 'manager', 'counselor'
 app.use('/api/tasks', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
 app.use('/api/tasks/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
 
+app.use('/api/marketing', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/marketing/*', rbacMiddleware(['super_admin', 'manager'], true));
+
+app.use('/api/incentives', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/incentives/*', rbacMiddleware(['super_admin', 'manager'], true));
+// Staff self-view of their own incentive accrual (Section 29.2#8 transparency)
+app.use('/api/staff/incentives', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
+app.use('/api/staff/incentives/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
+
 app.use('/api/admin', rbacMiddleware(['super_admin'], true));
 app.use('/api/admin/*', rbacMiddleware(['super_admin'], true));
 
@@ -77,6 +88,9 @@ app.route('/api/umrah', umrahRouter);
 app.route('/api/transit', transitRouter);
 app.route('/api/manpower', manpowerRouter);
 app.route('/api/tasks', tasksRouter);
+app.route('/api/marketing', marketingRouter);
+app.route('/api/incentives', incentivesRouter);
+app.route('/api/staff/incentives', staffIncentivesRouter);
 app.route('/api/admin', adminRouter);
 app.route('/api/admin/rbac', rbacRouter);
 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import RolesTab from '../components/RolesTab';
+import GrowthTab from '../components/GrowthTab';
 
 // API interfaces matching Drizzle schemas & Zod validators
 interface AuditLog {
@@ -45,7 +46,7 @@ const ROLES = [
 
 export default function AdminConsole() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth'>('directory');
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
@@ -353,7 +354,7 @@ export default function AdminConsole() {
             toast.type === 'error' ? 'bg-rose-950 border-rose-800 text-rose-300' :
             'bg-amber-950 border-amber-800 text-amber-300'
           }`}>
-            <span>{toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : '⚠️'}</span>
+            <span>{toast.type === 'success' ? 'âœ“' : toast.type === 'error' ? 'âœ•' : 'âš ï¸'}</span>
             <span>{toast.msg}</span>
           </div>
         )}
@@ -393,6 +394,14 @@ export default function AdminConsole() {
             >
               Roles & Permissions
             </button>
+            <button
+              onClick={() => setActiveTab('growth')}
+              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                activeTab === 'growth' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Growth & Incentives
+            </button>
           </div>
         </div>
 
@@ -406,7 +415,7 @@ export default function AdminConsole() {
                 <div className="p-12 text-center text-xs text-slate-400">Retrieving secure staff roster...</div>
               ) : staffError ? (
                 <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  ⚠️ Failed to retrieve staff records. Please check that you have active super-admin credentials.
+                  âš ï¸ Failed to retrieve staff records. Please check that you have active super-admin credentials.
                 </div>
               ) : (
                 <div className="bg-[#1C2541]/40 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
@@ -574,6 +583,7 @@ export default function AdminConsole() {
           {/* TAB 3: SYSTEM AUDIT LOGS */}
           {/* TAB 3.5: ROLES & PERMISSIONS (Section 33) */}
           {activeTab === 'roles' && <RolesTab />}
+          {activeTab === 'growth' && <GrowthTab />}
 
           {activeTab === 'audit' && (
             <div className="space-y-6">
@@ -642,7 +652,7 @@ export default function AdminConsole() {
                 <div className="p-12 text-center text-xs text-slate-400">Loading system write log pipeline...</div>
               ) : auditError ? (
                 <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  ⚠️ Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
+                  âš ï¸ Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
                 </div>
               ) : (
                 <div className="bg-[#1C2541]/40 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
@@ -789,7 +799,7 @@ export default function AdminConsole() {
                 onClick={() => setSelectedLogDetail(null)}
                 className="text-slate-400 hover:text-white text-xl p-1 font-bold cursor-pointer"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -870,7 +880,7 @@ export default function AdminConsole() {
                                   <span className="px-1.5 py-0.5 rounded bg-rose-950/40 text-rose-400 line-through max-w-[200px] truncate">
                                     {valBefore === undefined ? 'undefined' : valBefore}
                                   </span>
-                                  <span className="text-slate-500">→</span>
+                                  <span className="text-slate-500">â†’</span>
                                   <span className="px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-400 max-w-[200px] truncate">
                                     {valAfter === undefined ? 'undefined' : valAfter}
                                   </span>
