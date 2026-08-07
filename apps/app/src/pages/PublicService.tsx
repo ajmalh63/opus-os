@@ -18,6 +18,16 @@ export default function PublicService({ params }: { params: { division: string }
   const [inquiryPhone, setInquiryPhone] = useState('');
   const [inquiryEmail, setInquiryEmail] = useState('');
   const [consent, setConsent] = useState(false);
+  // Division-aware interest context (funnel scoring — mirrors PublicLeadForm)
+  const [targetCountry, setTargetCountry] = useState('us');
+  const [intakeSeason, setIntakeSeason] = useState('Fall 2027');
+  const [visaCategory, setVisaCategory] = useState('student');
+  const [visaCountry, setVisaCountry] = useState('');
+  const [umrahTier, setUmrahTier] = useState('deluxe');
+  const [umrahDeparture, setUmrahDeparture] = useState('sep');
+  const [attestationCategory, setAttestationCategory] = useState('educational');
+  const [attestationAuth, setAttestationAuth] = useState('apostille');
+  const [manpowerSector, setManpowerSector] = useState('healthcare');
 
   // Dynamic configuration mapping
   const serviceConfigs: Record<string, ServiceDetails> = {
@@ -150,6 +160,21 @@ export default function PublicService({ params }: { params: { division: string }
     };
     const division = divisionMap[currentDiv] || 'study-abroad';
 
+    // Build division-aware interest context so this entry feeds the funnel scorer
+    // the same intent signals (destination_specified / budget_given / intake_started)
+    // as the full lead form.
+    let dynamicContext: Record<string, any> = {};    if (division === 'study-abroad') {
+      dynamicContext = { targetCountry, intakeSeason };
+    } else if (division === 'visa') {
+      dynamicContext = { visaCategory, visaCountry };
+    } else if (division === 'umrah') {
+      dynamicContext = { umrahTier, umrahDeparture };
+    } else if (division === 'attestation') {
+      dynamicContext = { attestationCategory, attestationAuth };
+    } else if (division === 'manpower') {
+      dynamicContext = { manpowerSector };
+    }
+
     // Normalize phone to the API-required format: +91 XXXXX XXXXX
     const digits = inquiryPhone.replace(/\D/g, '');
     const normalizedPhone = digits.length === 10
@@ -168,6 +193,8 @@ export default function PublicService({ params }: { params: { division: string }
           email: inquiryEmail,
           highestQualification: 'undergrad',
           division,
+          leadSource: 'website',
+          dynamicContext,
           consents: { coreProcessing: true, whatsappUpdates: true, marketingCampaigns: false }
         })
       });
@@ -285,6 +312,143 @@ export default function PublicService({ params }: { params: { division: string }
                   className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
                 />
               </div>
+
+              {currentDiv === 'study-abroad' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-gray-400 mb-1">Target Country</label>
+                    <select
+                      value={targetCountry}
+                      onChange={(e) => setTargetCountry(e.target.value)}
+                      className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
+                    >
+                      <option value="us">United States</option>
+                      <option value="uk">United Kingdom</option>
+                      <option value="canada">Canada</option>
+                      <option value="germany">Germany</option>
+                      <option value="australia">Australia</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-400 mb-1">Intake Season</label>
+                    <select
+                      value={intakeSeason}
+                      onChange={(e) => setIntakeSeason(e.target.value)}
+                      className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
+                    >
+                      <option value="Fall 2027">Fall 2027</option>
+                      <option value="Spring 2028">Spring 2028</option>
+                      <option value="Summer 2028">Summer 2028</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {currentDiv === 'visa-services' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-gray-400 mb-1">Visa Category</label>
+                    <select
+                      value={visaCategory}
+                      onChange={(e) => setVisaCategory(e.target.value)}
+                      className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
+                    >
+                      <option value="student">Student</option>
+                      <option value="work">Work</option>
+                      <option value="tourist">Tourist</option>
+                      <option value="family">Family Reunion</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-400 mb-1">Destination Country</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. UAE, UK"
+                      value={visaCountry}
+                      onChange={(e) => setVisaCountry(e.target.value)}
+                      className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {currentDiv === 'umrah-travel' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-gray-400 mb-1">Package Tier</label>
+                    <select
+                      value={umrahTier}
+                      onChange={(e) => setUmrahTier(e.target.value)}
+                      className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
+                    >
+                      <option value="economy">Economy</option>
+                      <option value="standard">Standard</option>
+                      <option value="deluxe">Deluxe</option>
+                      <option value="premium">Premium</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-400 mb-1">Departure Month</label>
+                    <select
+                      value={umrahDeparture}
+                      onChange={(e) => setUmrahDeparture(e.target.value)}
+                      className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
+                    >
+                      <option value="sep">September</option>
+                      <option value="oct">October</option>
+                      <option value="nov">November</option>
+                      <option value="dec">December</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {currentDiv === 'attestation' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-gray-400 mb-1">Certificate Category</label>
+                    <select
+                      value={attestationCategory}
+                      onChange={(e) => setAttestationCategory(e.target.value)}
+                      className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
+                    >
+                      <option value="educational">Educational</option>
+                      <option value="marriage">Marriage</option>
+                      <option value="birth">Birth</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-400 mb-1">Authentication</label>
+                    <select
+                      value={attestationAuth}
+                      onChange={(e) => setAttestationAuth(e.target.value)}
+                      className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
+                    >
+                      <option value="apostille">Apostille</option>
+                      <option value="embassy">Embassy Legalization</option>
+                      <option value="mea">MEA</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {currentDiv === 'recruitment' && (
+                <div>
+                  <label className="block text-gray-400 mb-1">Target Sector</label>
+                  <select
+                    value={manpowerSector}
+                    onChange={(e) => setManpowerSector(e.target.value)}
+                    className="w-full rounded bg-[hsl(224,25%,12%)] border border-[hsl(224,25%,26%)] p-2 text-white focus:border-[hsl(45,100%,50%)] focus:outline-none"
+                  >
+                    <option value="healthcare">Healthcare</option>
+                    <option value="construction">Construction</option>
+                    <option value="hospitality">Hospitality</option>
+                    <option value="it">IT / Tech</option>
+                    <option value="domestic">Domestic Help</option>
+                  </select>
+                </div>
+              )}
 
               <div className="flex items-start gap-2 pt-2">
                 <input
