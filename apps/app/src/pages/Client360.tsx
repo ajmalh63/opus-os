@@ -656,6 +656,9 @@ export default function Client360() {
 
       const uploadRes = await fetch(url, {
         method: 'PUT',
+        headers: {
+          'Cookie': `better-auth.session_token=${sessionToken}`
+        },
         body: await file.arrayBuffer(),
       });
       if (!uploadRes.ok) {
