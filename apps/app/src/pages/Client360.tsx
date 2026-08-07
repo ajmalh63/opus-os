@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useRoute } from 'wouter';
 
@@ -222,6 +222,12 @@ export default function Client360() {
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'bank_transfer' | 'cash'>('upi');
   const [paymentRefNumber, setPaymentRefNumber] = useState<string>('');
   const [paymentIsInterstate, setPaymentIsInterstate] = useState<boolean>(false);
+
+  // Razorpay Online Payment States (Section 44)
+  const [razorpayMilestone, setRazorpayMilestone] = useState<string>('');
+  const [razorpayAmount, setRazorpayAmount] = useState<string>('');
+  const [razorpayStatus, setRazorpayStatus] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
+  const [rzPaymentBusy, setRzPaymentBusy] = useState<boolean>(false);
 
   // Attestation Courier States
   const [courierPartner, setCourierPartner] = useState<'blue-dart' | 'dtdc'>('blue-dart');
@@ -451,7 +457,7 @@ export default function Client360() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client360', clientId] });
       if (data.wipLimitBreached) {
-        showToast(`⚠️ Advanced with WIP Limit warning: Column reached capacity limit of ${data.limit}.`);
+        showToast(`âš ï¸ Advanced with WIP Limit warning: Column reached capacity limit of ${data.limit}.`);
       } else {
         showToast('Application stage advanced successfully.');
       }
@@ -780,6 +786,82 @@ export default function Client360() {
     });
   };
 
+  // Razorpay: create order -> open Checkout -> verify signature -> record receipt (Section 44)
+  const handleRazorpaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amountRs = parseFloat(razorpayAmount);
+    if (!amountRs || amountRs <= 0) {
+      setRazorpayStatus({ msg: 'Enter a valid amount', type: 'err' });
+      return;
+    }
+    const amountPaise = Math.round(amountRs * 100);
+    setRzPaymentBusy(true);
+    setRazorpayStatus(null);
+
+    try {
+      // 1. Create order server-side (amount computed & verified vs ledger)
+      const orderRes = await fetch('/api/payments/razorpay/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
+        body: JSON.stringify({ clientId, engagementId: client?.engagements?.[0]?.id || clientId, amount: amountPaise, milestoneName: razorpayMilestone }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData?.error || 'Failed to create order');
+
+      // 2. Load Checkout.js
+      if (!(window as any).Razorpay) {
+        await new Promise<void>((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          s.onload = () => resolve();
+          s.onerror = () => reject(new Error('Failed to load Razorpay Checkout'));
+          document.body.appendChild(s);
+        });
+      }
+
+      // 3. Open Checkout
+      const result = await new Promise<{ razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string } | null>((resolve) => {
+        const rz = new (window as any).Razorpay({
+          key: orderData.key,
+          amount: orderData.amount_paise,
+          currency: orderData.currency || 'INR',
+          name: 'Opus Overseas',
+          description: razorpayMilestone || 'Service payment',
+          order_id: orderData.order_id,
+          handler: (res: any) => resolve({ razorpay_payment_id: res.razorpay_payment_id, razorpay_order_id: res.razorpay_order_id, razorpay_signature: res.razorpay_signature }),
+          modal: { ondismiss: () => resolve(null) },
+          prefill: { contact: '' },
+          theme: { color: '#d7a019' },
+        });
+        rz.open();
+      });
+
+      if (!result) {
+        setRazorpayStatus({ msg: 'Payment window closed', type: 'err' });
+        return;
+      }
+
+      // 4. Verify signature server-side + record receipt
+      const verifyRes = await fetch('/api/payments/razorpay/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
+        body: JSON.stringify({ clientId, engagementId: client?.engagements?.[0]?.id || clientId, ...result, milestoneName: razorpayMilestone }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData?.error || 'Verification failed');
+
+      setRazorpayStatus({ msg: 'Payment captured & recorded', type: 'ok' });
+      setRazorpayAmount('');
+      setRazorpayMilestone('');
+      refetchPayments();
+      queryClient.invalidateQueries({ queryKey: ['client360', clientId] });
+    } catch (err: any) {
+      setRazorpayStatus({ msg: err.message || 'Payment failed', type: 'err' });
+    } finally {
+      setRzPaymentBusy(false);
+    }
+  };
+
   const handleLogPaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!paymentMilestoneName.trim()) {
@@ -863,7 +945,7 @@ export default function Client360() {
 
         {/* Dynamic Mock Cookie Role Toggle (Dx/Testing help) */}
         <div className="p-4 border-t border-slate-900 bg-slate-950/60">
-          <label className="text-[10px] text-brand-gold uppercase tracking-wider block mb-2 font-bold">🧪 Simulate Role Session</label>
+          <label className="text-[10px] text-brand-gold uppercase tracking-wider block mb-2 font-bold">ðŸ§ª Simulate Role Session</label>
           <div className="grid grid-cols-2 gap-1">
             <button 
               onClick={() => setSessionToken('token-manager')}
@@ -944,7 +1026,7 @@ export default function Client360() {
                             ? 'bg-brand-gold/15 border-brand-gold text-brand-gold' 
                             : 'bg-slate-900 border-slate-800 text-slate-500'
                       }`}>
-                        {isCompleted ? '✓' : step.seq}
+                        {isCompleted ? 'âœ“' : step.seq}
                       </span>
                       <span>{step.label}</span>
                     </div>
@@ -1034,7 +1116,7 @@ export default function Client360() {
                       <span className="text-slate-400 block leading-none">SHA-256 Digest:</span>
                       <span className="font-mono text-[9px] break-all block mt-1 text-slate-300 font-semibold">{consent.sha256Hash}</span>
                     </div>
-                    <span className="text-[8px] text-slate-500 block">IP: {consent.ipAddress} • {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
+                    <span className="text-[8px] text-slate-500 block">IP: {consent.ipAddress} â€¢ {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
                   </div>
                 ))}
                 {(!client.consents || client.consents.length === 0) && (
@@ -1060,7 +1142,7 @@ export default function Client360() {
                 <div className="text-right">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Outstanding Balance</span>
                   <span className="font-display font-extrabold text-xl text-brand-error block mt-0.5">
-                    ₹{(activeEng.outstandingBalance / 100).toFixed(2)}
+                    â‚¹{(activeEng.outstandingBalance / 100).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -1163,7 +1245,7 @@ export default function Client360() {
                             }`}
                             title={task.status === 'done' ? 'Mark open' : 'Mark done'}
                           >
-                            {task.status === 'done' ? '✓' : ''}
+                            {task.status === 'done' ? 'âœ“' : ''}
                           </button>
                           <div className="min-w-0">
                             <p className={`font-semibold text-white truncate ${task.status === 'done' ? 'line-through opacity-50' : ''}`}>
@@ -1171,7 +1253,7 @@ export default function Client360() {
                             </p>
                             {task.dueDate && (
                               <p className={`text-[10px] ${isOverdue ? 'text-brand-error font-bold' : 'text-slate-500'}`}>
-                                {isOverdue ? 'Overdue · ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
+                                {isOverdue ? 'Overdue Â· ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
                               </p>
                             )}
                           </div>
@@ -1379,6 +1461,53 @@ export default function Client360() {
             {activeTab === 'payments' && (
               <div className="flex flex-col gap-6">
                 
+                {/* Razorpay Online Collection (Section 44) */}
+                <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md">
+                  <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <div>
+                      <h3 className="font-display font-bold text-sm text-brand-gold">Collect Online Payment (Razorpay)</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">UPI Â· Cards Â· Netbanking Â· Wallets â€” amount computed from the ledger.</p>
+                    </div>
+                    {razorpayStatus && (
+                      <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${razorpayStatus.type === 'err' ? 'bg-brand-error/20 text-brand-error' : 'bg-brand-success/15 text-brand-success'}`}>
+                        {razorpayStatus.msg}
+                      </span>
+                    )}
+                  </div>
+
+                  <form onSubmit={handleRazorpaySubmit} className="flex flex-wrap gap-3 items-end">
+                    <div>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Milestone</label>
+                      <input
+                        type="text"
+                        value={razorpayMilestone}
+                        onChange={(e) => setRazorpayMilestone(e.target.value)}
+                        placeholder="e.g. 2nd Installment"
+                        className="w-56 text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (â‚¹)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        value={razorpayAmount}
+                        onChange={(e) => setRazorpayAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-40 text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={rzPaymentBusy}
+                      className="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-5 py-2.5 rounded text-xs font-bold transition disabled:opacity-40"
+                    >
+                      {rzPaymentBusy ? 'Processing...' : 'Pay with Razorpay'}
+                    </button>
+                  </form>
+                </div>
+
                 {/* Submit New Billing Log */}
                 <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md">
                   <h3 className="font-display font-bold text-sm text-brand-gold mb-3">Log Billing Entry (Charges & Invoices)</h3>
@@ -1415,7 +1544,7 @@ export default function Client360() {
 
                       {/* Amount in Rupees */}
                       <div>
-                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (Rupees ₹)</label>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (Rupees â‚¹)</label>
                         <input 
                           type="number" 
                           step="0.01"
@@ -1545,7 +1674,7 @@ export default function Client360() {
                           <div className="flex justify-between items-end border-t border-slate-900 pt-2.5">
                             <div>
                               <span className="text-[9px] text-slate-500 uppercase tracking-widest block leading-none">Milestone Fee</span>
-                              <span className="font-mono font-extrabold text-sm text-brand-gold">₹{(milestone.amount / 100).toFixed(2)}</span>
+                              <span className="font-mono font-extrabold text-sm text-brand-gold">â‚¹{(milestone.amount / 100).toFixed(2)}</span>
                             </div>
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
                               milestone.status === 'paid' 
@@ -1624,17 +1753,17 @@ export default function Client360() {
                                 </span>
                               </td>
                               <td className="p-4 font-mono text-slate-300">
-                                {hasTax ? `₹${(ledger.taxableAmount! / 100).toFixed(2)}` : '—'}
+                                {hasTax ? `â‚¹${(ledger.taxableAmount! / 100).toFixed(2)}` : 'â€”'}
                               </td>
                               <td className="p-4">
                                 {hasTax ? (
                                   <div className="text-[10px] font-mono text-slate-400 space-y-0.5">
                                     {ledger.isInterstate ? (
-                                      <div>IGST (18%): ₹{(ledger.igst! / 100).toFixed(2)}</div>
+                                      <div>IGST (18%): â‚¹{(ledger.igst! / 100).toFixed(2)}</div>
                                     ) : (
                                       <>
-                                        <div>CGST (9%): ₹{(ledger.cgst! / 100).toFixed(2)}</div>
-                                        <div>SGST (9%): ₹{(ledger.sgst! / 100).toFixed(2)}</div>
+                                        <div>CGST (9%): â‚¹{(ledger.cgst! / 100).toFixed(2)}</div>
+                                        <div>SGST (9%): â‚¹{(ledger.sgst! / 100).toFixed(2)}</div>
                                       </>
                                     )}
                                   </div>
@@ -1643,7 +1772,7 @@ export default function Client360() {
                                 )}
                               </td>
                               <td className={`p-4 text-right font-mono font-extrabold ${amountColor}`}>
-                                ₹{(ledger.amount / 100).toFixed(2)}
+                                â‚¹{(ledger.amount / 100).toFixed(2)}
                               </td>
                             </tr>
                           );
@@ -1709,12 +1838,12 @@ export default function Client360() {
                           </div>
                           <div className="text-right">
                             <span className="text-[8px] text-slate-500 uppercase block">Booking Fee</span>
-                            <span className="font-bold text-slate-200 font-mono">₹{(dep.bookingFee / 100).toFixed(2)}</span>
+                            <span className="font-bold text-slate-200 font-mono">â‚¹{(dep.bookingFee / 100).toFixed(2)}</span>
                           </div>
                         </div>
 
                         <div className="flex justify-between items-center">
-                          <span className="font-mono text-xs font-bold text-white">Price: ₹{(dep.price / 100).toFixed(2)}</span>
+                          <span className="font-mono text-xs font-bold text-white">Price: â‚¹{(dep.price / 100).toFixed(2)}</span>
                           <button
                             onClick={() => bookUmrahSeatMutation.mutate(dep.id)}
                             disabled={bookUmrahSeatMutation.isPending || dep.status === 'cancelled'}
@@ -1923,7 +2052,7 @@ export default function Client360() {
                             ? 'bg-sky-600 text-white border-sky-700' 
                             : 'bg-slate-800 text-slate-300 border-slate-700'
                       }`}>
-                        {isWhatsApp ? 'WA' : isEmail ? 'EM' : '⚙'}
+                        {isWhatsApp ? 'WA' : isEmail ? 'EM' : 'âš™'}
                       </div>
                       
                       <div className={`p-3 rounded-lg border flex-1 ${

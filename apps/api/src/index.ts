@@ -13,6 +13,7 @@ import { portalRouter } from './routes/portal.js';
 import { partnerRouter } from './routes/partner.js';
 import { tasksRouter } from './routes/tasks.js';
 import { rbacRouter } from './routes/rbac.js';
+import { razorpayRouter, razorpayWebhookRouter } from './routes/razorpay.js';
 import { adminRouter } from './routes/admin.js';
 
 const app = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string } }>();
@@ -32,6 +33,8 @@ app.route('/api/public/leads', leadsRouter);
 app.route('/api/public/portal', portalRouter);
 // Partner KYC registration + partnerId-scoped referrals/commissions (Section 39) — public signup form
 app.route('/api/public/partners', partnerRouter);
+// Razorpay webhook (Section 44) - gateway POSTs here with HMAC; no session auth
+app.route('/api/public/payments/razorpay/webhook', razorpayWebhookRouter);
 
 // ===== PROTECTED (session + RBAC) =====
 app.use('/api/clients', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
@@ -69,6 +72,7 @@ app.route('/api/clients', clientsRouter);
 app.route('/api/kanban', kanbanRouter);
 app.route('/api/agreements', agreementsRouter);
 app.route('/api/payments', paymentsRouter);
+app.route('/api/payments/razorpay', razorpayRouter);
 app.route('/api/umrah', umrahRouter);
 app.route('/api/transit', transitRouter);
 app.route('/api/manpower', manpowerRouter);
