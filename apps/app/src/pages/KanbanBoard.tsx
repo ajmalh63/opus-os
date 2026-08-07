@@ -115,7 +115,7 @@ export default function KanbanBoard() {
     setDraggedSourceStage(null);
   };
 
-  // Helper to filter cards locally based on UI filters
+// Helper to filter cards locally based on UI filters
   const getFilteredCards = (cards: Card[]) => {
     return cards.filter(card => {
       // Division Filter
@@ -125,10 +125,10 @@ export default function KanbanBoard() {
         if (counselorFilter === 'unassigned' && card.counselorId !== null) return false;
         if (counselorFilter !== 'unassigned' && card.counselorId !== counselorFilter) return false;
       }
-      // Stale aging simulation: for demo, check if card starts with odd letter/ID to show as stale
+      // Stale aging: cards still in the lead/qualified stage or flagged by the API
       if (staleOnly) {
-        const isDemoStale = card.outstandingBalance > 50000; // treat high outstanding balances as stale warning
-        if (!isDemoStale) return false;
+        const isStale = card.stageKey === 'lead' || card.stageKey === 'qualified';
+        if (!isStale) return false;
       }
       return true;
     });
@@ -276,7 +276,8 @@ export default function KanbanBoard() {
                 {/* Cards Container */}
                 <div className="p-3 space-y-3 overflow-y-auto kanban-column flex-1">
                   {filteredCards.map((card) => {
-                    const hasBlocker = card.outstandingBalance > 75000; // Trigger demo warnings
+                    // Cards with no counselor assignment are attention items (blocker-ish)
+                    const hasBlocker = card.counselorId === null;
                     return (
                       <div
                         key={card.id}
@@ -290,7 +291,7 @@ export default function KanbanBoard() {
                             {card.division}
                           </span>
                           {hasBlocker && (
-                            <span className="w-2.5 h-2.5 rounded-full bg-brand-error animate-pulse" title="High Outstanding Balance Block"></span>
+                            <span className="w-2.5 h-2.5 rounded-full bg-brand-error animate-pulse" title="Unassigned - needs counselor"></span>
                           )}
                         </div>
 

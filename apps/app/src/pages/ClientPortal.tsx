@@ -437,7 +437,7 @@ export default function ClientPortal() {
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-brand-cream/40">
           <div className="flex items-center gap-3">
             <span className="border border-brand-gold/30 text-brand-gold px-2 py-0.5 rounded text-[10px] font-semibold font-display">
-              MEA Accredited Agent
+              British Council Certified Agent
             </span>
           </div>
           <div>

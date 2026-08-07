@@ -120,24 +120,24 @@ export default function LandingPortal() {
           {/* Card 5: Super User Admin Control Panel */}
           <div 
             onClick={() => setLocation('/admin')}
-            className="group cursor-pointer rounded-xl border border-[hsl(224,25%,26%)] bg-[hsl(224,25%,18%)] p-6 transition-all hover:border-[hsl(45,100%,50%)] hover:shadow-[0_0_20px_rgba(250,204,21,0.1)] hover:-translate-y-1"
+            className="group cursor-pointer rounded-xl border border-brand-gold/25 bg-[hsl(224,25%,18%)] p-6 transition-all hover:border-brand-gold hover:shadow-[0_0_20px_rgba(215,160,25,0.1)] hover:-translate-y-1"
           >
-            <div className="text-3xl mb-4">⚙ï¸</div>
-            <h3 className="text-lg font-bold text-white group-hover:text-[hsl(45,100%,50%)] transition-colors">Admin Control Desk</h3>
+            <div className="text-3xl mb-4">⚙️</div>
+            <h3 className="text-lg font-bold text-white group-hover:text-brand-gold transition-colors">Admin Control Desk</h3>
             <p className="text-xs text-gray-400 mt-2">
               Staff registration, division scoping permissions mapping, and compliance audit trail logs.
             </p>
           </div>
 
-          {/* Card 6: Client 360 Workspace */}
+          {/* Card 6: Client 360 Workspace — via Kanban card selection (no mock ID) */}
           <div 
-            onClick={() => setLocation('/clients/OP-2026-1001')}
-            className="group cursor-pointer rounded-xl border border-[hsl(224,25%,26%)] bg-[hsl(224,25%,18%)] p-6 transition-all hover:border-[hsl(45,100%,50%)] hover:shadow-[0_0_20px_rgba(250,204,21,0.1)] hover:-translate-y-1"
+            onClick={() => setLocation('/kanban')}
+            className="group cursor-pointer rounded-xl border border-brand-gold/25 bg-[hsl(224,25%,18%)] p-6 transition-all hover:border-brand-gold hover:shadow-[0_0_20px_rgba(215,160,25,0.1)] hover:-translate-y-1"
           >
-            <div className="text-3xl mb-4">👤¤</div>
-            <h3 className="text-lg font-bold text-white group-hover:text-[hsl(45,100%,50%)] transition-colors">Client 360 Profile</h3>
+            <div className="text-3xl mb-4">👤</div>
+            <h3 className="text-lg font-bold text-white group-hover:text-brand-gold transition-colors">Client 360 Profiles</h3>
             <p className="text-xs text-gray-400 mt-2">
-              Detailed client profiles, R2 document vaults, digital eSign agreements, and ledger accounts.
+              Open the Kanban pipeline and select any client card to view their full 360 profile, R2 document vault, eSign agreements, and ledgers.
             </p>
           </div>
 

@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -85,21 +85,11 @@ describe('Public Client Portal & Partner Referral Tracking Integration Tests', (
     expect(data.consents[0].consentType).toBe("core-processing");
   });
 
-  it('GET /api/partners should reject unauthenticated requests with 401', async () => {
-    const res = await app.request('/api/partners', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: "Partner" })
-    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
-    expect(res.status).toBe(401);
-  });
-
-  it('POST /api/partners should register partner, encrypt PAN number, and return masked PAN', async () => {
-    const res = await app.request('/api/partners', {
+  it('POST /api/public/partners should register partner with KYC and return masked PAN', async () => {
+    const res = await app.request('/api/public/partners', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': 'better-auth.session_token=token-counselor'
       },
       body: JSON.stringify({
         name: "Hyderabad Consultants Agency",
@@ -115,11 +105,11 @@ describe('Public Client Portal & Partner Referral Tracking Integration Tests', (
     expect(data.partnerId).toBeDefined();
     expect(data.maskedPan).toBe("******234F");
 
-    // Verify DB stores encrypted PAN
+    // Verify DB stores masked PAN (no plaintext PII at rest)
     const partner = mockD1.tables.partners.find(p => p.id === data.partnerId);
     expect(partner).toBeDefined();
-    expect(partner.pan_number).not.toBe("ABCDE1234F"); // Encrypted!
-    expect(partner.pan_number.startsWith("enc:")).toBe(true);
+    expect(partner.pan_number).not.toBe("ABCDE1234F");
+    expect(partner.pan_number).toBe("******234F");
   });
 
   it('POST /api/partners/referrals should link client referral to partner', async () => {
@@ -135,11 +125,10 @@ describe('Public Client Portal & Partner Referral Tracking Integration Tests', (
       created_at: 0
     });
 
-    const res = await app.request('/api/partners/referrals', {
+    const res = await app.request('/api/public/partners/referrals', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': 'better-auth.session_token=token-counselor'
       },
       body: JSON.stringify({
         partnerId: partnerId,

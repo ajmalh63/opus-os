@@ -28,6 +28,7 @@ export const rbacMiddleware = (allowedRoles: string[], checkDivision: boolean = 
 
     const { user, session } = sessionResult;
 
+
     // 1. Role validation
     if (!allowedRoles.includes(user.role)) {
       return c.json({ error: "Forbidden: Insufficient role privileges" }, 403);

@@ -140,24 +140,43 @@ export default function PublicService({ params }: { params: { division: string }
       return;
     }
 
+    // Map public route slug -> API division enum (App routes use URL-friendly slugs)
+    const divisionMap: Record<string, string> = {
+      'study-abroad': 'study-abroad',
+      'visa-services': 'visa',
+      'umrah-travel': 'umrah',
+      'attestation': 'attestation',
+      'recruitment': 'manpower',
+    };
+    const division = divisionMap[currentDiv] || 'study-abroad';
+
+    // Normalize phone to the API-required format: +91 XXXXX XXXXX
+    const digits = inquiryPhone.replace(/\D/g, '');
+    const normalizedPhone = digits.length === 10
+      ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`
+      : digits.length === 12 && digits.startsWith('91')
+        ? `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`
+        : inquiryPhone;
+
     try {
       const res = await fetch('/api/public/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: inquiryName,
-          phone: inquiryPhone,
+          phone: normalizedPhone,
           email: inquiryEmail,
-          division: currentDiv,
-          consents: { coreProcessing: true }
+          highestQualification: 'undergrad',
+          division,
+          consents: { coreProcessing: true, whatsappUpdates: true, marketingCampaigns: false }
         })
       });
       const resData = await res.json();
       if (res.ok) {
         alert(`Inquiry logged successfully! Your journey token is: ${resData.token}`);
-        setLocation('/portal');
+        setLocation(`/portal?token=${encodeURIComponent(resData.token)}`);
       } else {
-        alert(`Error: ${resData.error}`);
+        alert(`Error: ${resData.error || resData.details || 'Submission failed'}`);
       }
     } catch (err: any) {
       alert(`Network error: ${err.message}`);

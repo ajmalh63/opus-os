@@ -48,11 +48,7 @@ export default function PartnerDashboard() {
     queryKey: ['partnerCommissions', partnerId],
     queryFn: async () => {
       if (!partnerId) return { commissions: [] };
-      const res = await fetch(`/api/partners/${partnerId}/commissions`, {
-        headers: {
-          'Cookie': 'better-auth.session_token=mock-session-token-123'
-        }
-      });
+      const res = await fetch(`/api/public/partners/${partnerId}/commissions`);
       if (!res.ok) {
         throw new Error(await res.text() || 'Failed to fetch commissions ledger.');
       }
@@ -64,11 +60,10 @@ export default function PartnerDashboard() {
   // Register Partner Mutation
   const registerMutation = useMutation({
     mutationFn: async (payload: { name: string; panNumber: string; bankAccount: string; ifscCode: string }) => {
-      const res = await fetch('/api/partners', {
+      const res = await fetch('/api/public/partners', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cookie': 'better-auth.session_token=mock-session-token-123'
         },
         body: JSON.stringify(payload),
       });
@@ -99,11 +94,10 @@ export default function PartnerDashboard() {
   // Log Referral Mutation
   const logReferralMutation = useMutation({
     mutationFn: async (payload: { partnerId: string; clientId: string; commissionRate: number }) => {
-      const res = await fetch('/api/partners/referrals', {
+      const res = await fetch('/api/public/partners/referrals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cookie': 'better-auth.session_token=mock-session-token-123'
         },
         body: JSON.stringify(payload),
       });
