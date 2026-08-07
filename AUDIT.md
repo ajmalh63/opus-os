@@ -109,3 +109,18 @@ Minor `mockDb` parser caveats and placeholder demo-simulators undog the "mature 
 | Tests | Added: webhook replay-idempotency, webhook 503 fail-closed, order 503 fail-closed, partner 401 (no/wrong token) + token-scoped commissions. **93/93 tests green**, api+app tsc clean, app build ✓. |
 
 **Remaining (P2/backlog, non-blocking):** B-1 CI/lint/typecheck + frontend tests, B-2 fresh-DB seed script, B-3 manpower mocks behind a dev flag, B-5 Umrah booking→payment, real-D1 (miniflare) payment tests. External: see `PENDING-CONFIGS.md`.
+
+---
+
+## P2 closure pass (2026-08-07) — all backlog items done
+
+| ID | Fix |
+|----|-----|
+| B-1 | **CI pipeline** (`.github/workflows/ci.yml`: checkout → pnpm 10.2.1 → node 20 → `install --frozen-lockfile` → `typecheck` → `test` → app build) + root `typecheck`/`build` scripts + per-package `tsc --noEmit`. Verified: `pnpm typecheck` 0, `pnpm test` green, app build ✓. |
+| B-2 | **Seed bootstrap** `apps/api/src/db/seed.ts` — idempotent (seeds only when tables empty): pipeline stages (5), clause library (DPDP/scope/fee/cancellation/doc-auth/data-share), permissions + default roles (reuses `rbac.ts` exported `PERMISSION_SEED`/`ROLES_SEED`, single source of truth), business profile. 2 new tests (seed + idempotency). |
+| B-3 | **Manpower dev-flag**: `MANPOWER_AI = mock|real` (types + wrangler `[vars]`). `mock` → labeled demo candidate (`mocked:true`); `real` → **fail-loud 501** (never fake) until the Workers AI parser is implemented. New test for the 501 path. |
+| B-5 | **Umrah booking → payment**: seat booking now creates a `payments` `charge` row (amount = `booking_fee`, `referenceNumber` = booking id, dedupable) when the client has an engagement. Test asserts the charge. |
+
+**Full suite now 96/96 tests** across 18 files; `pnpm typecheck` runs all three packages; app build clean; CI will enforce this on every push/PR.
+
+**Only external item left:** `PENDING-CONFIGS.md` (OpenWA/Chatwoot + Meta-vs-OpenWA delivery route + nurture consumer cron) — those require provisioning VPS/Cloudflare services outside this repo.
