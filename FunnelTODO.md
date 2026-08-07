@@ -10,11 +10,12 @@ Built (this set, committed):
   stale-lead recovery queue (7-day no-contact), partner attribution on converted customers.
 - `GET /api/marketing/partners` — affiliate leaderboard (referrals → converted → commission).
 - Agreement sign → matures referred commission at `commissionRate%` of realized payments.
+- **15-min speed-to-lead SLA task** on every lead: round-robin to the least-loaded
+  counselor allowed for the lead's division (empty user_divisions = all divisions).
 
 ## Not yet built (next sessions)
 
-1. **15-min speed-to-lead SLA task** — auto-create a follow-up `tasks` row due
-   `now+15m` on every lead (round-robin to division counselors). Research: ≤5min = 21× qualify.
+1. ~~**15-min speed-to-lead SLA task**~~ ✅ DONE (leads.ts)
 2. **Stale-lead recovery action** — convert the funnel `stale` queue into an auto task /
    re-nurture sequence (WhatsApp/email template) instead of just listing them.
 3. **FunnelTab UI** in AdminConsole — stage bars, conversion %, stale queue, velocity,

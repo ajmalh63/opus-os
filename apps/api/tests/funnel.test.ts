@@ -62,8 +62,7 @@ describe('Marketing automation interlock — funnel + partner affiliate (Section
     );
   });
 
-  it('intake with dynamicContext auto-scores intent signals (destination/budget/intake)', async () => {
-    const res = await app.request('/api/public/leads', {
+  it('intake with dynamicContext auto-scores intent signals (destination/budget/intake)', async () => {    const res = await app.request('/api/public/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'cf-connecting-ip': '203.0.113.50' },
       body: JSON.stringify(leadPayload({
@@ -195,5 +194,36 @@ describe('Marketing automation interlock — funnel + partner affiliate (Section
     const ledger = mockD1.tables.commission_ledger.find((l: any) => l.id === 'led-5');
     expect(ledger.status).toBe('matured');
     expect(ledger.amount).toBe(5000); // 5% of ₹1000 (100000 paise)
+  });
+
+  it('intake creates a 15-min SLA task routed round-robin to a division-matched counselor', async () => {
+    let mock2 = new MockD1Database();
+    // Two counselors: one study-abroad only, one all-divisions
+    mock2.tables.users.push(
+      { id: 'counc-a', name: 'A', email: 'a@o.com', role: 'counselor', userDivisions: '["study-abroad"]', email_verified: 1, created_at: 1, updated_at: 1 },
+      { id: 'counc-b', name: 'B', email: 'b@o.com', role: 'counselor', userDivisions: '[]', email_verified: 1, created_at: 1, updated_at: 1 },
+      { id: 'mgr-z', name: 'Z Mgr', email: 'z@o.com', role: 'manager', userDivisions: '[]', email_verified: 1, created_at: 1, updated_at: 1 }
+    );
+
+    const res = await app.request('/api/public/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'cf-connecting-ip': '203.0.113.60' },
+      body: JSON.stringify(leadPayload({
+        division: 'study-abroad',
+        dynamicContext: { targetCountry: 'US', budget: '20-30L' }
+      }))
+    }, { DB: mock2, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.slaTaskId).toBeTruthy();
+
+    const task = mock2.tables.tasks.find((t: any) => t.id === data.slaTaskId);
+    expect(task).toBeTruthy();
+    expect(task.priority).toBe('high');
+    expect(task.status).toBe('open');
+    expect(task.due_date - Math.floor(Date.now() / 1000)).toBeLessThanOrEqual(15 * 60 + 2);
+    expect(task.assignee_id).toBeTruthy();
+    // Both counselors match study-abroad; assignment must be one of them, not the manager
+    expect(['counc-a', 'counc-b']).toContain(task.assignee_id);
   });
 });
