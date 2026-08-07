@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { createTemplateSchema, createAgreementSchema, signAgreementSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
-import { agreements, agreementTemplates, clauseLibrary, clients, consents } from '../db/schema.js';
+import { agreements, agreementTemplates, clauseLibrary, clients, consents, referrals, commissionLedger, payments } from '../db/schema.js';
 import { eq, inArray } from 'drizzle-orm';
 
 export const agreementsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
@@ -213,6 +213,24 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
       sha256Hash: noticeHash,
       grantedAt: Math.floor(Date.now() / 1000)
     });
+
+    // 3. Partner affiliate interlock (Section 39): if this client came via a partner
+    // referral, mature the commission now that they are a signed customer.
+    // Commission = referral.commissionRate % of total realized payments (paise, int math).
+    try {
+      const referral = await db.select().from(referrals).where(eq(referrals.clientId, agreement.clientId)).get();
+      if (referral) {
+        const paidRows = await db.select().from(payments).where(eq(payments.clientId, agreement.clientId)).all();
+        const paidPaise = paidRows.reduce((a: number, p: any) => a + Number(p.amount || 0), 0);
+        const commissionPaise = Math.floor((paidPaise * (referral.commissionRate || 5)) / 100);
+        await db.update(commissionLedger)
+          .set({ amount: commissionPaise, status: 'matured' })
+          .where(eq(commissionLedger.referralId, referral.id));
+      }
+    } catch (refErr: any) {
+      // Commission maturation must never block agreement signing.
+      console.error('referral commission maturation failed', refErr?.message);
+    }
 
     return c.json({
       success: true,

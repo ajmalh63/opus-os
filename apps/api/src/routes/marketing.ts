@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { clients, interactionPoints, scoringEvents, segments } from '../db/schema.js';
-import { eq, desc } from 'drizzle-orm';
+import { clients, engagements, agreements, interactionPoints, scoringEvents, segments, partners, referrals, commissionLedger } from '../db/schema.js';
+import { eq, desc, and, gte } from 'drizzle-orm';
 
 export const marketingRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
 
@@ -170,5 +170,153 @@ marketingRouter.get('/leads', async (c) => {
     return c.json({ leads: rows });
   } catch (error: any) {
     return c.json({ error: "Lead scoring fetch failed", details: error.message }, 500);
+  }
+});
+
+// GET /api/marketing/funnel — full-funnel analytics (Section 26.3):
+//   stage counts + conversion %, velocity (days per stage), and stale-lead recovery queue.
+// Tracks the 5 business funnel stages; "converted" = customer boundary = signed agreement.
+const FUNNEL_STAGES = ['lead', 'qualified', 'documents', 'processing', 'complete'];
+
+marketingRouter.get('/funnel', async (c) => {
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  const DAY = 86400;
+
+  try {
+    const allEngagements = await db.select().from(engagements).all();
+    const active = allEngagements.filter((e) => e.status === 'active');
+
+    // Stage counts (current snapshot)
+    const stageCounts: Record<string, number> = {};
+    for (const st of FUNNEL_STAGES) {
+      stageCounts[st] = active.filter((e: any) => e.stageKey === st).filter(Boolean).length;
+    }
+    const totalLeads = (stageCounts.lead + stageCounts.qualified + stageCounts.documents + stageCounts.processing + stageCounts.complete) || active.length;
+
+    // Conversion: cumulative % of total leads that reached at least each stage
+    const cumulative = { ...stageCounts };
+    let running = stageCounts.complete;
+    const conversionOrder = [...FUNNEL_STAGES].reverse();
+    for (const st of conversionOrder.slice(1)) {
+      running += stageCounts[st];
+      cumulative[st] = running;
+    }
+    const funnel = FUNNEL_STAGES.map((st) => {
+      const stageReached = st === 'lead' ? totalLeads : cumulative[st];
+      return {
+        stage: st,
+        count: stageCounts[st],
+        reachedStage: stageReached,
+        conversionRate: totalLeads > 0 ? Math.round((stageReached / totalLeads) * 1000) / 10 : 0,
+      };
+    });
+
+    // Velocity: average age (days) of deals still sitting in each stage
+    const velocity: Record<string, number> = {};
+    for (const st of FUNNEL_STAGES) {
+      const inStage = active.filter((e: any) => e.stageKey === st && e.createdAt);
+      if (inStage.length === 0) { velocity[st] = 0; continue; }
+      velocity[st] = Math.round(inStage.reduce((a, e: any) => a + (now - e.createdAt), 0) / inStage.length / DAY);
+    }
+
+    // Signed customers (boundary: any agreement signed)
+    const signedAgreements = await db.select().from(agreements).all();
+    const customerIds = new Set((signedAgreements as any[]).filter((a) => a.status === 'signed').map((a) => a.clientId));
+    const customers = (signedAgreements as any[]).filter((a) => a.status === 'signed').length;
+    const leadToCustomer = totalLeads > 0 ? Math.round((customers / totalLeads) * 1000) / 10 : 0;
+
+    // Stale recovery queue: active lead/qualified engagement untouched >7 days with zero scoring events
+    const staleCutoff = now - 7 * DAY;
+    const stale: any[] = [];
+    for (const e of active) {
+      if (!['lead', 'qualified'].includes(e.stageKey)) continue;
+      if ((e.updatedAt || 0) > staleCutoff) continue;
+      const ev = await db.select().from(scoringEvents).where(eq(scoringEvents.clientId, e.clientId)).all();
+      const lastTouch = ev.length > 0 ? Math.max(...ev.map((x: any) => x.createdAt)) : 0;
+      if (lastTouch > staleCutoff) continue;
+      const cl = await db.select().from(clients).where(eq(clients.id, e.clientId)).get();
+      stale.push({
+        clientId: e.clientId, name: cl?.name || '—', phone: cl?.phone || '',
+        division: e.division, stageKey: e.stageKey,
+        ageDays: Math.round((now - (e.createdAt || now)) / DAY),
+        lastTouchAt: lastTouch || null, outstandingBalance: e.outstandingBalance || 0,
+      });
+    }
+    stale.sort((a, b) => b.ageDays - a.ageDays);
+
+    // Partner attribution on converted customers (Section 39 interlock)
+    const partnerAttribution: any[] = [];
+    const referredClients = await db.select().from(referrals).all();
+    for (const ref of referredClients as any[]) {
+      const isCustomer = customerIds.has(ref.clientId);
+      const partner = await db.select().from(partners).where(eq(partners.id, ref.partnerId)).get();
+      const ledger = await db.select().from(commissionLedger).where(eq(commissionLedger.referralId, ref.id)).get();
+      partnerAttribution.push({
+        clientId: ref.clientId,
+        partnerId: ref.partnerId,
+        partnerName: partner?.name || '—',
+        referralCode: partner?.referralCode || null,
+        converted: isCustomer,
+        commissionRate: ref.commissionRate,
+        commissionStatus: ledger?.status || 'none',
+        commissionPaise: ledger?.amount || 0,
+      });
+    }
+
+    return c.json({
+      success: true,
+      generatedAt: now,
+      totalLeads,
+      customers,
+      leadToCustomer,
+      funnel,
+      velocity,
+      stale,
+      staleCount: stale.length,
+      partnerAttribution,
+      bands: { hot: HOT, warm: WARM },
+    });
+  } catch (error: any) {
+    return c.json({ error: "Funnel analytics failed", details: error.message }, 500);
+  }
+});
+
+// GET /api/marketing/partners — affiliate leaderboard (Section 39 interlock):
+// referrals per partner, converted count, total matured commission, active status.
+marketingRouter.get('/partners', async (c) => {
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const allPartners = await db.select().from(partners).all();
+    const allReferrals = await db.select().from(referrals).all();
+    const allLedger = await db.select().from(commissionLedger).all();
+    const signed = await db.select().from(agreements).all();
+    const signedClientIds = new Set((signed as any[]).filter((a: any) => a.status === 'signed').map((a: any) => a.clientId));
+
+    const rows = allPartners.map((p: any) => {
+      const refs = allReferrals.filter((r: any) => r.partnerId === p.id);
+      const refIds = refs.map((r: any) => r.id);
+      const ledger = allLedger.filter((l: any) => refIds.includes(l.referralId));
+      const matured = ledger.filter((l: any) => l.status === 'matured' || l.status === 'paid');
+      const converted = refs.filter((r: any) => signedClientIds.has(r.clientId)).length;
+      return {
+        partnerId: p.id,
+        name: p.name,
+        referralCode: p.referralCode || null,
+        status: p.status,
+        referrals: refs.length,
+        converted,
+        conversionRate: refs.length > 0 ? Math.round((converted / refs.length) * 1000) / 10 : 0,
+        commissionPaise: matured.reduce((a, l) => a + Number(l.amount || 0), 0),
+        commissionPendingCount: ledger.filter((l: any) => l.status === 'unmatured').length,
+      };
+    });
+    rows.sort((a: any, b: any) => b.commissionPaise - a.commissionPaise);
+
+    return c.json({ partners: rows });
+  } catch (error: any) {
+    return c.json({ error: "Affiliate leaderboard failed", details: error.message }, 500);
   }
 });

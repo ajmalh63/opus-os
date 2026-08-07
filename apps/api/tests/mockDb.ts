@@ -155,22 +155,36 @@
 
     // 2. UPDATE
     if (sql.toUpperCase().startsWith('UPDATE')) {
-      const idParam = params[params.length - 1];
       const tableList = (this.tables as any)[tableName];
       if (tableList) {
-        const row = tableList.find((r: any) => r.id === idParam || r.client_id === idParam);
-        if (row) {
-          const setClauseMatch = sql.match(/SET\s+(.+?)\s+WHERE/i);
-          if (setClauseMatch) {
-            const setTerms = setClauseMatch[1].split(',').map(t => t.trim());
-            setTerms.forEach((term, idx) => {
-              const col = term.split('=')[0].trim();
-              const val = params[idx];
-              row[col] = val;
-              const camelKey = col.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-              row[camelKey] = val;
-            });
-          }
+        // Match rows by WHERE column equality (params correspond to SET terms then WHERE terms)
+        const setClauseMatch = sql.match(/SET\s+(.+?)\s+WHERE/i);
+        const whereMatches = [...(sql.match(/WHERE\s+([\w_]+)\s*=\s*\?/i) || [])];
+        const whereCol = whereMatches.length ? whereMatches[1] : null;
+        let row = null;
+        if (setClauseMatch && whereCol) {
+          const setTermCount = setClauseMatch[1].split(',').length;
+          const whereVal = params[setTermCount]; // value after all SET params
+          row = tableList.find((r: any) => {
+            const camelKey = whereCol.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+            const snakeKey = whereCol.replace(/([A-Z])/g, "_$1").toLowerCase();
+            const val = r[whereCol] ?? r[camelKey] ?? r[snakeKey];
+            return val !== undefined && String(val) === String(whereVal);
+          });
+        } else {
+          // legacy fallback: match on last param vs id|client_id
+          const idParam = params[params.length - 1];
+          row = tableList.find((r: any) => r.id === idParam || r.client_id === idParam);
+        }
+        if (row && setClauseMatch) {
+          const setTerms = setClauseMatch[1].split(',').map(t => t.trim());
+          setTerms.forEach((term, idx) => {
+            const col = term.split('=')[0].trim();
+            const val = params[idx];
+            row[col] = val;
+            const camelKey = col.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+            row[camelKey] = val;
+          });
         }
       }
       return { success: true, results: [] };

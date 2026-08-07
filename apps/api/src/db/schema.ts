@@ -30,6 +30,9 @@ export const clients = sqliteTable('clients', {
   passportExpiry: text('passport_expiry'), // ISO date string: YYYY-MM-DD
   gstin: text('gstin'), // for B2B classification (GSTR-1)
   state: text('state'), // place of supply state code
+  // Funnel enrichment (Section 26) — captured at intake for qualification
+  leadSource: text('lead_source'), // website, whatsapp, walk-in, partner, referral
+  intakeContext: text('intake_context'), // JSON: targetCountry/intake/budget/visaCategory/etc from lead form
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });
@@ -287,6 +290,7 @@ export const partners = sqliteTable('partners', {
   bankAccount: text('bank_account').notNull(),
   ifscCode: text('ifsc_code').notNull(),
   status: text('status', { enum: ['active', 'blocked'] }).notNull().default('active'),
+  referralCode: text('referral_code').unique(), // OPUS-affiliate short code for ?ref= tracking
   createdAt: integer('created_at').notNull()
 });
 

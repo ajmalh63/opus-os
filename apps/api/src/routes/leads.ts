@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { leadIntakeSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
-import { clients, consents, engagements } from '../db/schema.js';
+import { clients, consents, engagements, interactionPoints, scoringEvents, partners, referrals, commissionLedger } from '../db/schema.js';
 import { and, eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
 
@@ -26,13 +26,15 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
   const token = `OP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
   try {
-    // Insert client
+    // Insert client (persist lead source + intake context for funnel scoring/qualification)
     await db.insert(clients).values({
       id: token,
       name: data.name,
       phone: data.phone,
       email: data.email,
       highestQualification: data.highestQualification,
+      leadSource: data.leadSource || 'website',
+      intakeContext: data.dynamicContext ? JSON.stringify(data.dynamicContext) : null,
       createdAt: Math.floor(Date.now() / 1000),
       updatedAt: Math.floor(Date.now() / 1000)
     });
@@ -90,9 +92,80 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
       updatedAt: Math.floor(Date.now() / 1000)
     });
 
+    // Funnel auto-scoring at intake (Section 26.2.1) — seed interaction points, then award
+    // intent-driven signals the lead gave us in the form so the MQL band is meaningful day-one.
+    const now = Math.floor(Date.now() / 1000);
+    const intentSignals: { interactionCode: string; points: number; description: string }[] = [
+      { interactionCode: 'website_lead_form', points: 10, description: 'Website lead form submitted' },
+    ];
+    const ctx = data.dynamicContext || {};
+    if (ctx.targetCountry) intentSignals.push({ interactionCode: 'destination_specified', points: 10, description: 'Target country specified' });
+    if (ctx.budget) intentSignals.push({ interactionCode: 'budget_given', points: 15, description: 'Budget provided' });
+    if (ctx.intakeSeason) intentSignals.push({ interactionCode: 'intake_started', points: 5, description: 'Intake season specified' });
+
+    // Partner affiliate interlock (Section 39): ?ref=OPUS-XX on intake creates the
+    // referral record + an UNMATURED commission ledger entry + partner_referral score.
+    // Commission matures only when this lead becomes a signed customer (agreements/sign).
+    let referralId: string | null = null;
+    let referredPartnerId: string | null = null;
+    if (data.refCode) {
+      try {
+        const partner = await db.select().from(partners)
+          .where(eq(partners.referralCode, data.refCode.trim())).get();
+        if (partner && partner.status === 'active') {
+          const rid = crypto.randomUUID();
+          await db.insert(referrals).values({
+            id: rid,
+            partnerId: partner.id,
+            clientId: token,
+            commissionRate: 5,
+            createdAt: now,
+          });
+          await db.insert(commissionLedger).values({
+            id: crypto.randomUUID(),
+            referralId: rid,
+            amount: 0, // matured later in agreements/sign
+            status: 'unmatured',
+            createdAt: now,
+          });
+          referralId = rid;
+          referredPartnerId = partner.id;
+          intentSignals.push({ interactionCode: 'partner_referral', points: 15, description: 'Referral from partner' });
+        }
+      } catch (refErr: any) {
+        console.error('lead referral link failed', refErr?.message);
+      }
+    }
+
+    // Seed the points catalog once (idempotent), then award events for each signal.
+    try {
+      const existingCatalog = await db.select().from(interactionPoints).all();
+      if (existingCatalog.length === 0) {
+        for (const s of intentSignals) {
+          await db.insert(interactionPoints).values({ code: s.interactionCode, points: s.points, description: s.description }).onConflictDoNothing();
+        }
+      }
+      for (const s of intentSignals) {
+        await db.insert(scoringEvents).values({
+          id: crypto.randomUUID(),
+          clientId: token,
+          interactionCode: s.interactionCode,
+          points: s.points,
+          source: 'lead-form',
+          createdAt: now,
+        });
+      }
+    } catch (scoreErr: any) {
+      // Scoring must never break lead capture — log and continue.
+      console.error('lead auto-scoring failed', scoreErr?.message);
+    }
+
     return c.json({
       success: true,
       token,
+      points_awarded: intentSignals.reduce((a, s) => a + s.points, 0),
+      referralId,
+      referredPartnerId,
       message: "Lead captured and tracking token provisioned."
     });
   } catch (error: any) {

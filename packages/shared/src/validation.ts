@@ -10,6 +10,8 @@ export const leadIntakeSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   highestQualification: z.enum(['highschool', 'undergrad', 'postgrad']),
   division: z.enum(['study-abroad', 'visa', 'umrah', 'attestation', 'manpower']),
+  leadSource: z.enum(['website', 'whatsapp', 'walk-in', 'partner', 'referral', 'other']).optional(),
+  refCode: z.string().max(40).optional(), // partner affiliate code (?ref=OPUS-XX)
   
   // DPDP-2023 Compliance Consents
   consents: z.object({
@@ -27,6 +29,7 @@ export const leadIntakeSchema = z.object({
     intakeSeason: z.string().optional(),
     visaCategory: z.string().optional(),
     packageTier: z.string().optional(),
+    budget: z.string().optional(), // e.g. "15-25L" — drives budget_given scoring
     expectedDeparture: z.string().optional(),
     documentCategory: z.string().optional(),
     requiredAuthentication: z.string().optional(),
