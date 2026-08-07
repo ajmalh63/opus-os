@@ -28,6 +28,8 @@ export const clients = sqliteTable('clients', {
   highestQualification: text('highest_qualification'),
   passportNumber: text('passport_number'),
   passportExpiry: text('passport_expiry'), // ISO date string: YYYY-MM-DD
+  gstin: text('gstin'), // for B2B classification (GSTR-1)
+  state: text('state'), // place of supply state code
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });
@@ -364,6 +366,75 @@ export const userRoles = sqliteTable('user_roles', {
   revokedAt: integer('revoked_at'),
   revokedBy: text('revoked_by'),
   createdAt: integer('created_at').notNull()
+});
+
+// ==========================================
+// 23. BUSINESS PROFILE & COMPLIANCE (Section 14.5 - GST workbench)
+// ==========================================
+export const businessProfile = sqliteTable('business_profile', {
+  id: text('id').primaryKey().default('main'),
+  legalName: text('legal_name'),
+  gstin: text('gstin'),
+  pan: text('pan'),
+  tan: text('tan'),
+  stateCode: text('state_code'), // e.g. 36 for Telangana
+  stateName: text('state_name'),
+  address: text('address'),
+  hsnJson: text('hsn_json').notNull().default('{}'), // { "study-abroad": "9983", ... } division->SAC
+  gstRateJson: text('gst_rate_json').notNull().default('{}'), // { "study-abroad": 18 }
+  updatedAt: integer('updated_at').notNull().default(0)
+});
+
+// Purchase invoices (expenses) - feed ITC, GSTR-2B reconciliation, MSME 43B(h). Section 14.5.5
+export const purchaseInvoices = sqliteTable('purchase_invoices', {
+  id: text('id').primaryKey(),
+  vendorName: text('vendor_name').notNull(),
+  vendorGstin: text('vendor_gstin'), // null => vendor not GST-registered
+  invoiceNumber: text('invoice_number').notNull(),
+  invoiceDate: integer('invoice_date').notNull(), // epoch
+  amount: integer('amount').notNull(), // total in paise
+  taxableAmount: integer('taxable_amount').notNull().default(0),
+  cgst: integer('cgst').notNull().default(0),
+  sgst: integer('sgst').notNull().default(0),
+  igst: integer('igst').notNull().default(0),
+  isInterstate: integer('is_interstate', { mode: 'boolean' }).notNull().default(false),
+  itcClaimable: integer('itc_claimable').notNull().default(1), // bool
+  vendorMsme: integer('vendor_msme').notNull().default(0), // Udyam registered => 43B(h) clock
+  createdAt: integer('created_at').notNull(),
+  paidAt: integer('paid_at'), // for 43B(h) 45-15day clock
+  updatedAt: integer('updated_at').notNull().default(0)
+});
+
+// TDS records (Section 14.5.2 - new Income-tax Act codes 1026/1027/1028)
+export const tdsRecords = sqliteTable('tds_records', {
+  id: text('id').primaryKey(),
+  vendorName: text('vendor_name').notNull(),
+  payeePan: text('payee_pan'),
+  section: text('section').notNull(), // 194J | 194C | 194H
+  code: text('code'), // 1026 | 1027 | 1028
+  invoiceNumber: text('invoice_number'),
+  paymentDate: integer('payment_date').notNull(),
+  grossAmount: integer('gross_amount').notNull(), // paise
+  tdsAmount: integer('tds_amount').notNull(), // paise
+  challanRef: text('challan_ref'),
+  period: text('period'), // YYYY-MM
+  createdAt: integer('created_at').notNull()
+});
+
+// TCS records (Section 14.5.3 - overseas packages / 206C(1H))
+export const tcsRecords = sqliteTable('tcs_records', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').references(() => clients.id),
+  clientName: text('client_name'),
+  pan: text('pan'),
+  taxableAmount: integer('taxable_amount').notNull(),
+  tcsAmount: integer('tcs_amount').notNull(),
+  fyAmount: integer('fy_amount').notNull().default(0), // cumulative FY for threshold
+  section: text('section').notNull().default('206C(1H)'),
+  period: text('period'),
+  createdAt: integer('created_at').notNull(),
+  depositedAt: integer('deposited_at'),
+  tanRef: text('tan_ref')
 });
 
 // ==========================================

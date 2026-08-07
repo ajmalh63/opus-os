@@ -37,7 +37,11 @@
     segments: [] as any[],
     incentive_rules: [] as any[],
     incentive_entries: [] as any[],
-    payout_statements: [] as any[]
+    payout_statements: [] as any[],
+    business_profile: [] as any[],
+    purchase_invoices: [] as any[],
+    tds_records: [] as any[],
+    tcs_records: [] as any[]
   };
 
   private getTableName(sql: string): string {

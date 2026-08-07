@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import RolesTab from '../components/RolesTab';
 import GrowthTab from '../components/GrowthTab';
+import ComplianceTab from '../components/ComplianceTab';
 
 // API interfaces matching Drizzle schemas & Zod validators
 interface AuditLog {
@@ -46,7 +47,7 @@ const ROLES = [
 
 export default function AdminConsole() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'compliance'>('directory');
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
@@ -402,6 +403,14 @@ export default function AdminConsole() {
             >
               Growth & Incentives
             </button>
+            <button
+              onClick={() => setActiveTab('compliance')}
+              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                activeTab === 'compliance' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Compliance (GST)
+            </button>
           </div>
         </div>
 
@@ -584,6 +593,7 @@ export default function AdminConsole() {
           {/* TAB 3.5: ROLES & PERMISSIONS (Section 33) */}
           {activeTab === 'roles' && <RolesTab />}
           {activeTab === 'growth' && <GrowthTab />}
+          {activeTab === 'compliance' && <ComplianceTab />}
 
           {activeTab === 'audit' && (
             <div className="space-y-6">
