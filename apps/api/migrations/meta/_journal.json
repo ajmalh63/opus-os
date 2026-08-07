@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1786035073671,
+      "tag": "0000_steady_living_lightning",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1786037286100,
+      "tag": "0001_good_gorgon",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1786097095473,
+      "tag": "0002_overconfident_wong",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1786097280399,
+      "tag": "0003_superb_roland_deschain",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1786097376801,
+      "tag": "0004_free_black_panther",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786097455028,
+      "tag": "0005_hesitant_bloodscream",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786097593479,
+      "tag": "0006_swift_karen_page",
+      "breakpoints": true
+    }
+  ]
+}

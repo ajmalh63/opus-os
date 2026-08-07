@@ -1,0 +1,24 @@
+name = "opusos-api"
+main = "src/index.ts"
+compatibility_date = "2026-08-06"
+compatibility_flags = [ "nodejs_compat" ]
+workers_dev = true
+
+[vars]
+ENVIRONMENT = "development"
+TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA" # Local Turnstile mock test key
+
+[[d1_databases]]
+binding = "DB"
+database_name = "opusos-db"
+database_id = "07f9c2d1-local-dev-db-id"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "opusos-vault"
+preview_bucket_name = "opusos-vault-preview"
+
+[[queues.producers]]
+queue = "opusos-jobs-queue"
+binding = "JOBS_QUEUE"

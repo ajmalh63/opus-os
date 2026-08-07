@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client 360 - OpusOS</title>
+  <!-- Google Fonts: Montserrat & IBM Plex Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#0B132B',
+              navyLight: '#1C2541',
+              gold: '#D4AF37',
+              goldHover: '#C59B27',
+              cream: '#F7F5F0',
+              creamCard: '#FFFFFF',
+              textDark: '#1E293B',
+              textLight: '#64748B',
+              success: '#10B981',
+              warning: '#F59E0B',
+              error: '#EF4444'
+            }
+          },
+          fontFamily: {
+            sans: ['"IBM Plex Sans"', 'sans-serif'],
+            display: ['Montserrat', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Premium custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F1F1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D4AF37;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #C59B27;
+    }
+  </style>
+</head>
+<body class="bg-brand-cream text-brand-textDark font-sans min-h-screen flex">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="w-64 bg-brand-navy text-white flex flex-col justify-between shrink-0 shadow-xl z-20">
+    <div>
+      <!-- Brand Logo -->
+      <div class="p-6 border-b border-brand-navyLight flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-brand-gold flex items-center justify-center font-display font-bold text-brand-navy">O</div>
+        <div>
+          <h1 class="font-display font-bold text-lg leading-tight tracking-wider">OpusOS</h1>
+          <p class="text-[10px] text-brand-gold tracking-widest uppercase">Business Engine</p>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="p-4 space-y-2">
+        <a href="kanban-board.html" class="flex items-center gap-3 px-4 py-3 rounded text-sm text-brand-cream/80 hover:text-white hover:bg-brand-navyLight transition duration-200">
+          <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+          <span>Kanban Board</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded text-sm text-white bg-brand-navyLight border-l-4 border-brand-gold font-medium transition duration-200">
+          <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+          <span>Client 360</span>
+        </a>
+        <a href="public-lead-form.html" class="flex items-center gap-3 px-4 py-3 rounded text-sm text-brand-cream/80 hover:text-white hover:bg-brand-navyLight transition duration-200">
+          <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span>Public Lead Form</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Active Profile Footer -->
+    <div class="p-4 border-t border-brand-navyLight flex items-center gap-3 bg-brand-navyLight/30">
+      <div class="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center border border-brand-gold text-brand-gold font-semibold">SK</div>
+      <div class="overflow-hidden">
+        <p class="text-xs font-semibold truncate">Santhosh Kumar</p>
+        <p class="text-[10px] text-brand-cream/60 uppercase tracking-wider">Senior Counselor</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
+    
+    <!-- TOP HEADER -->
+    <header class="h-16 bg-white border-b border-brand-cream/80 shadow-sm flex items-center justify-between px-8 z-10 shrink-0">
+      <div class="flex items-center gap-4">
+        <h2 class="font-display font-semibold text-lg text-brand-navy">Client Profile: Rahul Sharma</h2>
+        <span class="px-3 py-1 bg-brand-navy text-white text-[10px] uppercase font-bold tracking-widest rounded-full">Study Abroad</span>
+      </div>
+
+      <!-- Linear Progress Timeline -->
+      <div class="hidden md:flex items-center gap-2">
+        <div class="flex items-center gap-1.5 text-brand-success text-xs font-medium">
+          <span class="w-5 h-5 rounded-full bg-brand-success/15 border border-brand-success flex items-center justify-center font-bold">✓</span>
+          <span>Consult</span>
+        </div>
+        <div class="w-10 h-[2px] bg-brand-success"></div>
+        <div class="flex items-center gap-1.5 text-brand-gold text-xs font-semibold">
+          <span class="w-5 h-5 rounded-full bg-brand-gold/15 border border-brand-gold flex items-center justify-center font-bold">2</span>
+          <span>Documents</span>
+        </div>
+        <div class="w-10 h-[2px] bg-gray-200"></div>
+        <div class="flex items-center gap-1.5 text-gray-400 text-xs">
+          <span class="w-5 h-5 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center">3</span>
+          <span>Submission</span>
+        </div>
+        <div class="w-10 h-[2px] bg-gray-200"></div>
+        <div class="flex items-center gap-1.5 text-gray-400 text-xs">
+          <span class="w-5 h-5 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center">4</span>
+          <span>Visa Gate</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="changeStage()" class="bg-brand-navy hover:bg-brand-navyLight text-white px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1 transition">
+          <span>Advance Stage</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY (3-Column Layout) -->
+    <div class="flex-1 flex overflow-hidden">
+      
+      <!-- LEFT COLUMN: Profile, Passport & Consents -->
+      <section class="w-80 border-r border-gray-200 bg-white p-6 overflow-y-auto shrink-0 flex flex-col gap-6">
+        
+        <!-- Profile Summary Card -->
+        <div class="text-center pb-4 border-b border-gray-100">
+          <div class="w-24 h-24 rounded-full bg-brand-navy/10 border-2 border-brand-gold mx-auto flex items-center justify-center text-brand-navy font-display font-bold text-3xl mb-3 shadow-inner">
+            RS
+          </div>
+          <h3 class="font-display font-bold text-lg">Rahul Sharma</h3>
+          <p class="text-xs text-brand-textLight">Token ID: <span class="font-mono text-brand-gold font-semibold">OP-2026-0814</span></p>
+          <div class="flex justify-center gap-2 mt-3">
+            <span class="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-semibold rounded-full">US Fall 2027</span>
+            <span class="px-2.5 py-0.5 bg-brand-gold/10 text-brand-gold border border-brand-gold/30 text-[10px] font-semibold rounded-full">Study Abroad</span>
+          </div>
+        </div>
+
+        <!-- Personal / Contact Information -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider">Contact Details</h4>
+          <div class="text-xs space-y-2">
+            <div class="flex justify-between"><span class="text-brand-textLight">Email:</span> <a href="mailto:rahul.sharma@example.com" class="font-medium text-brand-navy hover:underline">rahul.sharma@example.com</a></div>
+            <div class="flex justify-between"><span class="text-brand-textLight">Phone:</span> <span class="font-semibold">+91 98765 43210</span></div>
+            <div class="flex justify-between"><span class="text-brand-textLight">DOB:</span> <span class="font-medium">12 Oct 2004 (21 Yrs)</span></div>
+            <div class="flex justify-between"><span class="text-brand-textLight">City:</span> <span class="font-medium">Nizamabad, TS</span></div>
+          </div>
+        </div>
+
+        <!-- Passport details card with warnings -->
+        <div class="p-4 bg-brand-cream border border-brand-gold/20 rounded-lg relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 opacity-5 text-brand-navy">
+            <svg class="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+          </div>
+          <div class="flex justify-between items-start mb-2">
+            <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider flex items-center gap-1">
+              <svg class="w-4 h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+              Passport Details
+            </h4>
+            <span class="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] font-bold tracking-wide rounded-full animate-pulse">EXPIRING</span>
+          </div>
+          <div class="text-xs space-y-1.5 mt-2">
+            <div class="flex justify-between"><span class="text-brand-textLight">Passport No:</span> <span class="font-mono font-semibold text-brand-navy">U9876543</span></div>
+            <div class="flex justify-between"><span class="text-brand-textLight">Expiry Date:</span> <span class="font-semibold text-brand-error">15 Feb 2027</span></div>
+            <div class="flex justify-between"><span class="text-brand-textLight">Time Remaining:</span> <span class="font-medium text-brand-error">193 Days Left</span></div>
+          </div>
+        </div>
+
+        <!-- DPDP-2023 Consent Checklist -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            DPDP Compliance Consents
+          </h4>
+          <div class="space-y-3 text-xs bg-brand-cream/35 p-3 rounded border border-gray-100">
+            <label class="flex gap-2.5 items-start cursor-pointer group">
+              <input type="checkbox" checked onchange="logConsent('Processing')" class="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold">
+              <div>
+                <p class="font-medium text-brand-navy group-hover:text-brand-gold transition">Core Data Processing</p>
+                <p class="text-[9px] text-brand-textLight leading-tight">Retain profile & files for visa/admit workflow.</p>
+              </div>
+            </label>
+
+            <label class="flex gap-2.5 items-start cursor-pointer group">
+              <input type="checkbox" checked onchange="logConsent('University Sharing')" class="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold">
+              <div>
+                <p class="font-medium text-brand-navy group-hover:text-brand-gold transition">University Submission</p>
+                <p class="text-[9px] text-brand-textLight leading-tight">Share credentials & files with target colleges.</p>
+              </div>
+            </label>
+
+            <label class="flex gap-2.5 items-start cursor-pointer group">
+              <input type="checkbox" checked onchange="logConsent('WhatsApp Updates')" class="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold">
+              <div>
+                <p class="font-medium text-brand-navy group-hover:text-brand-gold transition">WhatsApp Communication</p>
+                <p class="text-[9px] text-brand-textLight leading-tight">Send automated timeline updates via OpenWA.</p>
+              </div>
+            </label>
+
+            <label class="flex gap-2.5 items-start cursor-pointer group">
+              <input type="checkbox" onchange="logConsent('Marketing Campaigns')" class="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold">
+              <div>
+                <p class="font-medium text-brand-navy group-hover:text-brand-gold transition">Marketing Drips</p>
+                <p class="text-[9px] text-brand-textLight leading-tight">Opt-in to travel tips, promos & events.</p>
+              </div>
+            </label>
+          </div>
+          <!-- Consent Artifact Log Info -->
+          <div class="text-[9px] text-brand-textLight bg-gray-50 p-2 rounded leading-normal border border-gray-200">
+            <span class="font-semibold block text-brand-navy">Consent Log Anchor:</span>
+            <span>IP: 49.205.214.23 | SHA-256 Verified<br>Logged: 2026-08-06 18:23:44 IST</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- MIDDLE COLUMN: Active Engagements & Document Vault -->
+      <section class="flex-1 bg-brand-cream p-8 overflow-y-auto flex flex-col gap-6">
+        
+        <!-- Active engagements section -->
+        <div class="flex justify-between items-center">
+          <h3 class="font-display font-bold text-lg text-brand-navy">Active Service Engagements</h3>
+          <button class="text-xs text-brand-gold font-bold hover:text-brand-goldHover flex items-center gap-1 transition">
+            <span>+ Add Service</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Engagement 1: Study Abroad -->
+          <div class="bg-white p-5 rounded-lg border border-brand-gold/10 shadow-sm relative hover:shadow-md transition">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <span class="text-[9px] uppercase tracking-wider text-brand-gold font-bold">Study Abroad Division</span>
+                <h4 class="font-semibold text-sm text-brand-navy mt-0.5">US Masters Application</h4>
+              </div>
+              <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 font-bold text-[9px] tracking-wide rounded">STAGE: DOCS</span>
+            </div>
+            <p class="text-xs text-brand-textLight">Target Universities: NYU, Boston U, UT Austin</p>
+            
+            <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-[11px]">
+              <div>
+                <span class="text-brand-textLight">Counselor:</span>
+                <span class="font-semibold text-brand-navy">Santhosh Kumar</span>
+              </div>
+              <div class="text-brand-gold font-bold">
+                Balance: ₹45,000
+              </div>
+            </div>
+          </div>
+
+          <!-- Engagement 2: Visa Assistance -->
+          <div class="bg-white p-5 rounded-lg border border-gray-100 shadow-sm relative hover:shadow-md transition opacity-80">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <span class="text-[9px] uppercase tracking-wider text-blue-500 font-bold">Visa Division</span>
+                <h4 class="font-semibold text-sm text-brand-navy mt-0.5">F1 Student Visa Support</h4>
+              </div>
+              <span class="px-2 py-0.5 bg-gray-100 text-gray-500 font-bold text-[9px] tracking-wide rounded">STAGE: QUEUED</span>
+            </div>
+            <p class="text-xs text-brand-textLight">Awaiting university I-20 document before starting check.</p>
+            
+            <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-[11px]">
+              <div>
+                <span class="text-brand-textLight">Specialist:</span>
+                <span class="font-semibold text-brand-navy">Anjali Nair</span>
+              </div>
+              <div class="text-brand-textLight font-medium">
+                Not Started
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Document Vault Section -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mt-2">
+          <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+            <div>
+              <h3 class="font-display font-semibold text-base text-brand-navy">R2 Document Vault</h3>
+              <p class="text-xs text-brand-textLight">Secure cloud storage with original courier tracking.</p>
+            </div>
+            <label class="bg-brand-navy hover:bg-brand-navyLight text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition">
+              <svg class="w-4 h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+              <span>Upload Document</span>
+              <input type="file" id="fileUploader" onchange="simulateUpload(event)" class="hidden">
+            </label>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-brand-cream/50 text-brand-textLight font-bold uppercase tracking-wider text-[10px] border-b border-gray-200">
+                  <th class="p-4">Document Name</th>
+                  <th class="p-4">Version</th>
+                  <th class="p-4">Upload Date</th>
+                  <th class="p-4">Compliance Status</th>
+                  <th class="p-4">Courier Tracker (Originals)</th>
+                  <th class="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="documentTableBody">
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                  <td class="p-4 font-semibold text-brand-navy">
+                    Rahul_Passport_Scan.pdf
+                  </td>
+                  <td class="p-4 text-brand-textLight">v2.0</td>
+                  <td class="p-4">03 Aug 2026</td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-success/10 text-brand-success">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-success"></span>
+                      VERIFIED
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <span class="text-brand-textLight">Not Applicable</span>
+                  </td>
+                  <td class="p-4 text-right space-x-2">
+                    <button class="text-brand-navy hover:text-brand-gold font-bold transition">View</button>
+                    <button class="text-red-600 hover:text-red-800 font-bold transition">Delete</button>
+                  </td>
+                </tr>
+
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                  <td class="p-4 font-semibold text-brand-navy">
+                    IELTS_Report_Form.pdf
+                  </td>
+                  <td class="p-4 text-brand-textLight">v1.0</td>
+                  <td class="p-4">05 Aug 2026</td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-warning/10 text-brand-warning">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-warning animate-pulse"></span>
+                      PENDING VERIFICATION
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <span class="text-brand-textLight">Not Applicable</span>
+                  </td>
+                  <td class="p-4 text-right space-x-2">
+                    <button class="text-brand-navy hover:text-brand-gold font-bold transition" onclick="verifyDoc(this)">Approve</button>
+                    <button class="text-red-600 hover:text-red-800 font-bold transition">Delete</button>
+                  </td>
+                </tr>
+
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                  <td class="p-4 font-semibold text-brand-navy">
+                    BTech_Degrees_Apostille_Consolidated.pdf
+                  </td>
+                  <td class="p-4 text-brand-textLight">v1.0</td>
+                  <td class="p-4">01 Aug 2026</td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-success/10 text-brand-success">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-success"></span>
+                      VERIFIED
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <div class="flex items-center gap-1.5">
+                      <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-200 font-mono text-[10px]">DTDC: Z9876543</span>
+                      <span class="text-[10px] text-brand-success font-semibold">Delivered</span>
+                    </div>
+                  </td>
+                  <td class="p-4 text-right space-x-2">
+                    <button class="text-brand-navy hover:text-brand-gold font-bold transition">View</button>
+                    <button class="text-red-600 hover:text-red-800 font-bold transition">Delete</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: Communication Timeline & Console -->
+      <section class="w-96 border-l border-gray-200 bg-white flex flex-col justify-between shrink-0 overflow-hidden">
+        
+        <!-- Timeline Navigation Header -->
+        <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+          <h3 class="font-display font-bold text-sm text-brand-navy">Communication Logs</h3>
+          <div class="flex gap-1 text-[10px]" id="timelineFilter">
+            <button onclick="filterTimeline('all')" class="px-2 py-1 rounded bg-brand-navy text-white font-semibold">All</button>
+            <button onclick="filterTimeline('whatsapp')" class="px-2 py-1 rounded hover:bg-gray-200 text-brand-textLight font-medium">WhatsApp</button>
+            <button onclick="filterTimeline('email')" class="px-2 py-1 rounded hover:bg-gray-200 text-brand-textLight font-medium">Email</button>
+            <button onclick="filterTimeline('system')" class="px-2 py-1 rounded hover:bg-gray-200 text-brand-textLight font-medium">Logs</button>
+          </div>
+        </div>
+
+        <!-- Chat / Events Flow -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="timelineFeed">
+          
+          <!-- System Stage Change -->
+          <div class="flex gap-2 text-xs text-brand-textLight flex-row timeline-item select-none" data-type="system">
+            <div class="w-6 h-6 rounded-full bg-brand-navy/5 flex items-center justify-center font-bold text-brand-navy text-[10px] shrink-0 border border-brand-navy/15">⚙</div>
+            <div class="bg-gray-50 p-2.5 rounded border border-gray-100 flex-1">
+              <p class="font-semibold text-brand-navy">Engagement Stage Advanced</p>
+              <p class="text-[10px] mt-0.5">Moved from <span class="font-medium text-brand-navy">Consultation</span> to <span class="font-medium text-brand-navy">Documents</span> by counselor Santhosh Kumar.</p>
+              <span class="text-[9px] text-gray-400 block mt-1.5">03 Aug 2026, 11:30 AM</span>
+            </div>
+          </div>
+
+          <!-- Incoming WhatsApp -->
+          <div class="flex gap-2 text-xs timeline-item" data-type="whatsapp">
+            <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shrink-0 text-white font-bold text-[9px] select-none shadow">WA</div>
+            <div class="bg-green-50 p-2.5 rounded-lg border border-green-200 flex-1 relative">
+              <span class="absolute right-2 top-2 font-bold text-[9px] text-green-700 tracking-wider">CLIENT</span>
+              <p class="font-bold text-green-800">Rahul Sharma</p>
+              <p class="text-[11px] mt-1 text-gray-700">"Hi Santhosh, I've just uploaded the consolidated apostilled degrees list in the portal. Can you please check it once and verify?"</p>
+              <span class="text-[9px] text-gray-400 block mt-1.5">05 Aug 2026, 02:15 PM</span>
+            </div>
+          </div>
+
+          <!-- Outcoming Email -->
+          <div class="flex gap-2 text-xs timeline-item" data-type="email">
+            <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shrink-0 text-white font-bold text-[9px] select-none shadow">EM</div>
+            <div class="bg-blue-50 p-2.5 rounded-lg border border-blue-100 flex-1 relative">
+              <span class="absolute right-2 top-2 font-bold text-[9px] text-blue-700 tracking-wider">STAFF</span>
+              <p class="font-bold text-blue-800">Santhosh Kumar</p>
+              <p class="text-[11px] mt-0.5 text-brand-navy font-semibold">Subj: Target USA Universities List Review</p>
+              <p class="text-[11px] mt-1 text-gray-700">Dear Rahul, Please check our university list options for the USA Masters Fall. Let me know which ones to select before final shortlist submission.</p>
+              <span class="text-[9px] text-gray-400 block mt-1.5">04 Aug 2026, 10:15 AM</span>
+            </div>
+          </div>
+
+          <!-- Outcoming WhatsApp -->
+          <div class="flex gap-2 text-xs timeline-item" data-type="whatsapp">
+            <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shrink-0 text-white font-bold text-[9px] select-none shadow">WA</div>
+            <div class="bg-green-50/50 p-2.5 rounded-lg border border-gray-200 flex-1">
+              <p class="font-bold text-brand-navy">Santhosh Kumar</p>
+              <p class="text-[11px] mt-1 text-gray-700">"Great, I will review the apostille degrees now and approve if everything matches the requirements."</p>
+              <span class="text-[9px] text-gray-400 block mt-1.5">05 Aug 2026, 03:00 PM</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Timeline Editor Console -->
+        <div class="p-4 border-t border-gray-200 bg-gray-50 flex flex-col gap-3">
+          
+          <!-- Channels Tabs -->
+          <div class="flex gap-1 border-b border-gray-200 pb-2">
+            <button onclick="switchEditorTab('whatsapp')" id="editorTab-whatsapp" class="px-3 py-1 rounded text-xs font-semibold bg-brand-navy text-white">WhatsApp (OpenWA)</button>
+            <button onclick="switchEditorTab('email')" id="editorTab-email" class="px-3 py-1 rounded text-xs font-medium text-brand-textLight hover:bg-gray-200">Email (Listmonk)</button>
+            <button onclick="switchEditorTab('note')" id="editorTab-note" class="px-3 py-1 rounded text-xs font-medium text-brand-textLight hover:bg-gray-200">Internal Note</button>
+          </div>
+
+          <!-- Quick Templates Dropdown -->
+          <div class="flex justify-between items-center">
+            <label class="text-[10px] text-brand-textLight font-semibold uppercase">Template</label>
+            <select id="messageTemplate" onchange="applyTemplate()" class="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-brand-gold">
+              <option value="custom">-- Custom Message --</option>
+              <option value="welcome">Welcome Onboarding</option>
+              <option value="docRequest">Request Missing Documents</option>
+              <option value="paymentAlert">Payment Reminder</option>
+            </select>
+          </div>
+
+          <!-- Message Textarea -->
+          <textarea id="messageEditor" placeholder="Type WhatsApp message here..." rows="3" class="w-full text-xs p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-brand-gold bg-white resize-none"></textarea>
+
+          <!-- Action buttons -->
+          <div class="flex justify-between items-center">
+            <span class="text-[9px] text-brand-textLight" id="complianceNotice">⚠️ Dynamic consent check: Active</span>
+            <button onclick="sendMessage()" class="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-4 py-1.5 rounded text-xs font-bold transition flex items-center gap-1 shadow-sm">
+              <span>Send Message</span>
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+            </button>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- POPUP NOTIFICATION SYSTEM -->
+  <div id="toastNotification" class="fixed right-6 bottom-6 bg-brand-navy border-l-4 border-brand-gold text-white text-xs px-4 py-3 rounded-lg shadow-xl translate-y-24 opacity-0 transition duration-300 ease-out z-50 flex items-center gap-2">
+    <span class="font-bold text-brand-gold">SUCCESS:</span>
+    <span id="toastMessage">Something happened.</span>
+  </div>
+
+  <script>
+    // Console State
+    let activeEditorChannel = 'whatsapp';
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').innerText = msg;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 3000);
+    }
+
+    // Dynamic Compliance Logging
+    function logConsent(consentName) {
+      showToast(`Consent updated: ${consentName}. Consent proofs re-anchored.`);
+    }
+
+    // Interactive Stage Changer
+    function changeStage() {
+      showToast("Advanced stage to: Submission (queued)");
+      // Dynamically add a system log card
+      const timeline = document.getElementById('timelineFeed');
+      const log = document.createElement('div');
+      log.className = 'flex gap-2 text-xs text-brand-textLight flex-row timeline-item';
+      log.setAttribute('data-type', 'system');
+      log.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-brand-navy/5 flex items-center justify-center font-bold text-brand-navy text-[10px] shrink-0 border border-brand-navy/15">⚙</div>
+        <div class="bg-gray-50 p-2.5 rounded border border-gray-100 flex-1">
+          <p class="font-semibold text-brand-navy">Engagement Stage Advanced</p>
+          <p class="text-[10px] mt-0.5">Moved from <span class="font-medium text-brand-navy">Documents</span> to <span class="font-medium text-brand-navy">Submission</span> by counselor Santhosh Kumar.</p>
+          <span class="text-[9px] text-gray-400 block mt-1.5">Just now</span>
+        </div>
+      `;
+      timeline.insertBefore(log, timeline.firstChild);
+    }
+
+    // Upload Document simulation
+    function simulateUpload(e) {
+      if(e.target.files.length > 0) {
+        const fileName = e.target.files[0].name;
+        showToast(`Document uploaded to R2: ${fileName}`);
+        
+        const tableBody = document.getElementById('documentTableBody');
+        const row = document.createElement('tr');
+        row.className = 'border-b border-gray-100 hover:bg-gray-50 transition';
+        row.innerHTML = `
+          <td class="p-4 font-semibold text-brand-navy">${fileName}</td>
+          <td class="p-4 text-brand-textLight">v1.0</td>
+          <td class="p-4">Just Now</td>
+          <td class="p-4">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-warning/10 text-brand-warning">
+              <span class="w-1.5 h-1.5 rounded-full bg-brand-warning animate-pulse"></span>
+              PENDING VERIFICATION
+            </span>
+          </td>
+          <td class="p-4"><span class="text-brand-textLight">Not Applicable</span></td>
+          <td class="p-4 text-right space-x-2">
+            <button class="text-brand-navy hover:text-brand-gold font-bold transition" onclick="verifyDoc(this)">Approve</button>
+            <button class="text-red-600 hover:text-red-800 font-bold transition" onclick="deleteRow(this)">Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      }
+    }
+
+    function verifyDoc(btn) {
+      const parent = btn.parentElement.parentElement;
+      const badgeContainer = parent.querySelector('td:nth-child(4)');
+      badgeContainer.innerHTML = `
+        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-success/10 text-brand-success">
+          <span class="w-1.5 h-1.5 rounded-full bg-brand-success"></span>
+          VERIFIED
+        </span>
+      `;
+      btn.remove(); // Remove approve button
+      showToast("Document verified and compliance state locked.");
+    }
+
+    function deleteRow(btn) {
+      btn.parentElement.parentElement.remove();
+      showToast("Document removed from vault.");
+    }
+
+    // Switch Editor Tab
+    function switchEditorTab(channel) {
+      activeEditorChannel = channel;
+      const tabs = ['whatsapp', 'email', 'note'];
+      tabs.forEach(tab => {
+        const tabEl = document.getElementById(`editorTab-${tab}`);
+        if(tab === channel) {
+          tabEl.className = 'px-3 py-1 rounded text-xs font-semibold bg-brand-navy text-white';
+        } else {
+          tabEl.className = 'px-3 py-1 rounded text-xs font-medium text-brand-textLight hover:bg-gray-200';
+        }
+      });
+
+      const textEditor = document.getElementById('messageEditor');
+      if(channel === 'whatsapp') {
+        textEditor.placeholder = "Type WhatsApp message here...";
+        document.getElementById('complianceNotice').innerText = "⚠️ Dynamic consent check: WhatsApp Active";
+      } else if(channel === 'email') {
+        textEditor.placeholder = "Write email message here...";
+        document.getElementById('complianceNotice').innerText = "⚠️ Dynamic consent check: Email Active";
+      } else {
+        textEditor.placeholder = "Add internal note for counselor team...";
+        document.getElementById('complianceNotice').innerText = "🔒 Private team-only note";
+      }
+    }
+
+    // Messaging Template Application
+    function applyTemplate() {
+      const select = document.getElementById('messageTemplate');
+      const editor = document.getElementById('messageEditor');
+      const templates = {
+        custom: "",
+        welcome: "Hi Rahul, welcome to Opus Overseas! We are excited to assist you on your Study Abroad journey. Your Client Portal token is OP-2026-0814. Please log in and check your checklist.",
+        docRequest: "Dear Rahul, we noticed you have not uploaded your required IELTS test score. Please upload it inside your dashboard so we can submit your applications before the deadline.",
+        paymentAlert: "Hi Rahul, this is a friendly reminder that milestone payment ₹15,000 for your US visa assistance is due in 3 days. Please complete the transfer to avoid delay."
+      };
+      editor.value = templates[select.value];
+    }
+
+    // Send Message / Add note simulation
+    function sendMessage() {
+      const editor = document.getElementById('messageEditor');
+      const text = editor.value.trim();
+      if(text === "") {
+        showToast("Cannot send empty message.");
+        return;
+      }
+
+      const timeline = document.getElementById('timelineFeed');
+      const messageCard = document.createElement('div');
+      messageCard.className = 'flex gap-2 text-xs timeline-item';
+      
+      if(activeEditorChannel === 'whatsapp') {
+        messageCard.setAttribute('data-type', 'whatsapp');
+        messageCard.innerHTML = `
+          <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shrink-0 text-white font-bold text-[9px] select-none shadow">WA</div>
+          <div class="bg-green-50/50 p-2.5 rounded-lg border border-gray-200 flex-1">
+            <p class="font-bold text-brand-navy">Santhosh Kumar</p>
+            <p class="text-[11px] mt-1 text-gray-700">"${text}"</p>
+            <span class="text-[9px] text-gray-400 block mt-1.5">Just now</span>
+          </div>
+        `;
+        showToast("WhatsApp message dispatched via OpenWA.");
+      } else if(activeEditorChannel === 'email') {
+        messageCard.setAttribute('data-type', 'email');
+        messageCard.innerHTML = `
+          <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shrink-0 text-white font-bold text-[9px] select-none shadow">EM</div>
+          <div class="bg-blue-50 p-2.5 rounded-lg border border-blue-100 flex-1">
+            <span class="absolute right-2 top-2 font-bold text-[9px] text-blue-700 tracking-wider">STAFF</span>
+            <p class="font-bold text-blue-800">Santhosh Kumar</p>
+            <p class="text-[11px] mt-0.5 text-brand-navy font-semibold">Subj: Client Portal Notification Update</p>
+            <p class="text-[11px] mt-1 text-gray-700">${text}</p>
+            <span class="text-[9px] text-gray-400 block mt-1.5">Just now</span>
+          </div>
+        `;
+        showToast("Email message dispatched via Listmonk.");
+      } else {
+        messageCard.setAttribute('data-type', 'system');
+        messageCard.innerHTML = `
+          <div class="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center shrink-0 text-white font-bold text-[9px] select-none shadow">NT</div>
+          <div class="bg-yellow-50/50 p-2.5 rounded-lg border border-yellow-200 flex-1">
+            <p class="font-bold text-yellow-800">Internal Team Note</p>
+            <p class="text-[11px] mt-1 text-gray-700">${text}</p>
+            <span class="text-[9px] text-gray-400 block mt-1.5">Just now</span>
+          </div>
+        `;
+        showToast("Internal counselor note logged.");
+      }
+
+      timeline.insertBefore(messageCard, timeline.firstChild);
+      editor.value = "";
+      document.getElementById('messageTemplate').value = "custom";
+    }
+
+    // Filter timeline cards
+    function filterTimeline(filter) {
+      const items = document.querySelectorAll('.timeline-item');
+      items.forEach(item => {
+        if(filter === 'all' || item.getAttribute('data-type') === filter) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+
+      // Update button styles
+      const filterBar = document.getElementById('timelineFilter');
+      const buttons = filterBar.querySelectorAll('button');
+      const mapping = { all: 0, whatsapp: 1, email: 2, system: 3 };
+      buttons.forEach((btn, index) => {
+        if(index === mapping[filter]) {
+          btn.className = 'px-2 py-1 rounded bg-brand-navy text-white font-semibold';
+        } else {
+          btn.className = 'px-2 py-1 rounded hover:bg-gray-200 text-brand-textLight font-medium';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

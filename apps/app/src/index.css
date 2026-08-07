@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@theme {
+  /* ============ Section 23.2 — Brand Palette (exact plan tokens) ============ */
+  --color-brand-navy: #0a2d50;
+  --color-brand-navy-800: #1b3a5f;
+  --color-brand-blue: #235a96;
+  --color-brand-gold: #d7a019;
+  --color-brand-gold-hover: #b8860b;
+  --color-brand-gold-light: #F5E6B8;
+  --color-brand-gold-bg: #FAF3DC;
+  --color-brand-cream: #FAF8F4;
+  --color-brand-textDark: #0a2d50;
+  --color-brand-textLight: #4B5563;
+  --color-brand-gray: #9CA3AF;
+  --color-brand-success: #16A34A;
+  --color-brand-warning: #D97706;
+  --color-brand-error: #DC2626;
+
+  /* ============ Section 23.3 — Typography ============ */
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: "Montserrat", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Shadows & radii (Section 23.4) */
+  --shadow-card: 0 4px 24px rgba(10, 45, 80, 0.06);
+  --shadow-card-hover: 0 12px 40px rgba(10, 45, 80, 0.14);
+  --radius-card: 12px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-brand-cream);
+  color: var(--color-brand-textDark);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+/* ============ Section 23.5 — Component styles ============ */
+.gold-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-brand-gold);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.gold-divider {
+  height: 1px;
+  background: rgba(215, 160, 25, 0.4);
+}
+
+.brand-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(10, 45, 80, 0.06);
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+
+.brand-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
+  border-color: rgba(215, 160, 25, 0.5);
+}
+
+/* Custom scrollbar (gold on cream) */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-brand-cream); }
+::-webkit-scrollbar-thumb { background: var(--color-brand-gold); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-brand-gold-hover); }
+
+.kanban-column { min-height: calc(100vh - 200px); }
+
+.drag-over {
+  background-color: rgba(215, 160, 25, 0.06);
+  border: 2px dashed var(--color-brand-gold);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-brand-gold);
+  box-shadow: 0 0 0 1px var(--color-brand-gold);
+}
+
+/* ============ Motion helpers (GSAP targets) ============ */
+.gsap-fade-up { opacity: 0; }
+.gsap-fade { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gsap-fade-up, .gsap-fade { opacity: 1 !important; }
+  html { scroll-behavior: auto; }
+}

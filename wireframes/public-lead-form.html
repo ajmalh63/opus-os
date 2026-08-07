@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opus Overseas - Lead Intake & Status Check</title>
+  <!-- Google Fonts: Montserrat & IBM Plex Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#0B132B',
+              navyLight: '#1C2541',
+              gold: '#D4AF37',
+              goldHover: '#C59B27',
+              cream: '#F7F5F0',
+              creamCard: '#FFFFFF',
+              textDark: '#1E293B',
+              textLight: '#64748B',
+              success: '#10B981',
+              warning: '#F59E0B',
+              error: '#EF4444'
+            }
+          },
+          fontFamily: {
+            sans: ['"IBM Plex Sans"', 'sans-serif'],
+            display: ['Montserrat', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom input outline states */
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #D4AF37;
+      box-shadow: 0 0 0 1px #D4AF37;
+    }
+  </style>
+</head>
+<body class="bg-brand-cream text-brand-textDark font-sans min-h-screen flex flex-col justify-between">
+
+  <!-- PUBLIC HEADER -->
+  <header class="bg-brand-navy text-white py-4 px-8 sticky top-0 shadow-md z-30 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded bg-brand-gold flex items-center justify-center font-display font-bold text-brand-navy">O</div>
+      <div>
+        <span class="font-display font-bold text-base tracking-wider block">Opus Overseas</span>
+        <span class="text-[9px] text-brand-gold tracking-widest uppercase block leading-none">Global Services Engine</span>
+      </div>
+    </div>
+    
+    <nav class="hidden md:flex gap-6 text-xs font-semibold uppercase tracking-wider text-brand-cream/80">
+      <a href="#" class="hover:text-brand-gold transition">Study Abroad</a>
+      <a href="#" class="hover:text-brand-gold transition">Visa Services</a>
+      <a href="#" class="hover:text-brand-gold transition">Umrah</a>
+      <a href="#" class="hover:text-brand-gold transition">Attestation</a>
+      <a href="#" class="hover:text-brand-gold transition">Careers</a>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <a href="tel:+919876543210" class="text-xs bg-brand-navyLight border border-brand-gold/30 hover:border-brand-gold hover:text-white px-3 py-1.5 rounded transition text-brand-gold font-bold">
+        Call Support
+      </a>
+    </div>
+  </header>
+
+  <!-- CONTENT CONTAINER (Split Layout Hero) -->
+  <main class="max-w-7xl w-full mx-auto p-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- LEFT SIDE: LEAD INTAKE FORM (Span 7) -->
+    <section class="lg:col-span-7 bg-white p-8 rounded-xl border border-gray-200 shadow-lg flex flex-col gap-6">
+      
+      <div>
+        <h2 class="font-display font-extrabold text-2xl text-brand-navy">Start Your Journey Today</h2>
+        <p class="text-xs text-brand-textLight mt-1">Submit your details and get instant access to the Client Status tracking system.</p>
+      </div>
+
+      <!-- Core fields form -->
+      <form id="leadIntakeForm" class="space-y-4" onsubmit="handleFormSubmit(event)">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Name -->
+          <div>
+            <label class="text-xs font-bold text-brand-navy uppercase tracking-wider block mb-1">Full Name *</label>
+            <input type="text" required placeholder="John Doe" class="w-full text-xs p-2.5 border border-gray-300 rounded transition bg-brand-cream/10">
+          </div>
+          <!-- Phone -->
+          <div>
+            <label class="text-xs font-bold text-brand-navy uppercase tracking-wider block mb-1">Phone Number *</label>
+            <input type="tel" required placeholder="+91 XXXXX XXXXX" class="w-full text-xs p-2.5 border border-gray-300 rounded transition bg-brand-cream/10">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Email -->
+          <div>
+            <label class="text-xs font-bold text-brand-navy uppercase tracking-wider block mb-1">Email Address *</label>
+            <input type="email" required placeholder="john@example.com" class="w-full text-xs p-2.5 border border-gray-300 rounded transition bg-brand-cream/10">
+          </div>
+          <!-- Current Qualification -->
+          <div>
+            <label class="text-xs font-bold text-brand-navy uppercase tracking-wider block mb-1">Highest Qualification *</label>
+            <select required class="w-full text-xs p-2.5 border border-gray-300 rounded transition bg-white font-medium">
+              <option value="">-- Select Qualification --</option>
+              <option value="highschool">High School (12th)</option>
+              <option value="undergrad">Bachelors Degree</option>
+              <option value="postgrad">Masters Degree</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Division Selector pills -->
+        <div>
+          <label class="text-xs font-bold text-brand-navy uppercase tracking-wider block mb-2">Service Division Interested *</label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="serviceSelectors">
+            <button type="button" onclick="selectService('study-abroad')" class="p-2 border border-gray-300 rounded text-xs font-semibold text-center hover:border-brand-gold hover:bg-brand-cream transition active-service-btn" id="btn-study-abroad">
+              🎓 Study Abroad
+            </button>
+            <button type="button" onclick="selectService('visa')" class="p-2 border border-gray-300 rounded text-xs font-semibold text-center hover:border-brand-gold hover:bg-brand-cream transition" id="btn-visa">
+              🛂 Visa Services
+            </button>
+            <button type="button" onclick="selectService('umrah')" class="p-2 border border-gray-300 rounded text-xs font-semibold text-center hover:border-brand-gold hover:bg-brand-cream transition" id="btn-umrah">
+              🕋 Umrah Travel
+            </button>
+            <button type="button" onclick="selectService('attestation')" class="p-2 border border-gray-300 rounded text-xs font-semibold text-center hover:border-brand-gold hover:bg-brand-cream transition" id="btn-attestation">
+              📌 Document Attest
+            </button>
+            <button type="button" onclick="selectService('manpower')" class="p-2 border border-gray-300 rounded text-xs font-semibold text-center hover:border-brand-gold hover:bg-brand-cream transition" id="btn-manpower">
+              💼 Overseas Jobs
+            </button>
+          </div>
+        </div>
+
+        <!-- DYNAMIC FIELDS PANELS -->
+        
+        <!-- Study Abroad Dynamic Panel -->
+        <div id="panel-study-abroad" class="p-4 bg-brand-cream rounded-lg border border-brand-gold/15 space-y-3 dynamic-panel">
+          <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider">Study Abroad Choices</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Target Country</label>
+              <select class="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium">
+                <option value="us">United States (USA)</option>
+                <option value="uk">United Kingdom (UK)</option>
+                <option value="ca">Canada</option>
+                <option value="au">Australia</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Preferred Intake Season</label>
+              <div class="flex gap-2">
+                <label class="flex-1 text-center border border-gray-300 rounded p-1.5 text-xs font-medium cursor-pointer bg-white hover:border-brand-gold">
+                  <input type="radio" name="intake" class="sr-only" checked>
+                  Fall 2027
+                </label>
+                <label class="flex-1 text-center border border-gray-300 rounded p-1.5 text-xs font-medium cursor-pointer bg-white hover:border-brand-gold">
+                  <input type="radio" name="intake" class="sr-only">
+                  Spring 2027
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visa Services Dynamic Panel -->
+        <div id="panel-visa" class="p-4 bg-brand-cream rounded-lg border border-brand-gold/15 space-y-3 dynamic-panel hidden">
+          <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider">Visa Type Details</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Visa Category</label>
+              <select class="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium">
+                <option value="student">Student F1 / Study Permit</option>
+                <option value="work">Work Visa (Skilled Professional)</option>
+                <option value="tourist">Tourist / Visit Visa</option>
+                <option value="family">Family reunification</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Target Visa Country</label>
+              <input type="text" placeholder="e.g. Germany, Saudi Arabia" class="w-full text-xs p-2 border border-gray-300 rounded bg-white">
+            </div>
+          </div>
+        </div>
+
+        <!-- Umrah Dynamic Panel -->
+        <div id="panel-umrah" class="p-4 bg-brand-cream rounded-lg border border-brand-gold/15 space-y-3 dynamic-panel hidden">
+          <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider">Umrah Package Preferences</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Package Tier</label>
+              <select class="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium">
+                <option value="deluxe">Deluxe (5-Star Hotel close to Haram)</option>
+                <option value="economy">Economy (Shared rooms, standard travel)</option>
+                <option value="custom">Custom Family Package</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Expected Departure</label>
+              <select class="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium">
+                <option value="sep">September 2026</option>
+                <option value="ramadan">Ramadan Season 2027</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attestation Dynamic Panel -->
+        <div id="panel-attestation" class="p-4 bg-brand-cream rounded-lg border border-brand-gold/15 space-y-3 dynamic-panel hidden">
+          <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider">Attestation Document Options</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Document Category</label>
+              <select class="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium">
+                <option value="educational">Educational Degree/Transcripts</option>
+                <option value="personal">Personal Certificate (Birth/Marriage)</option>
+                <option value="commercial">Commercial Invoices/Agreements</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Required Authentication</label>
+              <select class="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium">
+                <option value="apostille">MEA Apostille stamp</option>
+                <option value="embassy">Saudi / Kuwait Embassy Legalization</option>
+                <option value="notary">State Home Department/Notary verification</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manpower Dynamic Panel (Resume drag and drop) -->
+        <div id="panel-manpower" class="p-4 bg-brand-cream rounded-lg border border-brand-gold/15 space-y-3 dynamic-panel hidden">
+          <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider">Overseas Job Application</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Target Job Sector</label>
+              <select class="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium">
+                <option value="healthcare">Healthcare (Nursing, Medical staff)</option>
+                <option value="engineering">Construction & Civil Engineering</option>
+                <option value="hospitality">IT & Hospitality Management</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Upload CV/Resume *</label>
+              <div class="border-2 border-dashed border-gray-300 rounded bg-white p-3 text-center hover:border-brand-gold transition cursor-pointer">
+                <span class="text-xs text-brand-textLight font-medium block">Drag & Drop Resume (PDF)</span>
+                <span class="text-[9px] text-brand-textLight">or click to browse</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-start gap-2.5 mt-2 bg-white/50 p-2.5 rounded border border-gray-100">
+            <input type="checkbox" id="manpowerRetainCheck" class="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold">
+            <label for="manpowerRetainCheck" class="text-[10px] text-brand-textLight leading-tight">
+              <strong>Retain Consent:</strong> I agree that Opus Overseas can retain my resume details for 3 years to match and share with foreign employers.
+            </label>
+          </div>
+        </div>
+
+        <!-- DPDP Plain English Consents -->
+        <div class="border-t border-gray-200 pt-4 space-y-3">
+          <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider">DPDP-2023 Legal Consents</h4>
+          
+          <div class="space-y-2.5">
+            <label class="flex gap-2 items-start cursor-pointer select-none">
+              <input type="checkbox" required class="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold">
+              <span class="text-[11px] text-brand-textLight leading-tight">
+                I agree to the processing of my contact information and files to facilitate my application processes with universities, embassies, and transit agents.
+              </span>
+            </label>
+
+            <label class="flex gap-2 items-start cursor-pointer select-none">
+              <input type="checkbox" checked class="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold">
+              <span class="text-[11px] text-brand-textLight leading-tight">
+                I authorize sending progress alerts, payment reminders, and visa status information via WhatsApp (OpenWA) and SMS.
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Bot Protection (Turnstile Simulator) -->
+        <div class="bg-gray-50 border border-gray-200 rounded p-3 flex justify-between items-center text-xs">
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded bg-brand-gold animate-spin"></div>
+            <span class="font-medium text-brand-navy">Cloudflare Turnstile Verified</span>
+          </div>
+          <span class="text-[9px] text-brand-textLight font-mono">Token: c1f845...</span>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="w-full bg-brand-gold hover:bg-brand-goldHover text-brand-navy py-2.5 rounded text-xs font-bold uppercase tracking-wider transition shadow hover:shadow-md active:translate-y-px">
+          Submit Lead & Get Code
+        </button>
+
+      </form>
+
+    </section>
+
+    <!-- RIGHT SIDE: LEAD STATUS TRACKER (Span 5) -->
+    <section class="lg:col-span-5 flex flex-col gap-6">
+      
+      <!-- STATUS SEARCH BOX -->
+      <div class="bg-brand-navy text-white p-6 rounded-xl shadow-lg border border-brand-navyLight flex flex-col gap-4">
+        <div>
+          <h3 class="font-display font-bold text-lg text-brand-gold">Check Your Application Status</h3>
+          <p class="text-xs text-brand-cream/65 mt-0.5">Enter your registered mobile number and unique token code.</p>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="text-[9px] uppercase tracking-wider text-brand-gold font-bold block mb-1">Mobile Number</label>
+            <input type="tel" id="trackPhone" placeholder="+91 98765 43210" class="w-full text-xs p-2.5 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35">
+          </div>
+          <div>
+            <label class="text-[9px] uppercase tracking-wider text-brand-gold font-bold block mb-1">Access Token</label>
+            <input type="text" id="trackToken" placeholder="OP-2026-0814" class="w-full text-xs p-2.5 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35">
+          </div>
+          
+          <button onclick="handleStatusSearch()" class="w-full bg-brand-cream hover:bg-white text-brand-navy py-2 rounded text-xs font-bold tracking-wider transition">
+            Search Status
+          </button>
+        </div>
+
+        <!-- Quick Demo Helper -->
+        <div class="border-t border-brand-navyLight pt-3 flex justify-between items-center text-[10px] text-brand-cream/50">
+          <span>Try Demo Search:</span>
+          <button onclick="fillDemoSearch()" class="text-brand-gold font-bold hover:underline">Click here to auto-fill</button>
+        </div>
+      </div>
+
+      <!-- SEARCH RESULT CONTAINER -->
+      <div id="searchResultCard" class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg flex flex-col gap-5 hidden animate-fade-in">
+        
+        <div class="flex justify-between items-start border-b border-gray-100 pb-3">
+          <div>
+            <span class="text-[9px] font-bold text-brand-gold uppercase tracking-widest">Active Application Status</span>
+            <h4 class="font-display font-bold text-base text-brand-navy mt-1" id="resultName">Rahul Sharma</h4>
+            <p class="text-[10px] text-brand-textLight">Token: <span class="font-mono text-brand-navy font-semibold" id="resultToken">OP-2026-0814</span></p>
+          </div>
+          <span class="px-2.5 py-1 bg-yellow-100 text-yellow-800 text-[10px] font-bold rounded" id="resultService">Study Abroad</span>
+        </div>
+
+        <!-- Visual Timeline Status tracker -->
+        <div>
+          <label class="text-[9px] uppercase tracking-wider text-brand-textLight font-bold block mb-3">Application Progress</label>
+          
+          <div class="relative pl-6 space-y-4 text-xs">
+            <div class="absolute left-[7px] top-1.5 bottom-1.5 w-[2px] bg-gray-200" id="trackerConnector"></div>
+
+            <!-- Step 1: Consult -->
+            <div class="relative flex gap-3 flex-col timeline-point">
+              <span class="absolute -left-6 w-4 h-4 rounded-full bg-brand-success text-white text-[9px] flex items-center justify-center font-bold font-mono">✓</span>
+              <div>
+                <p class="font-bold text-brand-navy">Consultation & Shortlist</p>
+                <p class="text-[10px] text-brand-textLight">Completed on 03 Aug 2026. Target US Masters finalized.</p>
+              </div>
+            </div>
+
+            <!-- Step 2: Documents -->
+            <div class="relative flex gap-3 flex-col timeline-point" id="point-2">
+              <span class="absolute -left-6 w-4 h-4 rounded-full bg-brand-gold text-brand-navy text-[9px] flex items-center justify-center font-bold font-mono">2</span>
+              <div>
+                <p class="font-bold text-brand-navy" id="step2Title">Documents Vault Verification</p>
+                <p class="text-[10px] text-brand-textLight" id="step2Desc">Under review. Counselors are auditing uploaded apostilled certificates.</p>
+              </div>
+            </div>
+
+            <!-- Step 3: Submitted -->
+            <div class="relative flex gap-3 flex-col opacity-45 timeline-point" id="point-3">
+              <span class="absolute -left-6 w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-[9px] flex items-center justify-center font-bold font-mono">3</span>
+              <div>
+                <p class="font-bold text-brand-navy">University Applications Sent</p>
+                <p class="text-[10px] text-brand-textLight">Awaiting previous steps confirmation before submit.</p>
+              </div>
+            </div>
+
+            <!-- Step 4: Visa Support -->
+            <div class="relative flex gap-3 flex-col opacity-45 timeline-point" id="point-4">
+              <span class="absolute -left-6 w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-[9px] flex items-center justify-center font-bold font-mono">4</span>
+              <div>
+                <p class="font-bold text-brand-navy">F1 Student Visa Stamping</p>
+                <p class="text-[10px] text-brand-textLight">Embassy interview prep & financial statement assembly.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assigned Counselor details with WhatsApp quick link -->
+        <div class="mt-2 pt-4 border-t border-gray-100 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-brand-gold/15 flex items-center justify-center font-semibold text-brand-gold text-xs border border-brand-gold">
+              SK
+            </div>
+            <div>
+              <p class="text-[10px] text-brand-textLight leading-none">Assigned Counselor</p>
+              <p class="text-xs font-bold text-brand-navy mt-1">Santhosh Kumar</p>
+            </div>
+          </div>
+          
+          <a href="https://wa.me/919876543210" target="_blank" class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-1 transition shadow-sm">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.625 1.451 5.403.002 9.799-4.389 9.802-9.799.002-2.621-1.013-5.086-2.86-6.938C16.37 2.016 13.91 1.002 11.29 1.002c-5.405 0-9.801 4.393-9.806 9.805-.002 1.7.456 3.36 1.32 4.82L1.758 20.88l4.89-1.286z"/></svg>
+            <span>Chat on WA</span>
+          </a>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- PUBLIC FOOTER -->
+  <footer class="bg-brand-navy text-white py-6 border-t border-brand-navyLight shrink-0">
+    <div class="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-brand-cream/50">
+      <div class="flex items-center gap-3">
+        <!-- British Council Agent badge -->
+        <span class="border border-brand-gold/30 text-brand-gold px-2 py-0.5 rounded text-[10px] font-semibold font-display">British Council Certified Agent</span>
+      </div>
+      
+      <div>
+        <span>© 2026 Opus Overseas. Nizamabad, Telangana, India. All rights reserved.</span>
+      </div>
+
+      <div class="flex gap-4 font-semibold">
+        <a href="#" class="hover:underline">Privacy Policy (DPDP)</a>
+        <a href="#" class="hover:underline">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- POPUP TOAST SYSTEM -->
+  <div id="toastNotification" class="fixed right-6 bottom-6 bg-brand-navy border-l-4 border-brand-gold text-white text-xs px-4 py-3 rounded-lg shadow-xl translate-y-24 opacity-0 transition duration-300 ease-out z-50 flex items-center gap-2">
+    <span class="font-bold text-brand-gold">INTAKE SYSTEM:</span>
+    <span id="toastMessage">Form submitted.</span>
+  </div>
+
+  <script>
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').innerText = msg;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 3000);
+    }
+
+    // Dynamic Select Service Panel Swapper
+    function selectService(service) {
+      // Deactivate all button highlights
+      const buttons = document.querySelectorAll('#serviceSelectors > button');
+      buttons.forEach(btn => {
+        btn.classList.remove('border-brand-gold', 'bg-brand-cream', 'text-brand-navy');
+      });
+
+      // Hide all panels
+      const panels = document.querySelectorAll('.dynamic-panel');
+      panels.forEach(p => p.classList.add('hidden'));
+
+      // Highlight active button
+      document.getElementById(`btn-${service}`).classList.add('border-brand-gold', 'bg-brand-cream', 'text-brand-navy');
+
+      // Display active panel
+      document.getElementById(`panel-${service}`).classList.remove('hidden');
+    }
+
+    // Dynamic Intake Submit Action
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      // Generate a mockup Token
+      const tokenNum = Math.floor(1000 + Math.random() * 9000);
+      const generatedToken = `OP-2026-${tokenNum}`;
+      
+      showToast(`Success! Your Lead Record created. Access Token generated: ${generatedToken}`);
+      
+      // Auto-fill track search with the submitted info to demonstrate link
+      document.getElementById('trackPhone').value = "+91 98765 43210";
+      document.getElementById('trackToken').value = generatedToken;
+
+      // Auto load the tracker search result showing initial lead state
+      setTimeout(() => {
+        document.getElementById('resultName').innerText = "New Registered Lead";
+        document.getElementById('resultToken').innerText = generatedToken;
+        document.getElementById('resultService').innerText = "Registered Lead";
+        
+        // Update tracker list to showing just step 1 active and others muted
+        document.getElementById('point-2').className = "relative flex gap-3 flex-col timeline-point opacity-45";
+        document.getElementById('point-2').querySelector('span').className = "absolute -left-6 w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-[9px] flex items-center justify-center font-bold font-mono";
+        document.getElementById('step2Title').innerText = "Pending Registration Review";
+        document.getElementById('step2Desc').innerText = "Our intake counselor is reviewing your profile selection.";
+        
+        const card = document.getElementById('searchResultCard');
+        card.classList.remove('hidden');
+        showToast("Lead tracker status loaded for your new token!");
+      }, 1000);
+    }
+
+    // Tracker Search
+    function handleStatusSearch() {
+      const phone = document.getElementById('trackPhone').value.trim();
+      const token = document.getElementById('trackToken').value.trim();
+
+      if(phone === "" || token === "") {
+        showToast("Please enter both phone and token to search.");
+        return;
+      }
+
+      // Check if it matches the demo record
+      if(token === "OP-2026-0814") {
+        document.getElementById('resultName').innerText = "Rahul Sharma";
+        document.getElementById('resultToken').innerText = "OP-2026-0814";
+        document.getElementById('resultService').innerText = "Study Abroad";
+        
+        // Restore documents step status
+        document.getElementById('point-2').className = "relative flex gap-3 flex-col timeline-point";
+        document.getElementById('point-2').querySelector('span').className = "absolute -left-6 w-4 h-4 rounded-full bg-brand-gold text-brand-navy text-[9px] flex items-center justify-center font-bold font-mono";
+        document.getElementById('step2Title').innerText = "Documents Vault Verification";
+        document.getElementById('step2Desc').innerText = "Under review. Counselors are auditing uploaded apostilled certificates.";
+
+        document.getElementById('point-3').className = "relative flex gap-3 flex-col timeline-point opacity-45";
+        document.getElementById('point-4').className = "relative flex gap-3 flex-col timeline-point opacity-45";
+      } else {
+        // Fallback for custom entries
+        document.getElementById('resultName').innerText = "Client Account";
+        document.getElementById('resultToken').innerText = token;
+        document.getElementById('resultService').innerText = "Active Service";
+      }
+
+      const card = document.getElementById('searchResultCard');
+      card.classList.remove('hidden');
+      showToast("Tracking status resolved successfully.");
+    }
+
+    // Auto-fill demo
+    function fillDemoSearch() {
+      document.getElementById('trackPhone').value = "+91 98765 43210";
+      document.getElementById('trackToken').value = "OP-2026-0814";
+      showToast("Demo credentials filled. Click 'Search Status' to run.");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operational Kanban Board - OpusOS</title>
+  <!-- Google Fonts: Montserrat & IBM Plex Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#0B132B',
+              navyLight: '#1C2541',
+              gold: '#D4AF37',
+              goldHover: '#C59B27',
+              cream: '#F7F5F0',
+              creamCard: '#FFFFFF',
+              textDark: '#1E293B',
+              textLight: '#64748B',
+              success: '#10B981',
+              warning: '#F59E0B',
+              error: '#EF4444'
+            }
+          },
+          fontFamily: {
+            sans: ['"IBM Plex Sans"', 'sans-serif'],
+            display: ['Montserrat', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for horizontal columns */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F1F1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D4AF37;
+      border-radius: 3px;
+    }
+    .kanban-column {
+      min-height: calc(100vh - 200px);
+    }
+    .drag-over {
+      background-color: rgba(212, 175, 55, 0.05);
+      border: 2px dashed #D4AF37;
+    }
+  </style>
+</head>
+<body class="bg-brand-cream text-brand-textDark font-sans min-h-screen flex overflow-hidden">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="w-64 bg-brand-navy text-white flex flex-col justify-between shrink-0 shadow-xl z-20">
+    <div>
+      <!-- Brand Logo -->
+      <div class="p-6 border-b border-brand-navyLight flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-brand-gold flex items-center justify-center font-display font-bold text-brand-navy">O</div>
+        <div>
+          <h1 class="font-display font-bold text-lg leading-tight tracking-wider">OpusOS</h1>
+          <p class="text-[10px] text-brand-gold tracking-widest uppercase">Business Engine</p>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="p-4 space-y-2">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded text-sm text-white bg-brand-navyLight border-l-4 border-brand-gold font-medium transition duration-200">
+          <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+          <span>Kanban Board</span>
+        </a>
+        <a href="client-360.html" class="flex items-center gap-3 px-4 py-3 rounded text-sm text-brand-cream/80 hover:text-white hover:bg-brand-navyLight transition duration-200">
+          <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+          <span>Client 360</span>
+        </a>
+        <a href="public-lead-form.html" class="flex items-center gap-3 px-4 py-3 rounded text-sm text-brand-cream/80 hover:text-white hover:bg-brand-navyLight transition duration-200">
+          <svg class="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span>Public Lead Form</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Active Profile Footer -->
+    <div class="p-4 border-t border-brand-navyLight flex items-center gap-3 bg-brand-navyLight/30">
+      <div class="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center border border-brand-gold text-brand-gold font-semibold">SK</div>
+      <div class="overflow-hidden">
+        <p class="text-xs font-semibold truncate">Santhosh Kumar</p>
+        <p class="text-[10px] text-brand-cream/60 uppercase tracking-wider">Senior Counselor</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
+    
+    <!-- TOP FILTER BAR -->
+    <header class="bg-white border-b border-gray-200 py-4 px-8 flex flex-wrap gap-4 items-center justify-between z-10 shrink-0">
+      <div class="flex items-center gap-4">
+        <h2 class="font-display font-bold text-lg text-brand-navy">Universal pipeline Board</h2>
+      </div>
+
+      <!-- Filters Row -->
+      <div class="flex items-center gap-3 flex-wrap">
+        
+        <!-- Division Select -->
+        <div>
+          <label class="text-[9px] uppercase text-brand-textLight font-semibold block mb-0.5">Division</label>
+          <select id="divisionFilter" onchange="applyFilters()" class="text-xs border border-gray-300 rounded px-2.5 py-1.5 bg-white font-medium focus:outline-none focus:ring-1 focus:ring-brand-gold">
+            <option value="all">All Divisions</option>
+            <option value="study-abroad">Study Abroad</option>
+            <option value="visa">Visa Services</option>
+            <option value="attestation">Attestation</option>
+            <option value="umrah">Umrah / Travel</option>
+            <option value="manpower">Manpower Recruitment</option>
+          </select>
+        </div>
+
+        <!-- Counselor Select -->
+        <div>
+          <label class="text-[9px] uppercase text-brand-textLight font-semibold block mb-0.5">Counselor</label>
+          <select id="counselorFilter" onchange="applyFilters()" class="text-xs border border-gray-300 rounded px-2.5 py-1.5 bg-white font-medium focus:outline-none focus:ring-1 focus:ring-brand-gold">
+            <option value="all">All Staff</option>
+            <option value="santhosh">Santhosh Kumar</option>
+            <option value="anjali">Anjali Nair</option>
+            <option value="rajesh">Rajesh Patel</option>
+          </select>
+        </div>
+
+        <!-- Stale Aging Toggle -->
+        <div class="flex items-center gap-2 mt-3 select-none">
+          <input type="checkbox" id="agingFilter" onchange="applyFilters()" class="rounded border-gray-300 text-brand-gold focus:ring-brand-gold">
+          <label for="agingFilter" class="text-xs font-semibold text-brand-error flex items-center gap-1 cursor-pointer">
+            <span class="w-2.5 h-2.5 rounded-full bg-brand-error animate-pulse"></span>
+            Show Stale Work (>48h)
+          </label>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- BOARD COLUMNS AREA (Horizontal Scrollable Grid) -->
+    <div class="flex-1 overflow-x-auto overflow-y-hidden p-6 flex gap-4 items-start select-none">
+      
+      <!-- COLUMN 1: Lead Intake -->
+      <div class="w-80 bg-gray-100 rounded-lg flex flex-col shrink-0 overflow-hidden shadow-sm border border-gray-200">
+        <div class="p-3 bg-white border-b border-gray-200 flex justify-between items-center">
+          <h3 class="font-display font-bold text-xs text-brand-navy uppercase tracking-wider">1. Lead Intake</h3>
+          <span class="px-2 py-0.5 bg-brand-navy/15 text-brand-navy font-bold text-[10px] rounded-full" id="count-lead">3</span>
+        </div>
+        <div id="col-lead" class="kanban-column p-3 space-y-3 overflow-y-auto max-h-[calc(100vh-230px)]" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'lead')">
+          
+          <!-- Card 1 -->
+          <div id="card-1" draggable="true" ondragstart="drag(event)" onclick="openPreview('Vikram Singh', 'OP-2026-0982', 'Study Abroad', 'Santhosh Kumar', '3 Days', 'No IELTS upload', '₹0')" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-grab hover:border-brand-gold/60 transition" data-division="study-abroad" data-counselor="santhosh" data-stale="true">
+            <div class="flex justify-between items-start mb-2">
+              <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-bold rounded">Study Abroad</span>
+              <span class="px-1.5 py-0.5 bg-brand-warning/10 text-brand-warning border border-brand-warning/20 font-bold text-[9px] rounded">Stale 3d</span>
+            </div>
+            <h4 class="font-semibold text-sm text-brand-navy">Vikram Singh</h4>
+            <p class="text-[10px] text-brand-textLight">Token: <span class="font-mono text-brand-gold font-medium">OP-2026-0982</span></p>
+            
+            <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center text-[10px]">
+              <span class="text-brand-textLight">Staff: <span class="font-medium text-brand-navy">Santhosh K</span></span>
+              <span class="text-brand-error font-bold flex items-center gap-0.5">⚠️ No IELTS</span>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div id="card-2" draggable="true" ondragstart="drag(event)" onclick="openPreview('Fatimah Begum', 'OP-2026-0983', 'umrah', 'Rajesh Patel', '12 Hours', 'No passport upload', '₹10,000 due')" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-grab hover:border-brand-gold/60 transition" data-division="umrah" data-counselor="rajesh" data-stale="false">
+            <div class="flex justify-between items-start mb-2">
+              <span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-[9px] font-bold rounded">Umrah</span>
+              <span class="text-brand-textLight text-[9px]">Active: 12h</span>
+            </div>
+            <h4 class="font-semibold text-sm text-brand-navy">Fatimah Begum</h4>
+            <p class="text-[10px] text-brand-textLight">Token: <span class="font-mono text-brand-gold font-medium">OP-2026-0983</span></p>
+            
+            <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center text-[10px]">
+              <span class="text-brand-textLight">Staff: <span class="font-medium text-brand-navy">Rajesh P</span></span>
+              <span class="text-brand-error font-bold">₹10k Overdue</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COLUMN 2: Qualified -->
+      <div class="w-80 bg-gray-100 rounded-lg flex flex-col shrink-0 overflow-hidden shadow-sm border border-gray-200">
+        <div class="p-3 bg-white border-b border-gray-200 flex justify-between items-center">
+          <h3 class="font-display font-bold text-xs text-brand-navy uppercase tracking-wider">2. Qualified</h3>
+          <span class="px-2 py-0.5 bg-brand-navy/15 text-brand-navy font-bold text-[10px] rounded-full" id="count-qualified">1</span>
+        </div>
+        <div id="col-qualified" class="kanban-column p-3 space-y-3 overflow-y-auto max-h-[calc(100vh-230px)]" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'qualified')">
+          
+          <!-- Card 3 -->
+          <div id="card-3" draggable="true" ondragstart="drag(event)" onclick="openPreview('Arjun Mehta', 'OP-2026-0911', 'visa', 'Anjali Nair', '1 Day', 'All clear', '₹0')" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-grab hover:border-brand-gold/60 transition" data-division="visa" data-counselor="anjali" data-stale="false">
+            <div class="flex justify-between items-start mb-2">
+              <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded">Visa</span>
+              <span class="text-brand-textLight text-[9px]">Active: 1d</span>
+            </div>
+            <h4 class="font-semibold text-sm text-brand-navy">Arjun Mehta</h4>
+            <p class="text-[10px] text-brand-textLight">Token: <span class="font-mono text-brand-gold font-medium">OP-2026-0911</span></p>
+            
+            <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center text-[10px]">
+              <span class="text-brand-textLight">Staff: <span class="font-medium text-brand-navy">Anjali N</span></span>
+              <span class="text-brand-success font-bold">✓ Ready</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COLUMN 3: Documents Gathering -->
+      <div class="w-80 bg-gray-100 rounded-lg flex flex-col shrink-0 overflow-hidden shadow-sm border border-gray-200">
+        <div class="p-3 bg-white border-b border-gray-200 flex justify-between items-center">
+          <h3 class="font-display font-bold text-xs text-brand-navy uppercase tracking-wider">3. Document Vault</h3>
+          <span class="px-2 py-0.5 bg-brand-navy/15 text-brand-navy font-bold text-[10px] rounded-full" id="count-documents">2</span>
+        </div>
+        <div id="col-documents" class="kanban-column p-3 space-y-3 overflow-y-auto max-h-[calc(100vh-230px)]" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'documents')">
+          
+          <!-- Card 4 -->
+          <div id="card-4" draggable="true" ondragstart="drag(event)" onclick="openPreview('Rahul Sharma', 'OP-2026-0814', 'study-abroad', 'Santhosh Kumar', '4 Days', 'Passport expiring', '₹45,000')" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-grab hover:border-brand-gold/60 transition" data-division="study-abroad" data-counselor="santhosh" data-stale="true">
+            <div class="flex justify-between items-start mb-2">
+              <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-bold rounded">Study Abroad</span>
+              <span class="px-1.5 py-0.5 bg-brand-error/10 text-brand-error border border-brand-error/20 font-bold text-[9px] rounded">Stale 4d</span>
+            </div>
+            <h4 class="font-semibold text-sm text-brand-navy">Rahul Sharma</h4>
+            <p class="text-[10px] text-brand-textLight">Token: <span class="font-mono text-brand-gold font-medium">OP-2026-0814</span></p>
+            
+            <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center text-[10px]">
+              <span class="text-brand-textLight">Staff: <span class="font-medium text-brand-navy">Santhosh K</span></span>
+              <span class="text-brand-error font-bold flex items-center gap-0.5">⚠️ Passport Exp</span>
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div id="card-5" draggable="true" ondragstart="drag(event)" onclick="openPreview('Karan Malhotra', 'OP-2026-0749', 'attestation', 'Anjali Nair', '2 Days', 'Awaiting MEA stamp', '₹0')" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-grab hover:border-brand-gold/60 transition" data-division="attestation" data-counselor="anjali" data-stale="false">
+            <div class="flex justify-between items-start mb-2">
+              <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-[9px] font-bold rounded">Attestation</span>
+              <span class="text-brand-textLight text-[9px]">Active: 2d</span>
+            </div>
+            <h4 class="font-semibold text-sm text-brand-navy">Karan Malhotra</h4>
+            <p class="text-[10px] text-brand-textLight">Token: <span class="font-mono text-brand-gold font-medium">OP-2026-0749</span></p>
+            
+            <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center text-[10px]">
+              <span class="text-brand-textLight">Staff: <span class="font-medium text-brand-navy">Anjali N</span></span>
+              <span class="text-brand-gold font-bold">MEA Pending</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COLUMN 4: Active Processing (With WIP Limit 3) -->
+      <div class="w-80 bg-gray-100 rounded-lg flex flex-col shrink-0 overflow-hidden shadow-sm border border-gray-200">
+        <div id="colHeader-processing" class="p-3 bg-white border-b border-gray-200 flex justify-between items-center transition duration-200">
+          <div class="flex items-center gap-1.5">
+            <h3 class="font-display font-bold text-xs text-brand-navy uppercase tracking-wider">4. Processing</h3>
+            <!-- WIP limits badge -->
+            <span class="px-1.5 py-0.5 bg-brand-gold text-brand-navy font-bold text-[9px] rounded uppercase tracking-wider">WIP Limit: 2</span>
+          </div>
+          <span class="px-2 py-0.5 bg-brand-navy/15 text-brand-navy font-bold text-[10px] rounded-full" id="count-processing">1</span>
+        </div>
+        <div id="col-processing" class="kanban-column p-3 space-y-3 overflow-y-auto max-h-[calc(100vh-230px)]" data-wip="2" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'processing')">
+          
+          <!-- Card 6 -->
+          <div id="card-6" draggable="true" ondragstart="drag(event)" onclick="openPreview('Mohammed Ali', 'OP-2026-0615', 'manpower', 'Rajesh Patel', '1 Day', 'CV Shortlisted by client', '₹0')" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-grab hover:border-brand-gold/60 transition" data-division="manpower" data-counselor="rajesh" data-stale="false">
+            <div class="flex justify-between items-start mb-2">
+              <span class="px-2 py-0.5 bg-orange-100 text-orange-800 text-[9px] font-bold rounded">Manpower</span>
+              <span class="text-brand-textLight text-[9px]">Active: 1d</span>
+            </div>
+            <h4 class="font-semibold text-sm text-brand-navy">Mohammed Ali</h4>
+            <p class="text-[10px] text-brand-textLight">Token: <span class="font-mono text-brand-gold font-medium">OP-2026-0615</span></p>
+            
+            <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center text-[10px]">
+              <span class="text-brand-textLight">Staff: <span class="font-medium text-brand-navy">Rajesh P</span></span>
+              <span class="text-brand-success font-semibold">CV Shortlist</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COLUMN 5: Delivered / Closed -->
+      <div class="w-80 bg-gray-100 rounded-lg flex flex-col shrink-0 overflow-hidden shadow-sm border border-gray-200">
+        <div class="p-3 bg-white border-b border-gray-200 flex justify-between items-center">
+          <h3 class="font-display font-bold text-xs text-brand-navy uppercase tracking-wider">5. Complete</h3>
+          <span class="px-2 py-0.5 bg-brand-navy/15 text-brand-navy font-bold text-[10px] rounded-full" id="count-complete">1</span>
+        </div>
+        <div id="col-complete" class="kanban-column p-3 space-y-3 overflow-y-auto max-h-[calc(100vh-230px)]" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'complete')">
+          
+          <!-- Card 7 -->
+          <div id="card-7" draggable="true" ondragstart="drag(event)" onclick="openPreview('Shreya Reddy', 'OP-2026-0504', 'visa', 'Anjali Nair', '12 Days', 'Visa stamped, passport handoff done', '₹0')" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm cursor-grab hover:border-brand-gold/60 transition" data-division="visa" data-counselor="anjali" data-stale="false">
+            <div class="flex justify-between items-start mb-2">
+              <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded">Visa</span>
+              <span class="text-brand-success text-[9px] font-bold">COMPLETED</span>
+            </div>
+            <h4 class="font-semibold text-sm text-brand-navy">Shreya Reddy</h4>
+            <p class="text-[10px] text-brand-textLight">Token: <span class="font-mono text-brand-gold font-medium">OP-2026-0504</span></p>
+            
+            <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center text-[10px]">
+              <span class="text-brand-textLight">Staff: <span class="font-medium text-brand-navy">Anjali N</span></span>
+              <span class="text-brand-success font-bold">✓ Delivered</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- QUICK PREVIEW SIDE SLIDE-OUT MODAL (Simulating Client 360 preview) -->
+  <div id="clientPreviewModal" class="fixed inset-y-0 right-0 w-[420px] bg-white shadow-2xl z-40 border-l border-gray-200 translate-x-full transition duration-300 ease-in-out p-6 flex flex-col justify-between">
+    
+    <div>
+      <!-- Modal Header -->
+      <div class="flex justify-between items-start border-b border-gray-100 pb-4 mb-6">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-brand-gold tracking-widest">Client Quick View</span>
+          <h3 class="font-display font-bold text-xl text-brand-navy mt-1" id="modalName">Rahul Sharma</h3>
+          <p class="text-xs text-brand-textLight">Token: <span class="font-mono text-brand-gold font-semibold" id="modalToken">OP-2026-0814</span></p>
+        </div>
+        <button onclick="closePreview()" class="text-gray-400 hover:text-brand-navy p-1 rounded-full hover:bg-gray-100 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Modal Info Grid -->
+      <div class="space-y-4 text-xs">
+        <div>
+          <h4 class="font-bold uppercase tracking-wider text-[10px] text-brand-navyLight mb-2 border-b border-gray-100 pb-1">Engagement Detail</h4>
+          <div class="grid grid-cols-2 gap-y-2.5 gap-x-4">
+            <div><span class="text-brand-textLight block">Active Division:</span> <span class="font-semibold" id="modalDivision">Study Abroad</span></div>
+            <div><span class="text-brand-textLight block">Assigned Counselor:</span> <span class="font-semibold text-brand-navy" id="modalCounselor">Santhosh Kumar</span></div>
+            <div><span class="text-brand-textLight block">WIP Active Time:</span> <span class="font-medium text-brand-navy" id="modalActive">4 Days</span></div>
+            <div><span class="text-brand-textLight block">Outstanding Invoice:</span> <span class="font-bold text-brand-gold" id="modalOutstanding">₹45,000</span></div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-bold uppercase tracking-wider text-[10px] text-brand-navyLight mb-2 border-b border-gray-100 pb-1">Primary Checklist Blocker</h4>
+          <p class="text-xs text-brand-error font-semibold mt-1 flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-brand-error"></span>
+            <span id="modalBlocker">Passport is expiring within 6 months.</span>
+          </p>
+        </div>
+
+        <!-- Simulated Activity Timeline Quick List -->
+        <div>
+          <h4 class="font-bold uppercase tracking-wider text-[10px] text-brand-navyLight mb-2 border-b border-gray-100 pb-1">Recent Activity</h4>
+          <div class="space-y-3 mt-2">
+            <div class="p-2.5 bg-brand-cream border border-brand-gold/10 rounded flex gap-2 items-start">
+              <span class="w-4 h-4 rounded-full bg-brand-navy text-white text-[9px] flex items-center justify-center font-bold">⚙</span>
+              <div>
+                <p class="font-semibold text-[11px]">Timeline Logged</p>
+                <p class="text-[10px] text-brand-textLight">Client changed stage from Lead to Documents.</p>
+              </div>
+            </div>
+            <div class="p-2.5 bg-brand-cream border border-brand-gold/10 rounded flex gap-2 items-start opacity-70">
+              <span class="w-4 h-4 rounded-full bg-green-500 text-white text-[8px] flex items-center justify-center font-bold">WA</span>
+              <div>
+                <p class="font-semibold text-[11px]">WhatsApp Dispatched</p>
+                <p class="text-[10px] text-brand-textLight">"Dear Rahul, your registration has been received..."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div class="border-t border-gray-200 pt-4 flex gap-3">
+      <a href="client-360.html" class="flex-1 text-center bg-brand-navy hover:bg-brand-navyLight text-white py-2 rounded text-xs font-bold transition shadow-sm">
+        Go to Client 360 Profile
+      </a>
+    </div>
+
+  </div>
+
+  <!-- BG OVERLAY FOR MODAL -->
+  <div id="modalOverlay" onclick="closePreview()" class="fixed inset-0 bg-brand-navy/30 backdrop-blur-[1px] hidden z-30 transition duration-300"></div>
+
+  <!-- TOAST NOTIFICATION SYSTEM -->
+  <div id="toastNotification" class="fixed right-6 bottom-6 bg-brand-navy border-l-4 border-brand-gold text-white text-xs px-4 py-3 rounded-lg shadow-xl translate-y-24 opacity-0 transition duration-300 ease-out z-50 flex items-center gap-2">
+    <span class="font-bold text-brand-gold">PIPELINE UPDATE:</span>
+    <span id="toastMessage">Card moved.</span>
+  </div>
+
+  <script>
+    // TOAST SYSTEM
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').innerText = msg;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 3000);
+    }
+
+    // DRAG AND DROP IMPLEMENTATION
+    let draggedElementId = null;
+
+    function drag(ev) {
+      draggedElementId = ev.target.id;
+      ev.dataTransfer.setData("text", ev.target.id);
+      ev.target.style.opacity = "0.5";
+    }
+
+    // Clean drag styles
+    document.addEventListener("dragend", function(event) {
+      if(draggedElementId) {
+        const el = document.getElementById(draggedElementId);
+        if(el) el.style.opacity = "1";
+        draggedElementId = null;
+      }
+    });
+
+    function allowDrop(ev) {
+      ev.preventDefault();
+      ev.currentTarget.classList.add('drag-over');
+    }
+
+    function dragLeave(ev) {
+      ev.currentTarget.classList.remove('drag-over');
+    }
+
+    function drop(ev, columnKey) {
+      ev.preventDefault();
+      const col = ev.currentTarget;
+      col.classList.remove('drag-over');
+      
+      const data = ev.dataTransfer.getData("text");
+      const card = document.getElementById(data);
+      if(!card) return;
+
+      // Check WIP limits for Processing Column
+      if(columnKey === 'processing') {
+        const currentCount = col.children.length;
+        const maxLimit = parseInt(col.getAttribute('data-wip') || 99);
+        if(currentCount >= maxLimit) {
+          const header = document.getElementById('colHeader-processing');
+          header.classList.add('bg-red-50', 'border-brand-error');
+          header.querySelector('span:first-of-type').className = 'px-1.5 py-0.5 bg-brand-error text-white font-bold text-[9px] rounded uppercase tracking-wider animate-bounce';
+          showToast("⚠️ WIP Limit Breached! Too many items in processing.");
+        }
+      } else {
+        // Reset processing header color if drag out
+        const procCol = document.getElementById('col-processing');
+        const maxLimit = parseInt(procCol.getAttribute('data-wip') || 99);
+        if(procCol.children.length - (card.parentNode.id === 'col-processing' ? 1 : 0) <= maxLimit) {
+          const header = document.getElementById('colHeader-processing');
+          header.classList.remove('bg-red-50', 'border-brand-error');
+          header.querySelector('span:first-of-type').className = 'px-1.5 py-0.5 bg-brand-gold text-brand-navy font-bold text-[9px] rounded uppercase tracking-wider';
+        }
+      }
+
+      col.appendChild(card);
+      recalculateCounts();
+      
+      const name = card.querySelector('h4').innerText;
+      showToast(`Moved ${name} to column "${columnKey.toUpperCase()}".`);
+    }
+
+    function recalculateCounts() {
+      const cols = ['lead', 'qualified', 'documents', 'processing', 'complete'];
+      cols.forEach(col => {
+        const count = document.getElementById(`col-${col}`).children.length;
+        document.getElementById(`count-${col}`).innerText = count;
+      });
+    }
+
+    // SLIDE PREVIEW MODAL
+    function openPreview(name, token, division, counselor, active, blocker, outstanding) {
+      // Prevent trigger when dragging
+      if(draggedElementId) return;
+
+      document.getElementById('modalName').innerText = name;
+      document.getElementById('modalToken').innerText = token;
+      document.getElementById('modalDivision').innerText = division.toUpperCase();
+      document.getElementById('modalCounselor').innerText = counselor;
+      document.getElementById('modalActive').innerText = active;
+      document.getElementById('modalBlocker').innerText = blocker;
+      document.getElementById('modalOutstanding').innerText = outstanding;
+
+      const modal = document.getElementById('clientPreviewModal');
+      const overlay = document.getElementById('modalOverlay');
+      modal.classList.remove('translate-x-full');
+      overlay.classList.remove('hidden');
+    }
+
+    function closePreview() {
+      const modal = document.getElementById('clientPreviewModal');
+      const overlay = document.getElementById('modalOverlay');
+      modal.classList.add('translate-x-full');
+      overlay.classList.add('hidden');
+    }
+
+    // FILTERS APPLICATION
+    function applyFilters() {
+      const divFilter = document.getElementById('divisionFilter').value;
+      const staffFilter = document.getElementById('counselorFilter').value;
+      const isStaleOnly = document.getElementById('agingFilter').checked;
+
+      const cards = document.querySelectorAll('.kanban-column > div');
+      
+      cards.forEach(card => {
+        const cardDiv = card.getAttribute('data-division');
+        const cardStaff = card.getAttribute('data-counselor');
+        const isStale = card.getAttribute('data-stale') === 'true';
+
+        let show = true;
+
+        if(divFilter !== 'all' && cardDiv !== divFilter) {
+          show = false;
+        }
+
+        if(staffFilter !== 'all' && cardStaff !== staffFilter) {
+          show = false;
+        }
+
+        if(isStaleOnly && !isStale) {
+          show = false;
+        }
+
+        if(show) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      recalculateCounts();
+    }
+  </script>
+</body>
+</html>

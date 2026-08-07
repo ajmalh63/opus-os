@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Cloudflare / wrangler local state
+.wrangler/
+.dev.vars
+.dev.vars.*
+
+# Environment & secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# Testing / coverage
+coverage/
+.nyc_output/
+
+# Logs & OS junk
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# Temporary
+.tmp/
