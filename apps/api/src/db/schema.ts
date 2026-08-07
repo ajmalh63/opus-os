@@ -329,6 +329,107 @@ export const tasks = sqliteTable('tasks', {
   completedAt: integer('completed_at')
 });
 
+// ==========================================
+// 21. RBAC SUITE (Section 33 - role-builder)
+// ==========================================
+export const permissions = sqliteTable('permissions', {
+  code: text('code').primaryKey(), // e.g. 'clients:read'
+  family: text('family').notNull(), // client/payment/agreement/finance/compliance/admin...
+  label: text('label').notNull(),
+  ownerOnly: integer('owner_only', { mode: 'boolean' }).notNull().default(false),
+  seeded: integer('seeded', { mode: 'boolean' }).notNull().default(true)
+});
+
+export const roles = sqliteTable('roles', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  code: text('code').notNull().unique(), // e.g. 'counselor'
+  description: text('description'),
+  permissionsJson: text('permissions_json').notNull().default('[]'), // JSON array of permission codes
+  parentId: text('parent_id').references((): any => roles.id), // optional inheritance
+  system: integer('system', { mode: 'boolean' }).notNull().default(false), // seeded/system roles not deletable
+  editable: integer('editable', { mode: 'boolean' }).notNull().default(true),
+  color: text('color').notNull().default('brand-gold'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+export const userRoles = sqliteTable('user_roles', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id),
+  roleId: text('role_id').notNull().references(() => roles.id),
+  divisionScopeJson: text('division_scope').notNull().default('[]'), // JSON array of division keys; [] = all
+  activeFrom: integer('active_from').notNull().default(0),
+  activeTo: integer('active_to'), // null = indefinite
+  revokedAt: integer('revoked_at'),
+  revokedBy: text('revoked_by'),
+  createdAt: integer('created_at').notNull()
+});
+
+// ==========================================
+// 22. SATE (Section 26 - marketing interaction scoring)
+// ==========================================
+export const interactionPoints = sqliteTable('interaction_points', {
+  code: text('code').primaryKey(), // e.g. 'website_lead_form'
+  points: integer('points').notNull(),
+  description: text('description')
+});
+
+export const scoringEvents = sqliteTable('scoring_events', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  interactionCode: text('interaction_code').notNull(),
+  points: integer('points').notNull(),
+  source: text('source').notNull().default('api'),
+  createdAt: integer('created_at').notNull()
+});
+
+export const segments = sqliteTable('segments', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  rulesJson: text('rules_json').notNull().default('{}'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 26. INCENTIVE ENGINE (Section 29/31)
+// ==========================================
+export const incentiveRules = sqliteTable('incentive_rules', {
+  id: text('id').primaryKey(),
+  division: text('division').notNull(),
+  serviceId: text('service_id'),
+  trigger: text('trigger').notNull(), // agreement_signed | milestone_paid | visa_granted | placement_confirmed
+  amount: integer('amount').notNull(), // paise fixed amount OR percent-basis flag
+  isPercent: integer('is_percent', { mode: 'boolean' }).notNull().default(false),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at').notNull()
+});
+
+export const incentiveEntries = sqliteTable('incentive_entries', {
+  id: text('id').primaryKey(),
+  employeeId: text('employee_id').notNull().references(() => users.id),
+  ruleId: text('rule_id').references(() => incentiveRules.id),
+  engagementId: text('engagement_id'),
+  triggerRef: text('trigger_ref'),
+  amount: integer('amount').notNull(), // paise
+  status: text('status', { enum: ['accrued', 'clawed_back', 'paid'] }).notNull().default('accrued'),
+  period: text('period'), // '2026-08'
+  createdAt: integer('created_at').notNull()
+});
+
+export const payoutStatements = sqliteTable('payout_statements', {
+  id: text('id').primaryKey(),
+  employeeId: text('employee_id').notNull().references(() => users.id),
+  period: text('period').notNull(),
+  gross: integer('gross').notNull().default(0), // paise
+  tds: integer('tds').notNull().default(0),
+  net: integer('net').notNull().default(0),
+  status: text('status', { enum: ['draft', 'approved', 'paid'] }).notNull().default('draft'),
+  approvedBy: text('approved_by'),
+  createdAt: integer('created_at').notNull()
+});
+
 
 
 

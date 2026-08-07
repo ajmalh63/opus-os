@@ -2,6 +2,7 @@
 import { useLocation } from 'wouter';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Logo from '../components/Logo';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -113,20 +114,19 @@ export default function PublicHome() {
 
   return (
     <div className="min-h-screen bg-brand-cream text-brand-navy font-sans">
-      {/* ================= NAV ================= */}
-      <header className="sticky top-0 z-50 bg-brand-navy/95 backdrop-blur-md border-b border-brand-navy/20 px-6 py-4">
+      {/* ================= NAV (white header w/ official logo) ================= */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-brand-navy/10 px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button onClick={() => setLocation('/')} className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-full bg-brand-gold flex items-center justify-center font-display font-bold text-brand-navy text-lg">O</span>
-            <span className="font-display font-bold tracking-[0.15em] text-white uppercase text-sm">Opus <span className="text-brand-gold">Overseas</span></span>
+          <button onClick={() => setLocation('/')} className="flex items-center">
+            <Logo className="h-9 w-auto" />
           </button>
-          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-white/80">
+          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-brand-navy/80">
             {SERVICES.map((s) => (
               <button key={s.id} onClick={() => setLocation(s.path)} className="hover:text-brand-gold transition-colors">{s.title}</button>
             ))}
           </nav>
           <div className="flex items-center gap-3">
-            <button onClick={() => setLocation('/portal')} className="hidden sm:block text-xs border border-white/25 hover:border-brand-gold px-4 py-2 rounded-full text-white/80 hover:text-brand-gold transition-all">
+            <button onClick={() => setLocation('/portal')} className="hidden sm:block text-xs border border-brand-navy/20 hover:border-brand-gold px-4 py-2 rounded-full text-brand-navy/80 hover:text-brand-gold transition-all">
               Track Journey
             </button>
             <button onClick={() => setLocation('/lead-form')} className="text-xs bg-brand-gold text-brand-navy font-bold px-5 py-2.5 rounded-full shadow-[0_4px_20px_rgba(215,160,25,0.35)] hover:bg-brand-gold-hover hover:text-white transition-all">
@@ -276,10 +276,7 @@ export default function PublicHome() {
       <footer className="border-t border-brand-navy/10 bg-white px-6 py-14">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 text-xs text-brand-textLight">
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-brand-gold flex items-center justify-center font-display font-bold text-brand-navy">O</span>
-              <span className="font-display font-bold tracking-[0.15em] text-brand-navy uppercase">Opus <span className="text-brand-gold">Overseas</span></span>
-            </div>
+            <Logo className="h-8 w-auto" />
             <p className="leading-relaxed">Serving the community of Nizamabad and Telangana with legal, transparent, and top-tier global travel and employment consulting.</p>
           </div>
           <div className="space-y-4">

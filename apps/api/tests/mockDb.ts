@@ -22,7 +22,22 @@
     partners: [] as any[],
     referrals: [] as any[],
     commission_ledger: [] as any[],
-    tasks: [] as any[]
+    tasks: [] as any[],
+    permissions: [
+      { code: 'clients:read', family: 'client', label: 'View', owner_only: false },
+      { code: 'financials:view', family: 'finance', label: 'Owner', owner_only: true }
+    ] as any[],
+    roles: [] as any[],
+    user_roles: [] as any[],
+    interaction_points: [
+      { code: 'website_lead_form', points: 10 },
+      { code: 'consultation_booked', points: 30 }
+    ] as any[],
+    scoring_events: [] as any[],
+    segments: [] as any[],
+    incentive_rules: [] as any[],
+    incentive_entries: [] as any[],
+    payout_statements: [] as any[]
   };
 
   private getTableName(sql: string): string {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
+import RolesTab from '../components/RolesTab';
 
 // API interfaces matching Drizzle schemas & Zod validators
 interface AuditLog {
@@ -44,7 +45,7 @@ const ROLES = [
 
 export default function AdminConsole() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles'>('directory');
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
@@ -384,6 +385,14 @@ export default function AdminConsole() {
             >
               System Audit Logs
             </button>
+            <button
+              onClick={() => setActiveTab('roles')}
+              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                activeTab === 'roles' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Roles & Permissions
+            </button>
           </div>
         </div>
 
@@ -563,6 +572,9 @@ export default function AdminConsole() {
           )}
 
           {/* TAB 3: SYSTEM AUDIT LOGS */}
+          {/* TAB 3.5: ROLES & PERMISSIONS (Section 33) */}
+          {activeTab === 'roles' && <RolesTab />}
+
           {activeTab === 'audit' && (
             <div className="space-y-6">
               
