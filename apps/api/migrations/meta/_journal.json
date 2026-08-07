@@ -50,6 +50,13 @@
       "when": 1786097593479,
       "tag": "0006_swift_karen_page",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1786116267448,
+      "tag": "0007_chilly_songbird",
+      "breakpoints": true
     }
   ]
 }
