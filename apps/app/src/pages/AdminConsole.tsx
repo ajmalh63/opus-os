@@ -4,6 +4,7 @@ import { Link } from 'wouter';
 import RolesTab from '../components/RolesTab';
 import GrowthTab from '../components/GrowthTab';
 import ComplianceTab from '../components/ComplianceTab';
+import FunnelTab from '../components/FunnelTab';
 
 // API interfaces matching Drizzle schemas & Zod validators
 interface AuditLog {
@@ -47,7 +48,7 @@ const ROLES = [
 
 export default function AdminConsole() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'compliance'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance'>('directory');
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
@@ -404,6 +405,14 @@ export default function AdminConsole() {
               Growth & Incentives
             </button>
             <button
+              onClick={() => setActiveTab('funnel')}
+              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                activeTab === 'funnel' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Sales Funnel
+            </button>
+            <button
               onClick={() => setActiveTab('compliance')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
                 activeTab === 'compliance' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -593,6 +602,7 @@ export default function AdminConsole() {
           {/* TAB 3.5: ROLES & PERMISSIONS (Section 33) */}
           {activeTab === 'roles' && <RolesTab />}
           {activeTab === 'growth' && <GrowthTab />}
+          {activeTab === 'funnel' && <FunnelTab />}
           {activeTab === 'compliance' && <ComplianceTab />}
 
           {activeTab === 'audit' && (
