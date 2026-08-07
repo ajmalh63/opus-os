@@ -27,6 +27,16 @@ export interface OpusEnv {
   RAZORPAY_KEY_ID?: string;
   RAZORPAY_KEY_SECRET?: string;
 
+  // Aadhaar eSign provider (Section 11 — CCA/IT-Act-2000 compliant ASP).
+  // Provider-agnostic: any CCA-licensed ESP (surepass | protean | emudhra | veri5).
+  // Pattern: hash-signed token request -> redirect user to provider -> provider
+  // POSTs signed result to ESIGN_CALLBACK_URL -> we verify hash -> finalize.
+  ESIGN_PROVIDER?: string;
+  ESIGN_BASE_URL?: string;
+  ESIGN_API_KEY?: string;
+  ESIGN_SALT?: string;
+  ESIGN_CALLBACK_URL?: string;
+
   // Turnstile
   TURNSTILE_SECRET_KEY?: string;
 

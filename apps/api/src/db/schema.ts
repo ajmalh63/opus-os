@@ -194,6 +194,11 @@ export const agreements = sqliteTable('agreements', {
   status: text('status', { enum: ['draft', 'sent', 'signed', 'active', 'terminated'] }).notNull().default('draft'),
   content: text('content').notNull(),
   esignMethod: text('esign_method', { enum: ['aadhaar', 'otp', 'wet_ink'] }),
+  // Provider-agnostic Aadhaar eSign (Section 11 / gov CCA eSign API): token -> redirect -> callback -> finalize
+  esignProvider: text('esign_provider'), // e.g. 'surepass' | 'protean' | 'emudhra' | 'veri5'
+  esignToken: text('esign_token'),       // provider token (requestId) created on init
+  esignStatus: text('esign_status', { enum: ['none', 'pending', 'signed', 'failed', 'refused'] }).notNull().default('none'),
+  esignSignedDocKey: text('esign_signed_doc_key'), // R2 object key of provider-returned signed PDF
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   sha256Hash: text('sha256_hash'),

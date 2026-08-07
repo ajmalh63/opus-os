@@ -57,6 +57,13 @@
       "when": 1786116267448,
       "tag": "0007_chilly_songbird",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1786116791731,
+      "tag": "0008_sleepy_jackal",
+      "breakpoints": true
     }
   ]
 }
