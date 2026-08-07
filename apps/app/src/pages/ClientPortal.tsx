@@ -28,6 +28,16 @@ interface DocumentRecord {
   uploadedAt: number;
 }
 
+interface PaymentRecord {
+  id: string;
+  amount: number;
+  type: string;
+  milestoneName: string;
+  method: string | null;
+  referenceNumber: string | null;
+  createdAt: number;
+}
+
 interface ClientPortalData {
   success: boolean;
   client: {
@@ -39,6 +49,14 @@ interface ClientPortalData {
   engagements: Engagement[];
   consents: Consent[];
   documents: DocumentRecord[];
+  payments?: PaymentRecord[];
+}
+
+interface SessionResponse {
+  success: boolean;
+  authenticated: boolean;
+  email: string;
+  journeys: ClientPortalData[];
 }
 
 export default function ClientPortal() {
@@ -105,6 +123,88 @@ export default function ClientPortal() {
     showToast('Demo token loaded.');
   };
 
+  // ====== Authenticated "My Journey" (Section 25.4) ======
+  const [loginState, setLoginState] = useState<{ email: string; password: string }>({ email: '', password: '' });
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [claimToken, setClaimToken] = useState('');
+  const [claimPhone, setClaimPhone] = useState('');
+
+  // Fetch authenticated journeys once logged in
+  const { data: sessionData, isFetching: sessionFetching, refetch: refetchSession, error: sessionError, isError: sessionIsError } =
+    useQuery<SessionResponse>({
+      queryKey: ['portalSession', authEmail],
+      queryFn: async () => {
+        if (!authEmail) return null;
+        const res = await fetch('/api/public/portal/session', { credentials: 'include' });
+        if (res.status === 401) {
+          setAuthEmail(null);
+          throw new Error('Session expired. Please sign in again.');
+        }
+        if (!res.ok) throw new Error(await res.text() || 'Failed to load your journeys.');
+        return res.json();
+      },
+      enabled: !!authEmail,
+      retry: false,
+    });
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginState.email || !loginState.password) {
+      showToast('Enter your email and password.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth/sign-in/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: loginState.email, password: loginState.password }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.message || 'Sign-in failed. Check your credentials.');
+      }
+      setAuthEmail(loginState.email);
+      setLoginState({ email: loginState.email, password: '' });
+      showToast('Signed in successfully.');
+    } catch (err: any) {
+      showToast(`Sign-in error: ${err.message}`);
+    }
+  };
+
+  const handleSignOut = () => {
+    fetch('/api/auth/sign-out', { method: 'POST', credentials: 'include' }).catch(() => {});
+    setAuthEmail(null);
+    setLoginState({ email: '', password: '' });
+    showToast('Signed out.');
+  };
+
+  const handleClaim = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!claimToken || !claimPhone) {
+      showToast('Enter your journey token and phone number.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/public/portal/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ token: claimToken, phone: claimPhone }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Claim failed.');
+      }
+      showToast(data.message || 'Journey linked to your account.');
+      setClaimToken('');
+      setClaimPhone('');
+      refetchSession();
+    } catch (err: any) {
+      showToast(`Claim error: ${err.message}`);
+    }
+  };
+
   const stages = [
     { key: 'lead', label: 'Consultation', seq: 1, desc: 'Initial counseling and profile assembly.' },
     { key: 'qualified', label: 'Qualification', seq: 2, desc: 'Eligibility review and documentation checklist.' },
@@ -150,6 +250,86 @@ export default function ClientPortal() {
           </div>
 
           <div className="w-full max-w-md bg-brand-navy p-6 rounded-xl border border-brand-navyLight/60 shadow-xl flex flex-col gap-4">
+            {/* ====== Sign In (My Journey, Section 25.4) ====== */}
+            {!authEmail ? (
+              <form onSubmit={handleSignIn} className="space-y-3">
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-brand-gold font-bold block mb-1">
+                    My Journey Sign In
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@email.com"
+                    value={loginState.email}
+                    onChange={(e) => setLoginState({ ...loginState, email: e.target.value })}
+                    className="w-full text-xs p-3 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                  />
+                </div>
+                <input
+                  type="password"
+                  required
+                  placeholder="Password"
+                  value={loginState.password}
+                  onChange={(e) => setLoginState({ ...loginState, password: e.target.value })}
+                  className="w-full text-xs p-3 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-brand-gold hover:bg-brand-goldHover text-brand-navy py-2.5 rounded text-xs font-bold uppercase tracking-wider transition"
+                >
+                  Sign In to My Journey
+                </button>
+                <p className="text-[10px] text-brand-cream/50 text-center leading-relaxed">
+                  New to the portal? Use the token lookup below first, then link your journey from your dashboard.
+                </p>
+              </form>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wider text-brand-gold font-bold">
+                    Signed in as {authEmail}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="text-[10px] text-brand-error hover:underline font-semibold"
+                  >
+                    Sign out
+                  </button>
+                </div>
+
+                {/* Claim journey token */}
+                <form onSubmit={handleClaim} className="space-y-2 border-t border-brand-navyLight pt-3">
+                  <span className="text-[10px] uppercase tracking-wider text-brand-cream/60 font-semibold block">
+                    Link your journey token
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Token (OP-2026-XXXX)"
+                    value={claimToken}
+                    onChange={(e) => setClaimToken(e.target.value)}
+                    className="w-full text-xs p-2.5 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Phone (as registered)"
+                    value={claimPhone}
+                    onChange={(e) => setClaimPhone(e.target.value)}
+                    className="w-full text-xs p-2.5 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full border border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-navy py-2 rounded text-[10px] font-bold uppercase tracking-wider transition"
+                  >
+                    Link to My Account
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+
+          <div className="w-full max-w-md bg-brand-navy/70 p-5 rounded-xl border border-brand-navyLight/40 shadow-lg">
             <form onSubmit={handleSearchSubmit} className="space-y-3">
               <div>
                 <label className="text-[10px] uppercase tracking-wider text-brand-gold font-bold block mb-1">
@@ -213,6 +393,136 @@ export default function ClientPortal() {
               <p className="font-bold">Lookup Unsuccessful</p>
               <p className="text-[11px] opacity-80">{error?.message || 'Verification timed out. Check token formatting.'}</p>
             </div>
+          </div>
+        )}
+
+        {sessionIsError && (
+          <div className="p-5 bg-brand-error/10 border border-brand-error/20 text-brand-error rounded-xl text-xs flex items-center gap-3">
+            <span className="text-lg">⚠️</span>
+            <div>
+              <p className="font-bold">My Journey Unavailable</p>
+              <p className="text-[11px] opacity-80">{sessionError?.message || 'Could not load your journeys.'}</p>
+            </div>
+          </div>
+        )}
+
+        {sessionFetching && authEmail && (
+          <div className="py-16 text-center space-y-4">
+            <div className="w-10 h-10 border-4 border-brand-gold border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-xs text-brand-cream/70 font-medium">Loading your journeys...</p>
+          </div>
+        )}
+
+        {/* ====== MY JOURNEY (Authenticated, Section 25.4) ====== */}
+        {sessionData && sessionData.authenticated && (
+          <div className="space-y-8">
+            <div className="border-b border-brand-navyLight pb-3">
+              <h2 className="font-display font-bold text-lg text-white flex items-center gap-2">
+                My Journey Dashboard
+                <span className="text-[9px] bg-brand-gold/15 text-brand-gold px-2 py-0.5 rounded-full uppercase tracking-wider">Authenticated</span>
+              </h2>
+              <p className="text-[11px] text-brand-cream/50 mt-1">{sessionData.email}</p>
+            </div>
+
+            {sessionData.journeys.length === 0 && (
+              <div className="text-center border-2 border-dashed border-brand-navyLight rounded-xl p-10 bg-brand-navy/10">
+                <div className="text-3xl mb-3">🗂️</div>
+                <h3 className="font-display font-semibold text-sm text-white">No journeys yet</h3>
+                <p className="text-[11px] text-brand-cream/50 mt-1 max-w-sm mx-auto">
+                  Use the "Link your journey token" box to attach a token to this account, or enroll through our services to begin.
+                </p>
+              </div>
+            )}
+
+            {sessionData.journeys.map((journey, jIdx) => (
+              <div key={jIdx} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                  <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl">
+                    <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest block">Client profile</span>
+                    <h3 className="font-display font-bold text-lg text-white mt-1">{journey.client.name}</h3>
+                    <p className="text-[10px] text-brand-cream/60 mt-0.5">Account ID: {journey.client.id}</p>
+                    <p className="text-[10px] text-brand-cream/50 mt-1">{journey.client.email}</p>
+                  </div>
+
+                  {/* Payments summary (Section 25.4) */}
+                  <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl">
+                    <h4 className="font-display font-semibold text-xs text-white uppercase tracking-wider">Payment Overview</h4>
+                    {journey.payments && journey.payments.length > 0 ? (
+                      <div className="mt-3 space-y-2.5">
+                        {journey.payments.map((p, i) => (
+                          <div key={i} className="flex justify-between items-center text-xs border-b border-brand-navyLight/40 pb-2">
+                            <span className="text-brand-cream/70">{p.milestoneName || p.type}</span>
+                            <span className={`font-mono font-bold ${p.type === 'receipt' ? 'text-brand-success' : 'text-brand-error'}`}>
+                              {p.type === 'receipt' ? '-' : '+'}₹{(p.amount / 100).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-brand-cream/40 mt-2">No payments recorded.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8">
+                  {journey.engagements.map((eng) => {
+                    const currentIdx = stages.findIndex(s => s.key === eng.stageKey);
+                    return (
+                      <div key={eng.id} className="bg-brand-navy/40 border border-brand-navyLight p-6 md:p-8 rounded-2xl flex flex-col gap-6">
+                        <div className="flex justify-between items-start border-b border-brand-navyLight pb-4 flex-wrap gap-2">
+                          <div>
+                            <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest bg-brand-gold/10 px-2 py-0.5 rounded">
+                              {eng.division.replace('-', ' ')}
+                            </span>
+                            <h3 className="font-display font-extrabold text-lg text-white mt-2">{eng.title}</h3>
+                            <p className="text-[10px] text-brand-cream/60 mt-0.5">
+                              Status: <span className="font-semibold uppercase text-brand-gold">{eng.status}</span>
+                            </p>
+                          </div>
+                          {eng.outstandingBalance > 0 && (
+                            <div className="text-right">
+                              <span className="text-[9px] text-brand-cream/50 uppercase tracking-wider block">Outstanding</span>
+                              <span className="text-brand-error font-mono font-bold text-lg">₹{(eng.outstandingBalance / 100).toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-gold mb-5">Journey Progress</h4>
+                          <div className="relative pl-6 space-y-6 text-xs">
+                            <div className="absolute left-[7px] top-1.5 bottom-1.5 w-[2px] bg-brand-navyLight"></div>
+                            {stages.map((stage, idx) => {
+                              const isCompleted = idx < currentIdx;
+                              const isActive = idx === currentIdx;
+                              return (
+                                <div key={stage.key} className={`relative flex gap-3 flex-col transition duration-300 ${!isCompleted && !isActive ? 'opacity-40' : ''}`}>
+                                  <span className={`absolute -left-6 w-4.5 h-4.5 rounded-full text-[9px] flex items-center justify-center font-bold font-mono transition border ${
+                                    isCompleted ? 'bg-brand-success border-brand-success text-brand-navy'
+                                    : isActive ? 'bg-brand-gold border-brand-gold text-brand-navy animate-pulse'
+                                    : 'bg-[#070B19] border-brand-navyLight text-brand-cream/40'
+                                  }`}>
+                                    {isCompleted ? '✓' : stage.seq}
+                                  </span>
+                                  <div>
+                                    <h5 className={`font-bold ${isActive ? 'text-brand-gold text-sm' : 'text-white'}`}>{stage.label}</h5>
+                                    <p className="text-[10px] text-brand-cream/60 mt-0.5">{stage.desc}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {journey.engagements.length === 0 && (
+                    <div className="bg-brand-navy/40 border border-brand-navyLight p-8 rounded-2xl text-center">
+                      <p className="text-xs text-brand-cream/50">No active journeys for this client record.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

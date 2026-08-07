@@ -28,6 +28,22 @@ vi.mock('../src/auth.js', () => {
                 }
               };
             }
+            if (token === 'token-client') {
+              return {
+                user: {
+                  id: "client-user-1",
+                  name: "Suresh Kumar",
+                  email: "suresh@test.com",
+                  role: "client",
+                  userDivisions: JSON.stringify([])
+                },
+                session: {
+                  id: "session-client",
+                  token,
+                  userId: "client-user-1"
+                }
+              };
+            }
             return null;
           }
         }
@@ -148,5 +164,55 @@ describe('Public Client Portal & Partner Referral Tracking Integration Tests', (
     expect(ref.partner_id).toBe(partnerId);
     expect(ref.client_id).toBe("OP-2026-5555");
     expect(ref.commission_rate).toBe(8);
+  });
+
+  it('GET /api/public/portal/session returns journeys for the authenticated client', async () => {
+    const res = await app.request('/api/public/portal/session', {
+      headers: { 'Cookie': 'better-auth.session_token=token-client' }
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(data.authenticated).toBe(true);
+    expect(data.journeys.length).toBeGreaterThan(0);
+    expect(data.journeys[0].client.email).toBe("suresh@test.com");
+    expect(data.journeys[0].engagements[0].title).toBe("German Masters Application");
+  });
+
+  it('GET /api/public/portal/session rejects unauthenticated requests', async () => {
+    const res = await app.request('/api/public/portal/session', {}, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(res.status).toBe(401);
+  });
+
+  it('POST /api/public/portal/claim links a token to the authenticated account when phone matches', async () => {
+    const res = await app.request('/api/public/portal/claim', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'better-auth.session_token=token-client'
+      },
+      body: JSON.stringify({ token: "OP-2026-5555", phone: "+91 99999 44444" })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(data.journey.client.id).toBe("OP-2026-5555");
+    // email now bound to the authenticated user
+    expect(data.journey.client.email).toBe("suresh@test.com");
+  });
+
+  it('POST /api/public/portal/claim rejects mismatched phone', async () => {
+    const res = await app.request('/api/public/portal/claim', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'better-auth.session_token=token-client'
+      },
+      body: JSON.stringify({ token: "OP-2026-5555", phone: "+91 11111 22222" })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+
+    expect(res.status).toBe(403);
   });
 });
