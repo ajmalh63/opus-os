@@ -17,9 +17,11 @@ import { razorpayRouter, razorpayWebhookRouter } from './routes/razorpay.js';
 import { marketingRouter } from './routes/marketing.js';
 import { incentivesRouter, staffIncentivesRouter } from './routes/incentives.js';
 import { complianceRouter } from './routes/compliance.js';
+import { infraRouter } from './routes/infra.js';
+import { OpusEnv } from './types.js';
 import { adminRouter } from './routes/admin.js';
 
-const app = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string } }>();
+const app = new Hono<{ Bindings: OpusEnv }>();
 
 // Global Error Handler
 app.onError((err, c) => {
@@ -72,6 +74,9 @@ app.use('/api/incentives/*', rbacMiddleware(['super_admin', 'manager'], true));
 
 app.use('/api/compliance', rbacMiddleware(['super_admin', 'manager'], true));
 app.use('/api/compliance/*', rbacMiddleware(['super_admin', 'manager'], true));
+
+app.use('/api/infrastructure', rbacMiddleware(['super_admin'], true));
+app.use('/api/infrastructure/*', rbacMiddleware(['super_admin'], true));
 // Staff self-view of their own incentive accrual (Section 29.2#8 transparency)
 app.use('/api/staff/incentives', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
 app.use('/api/staff/incentives/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
@@ -96,6 +101,7 @@ app.route('/api/marketing', marketingRouter);
 app.route('/api/incentives', incentivesRouter);
 app.route('/api/staff/incentives', staffIncentivesRouter);
 app.route('/api/compliance', complianceRouter);
+app.route('/api/infrastructure', infraRouter);
 app.route('/api/admin', adminRouter);
 app.route('/api/admin/rbac', rbacRouter);
 
