@@ -7,6 +7,9 @@ workers_dev = true
 [vars]
 ENVIRONMENT = "development"
 TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA" # Local Turnstile mock test key
+# Resume parser mode (B-3). Dev/local default = "mock" (explicitly labeled demo data).
+# Production MUST set MANPOWER_AI = "real" and implement the Workers AI path.
+MANPOWER_AI = "mock"
 
 [[d1_databases]]
 binding = "DB"

@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { createDepartureSchema, bookSeatSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
-import { groupDepartures, seatBookings, clients } from '../db/schema.js';
+import { groupDepartures, seatBookings, clients, engagements, payments } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 export const umrahRouter = new Hono<{ Bindings: { DB: D1Database } }>();
@@ -100,10 +100,38 @@ umrahRouter.post('/departures/:id/book', zValidator('json', bookSeatSchema), asy
         .where(eq(groupDepartures.id, departureId));
     }
 
+    // 5. Create payment ledger entry for the booking fee (int paise, stored on
+    //    the departure) so the seat fee is charged/tracked in the ledger.
+    //    payments.engagementId is NOT NULL but the book payload only carries
+    //    clientId, so resolve the client's primary engagement; if the client
+    //    has none, skip the charge gracefully (seat booking still succeeds).
+    const clientEngagement = await db
+      .select()
+      .from(engagements)
+      .where(eq(engagements.clientId, data.clientId))
+      .get();
+
+    let paymentId: string | null = null;
+    if (clientEngagement) {
+      paymentId = crypto.randomUUID();
+      await db.insert(payments).values({
+        id: paymentId,
+        clientId: data.clientId,
+        engagementId: clientEngagement.id,
+        amount: dep.bookingFee,
+        type: 'charge',
+        milestoneName: `Umrah seat booking ${departureId}`,
+        method: 'bank_transfer',
+        referenceNumber: bookingId,
+        createdAt: Math.floor(Date.now() / 1000)
+      });
+    }
+
     return c.json({
       success: true,
       bookingId,
       status,
+      ...(paymentId ? { paymentId } : {}),
       message: hasSeats 
         ? "Seat booked and confirmed." 
         : "Departure full. Added to waiting list."

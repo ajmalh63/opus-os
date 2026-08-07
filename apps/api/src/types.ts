@@ -35,4 +35,8 @@ export interface OpusEnv {
 
   // Environment
   ENVIRONMENT?: string;
+
+  // Resume parser mode (B-3). 'mock' = explicitly labeled demo data only;
+  // 'real' = Workers AI parsing (must be implemented; fails loud 501 if not).
+  MANPOWER_AI?: 'mock' | 'real';
 }

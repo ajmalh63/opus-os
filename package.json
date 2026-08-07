@@ -4,6 +4,8 @@
   "packageManager": "pnpm@10.2.1",
   "scripts": {
     "dev": "pnpm --filter api run dev",
-    "test": "pnpm --filter api run test"
+    "test": "pnpm --filter api run test",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build"
   }
 }

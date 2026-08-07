@@ -71,7 +71,7 @@ describe('Manpower Candidates Hub & Workers AI Resume Parser Tests', () => {
     expect(res.status).toBe(401);
   });
 
-  it('POST /api/manpower/resume/parse should extract fields using Workers AI mock logic', async () => {
+  it('POST /api/manpower/resume/parse should extract fields using workers mock logic (mocked flag set)', async () => {
     const formData = new FormData();
     formData.append('resume', new Blob(['fake-resume-pdf-content'], { type: 'application/pdf' }), 'priya_patel_resume.pdf');
 
@@ -81,14 +81,38 @@ describe('Manpower Candidates Hub & Workers AI Resume Parser Tests', () => {
         'Cookie': 'better-auth.session_token=token-counselor'
       },
       body: formData
-    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret', MANPOWER_AI: 'mock' });
 
     expect(res.status).toBe(200);
     const data = await res.json() as any;
     expect(data.success).toBe(true);
+    expect(data.mocked).toBe(true);
     expect(data.parsedData.name).toBe("Priya Patel");
     expect(data.parsedData.email).toBe("priya.patel@example.com");
     expect(data.parsedData.skills).toContain("React");
+    // candidate key must be present in mock responses too (frontend contract)
+    expect(data.candidate.name).toBe("Priya Patel");
+  });
+
+  it('POST /api/manpower/resume/parse should return 501 (fail loud, no fake data) when MANPOWER_AI=real without AI implementation', async () => {
+    const formData = new FormData();
+    formData.append('resume', new Blob(['fake-resume-pdf-content'], { type: 'application/pdf' }), 'aditya_verma_resume.pdf');
+
+    const res = await app.request('/api/manpower/resume/parse', {
+      method: 'POST',
+      headers: {
+        'Cookie': 'better-auth.session_token=token-counselor'
+      },
+      body: formData
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret', MANPOWER_AI: 'real' });
+
+    expect(res.status).toBe(501);
+    const data = await res.json() as any;
+    expect(data.error).toContain('MANPOWER_AI=real');
+    expect(data.success).toBeUndefined();
+    expect(data.mocked).toBeUndefined();
+    expect(data.candidate).toBeUndefined();
+    expect(data.parsedData).toBeUndefined();
   });
 
   it('GET /api/manpower/candidates should retrieve all manpower division candidates', async () => {

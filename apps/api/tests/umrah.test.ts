@@ -48,6 +48,13 @@ describe('Umrah Group Departure Capacity & Booking Integration Tests', () => {
       { id: "OP-2026-8002", name: "Pilgrim Two", phone: "+91 99999 77777", email: "p2@test.com", created_at: 0, updated_at: 0 }
     );
 
+    // Seed active engagements so seat bookings can attach a payment charge
+    const now = Math.floor(Date.now() / 1000);
+    mockD1.tables.engagements.push(
+      { id: "eng-8001", client_id: "OP-2026-8001", division: "umrah", title: "Umrah Pilgrimage", stage_key: "lead", outstanding_balance: 0, status: "active", created_at: now, updated_at: now },
+      { id: "eng-8002", client_id: "OP-2026-8002", division: "umrah", title: "Umrah Pilgrimage", stage_key: "lead", outstanding_balance: 0, status: "active", created_at: now, updated_at: now }
+    );
+
     // Seed a scheduled departure with 29 booked seats (capacity = 30)
     mockD1.tables.group_departures.push({
       id: "dep-almost-full",
@@ -83,10 +90,20 @@ describe('Umrah Group Departure Capacity & Booking Integration Tests', () => {
     const data = await res.json() as any;
     expect(data.success).toBe(true);
     expect(data.status).toBe('confirmed'); // Confirmed booking!
+    expect(data.paymentId).toBeTruthy(); // Booking fee charge was created
 
     // Verify database booked_seats incremented to 30
     const dep = mockD1.tables.group_departures.find(d => d.id === 'dep-almost-full');
     expect(dep?.booked_seats).toBe(30);
+
+    // Verify a payment charge row exists: amount = booking_fee, reference = seat booking id
+    const payment = mockD1.tables.payments.find(p => p.client_id === 'OP-2026-8001');
+    expect(payment).toBeTruthy();
+    expect(payment?.amount).toBe(1000000); // 10k INR booking fee in paise
+    expect(payment?.reference_number).toBe(data.bookingId);
+    expect(payment?.type).toBe('charge');
+    expect(payment?.milestone_name).toBe('Umrah seat booking dep-almost-full');
+    expect(payment?.engagement_id).toBe('eng-8001');
   });
 
   it('POST /api/umrah/departures/:id/book should place pilgrim on waitlist if capacity is full', async () => {
@@ -110,5 +127,12 @@ describe('Umrah Group Departure Capacity & Booking Integration Tests', () => {
     // Verify database booked_seats stayed at 30 (prevented overbooking!)
     const dep = mockD1.tables.group_departures.find(d => d.id === 'dep-almost-full');
     expect(dep?.booked_seats).toBe(30);
+
+    // Verify a payment charge row is also created for the waitlisted booking
+    const payment = mockD1.tables.payments.find(p => p.client_id === 'OP-2026-8002');
+    expect(payment).toBeTruthy();
+    expect(payment?.amount).toBe(1000000);
+    expect(payment?.reference_number).toBe(data.bookingId);
+    expect(payment?.type).toBe('charge');
   });
 });

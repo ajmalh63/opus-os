@@ -3,7 +3,28 @@ import { getDb } from '../db/client.js';
 import { clients, engagements } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
-export const manpowerRouter = new Hono<{ Bindings: { DB: D1Database; AI?: any } }>();
+export const manpowerRouter = new Hono<{ Bindings: { DB: D1Database; MANPOWER_AI?: 'mock' | 'real' } }>();
+
+// Explicitly labeled demo candidates (B-3). Only used when MANPOWER_AI !== 'real'.
+// Never presented as a real Workers AI result.
+const MOCK_CANDIDATES = {
+  default: {
+    name: "Aditya Verma",
+    email: "aditya.verma@example.com",
+    phone: "+91 98989 12345",
+    skills: ["Java", "Spring Boot", "Docker", "Kubernetes", "SQL"],
+    experience: ["Software Engineer at Infosys (2 years)", "Intern at Tech Solutions (6 months)"],
+    education: "B.Tech in Computer Science from NIT Nagpur"
+  },
+  priya: {
+    name: "Priya Patel",
+    email: "priya.patel@example.com",
+    phone: "+91 97979 54321",
+    skills: ["React", "TypeScript", "Tailwind CSS", "Redux", "Figma"],
+    experience: ["Frontend Developer at Wipro (3 years)"],
+    education: "B.E. in Information Technology from Pune University"
+  }
+};
 
 // POST /api/manpower/resume/parse (Workers AI Resume Parser)
 manpowerRouter.post('/resume/parse', async (c) => {
@@ -15,45 +36,30 @@ manpowerRouter.post('/resume/parse', async (c) => {
       return c.json({ error: "No resume file uploaded." }, 400);
     }
 
-    // Fallback Mock Parsed Candidate Data (simulating Llama-3 parsing extraction)
+    // B-3: demo data must never run silently in production paths.
+    // When MANPOWER_AI=real, only a real Workers AI parse is acceptable. The
+    // Workers AI resume parser is NOT implemented, so fail LOUD (501) instead
+    // of returning the hardcoded fake candidate.
+    if (c.env.MANPOWER_AI === 'real') {
+      return c.json(
+        { error: "MANPOWER_AI=real configured but Workers AI call not implemented" },
+        501
+      );
+    }
+
+    // Mock mode (MANPOWER_AI !== 'real', e.g. dev default "mock"): return the
+    // training/demo candidate wrapped so the response is EXPLICITLY demo data.
     const fileNameLower = file.name?.toLowerCase() || '';
-    let parsedData = {
-      name: "Aditya Verma",
-      email: "aditya.verma@example.com",
-      phone: "+91 98989 12345",
-      skills: ["Java", "Spring Boot", "Docker", "Kubernetes", "SQL"],
-      experience: ["Software Engineer at Infosys (2 years)", "Intern at Tech Solutions (6 months)"],
-      education: "B.Tech in Computer Science from NIT Nagpur"
-    };
-
-    // If the file name is customized, we can vary the mock results to make the tests dynamic
-    if (fileNameLower.includes('priya')) {
-      parsedData = {
-        name: "Priya Patel",
-        email: "priya.patel@example.com",
-        phone: "+91 97979 54321",
-        skills: ["React", "TypeScript", "Tailwind CSS", "Redux", "Figma"],
-        experience: ["Frontend Developer at Wipro (3 years)"],
-        education: "B.E. in Information Technology from Pune University"
-      };
-    }
-
-    // Workers AI integration path (Production code outline)
-    if (c.env.AI) {
-      try {
-        // Run Cloudflare Llama model to parse candidate details
-        // const response = await c.env.AI.run('@cf/meta/llama-3-8b-instruct', {
-        //   prompt: `Extract structured name, email, phone, skills, experience, and education from resume text: ${file.name}`
-        // });
-      } catch (aiError) {
-        // Fall back gracefully to structured parser mapping
-      }
-    }
+    const mockCandidate = fileNameLower.includes('priya')
+      ? MOCK_CANDIDATES.priya
+      : MOCK_CANDIDATES.default;
 
     return c.json({
       success: true,
-      parsedData,
-      message: "Resume processed and structured by Workers AI parser."
+      mocked: true,
+      candidate: mockCandidate,
+      parsedData: mockCandidate,
+      message: "Resume processed by mock parser (MANPOWER_AI != 'real'). DEMO DATA — not a real parsing result."
     });
 
   } catch (error: any) {

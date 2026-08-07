@@ -8,7 +8,7 @@ import { eq, and } from 'drizzle-orm';
 export const rbacRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
 
 // Seed permission catalog (Section 33.2 - atomic permissions)
-const PERMISSION_SEED: { code: string; family: string; label: string; ownerOnly?: boolean }[] = [
+export const PERMISSION_SEED: { code: string; family: string; label: string; ownerOnly?: boolean }[] = [
   { code: 'clients:read', family: 'client', label: 'View client records' },
   { code: 'clients:write', family: 'client', label: 'Create / edit clients' },
   { code: 'kanban:view', family: 'operational', label: 'View pipeline boards' },
@@ -28,6 +28,14 @@ const PERMISSION_SEED: { code: string; family: string; label: string; ownerOnly?
   { code: 'settings:edit', family: 'admin', label: 'Edit business profile / system config', ownerOnly: true },
 ];
 
+export const ROLES_SEED: { id: string; name: string; code: string; perms: string[]; desc: string }[] = [
+  { id: 'role-super-admin', name: 'Super Admin (Owner)', code: 'super_admin', perms: PERMISSION_SEED.map(p => p.code), desc: 'Full system access (owner).' },
+  { id: 'role-manager', name: 'Manager / Team Lead', code: 'manager', perms: ['clients:read','clients:write','kanban:read','kanban:move','documents:manage','agreements:manage','consents:manage','payments:enter','tasks:manage','marketing:run','approvals:manage'], desc: 'Runs daily operations without owner financials.' },
+  { id: 'role-counselor', name: 'Counselor', code: 'counselor', perms: ['clients:read','clients:write','kanban:read','kanban:move','documents:manage','agreements:manage','consents:manage','payments:enter','tasks:manage'], desc: 'Client-facing counselor.' },
+  { id: 'role-receptionist', name: 'Receptionist', code: 'receptionist', perms: ['clients:read','payments:enter','tasks:manage'], desc: 'Front desk.' },
+  { id: 'role-coordinator', name: 'Coordinator', code: 'coordinator', perms: ['clients:read','kanban:read','documents:manage','tasks:manage'], desc: 'Back-office operations.' },
+];
+
 // POST /api/admin/rbac/seed - idempotently ensure permission + default roles (owner-only via mount)
 rbacRouter.post('/seed', async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
@@ -42,15 +50,7 @@ rbacRouter.post('/seed', async (c) => {
       }).onConflictDoNothing();
     }
 
-    const roles_seed_array = [
-      { id: 'role-super-admin', name: 'Super Admin (Owner)', code: 'super_admin', perms: PERMISSION_SEED.map(p => p.code), desc: 'Full system access (owner).' },
-      { id: 'role-manager', name: 'Manager / Team Lead', code: 'manager', perms: ['clients:read','clients:write','kanban:read','kanban:move','documents:manage','agreements:manage','consents:manage','payments:enter','tasks:manage','marketing:run','approvals:manage'], desc: 'Runs daily operations without owner financials.' },
-      { id: 'role-counselor', name: 'Counselor', code: 'counselor', perms: ['clients:read','clients:write','kanban:read','kanban:move','documents:manage','agreements:manage','consents:manage','payments:enter','tasks:manage'], desc: 'Client-facing counselor.' },
-      { id: 'role-receptionist', name: 'Receptionist', code: 'receptionist', perms: ['clients:read','payments:enter','tasks:manage'], desc: 'Front desk.' },
-      { id: 'role-coordinator', name: 'Coordinator', code: 'coordinator', perms: ['clients:read','kanban:read','documents:manage','tasks:manage'], desc: 'Back-office operations.' },
-    ];
-
-    for (const r of roles_seed_array) {
+    for (const r of ROLES_SEED) {
       await db.insert(roles).values({
         id: r.id, name: r.name, code: r.code, description: r.desc,
         permissionsJson: JSON.stringify(r.perms), system: true, editable: false,
