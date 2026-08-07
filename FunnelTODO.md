@@ -14,17 +14,22 @@ Built (this set, committed):
   counselor allowed for the lead's division (empty user_divisions = all divisions).
 - **Stale-lead reactivation**: `POST /api/marketing/stale/:clientId/reactivate` → 24h
   high-priority re-engagement task (shared `services/leadAssignment.ts`) + `stale_reactivated`
-  scoring event that exits the lead from the stale queue. Reactivate button in FunnelTab.
+  scoring event that exits the lead from the stale queue. Action button in FunnelTab.
+- **WhatsApp re-nurture engine (Funnel#4)**: DPDP-gated (whatsapp-updates consent) 4-stage
+  sequence (`value→case_study→offer→final` across Day0/3/5/12) via `nurture_touches` +
+  `GET /api/marketing/nurture/due` (consumer poll) + `POST /:id/send`. wa.me CTA on
+  PublicHome hero + PublicLeadForm.
+- **A/B experiment harness (Funnel#5, ab-test-setup skill)**: gated CRUD (hypothesis /
+  primaryMetric / baselineRate / MDE required before create), public sticky variant
+  assignment, per-variant stats in FunnelTab. No uncommitted experiment is force-launched.
 
 ## Not yet built (next sessions)
 
-1. ~~**15-min speed-to-lead SLA task**~~ ✅ DONE (leads.ts)
-2. ~~**Stale-lead recovery action**~~ ✅ DONE (marketing.ts + FunnelTab button)
-3. **FunnelTab UI** ✅ DONE (AdminConsole "Sales Funnel" tab)
-4. **WhatsApp-centric messaging** — the business runs on WhatsApp; add click-to-chat CTA
-   + WhatsApp-consented re-nurture sequence (multi-touch: Day 1 value, Day 3 case study,
-   Day 5 consultation offer) wired into stale reactivation. Needs Listmonk/OpenWA on VPC.
-5. **A/B tests** — subject lines / lead form variants via `ab-test-setup` skill.
+1. ~~**15-min speed-to-lead SLA task**~~ ✅
+2. ~~**Stale-lead recovery action**~~ ✅
+3. ~~**FunnelTab UI**~~ ✅
+4. ~~**WhatsApp-centric messaging**~~ ✅ (engine + wa.me; actual dispatch needs Listmonk/OpenWA consumer on Oracle VPC)
+5. ~~**A/B tests**~~ ✅ (harness built; launch a real experiment once traffic + a locked hypothesis exist)
 
 ## Design references
 - Lead Lifecycle / scoring / routing: `skills/revops` (MQL → SQL → Opportunity → Customer)
