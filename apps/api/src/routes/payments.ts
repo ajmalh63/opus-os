@@ -4,6 +4,7 @@ import { createPaymentSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
 import { payments, engagements, milestones } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { auditEvent } from '../middleware/audit.js';
 
 export const paymentsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -133,6 +134,18 @@ paymentsRouter.post('/', zValidator('json', createPaymentSchema), async (c) => {
         updatedAt: Math.floor(Date.now() / 1000)
       })
       .where(eq(engagements.id, data.engagementId));
+
+    // Audit trail (DPDP): ledger entry + balance transition are regulatory facts.
+    await auditEvent(c, {
+      action: 'PAYMENT_ENTER',
+      entityName: 'payments',
+      entityId: paymentId,
+      afterState: {
+        clientId: data.clientId, engagementId: data.engagementId,
+        amount: data.amount, type: data.type, method: data.method,
+        newBalance, gst: { cgst: gstInfo.cgst, sgst: gstInfo.sgst, igst: gstInfo.igst },
+      },
+    });
 
     return c.json({
       success: true,

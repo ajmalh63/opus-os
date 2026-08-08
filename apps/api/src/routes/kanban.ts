@@ -4,6 +4,7 @@ import { moveCardSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
 import { engagements, pipelineStages, clients, auditLog } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
+import { auditBegin } from '../middleware/audit.js';
 
 export const kanbanRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -101,10 +102,12 @@ kanbanRouter.post('/board/move', zValidator('json', moveCardSchema), async (c) =
       })
       .where(eq(engagements.id, data.cardId));
 
-    // 5. Record change in audit log
+    // 5. Record change in audit log (actorId from live session)
     const ipAddress = c.req.header('x-real-ip') || c.req.header('cf-connecting-ip') || '127.0.0.1';
+    const { actorId } = await auditBegin(c);
     await db.insert(auditLog).values({
       id: crypto.randomUUID(),
+      actorId,
       action: 'STAGE_CHANGE',
       entityName: 'engagements',
       entityId: data.cardId,

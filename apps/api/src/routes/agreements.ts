@@ -5,6 +5,7 @@ import { getDb } from '../db/client.js';
 import { agreements, agreementTemplates, clauseLibrary, clients, consents, referrals, commissionLedger, payments, engagements } from '../db/schema.js';
 import { eq, inArray } from 'drizzle-orm';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
+import { auditEvent } from '../middleware/audit.js';
 
 export const agreementsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -253,6 +254,17 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
     } catch (handErr: any) {
       console.error('agreement handover task failed', handErr?.message);
     }
+
+    // Audit trail (DPDP): agreement execution is a legal evidence event.
+    await auditEvent(c, {
+      action: 'AGREEMENT_SIGNED',
+      entityName: 'agreements',
+      entityId: agreement.id,
+      afterState: {
+        clientId: agreement.clientId, esignMethod: data.esignMethod,
+        signedAt: Math.floor(Date.now() / 1000),
+      },
+    });
 
     return c.json({
       success: true,

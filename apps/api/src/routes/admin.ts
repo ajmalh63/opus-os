@@ -5,6 +5,7 @@ import { getDb } from '../db/client.js';
 import { users, auditLog } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { getAuth } from '../auth.js';
+import { auditEvent } from '../middleware/audit.js';
 
 export const adminRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string } }>();
 
@@ -111,6 +112,14 @@ adminRouter.post('/staff/:id/scope', async (c) => {
         updatedAt: new Date()
       })
       .where(eq(users.id, staffId));
+
+    // Audit: division scope changes alter what data staff can touch.
+    await auditEvent(c, {
+      action: 'STAFF_SCOPE_UPDATE',
+      entityName: 'users',
+      entityId: staffId,
+      afterState: { userDivisions: body.userDivisions },
+    });
 
     return c.json({ success: true, message: "Staff division scopes updated successfully." });
   } catch (error: any) {

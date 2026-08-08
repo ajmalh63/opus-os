@@ -4,6 +4,7 @@ import { getDb } from '../db/client.js';
 import { getAuth } from '../auth.js';
 import { clients, engagements, consents, documents, communications, users } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
+import { auditEvent } from '../middleware/audit.js';
 
 export const clientsRouter = new Hono<{ Bindings: { DB: D1Database; BUCKET: R2Bucket; BETTER_AUTH_SECRET: string } }>();
 
@@ -180,6 +181,14 @@ clientsRouter.put('/:id/documents/upload', async (c) => {
       version,
       status: 'pending',
       uploadedAt: Math.floor(Date.now() / 1000)
+    });
+
+    // Audit trail: document versions are evidence-class (vault integrity).
+    await auditEvent(c, {
+      action: 'DOC_UPLOAD',
+      entityName: 'documents',
+      entityId: docId,
+      afterState: { clientId: id, fileName: filename, r2Key, version, status: 'pending' },
     });
 
     return c.json({
