@@ -12,9 +12,35 @@ account and are intentionally not used).**
 - **Webhook contract (commit 387e9b6):** `X-WA-Signature` = HMAC-SHA256(body, secret)
   OR `X-Webhook-Secret` plaintext; parses Meta + OpenWA `message.received` envelope.
 - Worker inbound requires `pnpm exec wrangler dev --ip 0.0.0.0`.
+- Worker inbound requires `pnpm exec wrangler dev --ip 0.0.0.0`.
 - **TODO:** OpenWA webhook REGISTRATION returns 500 (webhooks FK vs session across
   split sqlite files after container recreate) — needs a clean session re-start on
   the box. Send path is test-ready (`X-API-Key` + `/api/sessions/main/messages/send-text`).
+
+## ★ Chatwoot — PROVISIONED + frontend wired (commit 93e437b)
+- **Provisioned on VPS (chatwoot/chatwoot:latest):**
+  - Super admin: `ops@opusoverseas.com` / `ChatwootOps2026!` (account_id 1)
+  - Agent: `agent@opusoverseas.com` / `AgentPass2026!` — API token
+    `Dgx11Tq7HXFoHFwcCk2ShZ2T` (account-scoped, administrator on acc 1)
+  - Platform token (superadmin scope): `CWF9xBB6o6M2X1BKyWKRZZHX`
+  - **Widget inbox:** "Opus Website Chat" (inbox_id 1) — channel is
+    `Channel::WebWidget`, **website_token = `f36574fb918873fbba2749b6a2f18ac6`**
+  - `FRONTEND_URL` fixed to `http://100.87.71.38:3200` (was localhost)
+  - SDK reachable: `http://100.87.71.38:3200/packs/js/sdk.js` (HTTP 200)
+- **Frontend:** `ChatWidget.tsx` injects the official SDK on PublicHome +
+  division pages; token/base URL overridable via
+  `VITE_CHATWOOT_BASE_URL` / `VITE_CHATWOOT_WEBSITE_TOKEN`.
+- **TODO (one-time UI step):** open Chatwoot → Inbox Settings → **Webhooks** →
+  add `http://100.69.139.47:8787/api/webhooks/chatwoot` (the API route
+  `POST /api/webhooks/chatwoot` exists + secret-verified + persists to
+  `conversations`; `register_webhook` API 400'd on this build — easiest via UI).
+
+## ✅ Cal.diy — reachable, embed ready (frontend wired)
+- Web at `http://100.87.71.38:3000`, API v2 `:3201`, studio `:5555` (verified 200).
+- **Frontend:** "Pick a Time" CTA (gold outline) renders in the home CTA band
+  when `VITE_BOOKING_URL` is set (deep-link to a Cal.diy booking page).
+- **TODO (needs you):** create the Cal.diy super admin + first event type in
+  its UI (`/setup`), then paste the event/booking URL into `VITE_BOOKING_URL`.
 
 ## 0 ✅ VPS lockdown (committed to the box, verified)
 - **Public internet:** all app ports CLOSED (verified from VPS public IP: 2785/3000/3201/5555/3100/6381/8180/5434/5455 all `closed`). Done via:
