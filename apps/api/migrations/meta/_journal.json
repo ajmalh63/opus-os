@@ -85,6 +85,13 @@
       "when": 1786159630388,
       "tag": "0011_giant_lilandra",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1786166655655,
+      "tag": "0012_magical_arclight",
+      "breakpoints": true
     }
   ]
 }

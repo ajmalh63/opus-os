@@ -76,3 +76,30 @@ export async function seedDatabase(db: DbClient): Promise<void> {
     });
   }
 }
+
+// Bootstrap the owner/super-admin first-run account.
+// No-ops if the email already exists; password comes from env (ADMIN_EMAIL /
+// ADMIN_PASSWORD) or the caller's dev default.
+export async function seedSuperAdmin(db: DbClient, adminEmail: string, adminPassword: string): Promise<{ created: boolean; email: string }> {
+  const { users } = await import('../db/schema.js');
+  const existing = await db.select().from(users).all();
+  const found = existing.find((u: any) => (u.email || '').toLowerCase() === adminEmail.toLowerCase());
+  if (found) return { created: false, email: adminEmail };
+
+  const { hashPassword } = await import('better-auth/crypto');
+  const pwHash = await hashPassword(adminPassword);
+  const id = crypto.randomUUID();
+  await db.insert(users).values({
+    id,
+    name: 'Owner',
+    email: adminEmail,
+    emailVerified: true,
+    passwordHash: pwHash,
+    twoFactorEnabled: false,
+    role: 'super_admin',
+    userDivisions: JSON.stringify(['study-abroad', 'visa', 'umrah', 'attestation', 'manpower']),
+    createdAt: Math.floor(Date.now() / 1000),
+    updatedAt: Math.floor(Date.now() / 1000),
+  } as any);
+  return { created: true, email: adminEmail };
+}

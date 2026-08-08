@@ -26,7 +26,7 @@ export const rbacMiddleware = (allowedRoles: string[], checkDivision: boolean = 
       return c.json({ error: "Unauthorized: Invalid or expired session" }, 401);
     }
 
-    const { user, session } = sessionResult;
+    const { user, session } = sessionResult as { user: any; session: any };
 
 
     // 1. Role validation
