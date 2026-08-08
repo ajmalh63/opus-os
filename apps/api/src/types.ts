@@ -37,7 +37,8 @@ export interface OpusEnv {
   // WA_PROVIDER: 'openwa' (VPS Baileys sidecar) | 'meta' (Meta Cloud API — no VPS).
   WA_PROVIDER?: string;
   OPENWA_BASE_URL?: string;
-  OPENWA_SESSION_TOKEN?: string;
+  OPENWA_API_KEY?: string;
+  OPENWA_SESSION_ID?: string;
   META_WHATSAPP_PHONE_ID?: string;
   META_WHATSAPP_TOKEN?: string;
   WA_WEBHOOK_SECRET?: string;
