@@ -25,6 +25,10 @@ export default function LandingPortal() {
     { icon: '🤝', title: 'Partner Dashboard', desc: 'Affiliate referrals, KYC and commission ledger.', to: '/partner' },
   ];
 
+  // Role-aware visibility (P0-1/P0-5): cards with a `roles` allow-list are only
+  // shown to members of those roles; public-surface cards (no roles) stay visible.
+  const visibleCards = cards.filter((c) => !c.roles || (me?.role && c.roles.includes(me.role)));
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-brand-navy p-6 text-white">
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -55,7 +59,7 @@ export default function LandingPortal() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {cards.map((c) => (
+          {visibleCards.map((c) => (
             <div
               key={c.title}
               onClick={() => setLocation(c.to)}

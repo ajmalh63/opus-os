@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useRoute } from 'wouter';
+import { useSession } from '../lib/session';
 
 // ==========================================
 // 1. TYPE DEFINITIONS
@@ -189,9 +190,17 @@ export default function Client360() {
     setTimeout(() => setToast({ show: false, msg: '' }), 4000);
   };
 
-  // Mock Session Token toggle for testing Segregation of Duties (SoD)
-  // Default to token-manager to ensure all operations succeed, but allow switching to counselor
-  const [sessionToken, setSessionToken] = useState<string>('token-manager');
+  // Real session cookie (AuthGuard protects this route). Removed the demo
+  // "Simulate Role Session" token-switch — RBAC is enforced server-side.
+  const [sessionToken] = useState<string>(() => {
+    if (typeof document === 'undefined') return '';
+    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
+    return s ? s.split('=')[1] : '';
+  });
+
+  const { me } = useSession();
+  const meName = me?.name || me?.email?.split('@')[0] || 'Staff';
+  const meRole = me?.role || 'staff';
 
   // Navigation tabs state
   const [activeTab, setActiveTab] = useState<'tasks' | 'vault' | 'agreements' | 'payments' | 'umrah' | 'courier'>('tasks');
@@ -467,11 +476,27 @@ export default function Client360() {
     },
   });
 
-  // Send communication log
+  // Send communication log (persists to the client timeline via API)
   const sendMessageMutation = useMutation({
     mutationFn: async (payload: { sender: string; channel: string; subject?: string; message: string }) => {
-      // Simulate backend log insertion mapping to communication logs
-      return { success: true, log: payload };
+      const res = await fetch(`/api/clients/${clientId}/communications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': `better-auth.session_token=${sessionToken}`
+        },
+        body: JSON.stringify({
+          channel: payload.channel,
+          direction: 'outgoing',
+          subject: payload.subject || undefined,
+          body: payload.message,
+        }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error || 'Failed to log communication');
+      }
+      return res.json();
     },
     onSuccess: () => {
       showToast(`Message logged to timeline successfully.`);
@@ -706,7 +731,7 @@ export default function Client360() {
     }
 
     sendMessageMutation.mutate({
-      sender: sessionToken === 'token-manager' ? 'Manager Staff' : 'Santhosh Kumar',
+      sender: meName,
       channel: editorTab,
       subject: editorTab === 'email' ? messageSubject || 'Status Update Notification' : undefined,
       message: messageText,
@@ -943,41 +968,18 @@ export default function Client360() {
           </nav>
         </div>
 
-        {/* Dynamic Mock Cookie Role Toggle (Dx/Testing help) */}
+        {/* Authenticated session chip (real user via /api/auth/me) */}
         <div className="p-4 border-t border-slate-900 bg-slate-950/60">
-          <label className="text-[10px] text-brand-gold uppercase tracking-wider block mb-2 font-bold">ðŸ§ª Simulate Role Session</label>
-          <div className="grid grid-cols-2 gap-1">
-            <button 
-              onClick={() => setSessionToken('token-manager')}
-              className={`px-2 py-1 rounded text-[10px] font-bold border transition ${
-                sessionToken === 'token-manager' 
-                  ? 'bg-brand-gold text-brand-navy border-brand-gold' 
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
-              }`}
-            >
-              Manager
-            </button>
-            <button 
-              onClick={() => setSessionToken('token-counselor')}
-              className={`px-2 py-1 rounded text-[10px] font-bold border transition ${
-                sessionToken === 'token-counselor' 
-                  ? 'bg-brand-gold text-brand-navy border-brand-gold' 
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
-              }`}
-            >
-              Counselor
-            </button>
-          </div>
-          <p className="text-[9px] text-slate-500 mt-2 leading-tight">
-            * Counselor triggers SoD payment block (403). Manager permits writes.
-          </p>
+          <p className="text-[10px] text-brand-gold uppercase tracking-wider block mb-1.5 font-bold">Signed in as</p>
+          <p className="text-xs font-semibold truncate text-white">{meName}</p>
+          <p className="text-[9px] text-slate-500 mt-0.5">{meRole} · access enforced server-side</p>
         </div>
 
         {/* Active Profile Footer */}
         <div className="p-4 border-t border-slate-900 flex items-center gap-3 bg-brand-navyLight/20">
           <div className="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center border border-brand-gold text-brand-gold font-semibold">SK</div>
           <div className="overflow-hidden">
-            <p className="text-xs font-semibold truncate text-white">Santhosh Kumar</p>
+            <p className="text-xs font-semibold truncate text-white">{meName}</p>
             <p className="text-[10px] text-brand-gold uppercase tracking-wider">Senior Counselor</p>
           </div>
         </div>

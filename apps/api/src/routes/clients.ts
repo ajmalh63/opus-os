@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
+import { getAuth } from '../auth.js';
 import { clients, engagements, consents, documents, communications, users } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 
@@ -240,6 +241,49 @@ clientsRouter.get('/:id/sharing-eligibility', async (c) => {
 
   } catch (error: any) {
     return c.json({ error: "Eligibility check transaction failed", details: error.message }, 500);
+  }
+});
+
+// POST /api/clients/:id/communications — staff logs an outbound/inbound comm
+// onto the client timeline (wireframe: Client360 "Send message" is currently a
+// client-side stub; this is the real persistence). Sender resolved from session.
+const commSchema = z.object({
+  channel: z.enum(['whatsapp', 'email', 'system', 'note']),
+  direction: z.enum(['outgoing', 'internal']).default('outgoing'),
+  subject: z.string().max(200).optional(),
+  body: z.string().min(1).max(5000),
+});
+clientsRouter.post('/:id/communications', async (c) => {
+  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
+  const paramResult = clientIdParamSchema.safeParse(c.req.param());
+  if (!paramResult.success) return c.json({ error: "Invalid Client ID format" }, 400);
+  const parsed = commSchema.safeParse(await c.req.json().catch(() => ({})));
+  if (!parsed.success) return c.json({ error: "Invalid payload", details: parsed.error.flatten() }, 400);
+
+  const db = getDb(c.env.DB);
+  try {
+    const client = await db.select().from(clients).where(eq(clients.id, paramResult.data.id)).get();
+    if (!client) return c.json({ error: "Client not found" }, 404);
+
+    // Resolve sender from the session (cookie) — same resolution as RBAC.
+    const auth = getAuth(c.env);
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const senderId = (session?.user as any)?.id || null;
+
+    const id = crypto.randomUUID();
+    await db.insert(communications).values({
+      id,
+      clientId: paramResult.data.id,
+      senderId,
+      channel: parsed.data.channel,
+      direction: parsed.data.direction,
+      subject: parsed.data.subject || null,
+      body: parsed.data.body,
+      createdAt: Math.floor(Date.now() / 1000),
+    });
+    return c.json({ success: true, id, message: "Communication logged to timeline." });
+  } catch (error: any) {
+    return c.json({ error: "Communication log failed", details: error.message }, 500);
   }
 });
 
