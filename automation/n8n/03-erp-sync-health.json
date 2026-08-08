@@ -1,0 +1,85 @@
+{
+  "name": "03-erp-sync-health",
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [ { "field": "days", "daysInterval": 1 } ], "triggerAtHour": 9, "triggerAtMinute": 0 } },
+      "id": "sched-03",
+      "name": "Daily 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [ -300, 220 ]
+    },
+    {
+      "parameters": {
+        "url": "http://100.69.139.47:8787/api/automation/erp/sync-log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "credentialId": "OpusOS Automation",
+        "options": { "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2 }
+      },
+      "id": "http-03",
+      "name": "Fetch sync log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ -80, 220 ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const entries = $json.entries || []; const failed = entries.filter(e => e.status === 'failed' || e.status === 'pending'); return [{ failedCount: failed.length, total: entries.length, failedIds: failed.map(f => f.entityId) }];"
+      },
+      "id": "code-03",
+      "name": "Summarize failures",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [ 140, 220 ]
+    },
+    {
+      "parameters": {
+        "conditions": { "options": { "caseSensitive": true }, "conditions": [ { "id": "cond-03", "leftValue": "={{ $json.failed }}", "rightValue": "0", "operator": { "type": "number", "operation": "gt" } } ] }
+      },
+      "id": "if-03",
+      "name": "Any failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [ 360, 220 ]
+    },
+    {
+      "parameters": {
+        "url": "http://100.69.139.47:8787/api/automation/erp/sync/pending",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "credentialId": "OpusOS Automation",
+        "sendBody": false,
+        "options": { "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2 }
+      },
+      "id": "http-03b",
+      "name": "Retry pending",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ 580, 160 ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.OPS_TELEGRAM_CHAT_ID }}",
+        "text": "ERP sync retry: {{ $json.pushed }} pushed / {{ $json.failed }} failed ({{ $json.total }} pending attempted).",
+        "additionalFields": {}
+      },
+      "id": "tg-03",
+      "name": "Report ops",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [ 800, 160 ],
+      "credentials": { "telegramApi": { "id": "Ops Telegram", "name": "Ops Telegram" } }
+    }
+  ],
+  "connections": {
+    "Daily 09:00": { "main": [ [ { "node": "Fetch sync log", "type": "main", "index": 0 } ] ] },
+    "Fetch sync log": { "main": [ [ { "node": "Summarize failures", "type": "main", "index": 0 } ] ] },
+    "Summarize failures": { "main": [ [ { "node": "Any failed?", "type": "main", "index": 0 } ] ] },
+    "Any failed?": { "main": [ [ { "node": "Retry pending", "type": "main", "index": 0 } ] ] },
+    "Retry pending": { "main": [ [ { "node": "Report ops", "type": "main", "index": 0 } ] ] }
+  }
+}

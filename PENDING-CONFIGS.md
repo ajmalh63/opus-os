@@ -4,6 +4,57 @@ Status: **Tailscale test phase LIVE (2026-08-08). Cloudflare tunnel phase PENDIN
 needs the real CF account credentials (old postiz/etsy JSONs are a DIFFERENT
 account and are intentionally not used).**
 
+> **2026-08-09 (Wave 0 applied + Wave 2 automation lane shipped):** ERP tax blocker
+> RESOLVED · automation lane `/api/automation` (service token, fail-closed) LIVE with 7 tests ·
+> n8n spine: 5 workflow JSONs in `automation/n8n/` ready to import after the n8n wizard click ·
+> Chatwoot webhook API 404 (one UI click) · Cal.diy wizard still one click · OpenWA
+> deliberately deferred (no dedicated number yet). Details below + TOOL-STRATEGIES.md.
+
+## ★ Wave 2 — n8n spine (added 2026-08-09)
+- **OS automation lane LIVE in code:** `src/middleware/serviceToken.ts` (fail-closed; token from
+  `AUTOMATION_TOKEN` — dev value in `.dev.vars` + wrangler.toml `[vars]`, PROD → `wrangler secret put`).
+  Routes (all under `/api/automation`, `X-Service-Token` header):
+  `GET /health` · `GET /nurture/due` · `POST /nurture/:id/send` (idempotent) ·
+  `GET /erp/sync-log` · `POST /erp/sync/pending` (bounded 25).
+  Tests: `tests/automation.test.ts` (7) — 132 total green. Mock D1 now understands `<=` in WHERE.
+- **n8n workflows (import into n8n after wizard):** `automation/n8n/*.json`
+  - `01-lead-followup.json` — 5-min canary → Telegram alert when nurture touches are due
+  - `02-nurture-due.json` — every 15 min: pull due touches → mark each sent
+  - `03-erp-sync-health.json` — daily 09:00: failed rows → retry via `/sync/pending` → Telegram
+  - `04-monthly-close.json` — 1st of month: sync-log digest → Telegram (owner)
+  - `05-kuma-alerts.json` — webhook `/opusos-kuma` ← Uptime Kuma notifications → Telegram
+- **One-time n8n steps (UI, ~10 min):** complete `/setup` wizard → create creds
+  `OpusOS Automation` (HTTP Header Auth, header `X-Service-Token`) and `Ops Telegram`
+  (Bot token; set `OPS_TELEGRAM_CHAT_ID` in workflow env) → import 5 JSONs → set
+  `N8N_ENCRYPTION_KEY` before creating creds → activate one at a time.
+
+---
+
+## ★ ERPNext — FIXED (2026-08-09): GST tax template created
+- **Result:** Sales Invoice POST with OS payload shape → **HTTP 200** (`ACC-SINV-2026-00001`).
+  Tax template `CGST@9 + SGST@9 - OO` (is_default) + accounts `CGST/SGST/IGST Output - OO - OO`
+  under `Duties and Taxes - OO`; Company default_taxes_and_charges wired.
+- **Doctype-permission note:** `ops@opusoverseas.com` API user cannot write `Sales Taxes and
+  Charges Template` (403) → template was created via `Administrator` session. Consider granting
+  that permission or leaving as admin-only.
+- **OS code change:** `buildInvoicePayload` now adds GST `taxes[]` rows (CGST÷SGST 9/9
+  intra-state default, IGST 18% interstate, or componentized CGST/SGST/IGST paise from payment
+  record). 3 new unit tests; suite 125 green.
+
+## ⏳ Chatwoot webhook — API probe 404 (needs 1 UI click)
+- `POST /api/v1/accounts/1/inboxes/1/webhooks` → 404 on this build (webhooks API disabled),
+  same as the `register_webhook` 400 noted earlier. **Manual step remains:** Chatwoot →
+  Inbox settings (Opus Website Chat) → Webhooks → add
+  `http://100.95.139.47:8787/api/webhooks/chatwoot` (secret‑verified route exists).
+
+## ⏳ Cal.diy — booking URL pending wizard click
+- `/opus-owner/consultation` and `/book/opus-owner/consultation` → 404 until SSG onboarding
+  wizard is completed in-browser with `owner@opusoverseas.com`. Set
+  `VITE_BOOKING_URL=http://100.87.71.38:3000/opus-owner/consultation` afterwards
+  (verify slug; else `/book/...`).
+
+## Original historic records (kept for continuity)
+
 ## ★ ERPNext — integrated in OS (commit 457617c), LIVE END-TO-END VERIFIED
 - **ERP node:** `http://100.87.71.38:8080` (tailnet only; publicly closed ✓).
   Containers: `erpnext-backend-1` (bench · api on MariaDB), `-frontend-1` (nginx→8080),

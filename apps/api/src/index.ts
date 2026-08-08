@@ -4,6 +4,7 @@ import { clientsRouter } from './routes/clients.js';
 import { kanbanRouter } from './routes/kanban.js';
 import { authRouter } from './routes/auth.js';
 import { rbacMiddleware } from './middleware/rbac.js';
+import { serviceTokenMiddleware } from './middleware/serviceToken.js';
 import { agreementsRouter } from './routes/agreements.js';
 import { paymentsRouter } from './routes/payments.js';
 import { umrahRouter } from './routes/umrah.js';
@@ -16,6 +17,7 @@ import { rbacRouter } from './routes/rbac.js';
 import { razorpayRouter, razorpayWebhookRouter } from './routes/razorpay.js';
 import { marketingRouter } from './routes/marketing.js';
 import { nurtureRouter } from './routes/nurture.js';
+import { automationRouter } from './routes/automation.js';
 import { incentivesRouter, staffIncentivesRouter } from './routes/incentives.js';
 import { complianceRouter } from './routes/compliance.js';
 import { infraRouter } from './routes/infra.js';
@@ -125,6 +127,12 @@ app.route('/api/admin', adminRouter);
 app.route('/api/admin/rbac', rbacRouter);
 app.route('/api/inbox', inboxRouter);
 app.route('/api/erpnext', erpnextRouter);
+
+// Automation lane (n8n spine, Wave 2) — scoped, fail-closed service token.
+// Deliberately NOT under RBAC: it is a machine lane with its own auth.
+app.use('/api/automation', serviceTokenMiddleware);
+app.use('/api/automation/*', serviceTokenMiddleware);
+app.route('/api/automation', automationRouter);
 
 // Health check endpoint
 app.get('/api/health', (c) => c.json({ status: 'healthy', timestamp: Date.now() }));

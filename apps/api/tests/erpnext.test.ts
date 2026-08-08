@@ -49,6 +49,35 @@ describe('ERPNext back-office integration', () => {
     expect(payload.currency).toBe('INR');
   });
 
+  it('buildInvoicePayload attaches CGST+SGST rows for intra-state (9% each, no components)', () => {
+    const payload = buildInvoicePayload(
+      { id: 'pay-8002', amount: 1180000, milestone_name: 'Full Fee', isInterstate: false },
+      { name: 'Erp Client', email: 'e@x.com' }
+    );
+    expect(payload.taxes).toHaveLength(2);
+    expect(payload.taxes[0]).toMatchObject({ account_head: 'CGST Output - OO - OO', rate: 9 });
+    expect(payload.taxes[1]).toMatchObject({ account_head: 'SGST Output - OO - OO', rate: 9 });
+  });
+
+  it('buildInvoicePayload attaches IGST row for interstate payments', () => {
+    const payload = buildInvoicePayload(
+      { id: 'pay-8003', amount: 1180000, milestone_name: 'Full Fee', isInterstate: 1 },
+      { name: 'Erp Client', email: 'e@x.com' }
+    );
+    expect(payload.taxes).toHaveLength(1);
+    expect(payload.taxes[0]).toMatchObject({ account_head: 'IGST Output - OO - OO', rate: 18 });
+  });
+
+  it('buildInvoicePayload preserves stored componentized paise splits', () => {
+    const payload = buildInvoicePayload(
+      { id: 'pay-8004', amount: 1180000, taxableAmount: 1000000, cgst: 90000, sgst: 90000, igst: 0, isInterstate: false },
+      { name: 'Erp Client', email: 'e@x.com' }
+    );
+    expect(payload.taxes).toHaveLength(2);
+    expect(payload.taxes[0].rate).toBeCloseTo(9);
+    expect(payload.taxes[1].rate).toBeCloseTo(9);
+  });
+
   it('POST /api/erpnext/payments/:id/sync → success writes a synced log entry', async () => {
     // Mock the two-step flow: (1) GET customer probe → 404 (create), (2) POST Customer → created,
     // (3) POST Sales Invoice → created doc SINV-00001

@@ -11,6 +11,10 @@ TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA" # Local Turnstile m
 # Production MUST set MANPOWER_AI = "real" and implement the Workers AI path.
 MANPOWER_AI = "mock"
 
+# n8n automation lane (Wave 2) — service token, fail-closed. DEV ONLY value;
+# production MUST use `wrangler secret put AUTOMATION_TOKEN` (never in [vars]).
+AUTOMATION_TOKEN = "dev-automation-token-change-me"
+
 # First-run owner bootstrap (auth gateway). Dev defaults; production uses secrets.
 ADMIN_EMAIL = "owner@opusoverseas.com"
 ADMIN_PASSWORD = "OwnerPass2026!"

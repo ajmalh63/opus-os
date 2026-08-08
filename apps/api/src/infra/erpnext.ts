@@ -106,7 +106,39 @@ export async function erpHealth(env: ErpEnv): Promise<ErpResult> {
 // Payment (receipt) → Sales Invoice / received payment in ERPNext books.
 // cost_center + income_account are explicit so the doc validates even on a
 // fresh ERP where the Item lacks defaults (values created during first-run).
+// GST rows are attached from the stored paise components (taxableAmount/cgst/
+// sgst/igst). Fallback when a payload lacks components: 18% split CGST9+SGST9
+// (intra-state default) or IGST 18% when isInterstate is truthy.
+const GST_ACCOUNTS = {
+  CGST: 'CGST Output - OO - OO',
+  SGST: 'SGST Output - OO - OO',
+  IGST: 'IGST Output - OO - OO',
+};
+
 export function buildInvoicePayload(payment: Record<string, any>, client: { name: string; email: string; phone?: string } | null) {
+  const interstate = payment.isInterstate === true || payment.isInterstate === 1;
+
+  const taxes: Array<Record<string, any>> = [];
+  const addTax = (accountHead: string, rate: number, description: string) => {
+    taxes.push({ charge_type: 'On Net Total', account_head: accountHead, rate, description });
+  };
+
+  const taxable = payment.taxableAmount ?? payment.amount ?? 0;
+  const cgst = payment.cgst ?? 0;
+  const sgst = payment.sgst ?? 0;
+  const igst = payment.igst ?? 0;
+  const hasComponentized = cgst || sgst || igst;
+  if (hasComponentized && taxable > 0) {
+    if (cgst) addTax(GST_ACCOUNTS.CGST, (cgst / taxable) * 100, 'CGST');
+    if (sgst) addTax(GST_ACCOUNTS.SGST, (sgst / taxable) * 100, 'SGST');
+    if (igst) addTax(GST_ACCOUNTS.IGST, (igst / taxable) * 100, 'IGST');
+  } else if (interstate) {
+    addTax(GST_ACCOUNTS.IGST, 18, 'IGST 18%');
+  } else {
+    addTax(GST_ACCOUNTS.CGST, 9, 'CGST 9%');
+    addTax(GST_ACCOUNTS.SGST, 9, 'SGST 9%');
+  }
+
   return {
     company: 'Opus Overseas',
     customer: client?.name || 'Walk-in Customer',
@@ -122,6 +154,7 @@ export function buildInvoicePayload(payment: Record<string, any>, client: { name
       income_account: 'Sales - OO',
       cost_center: 'Main - OO',
     }],
+    taxes,
     is_pos: 0,
   };
 }

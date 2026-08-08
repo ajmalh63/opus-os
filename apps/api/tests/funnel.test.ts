@@ -318,7 +318,7 @@ expect(res.status).toBe(200);
     expect(touches.every((t: any) => t.channel === 'whatsapp')).toBe(true);
     expect(touches.map((t: any) => t.stage)).toEqual(expect.arrayContaining(['value', 'case_study', 'offer', 'final']));
 
-    const due = await app.request('/api/marketing/nurture/due?now=' + (Math.floor(Date.now() / 1000) + 1), {
+const due = await app.request('/api/marketing/nurture/due?now=' + (Math.floor(Date.now() / 1000) + 20 * 86400), {
       headers: { 'cookie': 'better-auth.session_token=token-manager' }
     }, { DB: mock6, BETTER_AUTH_SECRET: 'test-secret' });
     const dueData = await due.json() as any;

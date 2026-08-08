@@ -218,24 +218,31 @@
       if (sql.toLowerCase().includes('where')) {
         const whereIndex = sql.toLowerCase().indexOf('where');
         const whereClause = sql.substring(whereIndex + 5);
-        const matches = [...whereClause.matchAll(/([\w_]+)\s*=\s*\?/g)];
-        if (matches.length > 0) {
+        const eqMatches = [...whereClause.matchAll(/([\w_]+)\s*=\s*\?/g)];
+        const lteMatches = [...whereClause.matchAll(/([\w_]+)\s*<=\s*\?/g)];
+        if (eqMatches.length > 0 || lteMatches.length > 0) {
           results = results.filter(row => {
-            return matches.every((m, idx) => {
-              const colName = m[1];
+            const rowKey = (key: string) => {
+              const k = [key, key.replace(/_([a-z])/g, (g) => g[1].toUpperCase()), key.replace(/([A-Z])/g, "_$1").toLowerCase()];
+              return k.map(x => row[x]).find(v => v !== undefined);
+            };
+
+            // Equality conditions consume params[0..eqMatches.length)
+            const eqOk = eqMatches.every((m, idx) => {
               const val = params[idx];
-              
-              const checkMatch = (key: string) => {
-                const rowVal = row[key];
-                if (rowVal === undefined) return false;
-                return String(rowVal) === String(val);
-              };
-
-              const camelColName = colName.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-              const snakeColName = colName.replace(/([A-Z])/g, "_$1").toLowerCase();
-
-              return checkMatch(colName) || checkMatch(camelColName) || checkMatch(snakeColName);
+              const rowVal = rowKey(m[1]);
+              return rowVal !== undefined && String(rowVal) === String(val);
             });
+
+            // lte conditions consume params[eqMatches.length + i]
+            const lteOk = lteMatches.every((m, i) => {
+              const val = params[eqMatches.length + i];
+              const rowVal = rowKey(m[1]);
+              if (rowVal === undefined) return true;
+              return Number(rowVal) <= Number(val);
+            });
+
+            return eqOk && lteOk;
           });
         }
       }

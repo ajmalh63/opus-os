@@ -1,0 +1,59 @@
+{
+  "name": "01-lead-followup canary",
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [ { "field": "minutes", "minutesInterval": 5 } ] } },
+      "id": "sched-01",
+      "name": "Every 5 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [ -260, 220 ]
+    },
+    {
+      "parameters": {
+        "url": "http://100.69.139.47:8787/api/automation/health",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "credentialId": "OpusOS Automation",
+        "sendQuery": true,
+        "queryParameters": { "parameters": [] },
+        "options": { "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2, "batching": { "batch": { "batchSize": 1 } } }
+      },
+      "id": "http-01",
+      "name": "OS automation health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ -40, 220 ]
+    },
+    {
+      "parameters": {
+        "conditions": { "options": { "caseSensitive": true }, "conditions": [ { "id": "cond-1", "leftValue": "={{ $json.dueNurtureTouches }}", "rightValue": "0", "operator": { "type": "number", "operation": "gt" } } ] }
+      },
+      "id": "if-01",
+      "name": "Due touches > 0?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [ 180, 220 ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.OPS_TELEGRAM_CHAT_ID }}",
+        "text": "Ops canary: {{ $json.dueNurtureTouches }} nurture touch(es) due. ERP={{ $json.services.erp }}. Details in OS inbox.",
+        "additionalFields": {}
+      },
+      "id": "tg-01",
+      "name": "Alert ops",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [ 400, 220 ],
+      "credentials": { "telegramApi": { "id": "Ops Telegram", "name": "Ops Telegram" } }
+    }
+  ],
+  "connections": {
+    "Every 5 minutes": { "main": [ [ { "node": "OS automation health", "type": "main", "index": 0 } ] ] },
+    "OS automation health": { "main": [ [ { "node": "Due touches > 0?", "type": "main", "index": 0 } ] ] },
+    "Due touches > 0?": { "main": [ [ { "node": "Alert ops", "type": "main", "index": 0 } ] ] }
+  }
+}

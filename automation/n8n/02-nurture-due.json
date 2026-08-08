@@ -1,0 +1,58 @@
+{
+  "name": "02-nurture-due dispatcher",
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [ { "field": "minutes", "minutesInterval": 15 } ] } },
+      "id": "sched-02",
+      "name": "Every 15 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [ -260, 240 ]
+    },
+    {
+      "parameters": {
+        "url": "http://100.69.139.47:8787/api/automation/nurture/due?now={{ $now }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "credentialId": "OpusOS Automation",
+        "options": { "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2 }
+      },
+      "id": "http-02",
+      "name": "Pull due touches",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ -40, 240 ]
+    },
+    {
+      "parameters": { "keepOnlySet": true, "values": {} },
+      "id": "disp-02",
+      "name": "Expand touches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3.3,
+      "position": [ 180, 240 ]
+    },
+    {
+      "parameters": {
+        "url": "=http://100.69.139.47:8787/api/automation/nurture/{{ $json.id }}/send",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "credentialId": "OpusOS Automation",
+        "sendBody": false,
+        "options": { "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2 }
+      },
+      "id": "http-02b",
+      "name": "Mark sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ 400, 240 ]
+    }
+  ],
+  "connections": {
+    "Every 15 minutes": { "main": [ [ { "node": "Pull due touches", "type": "main", "index": 0 } ] ] },
+    "Pull due touches": { "main": [ [ { "node": "Expand touches", "type": "main", "index": 0 } ] ] },
+    "Expand touches": { "main": [ [ { "node": "Mark sent", "type": "main", "index": 0 } ] ] }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "04-monthly-close digest",
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [ { "field": "cronExpression", "expression": "0 30 9 1 * *" } ], "triggerAtHour": 9, "triggerAtMinute": 30 } },
+      "id": "sched-04",
+      "name": "1st of month 09:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [ -260, 220 ]
+    },
+    {
+      "parameters": {
+        "url": "http://100.69.139.47:8787/api/automation/erp/sync-log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "credentialId": "OpusOS Automation",
+        "options": { "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2 }
+      },
+      "id": "http-04",
+      "name": "Monthly sync log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ -40, 220 ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const entries = $json.entries || []; const synced = entries.filter(e => e.status === 'synced').length; const failed = entries.filter(e => e.status === 'failed' || e.status === 'pending').length; return [{ synced, failed, total: entries.length, lastErrors: entries.filter(e => e.error).slice(0, 3).map(e => e.error) }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "code-04",
+      "name": "Month summary",
+      "position": [ 180, 220 ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.OPS_TELEGRAM_CHAT_ID }}",
+        "text": "Monthly ERP close digest: {{ $json.synced }} synced / {{ $json.failed }} failed (last: {{ $json.lastErrors.join(' | ') || 'none' }}).",
+        "additionalFields": {}
+      },
+      "id": "tg-04",
+      "name": "Owner digest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [ 400, 220 ],
+      "credentials": { "telegramApi": { "id": "Ops Telegram", "name": "Ops Telegram" } }
+    }
+  ],
+  "connections": {
+    "1st of month 09:30": { "main": [ [ { "node": "Monthly sync log", "type": "main", "index": 0 } ] ] },
+    "Monthly sync log": { "main": [ [ { "node": "Month summary", "type": "main", "index": 0 } ] ] },
+    "Month summary": { "main": [ [ { "node": "Owner digest", "type": "main", "index": 0 } ] ] }
+  }
+}

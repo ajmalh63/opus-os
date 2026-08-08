@@ -1,0 +1,73 @@
+{
+  "name": "05-kuma-alerts bridge",
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "opusos-kuma", "responseMode": "onReceived", "options": { "responseHeaders": { "entries": [ { "name": "Content-Type", "value": "application/json" } ] } } },
+      "id": "wh-05",
+      "name": "Kuma webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "opusos-kuma",
+      "position": [ -260, 240 ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "monitorName", "value": "={{ $json.monitorName || $json.name || 'unknown' }}" },
+            { "id": "a2", "name": "alertType", "value": "={{ ($json.msg || $json.alertType || 'down').toUpperCase() }}" },
+            { "id": "a3", "name": "details", "value": "={{ $json.msg || $json.error || '' }}" }
+          ]
+        }
+      },
+      "id": "set-05",
+      "name": "Normalize",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [ -40, 240 ]
+    },
+    {
+      "parameters": {
+        "conditions": { "options": { "caseSensitive": false }, "conditions": [ { "id": "cond-05", "leftValue": "={{ $json.alertType }}", "rightValue": "DOWN", "operator": { "type": "string", "operation": "equals" } } ] }
+      },
+      "id": "if-05",
+      "name": "Critical?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [ 180, 240 ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.OPS_TELEGRAM_CHAT_ID }}",
+        "text": "[DOWN] {{ $json.monitorName }} — {{ $json.details }}",
+        "additionalFields": {}
+      },
+      "id": "tg-05",
+      "name": "Critical alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [ 400, 160 ],
+      "credentials": { "telegramApi": { "id": "Ops Telegram", "name": "Ops Telegram" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.OPS_TELEGRAM_CHAT_ID }}",
+        "text": "[UP] {{ $json.monitorName }} recovered",
+        "additionalFields": {}
+      },
+      "id": "tg-05b",
+      "name": "Recovery notice",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [ 400, 320 ],
+      "credentials": { "telegramApi": { "id": "Ops Telegram", "name": "Ops Telegram" } }
+    }
+  ],
+  "connections": {
+    "Kuma webhook": { "main": [ [ { "node": "Normalize", "type": "main", "index": 0 } ] ] },
+    "Normalize": { "main": [ [ { "node": "Critical?", "type": "main", "index": 0 } ] ] },
+    "Critical?": { "main": [ [ { "node": "Critical alert", "type": "main", "index": 0 } ], [ { "node": "Recovery notice", "type": "main", "index": 0 } ] ] }
+  }
+}
