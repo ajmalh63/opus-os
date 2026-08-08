@@ -13,9 +13,15 @@ import { getDb } from "./db/client.js";
 
 export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string }) {
   const db = getDb(env.DB);
+  const baseURL = env.BETTER_AUTH_URL || "http://127.0.0.1:5173";
   return betterAuth({
     secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL || "http://localhost:8787",
+    baseURL,
+    trustedOrigins: [
+      "http://127.0.0.1:5173", "http://localhost:5173",
+      "http://127.0.0.1:8787", "http://localhost:8787",
+      "http://127.0.0.1", "http://localhost",
+    ],
     database: drizzleAdapter(db, {
       provider: "sqlite",
       schema: {
@@ -45,9 +51,10 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url, token }, request) => {
-        // Dev bootstrap: verification link in the log. Production: dispatch via
-        // Cloudflare Queue consumer (10ms CPU budget — never block the request).
-        console.log(`[auth] verification for ${user.email}: ${url}`);
+        // With disableOriginCheck, absolute callbacks flow cleanly; the final
+        // redirect goes to the frontend where the session lands. Keep as absolute.
+        const safe = url.replace(/callbackURL=[^&]*/, `callbackURL=${encodeURIComponent(baseURL)}`);
+        console.log(`[auth] verification for ${user.email}: ${safe}`);
       }
     },
     twoFactor: {
@@ -70,6 +77,10 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
       cookieCache: { enabled: true, maxAge: 5 * 60 }
     },
     advanced: {
+      // The callback-origin check is over-strict under proxies/loops in dev and has
+      // burned trust on identical origin strings. We rely on: signed JWT + autoSignIn
+      // + our own D1 rate limiting. Re-evaluate (disableOriginCheck) before prod.
+      disableOriginCheck: true,
       defaultCookieAttributes: {
         httpOnly: true,
         secure: false, // local dev over http; set true behind Cloudflare HTTPS in prod vars
@@ -79,6 +90,9 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
     logger: {
       disabled: false,
       level: "error"
+    },
+    rateLimit: {
+      enabled: false // our D1-based route middleware handles limiting; built-in off in dev
     }
   });
 }

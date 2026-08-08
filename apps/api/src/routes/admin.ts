@@ -58,8 +58,8 @@ adminRouter.post('/register-staff', zValidator('json', registerStaffSchema), asy
       emailVerified: true, // Auto-verified for local/staff registration
       role: data.role,
       userDivisions: JSON.stringify(data.userDivisions),
-      createdAt: Math.floor(Date.now() / 1000),
-      updatedAt: Math.floor(Date.now() / 1000)
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
     return c.json({ success: true, id, message: "Staff user successfully registered and scoped." });
@@ -93,7 +93,7 @@ adminRouter.post('/staff/:id/scope', async (c) => {
       .update(users)
       .set({
         userDivisions: JSON.stringify(body.userDivisions),
-        updatedAt: Math.floor(Date.now() / 1000)
+        updatedAt: new Date()
       })
       .where(eq(users.id, staffId));
 

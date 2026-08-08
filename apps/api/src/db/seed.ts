@@ -98,8 +98,8 @@ export async function seedSuperAdmin(db: DbClient, adminEmail: string, adminPass
     twoFactorEnabled: false,
     role: 'super_admin',
     userDivisions: JSON.stringify(['study-abroad', 'visa', 'umrah', 'attestation', 'manpower']),
-    createdAt: Math.floor(Date.now() / 1000),
-    updatedAt: Math.floor(Date.now() / 1000),
+    createdAt: new Date(),
+    updatedAt: new Date(),
   } as any);
   return { created: true, email: adminEmail };
 }

@@ -13,8 +13,8 @@ export const users = sqliteTable('users', {
   twoFactorEnabled: integer('two_factor_enabled', { mode: 'boolean' }).notNull().default(false),
   role: text('role', { enum: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'] }).notNull().default('counselor'),
   userDivisions: text('user_divisions').notNull().default('[]'), // JSON array of division keys
-  createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull()
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 });
 
 // ==========================================
@@ -132,11 +132,11 @@ export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
   token: text('token').notNull().unique(),
-  expiresAt: integer('expires_at').notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
-  createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull()
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 });
 
 export const accounts = sqliteTable('accounts', {
@@ -148,19 +148,19 @@ export const accounts = sqliteTable('accounts', {
   accessToken: text('access_token'),
   refreshToken: text('refresh_token'),
   idToken: text('id_token'),
-  expiresAt: integer('expires_at'),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }),
   scope: text('scope'),
-  createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull()
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 });
 
 export const verifications = sqliteTable('verifications', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
-  expiresAt: integer('expires_at').notNull(),
-  createdAt: integer('created_at'),
-  updatedAt: integer('updated_at')
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
 });
 
 // ==========================================

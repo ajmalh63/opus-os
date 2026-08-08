@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import Logo from './Logo';
+import { useSession } from '../lib/session';
 
 const LINKS = [
   { label: 'Study Abroad', path: '/study-abroad' },
@@ -13,6 +14,7 @@ const LINKS = [
 export default function Nav() {
   const [open, setOpen] = useState(false);
   const [, setLocation] = useLocation();
+  const { me } = useSession();
 
   const go = (path: string) => {
     setOpen(false);
@@ -44,13 +46,22 @@ export default function Nav() {
           </div>
 
           <div className="ml-auto flex items-center">
-            <button
-              onClick={() => go('/lead-form')}
-              className="mr-1 hidden cursor-pointer items-center gap-2 rounded-full bg-brand-gold px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] md:inline-flex"
-            >
-              Get Started
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-navy/10 text-[10px]">↗</span>
-            </button>
+            {me ? (
+              <button
+                onClick={() => go('/workspaces')}
+                className="mr-1 hidden cursor-pointer items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-gold transition-all hover:bg-brand-gold hover:text-brand-navy md:inline-flex"
+              >
+                {me.name?.split(' ')[0]} · {me.role}
+              </button>
+            ) : (
+              <button
+                onClick={() => go('/login')}
+                className="mr-1 hidden cursor-pointer items-center gap-2 rounded-full bg-brand-gold px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] md:inline-flex"
+              >
+                Sign In
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-navy/10 text-[10px]">↗</span>
+              </button>
+            )}
 
             {/* Hamburger morph */}
             <button
@@ -83,11 +94,11 @@ export default function Nav() {
               </button>
             ))}
             <button
-              onClick={() => go('/lead-form')}
+              onClick={() => (me ? go('/workspaces') : go('/login'))}
               style={{ transitionDelay: `${(LINKS.length + 1) * 60}ms` }}
               className="mt-4 w-full max-w-sm cursor-pointer rounded-full bg-brand-gold py-4 text-sm font-bold uppercase tracking-wider text-brand-navy transition-all active:scale-[0.98]"
             >
-              Get Started
+              {me ? `${me.name?.split(' ')[0]} · My Workspace` : 'Sign In'}
             </button>
           </nav>
         </div>

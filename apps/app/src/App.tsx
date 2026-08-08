@@ -1,4 +1,6 @@
 ﻿import { Route, Switch, Redirect } from 'wouter';
+import { SessionProvider } from './lib/session';
+import AuthGuard from './components/AuthGuard';
 import PublicLeadForm from './pages/PublicLeadForm.js';
 import KanbanBoard from './pages/KanbanBoard.js';
 import Client360 from './pages/Client360.js';
@@ -8,21 +10,17 @@ import AdminConsole from './pages/AdminConsole.js';
 import LandingPortal from './pages/LandingPortal.js';
 import PublicHome from './pages/PublicHome.js';
 import PublicService from './pages/PublicService.js';
+import Login from './pages/Login.js';
 import ProductivityToolbox from './components/ProductivityToolbox.js';
 
 export default function App() {
   return (
-    <>
+    <SessionProvider>
       <Switch>
+        {/* Public surface */}
         <Route path="/" component={PublicHome} />
-        <Route path="/workspaces" component={LandingPortal} />
         <Route path="/lead-form" component={PublicLeadForm} />
-        <Route path="/kanban" component={KanbanBoard} />
-        <Route path="/clients/:id" component={Client360} />
-        <Route path="/portal" component={ClientPortal} />
-        <Route path="/partner" component={PartnerDashboard} />
-        <Route path="/admin" component={AdminConsole} />
-        
+
         <Route path="/study-abroad">
           {() => <PublicService params={{ division: 'study-abroad' }} />}
         </Route>
@@ -39,11 +37,32 @@ export default function App() {
           {() => <PublicService params={{ division: 'recruitment' }} />}
         </Route>
 
+        {/* Central auth gateway */}
+        <Route path="/login" component={Login} />
+
+        {/* Public self-service surfaces (token-based by design) */}
+        <Route path="/portal" component={ClientPortal} />
+        <Route path="/partner" component={PartnerDashboard} />
+
+        {/* Authenticated surface */}
+        <Route path="/workspaces">
+          <AuthGuard><LandingPortal /></AuthGuard>
+        </Route>
+        <Route path="/kanban">
+          <AuthGuard><KanbanBoard /></AuthGuard>
+        </Route>
+        <Route path="/clients/:id">
+          <AuthGuard><Client360 /></AuthGuard>
+        </Route>
+        <Route path="/admin">
+          <AuthGuard><AdminConsole /></AuthGuard>
+        </Route>
+
         <Route>
           <Redirect to="/" />
         </Route>
       </Switch>
       <ProductivityToolbox />
-    </>
+    </SessionProvider>
   );
 }
