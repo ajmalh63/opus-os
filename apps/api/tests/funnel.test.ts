@@ -193,7 +193,13 @@ describe('Marketing automation interlock â€” funnel + partner affiliate (Se
 
     const ledger = mockD1.tables.commission_ledger.find((l: any) => l.id === 'led-5');
     expect(ledger.status).toBe('matured');
-    expect(ledger.amount).toBe(5000); // 5% of â‚¹1000 (100000 paise)
+    expect(ledger.amount).toBe(5000); // 5% of ₹1000 (100000 paise)
+
+    // Interlock: signed agreement creates a handover task for the ops team
+    const handover = mockD1.tables.tasks.find((t: any) => (t.title || '').includes('Handover'));
+    expect(handover).toBeTruthy();
+    expect(handover.priority).toBe('high');
+    expect(handover.client_id).toBe('C-5');
   });
 
   it('intake creates a 15-min SLA task routed round-robin to a division-matched counselor', async () => {

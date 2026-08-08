@@ -2,8 +2,9 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { createTemplateSchema, createAgreementSchema, signAgreementSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
-import { agreements, agreementTemplates, clauseLibrary, clients, consents, referrals, commissionLedger, payments } from '../db/schema.js';
+import { agreements, agreementTemplates, clauseLibrary, clients, consents, referrals, commissionLedger, payments, engagements } from '../db/schema.js';
 import { eq, inArray } from 'drizzle-orm';
+import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 
 export const agreementsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -230,6 +231,27 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
     } catch (refErr: any) {
       // Commission maturation must never block agreement signing.
       console.error('referral commission maturation failed', refErr?.message);
+    }
+
+    // Interlock: agreement signed → handover task for the ops team (funnel loop
+    // close: customer boundary reached; kick off delivery stage). Fail-open.
+    try {
+      const eng = await db.select().from(engagements).where(eq(engagements.clientId, agreement.clientId)).get();
+      const assignee = await pickCounselorForDivision(db, eng?.division || 'study-abroad');
+      const handoverId = crypto.randomUUID();
+      await createAssignmentTask(db, {
+        taskId: handoverId,
+        clientId: agreement.clientId,
+        engagementId: eng?.id || null,
+        assigneeId: assignee,
+        title: `🤝 Handover: ${agreement.clientId} signed agreement`,
+        description: `Agreement ${agreement.id} signed (${data.esignMethod}). Begin delivery: collect outstanding balance, assign case owner, open vault stage.`,
+        priority: 'high',
+        dueInSeconds: 2 * 86400,
+        now: Math.floor(Date.now() / 1000),
+      });
+    } catch (handErr: any) {
+      console.error('agreement handover task failed', handErr?.message);
     }
 
     return c.json({
