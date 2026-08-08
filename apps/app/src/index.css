@@ -156,6 +156,27 @@ input:focus, select:focus, textarea:focus {
   background-size: 180px 180px;
 }
 
+/* Lead form premium pass: upgrade all mobile-friendly fields in one scope */
+.lead-form-wrap input,
+.lead-form-wrap select,
+.lead-form-wrap textarea {
+  background: #ffffff;
+  border: 1px solid rgba(10, 45, 80, 0.12);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  font-size: 0.875rem;
+  color: var(--color-brand-navy);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lead-form-wrap input:focus,
+.lead-form-wrap select:focus,
+.lead-form-wrap textarea:focus {
+  outline: none;
+  border-color: var(--color-brand-gold);
+  box-shadow: 0 0 0 3px rgba(215, 160, 25, 0.18);
+}
+
 /* Mobile menu staggered link reveal */
 @keyframes link-reveal {
   from { opacity: 0; transform: translateY(16px); }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
+import Logo from '../components/Logo';
 
 interface Engagement {
   id: string;
@@ -218,7 +219,7 @@ export default function ClientPortal() {
       {/* HEADER */}
       <header className="bg-brand-navy/80 backdrop-blur-md border-b border-brand-navyLight py-4 px-8 sticky top-0 shadow-lg z-30 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-brand-gold flex items-center justify-center font-display font-bold text-brand-navy">O</div>
+          <Logo className="h-9 w-auto" />
           <div>
             <span className="font-display font-bold text-base tracking-wider block text-white">Opus Overseas</span>
             <span className="text-[9px] text-brand-gold tracking-widest uppercase block leading-none">Client Status Desk</span>

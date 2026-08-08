@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import Nav from '../components/Nav';
+import Footer from '../components/Footer';
+import StickyCallBar from '../components/StickyCallBar';
+import { prefersReducedMotion, animateHeadlineWords } from '../lib/motion';
 
 type Division = 'study-abroad' | 'visa' | 'umrah' | 'attestation' | 'manpower';
 
@@ -67,6 +71,13 @@ export default function PublicLeadForm() {
     },
     enabled: !!searchParams,
   });
+
+  // Hero headline reveal
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const el = document.querySelector('.lead-h1') as HTMLElement | null;
+    if (el) animateHeadlineWords(el, { delay: 0.15 });
+  }, []);
 
   // Submit Lead Mutation
   const leadMutation = useMutation({
@@ -153,36 +164,34 @@ export default function PublicLeadForm() {
 
   return (
     <div className="bg-brand-cream text-brand-textDark font-sans min-h-screen flex flex-col justify-between">
-      {/* PUBLIC HEADER */}
-      <header className="bg-brand-navy text-white py-4 px-8 sticky top-0 shadow-md z-30 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-brand-gold flex items-center justify-center font-display font-bold text-brand-navy">O</div>
-          <div>
-            <span className="font-display font-bold text-base tracking-wider block">Opus Overseas</span>
-            <span className="text-[9px] text-brand-gold tracking-widest uppercase block leading-none">Global Services Engine</span>
-          </div>
-        </div>
-        
-        <nav className="hidden md:flex gap-6 text-xs font-semibold uppercase tracking-wider text-brand-cream/80">
-          <a href="#" className="hover:text-brand-gold transition">Study Abroad</a>
-          <a href="#" className="hover:text-brand-gold transition">Visa Services</a>
-          <a href="#" className="hover:text-brand-gold transition">Umrah</a>
-          <a href="#" className="hover:text-brand-gold transition">Attestation</a>
-          <a href="#" className="hover:text-brand-gold transition">Careers</a>
-        </nav>
+      <div className="film-grain" aria-hidden="true" />
+      <Nav />
+      <StickyCallBar />
 
-        <div className="flex items-center gap-3">
-          <a href="tel:+919876543210" className="text-xs bg-brand-navyLight border border-brand-gold/30 hover:border-brand-gold hover:text-white px-3 py-1.5 rounded transition text-brand-gold font-bold">
-            Call Support
-          </a>
+      {/* Premium hero band */}
+      <section className="relative overflow-hidden bg-brand-navy pb-10 pt-32 text-white">
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="hero-orb -right-16 -top-20 h-96 w-96 bg-brand-gold/15 blur-3xl" />
+          <div className="hero-orb -left-24 bottom-0 h-80 w-80 bg-brand-blue/25 blur-3xl" />
         </div>
-      </header>
+        <div className="relative mx-auto max-w-7xl px-5 md:px-8">
+          <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
+            Free · 60 Seconds · No Commitment
+          </span>
+          <h1 className="lead-h1 mt-6 font-display text-4xl font-extrabold leading-[1.05] tracking-tight md:text-5xl">
+            Start Your Journey <span className="text-brand-gold">Today</span>
+          </h1>
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/70">
+            Submit your details and get an instant journey token — then track your case live, any time.
+          </p>
+        </div>
+      </section>
 
       {/* CONTENT CONTAINER */}
       <main className="max-w-7xl w-full mx-auto p-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* LEFT SIDE: LEAD INTAKE FORM */}
-        <section className="lg:col-span-7 bg-white p-8 rounded-xl border border-gray-200 shadow-lg flex flex-col gap-6">
+        <section className="lead-form-wrap lg:col-span-7 clay-card !rounded-3xl p-8 flex flex-col gap-6">
           <div>
             <h2 className="font-display font-extrabold text-2xl text-brand-navy">Start Your Journey Today</h2>
             <p className="text-xs text-brand-textLight mt-1">Submit your details and get instant access to the Client Status tracking system.</p>
@@ -702,22 +711,7 @@ export default function PublicLeadForm() {
       </main>
 
       {/* PUBLIC FOOTER */}
-      <footer className="bg-brand-navy text-white py-6 border-t border-brand-navyLight shrink-0">
-        <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-brand-cream/50">
-          <div className="flex items-center gap-3">
-            <span className="border border-brand-gold/30 text-brand-gold px-2 py-0.5 rounded text-[10px] font-semibold font-display">British Council Certified Agent</span>
-          </div>
-          
-          <div>
-            <span>© 2026 Opus Overseas. Nizamabad, Telangana, India. All rights reserved.</span>
-          </div>
-
-          <div className="flex gap-4 font-semibold">
-            <a href="#" className="hover:underline">Privacy Policy (DPDP)</a>
-            <a href="#" className="hover:underline">Terms of Service</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* POPUP TOAST SYSTEM */}
       <div 
