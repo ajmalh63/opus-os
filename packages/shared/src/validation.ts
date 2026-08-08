@@ -115,7 +115,8 @@ export const registerStaffSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   role: z.enum(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator']),
-  userDivisions: z.array(z.string())
+  userDivisions: z.array(z.string()),
+  password: z.string().min(8).optional() // if absent, a temporary password is generated & returned once
 });
 
 export type RegisterStaffInput = z.infer<typeof registerStaffSchema>;

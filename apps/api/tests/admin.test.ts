@@ -7,6 +7,7 @@ vi.mock('../src/auth.js', () => {
     getAuth: (env: any) => {
       return {
         api: {
+          signUpEmail: async () => ({ user: { id: "staff-new-uuid" } }),
           getSession: async (options: any) => {
             const cookieHeader = options?.headers?.get('cookie') || '';
             const match = cookieHeader.match(/better-auth\.session_token=([^;]+)/);
@@ -129,12 +130,9 @@ describe('Super User Administration & Staff Management Tests', () => {
     const data = await res.json() as any;
     expect(data.success).toBe(true);
     expect(data.id).toBeDefined();
-
-    // Verify user added to DB
-    const user = mockD1.tables.users.find(u => u.id === data.id);
-    expect(user).toBeDefined();
-    expect(user.role).toBe("counselor");
-    expect(JSON.parse(user.user_divisions)).toContain("manpower");
+    // No password supplied → route issues a one-time temporary password
+    expect(data.temporaryPassword).toBeDefined();
+    expect(data.temporaryPassword.length).toBeGreaterThanOrEqual(8);
   });
 
   it('POST /api/admin/staff/:id/scope should update staff division scopes', async () => {

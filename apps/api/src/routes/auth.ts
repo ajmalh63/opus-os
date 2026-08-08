@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { getAuth } from '../auth.js';
 import { getDb } from '../db/client.js';
 import { users } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
-import { seedSuperAdmin } from '../db/seed.js';
 
 export const authRouter = new Hono<{
   Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string; ADMIN_EMAIL?: string; ADMIN_PASSWORD?: string };
@@ -55,8 +55,26 @@ authRouter.post('/bootstrap-admin', async (c) => {
   const hasAdmin = all.some((u: any) => u.role === 'super_admin' && u.emailVerified);
   if (hasAdmin) return c.json({ error: 'A verified super_admin already exists' }, 409);
 
-  const result = await seedSuperAdmin(db, email, password);
-  return c.json({ success: true, created: result.created, email: result.email });
+  // Route through Better Auth so hashing + verification share ONE implementation
+  // (avoids nodejs_compat scrypt drift from manual hashPassword inserts).
+  const auth = getAuth(c.env);
+  const result = await auth.api.signUpEmail({
+    body: {
+      name: 'Owner', email, password,
+      role: 'super_admin', userDivisions: JSON.stringify(['study-abroad', 'visa', 'umrah', 'attestation', 'manpower']),
+    },
+    headers: c.req.raw.headers,
+  });
+  const id = (result as any)?.user?.id;
+  if (!id) throw new Error('signUpEmail did not return a user id');
+  await db.update(users).set({
+    emailVerified: true,
+    role: 'super_admin',
+    userDivisions: JSON.stringify(['study-abroad', 'visa', 'umrah', 'attestation', 'manpower']),
+    updatedAt: new Date(),
+  }).where(eq(users.id, id));
+
+  return c.json({ success: true, created: true, email });
 });
 
 // All other /api/auth/* routes go to Better Auth (sign-in, sign-up, session, 2FA…)

@@ -11,6 +11,10 @@ TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA" # Local Turnstile m
 # Production MUST set MANPOWER_AI = "real" and implement the Workers AI path.
 MANPOWER_AI = "mock"
 
+# First-run owner bootstrap (auth gateway). Dev defaults; production uses secrets.
+ADMIN_EMAIL = "owner@opusoverseas.com"
+ADMIN_PASSWORD = "OwnerPass2026!"
+
 # ============================================================
 # Unified messaging — TAILSCALE TEST PHASE (PENDING-CONFIGS #1)
 # VPS services reachable only on the tailnet (100.87.71.38); ports
