@@ -4,14 +4,44 @@ Status: **Tailscale test phase LIVE (2026-08-08). Cloudflare tunnel phase PENDIN
 needs the real CF account credentials (old postiz/etsy JSONs are a DIFFERENT
 account and are intentionally not used).**
 
-## ★ LIVE VERIFIED 2026-08-08 — messaging E2E over tailnet
-- VPS OpenWA → HMAC webhook → local worker → `conversations` row (**`count:1`**).
+## ★ ERPNext — integrated in OS (commit 457617c), LIVE END-TO-END VERIFIED
+- **ERP node:** `http://100.87.71.38:8080` (tailnet only; publicly closed ✓).
+  Containers: `erpnext-backend-1` (bench · api on MariaDB), `-frontend-1` (nginx→8080),
+  `-queue-long/short`, `-scheduler`, `-websocket`, `-redis-cache/queue`, `-db-1` (mariadb:11).
+- **Credentials:** Admin `Administrator` / `admin` (default docker stack). OS API user:
+  `ops@opusoverseas.com` (Accounts+Item+Sales roles) with `api_key 14a5ec26e5dbcc8b`
+  `api_secret 592c2dac21507f482` → stored in `apps/api/.dev.vars` (gitignored). Lock down
+  the admin password + rotate keys before prod.
+- **Item created:** `CONSULTANCY-SV` (services; HSN 9983, taxable, income `Sales - OO`,
+  cost center `Main - OO`).
+- **Customer sync proven:** OS `POST /api/erpnext/payments/:id/sync` → Customer upsert
+  (created `ERP Test Client`) → then Sales Invoice attempt (validated; needs GST break-up
+  on the template — tax row config pending ERP side).
+- **Endpoints (owner-only):** `/api/erpnext/health`, `/payments/:id/sync`,
+  `/sync-log`, `/sync/pending` retry; `erpnext_sync_log` D1 table (migration 0015).
+- **TODO (ERP side, one-time):** create a **Sales Taxes and Charges Template** named
+  e.g. `CGST@9 + SGST@9` (CGST - OO / SGST - OO rows) and set Company default — then
+  invoice rows pass final validation. Everything upstream in the OS sync path is done.
+
+## ★ Other VPC apps installed (all loopback/tailnet-only, publicly closed ✓)
+
+| App | URL | Role in OS | Setup status |
+|---|---|---|---|
+| **Listmonk** | `http://100.87.71.38:9009` | Email marketing + nurture campaigns (SMTP) | Installed (listmonk+db on its own postgres) — create admin + SMTP in its wizard; wire Listmonk SMTP into nurture later |
+| **Umami** | `http://100.87.71.38:3002` | Analytics (views/read-time, §26.4/27.6) | Fresh install — create account → API token → add tracking snippet to public pages when ready |
+| **n8n** | `http://100.87.71.38:5678` | Workflow glue (VPC-DR runbooks, adapters) | Fresh — run its `/setup` wizard; optional later |
+| **Uptime Kuma** | `http://100.87.71.38:3003` | Monitor `/api/infrastructure/health` + DR runbook | Fresh — add push/HTTP monitors after setup |
+| **Twenty CRM** | `http://100.87.71.38:3001` | (Optional) CRM bridge | Already running; not wired into OS (OS has its own client 360) |
+
+**Firewall matrix (verified 2026-08-08):** 8080/9009/5678/3002/3003 → tailnet OPEN, public CLOSED (iptables DOCKER-USER tail-scale-only, as designed).
+
+## Earlier sections (retained)
+- **OpenWA → conversations webhook E2E verified (count:1).**
 - **OpenWA SSRF guard:** added `SSRF_ALLOWED_HOSTS=100.69.139.47,localhost,127.0.0.1`
   to the container env (from `dist/common/security/ssrf-guard.js`; blocks 100.64/10).
   Container recreated preserving the data volume.
 - **Webhook contract (commit 387e9b6):** `X-WA-Signature` = HMAC-SHA256(body, secret)
   OR `X-Webhook-Secret` plaintext; parses Meta + OpenWA `message.received` envelope.
-- Worker inbound requires `pnpm exec wrangler dev --ip 0.0.0.0`.
 - Worker inbound requires `pnpm exec wrangler dev --ip 0.0.0.0`.
 - **TODO:** OpenWA webhook REGISTRATION returns 500 (webhooks FK vs session across
   split sqlite files after container recreate) — needs a clean session re-start on
