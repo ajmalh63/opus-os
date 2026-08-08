@@ -6,6 +6,7 @@ import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import StickyCallBar from '../components/StickyCallBar';
 import Img from '../components/Img';
+import ChatWidget from '../components/ChatWidget';
 import { imageFor } from '../config/images';
 import { prefersReducedMotion, animateHeadlineWords } from '../lib/motion';
 
@@ -251,6 +252,7 @@ export default function PublicService({ params }: { params: { division: string }
     <div className="min-h-screen bg-brand-cream font-sans text-brand-navy">
       <div className="film-grain" aria-hidden="true" />
       <Nav />
+      <ChatWidget />
       <StickyCallBar />
 
       {/* Division hero */}

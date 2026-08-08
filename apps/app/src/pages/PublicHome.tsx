@@ -8,7 +8,10 @@ import Footer from '../components/Footer';
 import StickyCallBar from '../components/StickyCallBar';
 import HeroCarousel from '../components/HeroCarousel';
 import Img from '../components/Img';
+import ChatWidget from '../components/ChatWidget';
 import { imageFor } from '../config/images';
+
+const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || ''; // Cal.diy embed (set once account/event exists)
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -105,6 +108,7 @@ export default function PublicHome() {
     <div className="min-h-screen bg-brand-cream font-sans text-brand-navy">
       <div className="film-grain" aria-hidden="true" />
       <Nav />
+      <ChatWidget />
       <HeroCarousel />
       <StickyCallBar />
 
@@ -255,6 +259,17 @@ export default function PublicHome() {
             <button onClick={() => setLocation('/lead-form')} className="rounded-full bg-brand-gold px-10 py-4 text-sm font-bold text-brand-navy shadow-[0_8px_30px_rgba(215,160,25,0.4)] transition-all hover:bg-brand-gold-hover hover:text-white">
               Book Free Consultation
             </button>
+            {BOOKING_URL && (
+              <a
+                href={BOOKING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-10 py-4 text-sm font-bold text-brand-gold transition-all hover:bg-brand-gold hover:text-brand-navy"
+              >
+                Pick a Time
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-navy/10 text-[10px]">↗</span>
+              </a>
+            )}
             <a
               href="https://wa.me/919876543210?text=Hi%20Opus%20Overseas!"
               target="_blank"
