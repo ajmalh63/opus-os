@@ -107,23 +107,36 @@
       const conflictTarget = (sql.match(/on conflict\s*\(([^)]+)\)/i) || [])[1]?.replace(/\W/g, '');
       const setMatch = sql.match(/do update\s+set\s+([\w_]+)\s*=/i);
       const incrementCol = setMatch ? setMatch[1] : '';
+      const doNothing = /do\s+nothing/i.test(sql);
 
-      if (conflictTarget && incrementCol) {
+      if (conflictTarget || doNothing) {
         const colsMatch = parts[0].match(/\(([^)]+)\)/);
         if (colsMatch) {
           const columns = colsMatch[1].split(',').map(c => c.trim());
-          const conflictIdx = columns.indexOf(conflictTarget);
-          if (conflictIdx >= 0 && params[conflictIdx] !== undefined) {
+          const conflictIdx = conflictTarget ? columns.indexOf(conflictTarget) : -1;
+          if (conflictTarget && conflictIdx >= 0 && params[conflictIdx] !== undefined) {
             const existing = (this.tables as any)[tableName].find(
               (r: any) => String(r[conflictTarget]) === String(params[conflictIdx])
             );
             if (existing) {
-              const camelKey = incrementCol.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-              const cur = Number(existing[incrementCol] ?? existing[camelKey]) || 0;
-              existing[incrementCol] = cur + 1;
-              existing[camelKey] = cur + 1;
-              return { success: true, results: [existing] };
+              if (doNothing) return { success: true, results: [] };
+              if (incrementCol) {
+                const camelKey = incrementCol.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+                const cur = Number(existing[incrementCol] ?? existing[camelKey]) || 0;
+                existing[incrementCol] = cur + 1;
+                existing[camelKey] = cur + 1;
+                return { success: true, results: [existing] };
+              }
             }
+          }
+          // DO NOTHING without resolvable target → dedupe by full value equality
+          if (doNothing) {
+            const row: Record<string, any> = {};
+            columns.forEach((col, i) => { row[col] = params[i]; });
+            const dup = (this.tables as any)[tableName].find((r: any) =>
+              columns.every((c) => String(r[c]) === String(row[c]))
+            );
+            if (dup) return { success: true, results: [] };
           }
         }
       }

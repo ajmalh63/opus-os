@@ -37,7 +37,30 @@ export async function seedDatabase(db: DbClient): Promise<void> {
       await db.insert(pipelineStages).values({ id: crypto.randomUUID(), key: s.key, name: s.name, sequence: s.sequence, wipLimit: s.wipLimit ?? null, createdAt: now });
     }
   }
+  await seedDatabaseRest(db);
+}
 
+// Self-healing bootstrap used by hot paths (leads intake, kanban) when a fresh
+// DB has not gone through the seed step. Insert-or-ignore — safe to call often.
+export async function ensurePipelineStages(db: DbClient): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  for (const s of DEFAULT_STAGES) {
+    try {
+      await db.insert(pipelineStages).values({
+        id: crypto.randomUUID(),
+        key: s.key,
+        name: s.name,
+        sequence: s.sequence,
+        wipLimit: s.wipLimit ?? null,
+        createdAt: now,
+      }).onConflictDoNothing();
+    } catch { /* concurrent insert safe */ }
+  }
+}
+
+// ============ remainder of full seedDatabase body ============
+export async function seedDatabaseRest(db: DbClient): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
   // Clause library
   const clauses = await db.select().from(clauseLibrary).all();
   if (clauses.length === 0) {

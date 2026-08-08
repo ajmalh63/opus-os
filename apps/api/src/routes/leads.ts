@@ -6,6 +6,7 @@ import { clients, consents, engagements, interactionPoints, scoringEvents, partn
 import { and, eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
+import { ensurePipelineStages } from '../db/seed.js';
 
 export const leadsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -80,7 +81,9 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
       });
     }
 
-    // Insert engagement
+    // Insert engagement (self-heal: guarantee pipeline stages exist first —
+    // engagements.stage_key has an FK to pipeline_stages; fresh DBs seeding)
+    await ensurePipelineStages(db);
     const engagementId = crypto.randomUUID();
     await db.insert(engagements).values({
       id: engagementId,

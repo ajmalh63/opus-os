@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { seedDatabase } from '../src/db/seed.js';
+import { seedDatabase, ensurePipelineStages } from '../src/db/seed.js';
 import { getDb } from '../src/db/client.js';
 import { MockD1Database } from './mockDb.js';
 import { pipelineStages, clauseLibrary, permissions, roles, businessProfile } from '../src/db/schema.js';
@@ -41,5 +41,16 @@ describe('DB seed bootstrap (B-2)', () => {
     expect((mockD1.tables.pipeline_stages as any[]).length).toBe(5);
     expect((mockD1.tables.business_profile as any[]).length).toBe(1);
     expect((mockD1.tables.roles as any[]).length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('ensurePipelineStages self-heals a fresh DB (idempotent, keys present)', async () => {
+    const fresh = new MockD1Database();
+    expect((fresh.tables.pipeline_stages as any[]).length).toBe(0);
+
+    await ensurePipelineStages(getDb(fresh as any));
+    expect((fresh.tables.pipeline_stages as any[]).length).toBe(5);
+    expect((fresh.tables.pipeline_stages as any[]).map((s) => s.key)).toEqual(
+      expect.arrayContaining(['lead', 'qualified', 'documents', 'processing', 'complete'])
+    );
   });
 });
