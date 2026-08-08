@@ -1,6 +1,6 @@
 import { getDb } from './client.js';
 import {
-  pipelineStages, clauseLibrary, permissions, roles, businessProfile
+  pipelineStages, clauseLibrary, permissions, roles, businessProfile, campaigns, campaignTouches
 } from './schema.js';
 import { eq } from 'drizzle-orm';
 import { PERMISSION_SEED, ROLES_SEED } from '../routes/rbac.js';
@@ -83,7 +83,7 @@ export async function seedDatabaseRest(db: DbClient): Promise<void> {
     }
   }
 
-  // Business profile (single 'main' row)
+// Business profile (single 'main' row)
   const profile = await db.select().from(businessProfile).all();
   if (profile.length === 0) {
     await db.insert(businessProfile).values({
@@ -98,6 +98,65 @@ export async function seedDatabaseRest(db: DbClient): Promise<void> {
       updatedAt: now,
     });
   }
+
+  // 29.1 Seed campaigns (Wave 2) — one pilot per division; idempotent by key.
+  await seedCampaigns(db);
+}
+
+// Pilot campaign catalog — the default-set study-abroad deadline campaign and
+// a manpower job-match hint. Idempotent (onConflictDoNothing on key).
+export async function seedCampaigns(db: DbClient): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+
+  const CSAW_ID = 'camp-study-abroad-deadline';
+  await db.insert(campaigns).values({
+    id: CSAW_ID,
+    key: 'study-abroad-country-deadline',
+    name: 'Country & Intake Deadline Campaign',
+    description: 'Division-wide study-abroad nurture with country-aware deadline copy and a free screening call each.',
+    division: 'study-abroad',
+    eligibilityJson: JSON.stringify({ targetCountry: ['US', 'UK', 'Canada', 'Australia', 'Germany'] }),
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+  }).onConflictDoNothing();
+
+  await db.insert(campaignTouches).values([
+    { id: crypto.randomUUID(), campaignId: CSAW_ID, seq: 1, day: 0, stage: 'value',
+      body: `Hi {{name}}! Curious how {{targetCountry}} deadlines work for your profile? No pressure at all.`,
+      createdAt: now },
+    { id: crypto.randomUUID(), campaignId: CSAW_ID, seq: 2, day: 3, stage: 'case_study',
+      body: `{{name}}, a {{targetCountry}} admit from last intake came to us with a 2.9 GPA and still made it. Ask us how.`,
+      createdAt: now },
+    { id: crypto.randomUUID(), campaignId: CSAW_ID, seq: 3, day: 5, stage: 'offer',
+      body: `Free 20-min eligibility check for {{targetCountry}} — find your realistic university list. Reply YES and we send the link.`,
+      createdAt: now },
+    { id: crypto.randomUUID(), campaignId: CSAW_ID, seq: 4, day: 12, stage: 'final',
+      body: `{{name}}, we would love to onboard you before {{targetCountry}} deadlines crunch. Last note unless you write back.`,
+      createdAt: now },
+  ]).onConflictDoNothing();
+
+  const CMP = 'manpower-job-match';
+  await db.insert(campaigns).values({
+    id: CMP,
+    key: 'manpower-job-match',
+    name: 'Manpower job match alert',
+    description: 'Active job postings for manpower candidates by sector.',
+    division: 'manpower',
+    eligibilityJson: '{}',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+  }).onConflictDoNothing();
+
+  await db.insert(campaignTouches).values([
+    { id: crypto.randomUUID(), campaignId: CMP, seq: 1, day: 0, stage: 'value',
+      body: `{{name}}, a matching {{sector}} role opened in the Manpower bucket today. Should we preview it?`,
+      createdAt: now },
+    { id: crypto.randomUUID(), campaignId: CMP, seq: 2, day: 3, stage: 'case_study',
+      body: `A technician from your sector just got placed in 3 weeks through us. Could you be next?`,
+      createdAt: now },
+  ]).onConflictDoNothing().catch(() => {});
 }
 
 // Bootstrap the owner/super-admin first-run account.

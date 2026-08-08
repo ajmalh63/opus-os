@@ -604,9 +604,41 @@ export const nurtureTouches = sqliteTable('nurture_touches', {
   channel: text('channel', { enum: ['whatsapp', 'email'] }).notNull().default('whatsapp'),
   stage: text('stage', { enum: ['value', 'case_study', 'offer', 'final'] }).notNull(),
   body: text('body').notNull(), // message template (personalized at send time by consumer)
+  campaignId: text('campaign_id').references(() => campaigns.id), // null = legacy default sequence
   dueAt: integer('due_at').notNull(), // epoch seconds
   status: text('status', { enum: ['scheduled', 'sent', 'skipped'] }).notNull().default('scheduled'),
   sentAt: integer('sent_at'),
+  createdAt: integer('created_at').notNull()
+});
+
+// ==========================================
+// 29.1 CAMPAIGNS (division+context targeted nurture, Wave 2 brainstorm)
+// A campaign is the unit of targeting: it binds a division (and optionally
+// intake-context predicates) to a custom touch plan. The marketing layer picks
+// the best campaign per lead (by division+context) instead of the legacy
+// default SEQUENCE in nurture.ts. UI: manager+ via /api/marketing/campaigns.
+// ==========================================
+export const campaigns = sqliteTable('campaigns', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(), // e.g. 'study-abroad-country-deadline'
+  name: text('name').notNull(),
+  description: text('description'),
+  division: text('division', { enum: ['study-abroad', 'visa', 'umrah', 'attestation', 'manpower'] }).notNull(),
+  // Eligibility: JSON predicate on the lead's dynamicContext, e.g.
+  // {"targetCountry": {"$in": ["USA", "UK"]}} — null/{} = applies to whole division.
+  eligibilityJson: text('eligibility_json').notNull().default('{}'),
+  status: text('status', { enum: ['draft', 'active', 'paused'] }).notNull().default('draft'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+export const campaignTouches = sqliteTable('campaign_touches', {
+  id: text('id').primaryKey(),
+  campaignId: text('campaign_id').notNull().references(() => campaigns.id),
+  seq: integer('seq').notNull(), // 1..N within campaign
+  day: integer('day').notNull(), // day offset from plan start
+  stage: text('stage', { enum: ['value', 'case_study', 'offer', 'final'] }).notNull(),
+  body: text('body').notNull(), // {{name}}/{{division}} personalization at send time
   createdAt: integer('created_at').notNull()
 });
 

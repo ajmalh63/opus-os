@@ -50,8 +50,9 @@ export default function PublicLeadForm() {
   const [manpowerRetain, setManpowerRetain] = useState(false);
 
   // Consents State
-  const [consentProcessing, setConsentProcessing] = useState(false);
-  const [consentWhatsApp, setConsentWhatsApp] = useState(true);
+const [consentProcessing, setConsentProcessing] = useState(false);
+const [consentWhatsApp, setConsentWhatsApp] = useState(true);
+const [consentMarketing, setConsentMarketing] = useState(true);
 
   // Search State
   const [searchPhone, setSearchPhone] = useState('');
@@ -139,7 +140,7 @@ export default function PublicLeadForm() {
       consents: {
         coreProcessing: consentProcessing,
         whatsappUpdates: consentWhatsApp,
-        marketingCampaigns: false,
+        marketingCampaigns: consentMarketing,
       },
     };
 
@@ -497,6 +498,18 @@ export default function PublicLeadForm() {
                   />
                   <span className="text-[11px] text-brand-textLight leading-tight">
                     I authorize sending progress alerts, payment reminders, and visa status information via WhatsApp and SMS notifications.
+                  </span>
+                </label>
+
+                <label className="flex gap-2 items-start cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={consentMarketing}
+                    onChange={(e) => setConsentMarketing(e.target.checked)}
+                    className="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold"
+                  />
+                  <span className="text-[11px] text-brand-textLight leading-tight">
+                    I would like to receive occasional updates, tips, scholarship alerts, and offers about study-abroad and visa services tailored to my interests.
                   </span>
                 </label>
               </div>

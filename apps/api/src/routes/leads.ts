@@ -54,6 +54,7 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
 
     const CORE_PROCESSING_NOTICE = "OpusOS Consent Notice v1.0: Core processing of client application data for admissions, visa processing, and division-specific onboarding under DPDP-2023 guidelines.";
     const WHATSAPP_UPDATES_NOTICE = "OpusOS Consent Notice v1.0: Consent to receive updates, reminders, notifications, and communications via WhatsApp messenger.";
+    const MARKETING_NOTICE = "OpusOS Consent Notice v1.0: Consent to receive occasional marketing updates, tips, scholarship alerts, and offers tailored to your interests via email.";
 
     const coreNoticeHash = await sha256(CORE_PROCESSING_NOTICE);
     const whatsappNoticeHash = await sha256(WHATSAPP_UPDATES_NOTICE);
@@ -87,6 +88,24 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
       await auditEvent(c, {
         action: 'CONSENT_GRANTED', entityName: 'consents', entityId: token,
         afterState: { clientId: token, consentType: 'whatsapp-updates', status: 'granted' },
+      });
+    }
+
+    // Insert marketing-campaigns consent (email/offers lane — Wave 2 brainstorm)
+    if (data.consents.marketingCampaigns) {
+      const marketingNoticeHash = await sha256(MARKETING_NOTICE);
+      await db.insert(consents).values({
+        id: crypto.randomUUID(),
+        clientId: token,
+        consentType: 'marketing-campaigns',
+        status: 'granted',
+        ipAddress,
+        sha256Hash: marketingNoticeHash,
+        grantedAt: Math.floor(Date.now() / 1000)
+      });
+      await auditEvent(c, {
+        action: 'CONSENT_GRANTED', entityName: 'consents', entityId: token,
+        afterState: { clientId: token, consentType: 'marketing-campaigns', status: 'granted' },
       });
     }
 

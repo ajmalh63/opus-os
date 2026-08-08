@@ -340,9 +340,63 @@ const due = await app.request('/api/marketing/nurture/due?now=' + (Math.floor(Da
       headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
       body: JSON.stringify({ clientId: 'C-N2' })
     }, { DB: mock7, BETTER_AUTH_SECRET: 'test-secret' });
-    const data = await res.json() as any;
+const data = await res.json() as any;
     expect(data.status).toBe('skipped');
     expect(mock7.tables.nurture_touches.length).toBe(0);
+  });
+
+  it('campaign create + activate: division campaign overrides default sequence for matching context', async () => {
+    let mock9 = new MockD1Database();
+    // manager creates an ACTIVE study-abroad campaign targetting US/UK context
+    const create = await app.request('/api/marketing/nurture/campaigns', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
+      body: JSON.stringify({
+        key: 'us-uk-deadline', name: 'US UK Deadline',
+        division: 'study-abroad', status: 'active',
+        eligibilityJson: { targetCountry: ['US', 'UK'] },
+        touches: [
+          { seq: 1, day: 0, stage: 'value', body: 'Hi {{name}}, US deadlines soon!' },
+          { seq: 2, day: 4, stage: 'offer', body: 'Free screening for {{targetCountry}}.' },
+        ],
+      })
+    }, { DB: mock9, BETTER_AUTH_SECRET: 'test-secret' });
+    expect(create.status).toBe(200);
+
+    // lead with US context in the same division
+    mock9.tables.clients.push({ id: 'C-C1', name: 'Camp Lead', phone: '3', email: 'c1@b.c', createdAt: 1, updatedAt: 1, intakeContext: JSON.stringify({ targetCountry: 'US' }) });
+    mock9.tables.consents.push({ id: 'ck1', clientId: 'C-C1', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
+
+    const plan = await app.request('/api/marketing/nurture/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
+      body: JSON.stringify({ clientId: 'C-C1' })
+    }, { DB: mock9, BETTER_AUTH_SECRET: 'test-secret' });
+    const planData = await plan.json() as any;
+    expect(planData.status).toBe('planned');
+    expect(planData.campaignId).toBe('us-uk-deadline');
+    expect(planData.count).toBe(2);
+    // the body must come from the campaign (not the default sequence)
+    const touches = mock9.tables.nurture_touches.filter((t: any) => t.client_id === 'C-C1');
+    expect(touches).toHaveLength(2);
+    expect(touches[0].body).toContain('US deadlines');
+    expect(touches.map((t: any) => t.campaign_id).every((cid: any) => cid !== null)).toBe(true);
+  });
+
+  it('campaign eligibility: non-matching context falls back to default sequence', async () => {
+    let mock10 = new MockD1Database();
+    mock10.tables.clients.push({ id: 'C-C2', name: 'No Match', phone: '4', email: 'n@b.c', createdAt: 1, updatedAt: 1, intakeContext: JSON.stringify({ targetCountry: 'Australia' }) });
+    mock10.tables.consents.push({ id: 'ck2', clientId: 'C-C2', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
+    // read back any persisted campaigns in this mock (none were created here) => default sequence
+    const res = await app.request('/api/marketing/nurture/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
+      body: JSON.stringify({ clientId: 'C-C2' })
+    }, { DB: mock10, BETTER_AUTH_SECRET: 'test-secret' });
+    const data = await res.json() as any;
+    expect(data.status).toBe('planned');
+    expect(data.campaignId).toBeUndefined();
+    expect(data.count).toBe(4);
   });
 
   it('experiment creation enforces the hypothesis gate; active experiment assigns sticky variants', async () => {

@@ -44,6 +44,8 @@
     tcs_records: [] as any[],
     rate_limit: [] as any[],
     nurture_touches: [] as any[],
+    campaigns: [] as any[],
+    campaign_touches: [] as any[],
     experiments: [] as any[],
     experiment_assignments: [] as any[],
     job_postings: [] as any[],
