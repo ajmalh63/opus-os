@@ -48,7 +48,8 @@
     experiment_assignments: [] as any[],
     job_postings: [] as any[],
     attestation_chains: [] as any[],
-    universities: [] as any[]
+    universities: [] as any[],
+    conversations: [] as any[]
   };
 
   private getTableName(sql: string): string {

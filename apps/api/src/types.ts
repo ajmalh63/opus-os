@@ -33,6 +33,15 @@ export interface OpusEnv {
   // Turnstile
   TURNSTILE_SECRET_KEY?: string;
 
+  // Unified messaging (PENDING-CONFIGS #1/#2): WhatsApp + inbox webhooks.
+  // WA_PROVIDER: 'openwa' (VPS Baileys sidecar) | 'meta' (Meta Cloud API — no VPS).
+  WA_PROVIDER?: string;
+  OPENWA_BASE_URL?: string;
+  OPENWA_SESSION_TOKEN?: string;
+  META_WHATSAPP_PHONE_ID?: string;
+  META_WHATSAPP_TOKEN?: string;
+  WA_WEBHOOK_SECRET?: string;
+
   // Environment
   ENVIRONMENT?: string;
 

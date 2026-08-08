@@ -22,6 +22,7 @@ import { infraRouter } from './routes/infra.js';
 import { publicRouter } from './routes/public.js';
 import { OpusEnv } from './types.js';
 import { adminRouter } from './routes/admin.js';
+import { waWebhookRouter, chatwootWebhookRouter } from './routes/messagingWebhooks.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
@@ -40,6 +41,9 @@ app.route('/api/public/leads', leadsRouter);
 app.route('/api/public/portal', portalRouter);
 // Hero live artifacts (Section 24.1.1): jobs ticker, umrah departures, attestation chains, eligibility
 app.route('/api/public', publicRouter);
+// Unified messaging webhooks (PENDING-CONFIGS #1) — WhatsApp + Chatwoot inbound
+app.route('/api/webhooks/wa', waWebhookRouter);
+app.route('/api/webhooks/chatwoot', chatwootWebhookRouter);
 // Partner KYC registration + partnerId-scoped referrals/commissions (Section 39) — public signup form
 app.route('/api/public/partners', partnerRouter);
 // Razorpay webhook (Section 44) - gateway POSTs here with HMAC; no session auth

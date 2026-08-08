@@ -113,6 +113,25 @@ export const communications = sqliteTable('communications', {
 });
 
 // ==========================================
+// 48. UNIFIED MESSAGING (PENDING-CONFIGS #1/#3)
+// Provider-agnostic conversations for WhatsApp (OpenWA or Meta Cloud API) and
+// web chat — the Chatwoot-replacement inbox. Webhook events land here; the
+// staff inbox UI (workspace) reads these rows.
+// ==========================================
+export const conversations = sqliteTable('conversations', {
+  id: text('id').primaryKey(),
+  channel: text('channel', { enum: ['whatsapp', 'webchat', 'email'] }).notNull(),
+  remoteId: text('remote_id'), // provider conversation id (WA chat id, etc.)
+  contactKey: text('contact_key').notNull(), // phone/e-mail/webchat key
+  contactName: text('contact_name'),
+  lastMessage: text('last_message'),
+  lastMessageAt: integer('last_message_at'),
+  unread: integer('unread').notNull().default(0),
+  status: text('status', { enum: ['open', 'pending', 'resolved'] }).notNull().default('open'),
+  createdAt: integer('created_at').notNull()
+});
+
+// ==========================================
 // 8. AUDIT LOG (Immutable)
 // ==========================================
 export const auditLog = sqliteTable('audit_log', {
