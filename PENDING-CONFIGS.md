@@ -35,12 +35,24 @@ account and are intentionally not used).**
   `POST /api/webhooks/chatwoot` exists + secret-verified + persists to
   `conversations`; `register_webhook` API 400'd on this build — easiest via UI).
 
-## ✅ Cal.diy — reachable, embed ready (frontend wired)
-- Web at `http://100.87.71.38:3000`, API v2 `:3201`, studio `:5555` (verified 200).
-- **Frontend:** "Pick a Time" CTA (gold outline) renders in the home CTA band
-  when `VITE_BOOKING_URL` is set (deep-link to a Cal.diy booking page).
-- **TODO (needs you):** create the Cal.diy super admin + first event type in
-  its UI (`/setup`), then paste the event/booking URL into `VITE_BOOKING_URL`.
+## ✅ Cal.diy — PROVISIONED end-to-end (login verified, one UI click left)
+- Web `http://100.87.71.38:3000` · API v2 `:3201` · studio `:5555` (verified).
+- **Bootstrapped via API + postgres:**
+  - Super admin: `owner@opusoverseas.com` / `CalDiyOwner2026!` (username `opus-owner`, id 1)
+  - `emailVerified`, `completedOnboarding`, `defaultScheduleId=1`, `timeZone=Asia/Kolkata`
+  - **EventType 1:** "Free Consultation" · slug `consultation` · 30 min
+  - Schedule "Working hours" (Mon–Fri 9–17) + availability row present
+  - Env: `NEXT_PUBLIC_WEBAPP_URL=http://100.87.71.38:3000`,
+    `NEXTAUTH_URL` reverted to `http://localhost:3000/api/auth` (server-side must stay
+    container-local; a tailnet NEXTAUTH_URL broke next-auth fetch → fixed)
+  - Login verified: `POST /api/auth/callback/credentials` → **302**
+- **Frontend:** "Pick a Time" gold CTA in home CTA band renders when
+  `VITE_BOOKING_URL` is set.
+- **TODO (one browser click — resolves the wizard 404):** open
+  `http://100.87.71.38:3000`, sign in with the creds above (Cal's onboarding adds
+  what the DB seed can't), then set
+  `VITE_BOOKING_URL=http://100.200.71.38:3000/opus-owner/consultation` (verify slug —
+  may be `/book/opus-owner/consultation` in this Cal version) in the app .env.
 
 ## 0 ✅ VPS lockdown (committed to the box, verified)
 - **Public internet:** all app ports CLOSED (verified from VPS public IP: 2785/3000/3201/5555/3100/6381/8180/5434/5455 all `closed`). Done via:
