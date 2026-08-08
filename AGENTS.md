@@ -6,110 +6,126 @@ Welcome! This is the living specification and rulebook for AI agents working on 
 
 ## 1. Core Technology Stack
 
-The stack is locked for production-ready Cloudflare-native deployment:
+**Canonical project path:** `C:\Opus OS` (copied from OneDrive; the OneDrive copy is a frozen backup). Work only in `C:\Opus OS`.
 
-- **Frontend:** React 19 + Vite (Single Page Application, served via Cloudflare Static Assets)
-- **Styling:** Tailwind CSS v4
-- **Backend:** Hono API framework running on Cloudflare Workers
-- **Database:** Cloudflare D1 (SQLite)
-- **ORM:** Drizzle ORM (type-safe query building and automated migrations)
-- **Authentication:** Better Auth v1 (using D1 database adapter, email OTP/password, and revocable sessions)
-- **Monorepo Structure (pnpm workspaces):**
-  - `app/` — React frontend application
-  - `api/` — Hono API backend
-  - `shared/` — Common schemas, Zod validators, and TypeScript types
+| Layer | Technology |
+|---|---|
+| Frontend | React 19 + Vite SPA (`apps/app`), served via Cloudflare Static Assets |
+| Styling | Tailwind CSS v4 (`@theme` tokens: brand-navy `#0a2d50`, brand-gold `#d7a019`, brand-cream `#FAF8F4`, brand-blue, brand-gold-hover, brand-gray, brand-textLight; utilities `.clay-card`, `.glass-pill`, `.hero-orb`, `.film-grain`, `.gold-dot`, `.lead-form-wrap`) |
+| Backend | Hono API on Cloudflare Workers · `apps/api` |
+| Database | Cloudflare D1 (SQLite), migrations in `apps/api/migrations` |
+| ORM | Drizzle (`pnpm --filter api db:generate` → migration SQL, NEVER hand-written) |
+| Auth | **Better Auth v1.6.26** (D1 adapter; password + email-OTP verification + TOTP 2FA; `apps/api/src/auth.ts`) |
+| Money | **Integer paise everywhere**; ₹ formatting only at UI boundary |
+| Validation | Zod schemas in `packages/shared/src` — never ad-hoc in handlers |
+| Workspaces | `apps/app` · `apps/api` · `packages/shared` |
 
 ---
 
 ## 2. Non-Negotiable Rules
 
-To ensure compliance with the Cloudflare Workers free tier limits, standard financial/software practices, and our development environment, the following constraints are non-negotiable:
+### Local-First
+- Dev runs locally (`pnpm wrangler dev --port 8787 --ip 0.0.0.0` + `pnpm dev` in app on 5173). No remote Cloudflare deploys until explicitly told.
+- **Detached startup (persistent):** use `Start-Process cmd /c '... > log 2>&1'` from PowerShell. Start-Job/background jobs DIE when the shell exits. Restart pattern that works:
+  ```
+  apps/api:    pnpm exec wrangler dev --port 8787 --ip 0.0.0.0 --local
+  apps/app:    pnpm dev --host 127.0.0.1 --port 5173
+  ```
+- Apply migrations to local D1 before first request: `npx wrangler d1 migrations apply DB --local`.
 
-### Strict Local-First Rule
-- All development, testing, and database execution **MUST** run on a local dev server (`pnpm wrangler dev` with local D1 SQLite bindings).
-- **Do NOT** attempt to deploy to Cloudflare or push remote branches until explicitly instructed.
+### 10ms CPU Budget
+- Heavy work (AI, PDF, email) must go async (Queues / Cron). Keep handlers to DB + JSON.
 
-### Execution Sequence
-Every feature implementation must strictly follow this workflow order:
-1. **Wireframes:** Build interactive HTML/React mockups/wireframes to align on UX/UI design first.
-2. **Scaffolding:** Set up the basic layout, component containers, routing, and directory structure.
-3. **API & Schema Scaffolding:** Create database schemas, migration files, Hono route shells, and validation schemas.
-4. **Feature Logic:** Implement the core frontend and backend business logic.
-5. **Local Testing:** Validate the entire implementation locally.
+### Money = paise integers. Never floats for amounts.
 
-### 10ms CPU Budget Enforcement
-- Cloudflare Workers Free Tier enforces a **10ms CPU limit** per request.
-- Request handlers must remain extremely lightweight (e.g., direct DB queries, session lookups, JSON responses).
-- **Heavy operations** (such as PDF generation, AI calls, and transactional email sends) **MUST** be offloaded to Cloudflare Queues (asynchronous consumers) or Cron Triggers.
-- Ensure that network/database requests do not perform blocking CPU operations in the request thread.
+### Zod validation in shared package for every body/query.
 
-### Integer Paise for Financial Calculations
-- Floating-point arithmetic (e.g., JavaScript `number` decimals) is strictly prohibited for money fields to avoid rounding issues.
-- All financial metrics, payments, collections, commissions, invoices, and prices must be stored and computed as **integers representing paise** (1 INR = 100 paise).
-- Convert values at the input/output boundaries (e.g., formatting to Rupees `₹X.YY` only in the user interface).
-
-### Strict Zod Validation & Shared Types
-- Every API endpoint that accepts request body payloads or query parameters must validate inputs using Zod.
-- Schemas must be defined in the `shared/` workspace package to ensure absolute type synchronicity between the React frontend (`app`) and the Hono API (`api`).
-- Do not define ad-hoc validation schemas directly in route handlers.
+### Secrets
+- Secrets go in `wrangler secret put`, **never** in `[vars]` (except dev-only placeholders like `OPENWA_API_KEY`/`ADMIN_PASSWORD` which are marked DEV ONLY). **No hardcoded fallback secrets** — fail closed (503) when a required secret is missing.
 
 ---
 
 ## 3. Development & Testing Commands
 
-Agents must use the following commands exactly when running local development or test suites:
-
-- **Local Development Server:**
-  ```bash
-  pnpm wrangler dev
-  ```
-  *(Launches the Cloudflare wrangler environment locally with D1/R2 mock storage bindings)*
-
-- **Running the Test Suite:**
-  ```bash
-  pnpm test
-  ```
-  *(Executes Vitest/Playwright test suites across workspaces)*
+```bash
+cd C:\Opus OS
+pnpm install --frozen-lockfile
+pnpm typecheck          # tsc --noEmit across all workspaces
+pnpm test               # vitest, 122+ tests
+pnpm --filter app build
+cd apps/api && pnpm run db:generate   # incremental Drizzle migration
+```
 
 ---
 
 ## 4. The 4-Layer ACE Loop Framework Protocol
 
-We build and iterate using the **Architecture of Cyclical Execution (ACE)** framework. Before you perform any work, locate yourself within these four nested loops:
-
-### 1. The Micro Loop (Think ➔ Act ➔ Observe ➔ Correct)
-- **Timescale:** 2–10 seconds.
-- **Rule:** Never write code and declare it done without testing. After making a code modification, immediately execute tests (`pnpm test`), analyze errors (compile/runtime/test failures), and correct the codebase until all tests pass.
-
-### 2. The Meso Loop (Plan ➔ Execute ➔ Test ➔ Review)
-- **Timescale:** 5–30 minutes.
-- **Rule (Plan First):** Before editing files, present your step-by-step implementation plan. List the exact files to be changed, the approach, and any potential side effects. Do not start coding until the human partner approves the plan.
-- **Rule (Review Diff):** Once coding is finished and tests pass, summarize the code changes clearly and present the git diff for human review. Commit changes with a clean message upon approval (Checkpoint Commits).
-
-### 3. The Macro Loop (Spec ➔ Ship ➔ Reset ➔ Compound)
-- **Timescale:** 1–4 hours.
-- **Rule (Spec-First):** Do not write code without a structured specification (What, Why, Scope, and Success Criteria).
-- **Rule (Context Management):** If you notice your suggestions degrading, you are repeating yourself, or context is saturated (approaching 3 hours of session time), halt and reset the session. Write a brief handoff file summarizing completed items, current state, and next steps before clearing context.
-- **Rule (Compound):** Update this `AGENTS.md` file immediately if any new developer conventions, rules, or recurring mistakes are identified during a session.
-
-### 4. The Meta Loop (Do ➔ Document ➔ Improve ➔ Compose)
-- **Timescale:** Continuous.
-- **Rule:** Refine rules and documentation iteratively so that each session builds upon the last, reducing execution friction over time.
+**Micro (2–10s):** after any edit → `pnpm test` → fix → retest.
+**Meso (5–30min):** Plan-First (present plan + files before coding), Review-Diff (summarize + get approval), Checkpoint Commits.
+**Macro (1–4h):** Spec-first; reset handoff file if context degrades; compound AGENTS.md.
+**Meta:** continuously document.
 
 ---
 
 ## 5. Coding Conventions
 
-- **Null/Undefined:** Prefer explicit `null` for database models (matching D1/SQL nullable columns) and `undefined` for optional frontend fields.
-- **Imports:** Use explicit ES Modules import patterns. Do not import full libraries if named imports are available.
-- **Errors:** Handled at Hono middleware level. Return consistent JSON objects: `{ error: string, details?: any }`.
-- **Database Migrations:** All schema changes must go through Drizzle kit migration generation (`pnpm drizzle-kit generate` or equivalent wrangler migration script) and never be applied manually.
+- Explicit null for DB, undefined for optional frontend fields.
+- Error shape `{ error: string, details?: any }`; zod 400s return `{ error, details }`.
+- Migrations via `drizzle-kit`; never hand-write.
+- No excessive comments; no new deps without approval.
+
+---
+
+## 6. Module Map (current state — what exists where)
+
+### Auth gateway (`apps/api/src/routes/auth.ts`, `middleware/rbac.ts`, `lib/session.tsx`)
+- Real accounts via Better Auth sign-up/sign-in; **staff created only by owner** (`POST /api/admin/register-staff` → routes through `auth.api.signUpEmail` to avoid scrypt drift).
+- Bootstrap owner: `POST /api/auth/bootstrap-admin` (env ADMIN_EMAIL/ADMIN_PASSWORD) — **recreates** if none; owner logs in at `/login`.
+- `GET /api/auth/me` session self-describe; `AuthGuard` protects workspace routes; nav shows live user chip; **no hardcoded `token-admin` cookies anywhere** (removed previously — re-check if re-added).
+- 2FA: `src/components/TwoFactorSetup.tsx`, TOTP + backup codes. Uses `better-auth/crypto` hashPassword — mutate user through `auth.api` never manual hashes in prod paths.
+
+### Funnel & marketing (`leads.ts`, `marketing.ts`, `nurture.ts`, `public.ts`)
+- Public lead intake POST `/api/public/leads` (rate-limited, self-heals pipeline_stages, auto-scoring, SLA task, referral↔commission).
+- `/api/marketing/funnel`, `/partners`, `/experiments`, `/stale/:id/reactivate`, `/nurture/plan|due|:id/send`.
+- Artifact endpoints: `/api/public/jobs`, `/umrah/departures`, `/attestation/chains`, `/match/eligibility`.
+
+### Messaging (OpenWA / Chatwoot / inbox)
+- `src/infra/messaging.ts` — `sendWhatsApp` (OpenWA 0.14.2: `X-API-Key` + `/api/sessions/{id}/messages/send-text` with `{chatId, text}`; or Meta Cloud API).
+- Webhooks: `/api/webhooks/wa` (HMAC-SHA256 body or plaintext secret header; both timing-safe), `/api/webhooks/chatwoot` → land in `conversations`.
+- **Staff Inbox:** `GET /api/inbox`, `/api/inbox/:id/thread`, `POST /api/inbox/:id/reply` — frontend `apps/app/src/pages/Inbox.tsx` (route `/inbox`, staff only). Chatwoot widget mounts on public pages (`ChatWidget.tsx` — IMPORTANT: boot via `window.chatwootSDK.run({websiteToken, baseUrl})`; never reference `window.ChatwootSDK` capital).
+- PENDING-CONFIGS: OpenWA webhook registration on VPS still 500s (session/webhook DB split); Cal.diy needs wizard click to finish SSG.
+
+### ERPNext (back-office)
+- `src/infra/erpnext.ts` (Frappe REST v2, `token api_key:secret` auth), `routes/erpnext.ts` (owner-only `/api/erpnext/*`: health, `payments/:id/sync`, sync-log, sync/pending retry).
+- One-way sync payments→Sales Invoice, `erpnext_sync_log` table, migration `0015`.
+- Env: ERPNEXT_BASE_URL/API_KEY/API_SECRET.
+
+### Compliance / audit
+- `auditLog` written everywhere critical: PAYMENT_ENTER, AGREEMENT_SIGNED, DOC_UPLOAD, STAFF_SCOPE_UPDATE, LEAD_CREATED, CONSENT_GRANTED, STAGE_CHANGE. Use `middleware/audit.ts` helpers (fail-open).
+- Oracle VPS: everything bound to loopback/Tailscale only; DOCKER-USER chain drops public except SSH + tailscale0.
+
+### Retro-Funnel front-end
+- Hero carousel with 5 live artifacts; clay/glass design; GSAP via `src/lib/motion.ts` helpers.
 
 ---
 
 ## 6. Live List of Past Mistakes & Architectural Invariants
 
-*(To be compiled and expanded by agents as the project proceeds — Meta Loop)*
+- **Provider drift:** never hash passwords manually in route/worker paths (`better-auth/crypto` `hashPassword` produced hashes that failed BetterAuth verify in Worker runtime — went through signUpEmail instead). In prod code, **staff/owner creation → `auth.api.signUpEmail()`**.
+- **FK fresh-DB boot:** `engagements.stage_key → pipeline_stages.key`; empty stages breaks lead intake — always call `ensurePipelineStages(db)` before writing an engagement (self-heal exists in `leads.ts`).
+- **`timestamp` mode columns** in D1 + Better Auth: users/sessions/accounts/verifications use `integer(... { mode: 'timestamp' })`, insert `new Date()` not epoch in app code.
+- **Ownership/owner ceiling:** owner-only for `/api/admin/*` and `/api/infrastructure/*`; counselor blocked from payments/marketing/compliance/incentives. Don't loosen.
+- **Public surfaces:** `/api/public/*` unrestricted; webhooks need secret/HMAC (403 if missing) — never plaintext compare.
+- **Money:** amounts integer paise; GST split helper returns paise.
+- **BELOW ALL:** if a change contradicts this file, the file wins until partner updates it.
 
-- **No Third-Party DBs:** All relational data must reside inside Cloudflare D1. No external postgres or mongo providers.
-- **No Unapproved Packages:** Check with the human partner before installing new npm packages.
+---
+
+## 7. Pending / Future Work (session index)
+
+- **OpenWA webhook registration** (VPS) — check FK split sqlite (openwa.sqlite vs main.sqlite).
+- **Cal.diy** wizard completion + booking URL in `VITE_BOOKING_URL`.
+- **AI integration plan** — see `OPUSAI-INTEGRATION-PLAN.md` (not implemented).
+- **CI**: `.github/workflows/ci.yml` runs typecheck+test+build on push.
+
+*Doc updated 2026-08-08 (Meta loop).*
