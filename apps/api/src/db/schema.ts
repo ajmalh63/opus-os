@@ -103,7 +103,7 @@ export const consents = sqliteTable('consents', {
 // ==========================================
 export const communications = sqliteTable('communications', {
   id: text('id').primaryKey(),
-  clientId: text('client_id').notNull().references(() => clients.id),
+  clientId: text('client_id').references(() => clients.id), // nullable: webhook/inbox rows may precede a client record
   senderId: text('sender_id').references(() => users.id), // Null implies client sent it
   channel: text('channel', { enum: ['whatsapp', 'email', 'system', 'note'] }).notNull(),
   direction: text('direction', { enum: ['incoming', 'outgoing', 'internal'] }).notNull(),
@@ -317,6 +317,26 @@ export const universities = sqliteTable('universities', {
   budgetLpaMin: real('budget_lpa_min').notNull().default(0), // in lakh INR per year
   intake: text('intake').notNull().default('Fall 2027'),
   createdAt: integer('created_at').notNull()
+});
+
+// ==========================================
+// 49. ERPNEXT SYNC LOG (back-office books integration)
+// One-way queue: OpusOS front office → ERPNext official books. Each syncable
+// business event (payments/invoices) gets a row; a worker/endpoint pushes rows
+// with status='pending' and records Frappe's response + any retry attempts.
+// ==========================================
+export const erpnextSyncLog = sqliteTable('erpnext_sync_log', {
+  id: text('id').primaryKey(),
+  entityName: text('entity_name').notNull(), // e.g. 'payments'
+  entityId: text('entity_id').notNull(),     // local id (payment id)
+  doctype: text('doctype').notNull().default('Sales Invoice'), // ERPNext doctype target
+  payloadJson: text('payload_json').notNull(), // the invoice payload sent to Frappe
+  status: text('status', { enum: ['pending', 'synced', 'failed', 'skipped'] }).notNull().default('pending'),
+  attempts: integer('attempts').notNull().default(0),
+  erpDocName: text('erp_doc_name'), // Frappe doc name after success
+  error: text('error'), // last error message
+  createdAt: integer('created_at').notNull(),
+  syncedAt: integer('synced_at')
 });
 
 // ==========================================

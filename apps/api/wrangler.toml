@@ -27,6 +27,9 @@ OPENWA_API_KEY = "owa_k1_6c127c65d850fa156f794cd554c3eb55f" # DEV ONLY — VPS d
 OPENWA_SESSION_ID = "main"
 WA_WEBHOOK_SECRET = "dev-webhook-secret-change-me"
 
+# ERPNext back-office integration (Frappe REST) — owner-only sync endpoints
+ERPNEXT_BASE_URL = "http://100.87.71.38:8000"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "opusos-db"

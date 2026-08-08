@@ -43,6 +43,11 @@ export interface OpusEnv {
   META_WHATSAPP_TOKEN?: string;
   WA_WEBHOOK_SECRET?: string;
 
+  // ERPNext back-office integration (Frappe REST)
+  ERPNEXT_BASE_URL?: string;
+  ERPNEXT_API_KEY?: string;
+  ERPNEXT_API_SECRET?: string;
+
   // Environment
   ENVIRONMENT?: string;
 

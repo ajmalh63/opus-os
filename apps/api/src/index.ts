@@ -23,6 +23,8 @@ import { publicRouter } from './routes/public.js';
 import { OpusEnv } from './types.js';
 import { adminRouter } from './routes/admin.js';
 import { waWebhookRouter, chatwootWebhookRouter } from './routes/messagingWebhooks.js';
+import { inboxRouter } from './routes/inbox.js';
+import { erpnextRouter } from './routes/erpnext.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
@@ -92,6 +94,14 @@ app.use('/api/staff/incentives/*', rbacMiddleware(['super_admin', 'manager', 'co
 app.use('/api/admin', rbacMiddleware(['super_admin'], true));
 app.use('/api/admin/*', rbacMiddleware(['super_admin'], true));
 
+// Unified staff inbox (OpenWA + Chatwoot surface) — all staff roles can answer
+app.use('/api/inbox', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.use('/api/inbox/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+
+// ERPNext books integration — owner only (sensitive financial target)
+app.use('/api/erpnext', rbacMiddleware(['super_admin'], true));
+app.use('/api/erpnext/*', rbacMiddleware(['super_admin'], true));
+
 // RBAC suite (Section 33) - owner-only role/permission management
 app.use('/api/admin/rbac', rbacMiddleware(['super_admin'], true));
 
@@ -113,6 +123,8 @@ app.route('/api/compliance', complianceRouter);
 app.route('/api/infrastructure', infraRouter);
 app.route('/api/admin', adminRouter);
 app.route('/api/admin/rbac', rbacRouter);
+app.route('/api/inbox', inboxRouter);
+app.route('/api/erpnext', erpnextRouter);
 
 // Health check endpoint
 app.get('/api/health', (c) => c.json({ status: 'healthy', timestamp: Date.now() }));
