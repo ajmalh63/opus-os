@@ -4,6 +4,18 @@ Status: **Tailscale test phase LIVE (2026-08-08). Cloudflare tunnel phase PENDIN
 needs the real CF account credentials (old postiz/etsy JSONs are a DIFFERENT
 account and are intentionally not used).**
 
+## ★ LIVE VERIFIED 2026-08-08 — messaging E2E over tailnet
+- VPS OpenWA → HMAC webhook → local worker → `conversations` row (**`count:1`**).
+- **OpenWA SSRF guard:** added `SSRF_ALLOWED_HOSTS=100.69.139.47,localhost,127.0.0.1`
+  to the container env (from `dist/common/security/ssrf-guard.js`; blocks 100.64/10).
+  Container recreated preserving the data volume.
+- **Webhook contract (commit 387e9b6):** `X-WA-Signature` = HMAC-SHA256(body, secret)
+  OR `X-Webhook-Secret` plaintext; parses Meta + OpenWA `message.received` envelope.
+- Worker inbound requires `pnpm exec wrangler dev --ip 0.0.0.0`.
+- **TODO:** OpenWA webhook REGISTRATION returns 500 (webhooks FK vs session across
+  split sqlite files after container recreate) — needs a clean session re-start on
+  the box. Send path is test-ready (`X-API-Key` + `/api/sessions/main/messages/send-text`).
+
 ## 0 ✅ VPS lockdown (committed to the box, verified)
 - **Public internet:** all app ports CLOSED (verified from VPS public IP: 2785/3000/3201/5555/3100/6381/8180/5434/5455 all `closed`). Done via:
   - `iptables DOCKER-USER` chain: ACCEPT on `tailscale0` + loopback only, DROP everything else
