@@ -19,6 +19,7 @@ export default function LandingPortal() {
   const cards = [
     { icon: '📝', title: 'Public Lead Intake', desc: 'Public student and job seeker registration form with compliance notice & consent agreements.', to: '/lead-form' },
     { icon: '📋', title: 'Counselor Kanban', desc: 'Interactive drag-and-drop workspace scoping client pipelines with WIP limits and stale flags.', to: '/kanban', roles: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'] },
+    { icon: '💬', title: 'Unified Inbox', desc: 'WhatsApp & website chat from OpenWA/Chatwoot — reply in one place.', to: '/inbox', roles: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'] },
     { icon: '👤', title: 'Client 360 Profiles', desc: 'Select any client card to view their full 360 profile, vault, agreements and ledgers.', to: '/kanban', roles: ['super_admin', 'manager', 'counselor'] },
     { icon: '⚙️', title: 'Admin Control Desk', desc: 'Staff registration, division scopes, RBAC roles and compliance audit trail.', to: '/admin', roles: ['super_admin', 'manager'] },
     { icon: '🚀', title: 'Client Journey Portal', desc: "Self-service status tracking using the client's journey token.", to: '/portal' },

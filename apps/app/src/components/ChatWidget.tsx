@@ -1,14 +1,15 @@
 import { useEffect } from 'react';
 
-// Chatwoot live-chat widget on the public site (official Chatwoot Web SDK).
-// Loaded once; backend inbox "Opus Website Chat" (inbox 1, account 1).
-// Config via window.chatwootSettings — language from the page.
+// Chatwoot live-chat widget (official SDK contract).
+// SDK (packs/js/sdk.js) boots by setting window.chatwootSDK = { run(...) } and
+// reads window.chatwootSettings for appearance + window.$chatwoot for the
+// banner config. Contract confirmed from the served sdk.js.
 
 declare global {
   interface Window {
-    chatwootSDK?: any;
+    chatwootSDK?: { run: (opts: { websiteToken: string; baseUrl: string }) => void };
     chatwootSettings?: Record<string, unknown>;
-    ChatwootSDK?: { run: (opts: { websiteToken: string; baseUrl: string }) => void };
+    $chatwoot?: { baseUrl: string; websiteToken: string };
   }
 }
 
@@ -17,27 +18,23 @@ const CHATWOOT_TOKEN = import.meta.env.VITE_CHATWOOT_WEBSITE_TOKEN || 'f36574fb9
 
 export default function ChatWidget() {
   useEffect(() => {
-    const sdk = document.getElementById('chatwoot-sdk') as HTMLScriptElement | null;
-    if (sdk) return;
+    if (document.getElementById('chatwoot-sdk')) return; // mounted once
+
+    window.chatwootSettings = {
+      position: 'right',
+      type: 'expanded_bubble',
+      launcherTitle: 'Chat with Opus Overseas',
+      locale: 'en',
+    };
 
     const script = document.createElement('script');
     script.id = 'chatwoot-sdk';
     script.src = `${CHATWOOT_BASE}/packs/js/sdk.js`;
-    script.defer = true;
+    script.async = true;
     script.onload = () => {
-      window.chatwootSDK = window.chatwootSDK || {};
-      window.chatwootSettings = {
-        position: 'right',
-        type: 'expanded_bubble',
-        launcherTitle: 'Chat with Opus Overseas',
-      };
-      (window as any).ChatwootSDK?.({ websiteToken: CHATWOOT_TOKEN, baseUrl: CHATWOOT_BASE });
+      window.chatwootSDK?.run({ websiteToken: CHATWOOT_TOKEN, baseUrl: CHATWOOT_BASE });
     };
     document.body.appendChild(script);
-
-    return () => {
-      document.getElementById('chatwoot-sdk')?.remove();
-    };
   }, []);
 
   return null;

@@ -12,6 +12,7 @@ import PublicHome from './pages/PublicHome.js';
 import PublicService from './pages/PublicService.js';
 import Login from './pages/Login.js';
 import Signup from './pages/Signup.js';
+import Inbox from './pages/Inbox.js';
 
 export default function App() {
   return (
@@ -57,6 +58,9 @@ export default function App() {
         </Route>
         <Route path="/admin">
           <AuthGuard><AdminConsole /></AuthGuard>
+        </Route>
+        <Route path="/inbox">
+          <AuthGuard><Inbox /></AuthGuard>
         </Route>
 
         <Route>

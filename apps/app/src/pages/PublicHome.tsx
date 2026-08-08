@@ -11,7 +11,7 @@ import Img from '../components/Img';
 import ChatWidget from '../components/ChatWidget';
 import { imageFor } from '../config/images';
 
-const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || ''; // Cal.diy embed (set once account/event exists)
+const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || 'http://100.87.71.38:3000/opus-owner/consultation'; // Cal.diy — keep tailnet for dev; swap to public domain in prod
 
 gsap.registerPlugin(ScrollTrigger);
 
