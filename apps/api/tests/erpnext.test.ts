@@ -44,12 +44,21 @@ describe('ERPNext back-office integration', () => {
     );
     expect(payload.customer).toBe('Erp Client');
     expect(payload.customer_email).toBe('e@x.com');
+    expect(payload.company).toBe('Opus Overseas');
     expect(payload.items[0].rate).toBe(11800); // paise → rupees
     expect(payload.currency).toBe('INR');
   });
 
   it('POST /api/erpnext/payments/:id/sync → success writes a synced log entry', async () => {
-    fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { name: 'SINV-00001' } }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    // Mock the two-step flow: (1) GET customer probe → 404 (create), (2) POST Customer → created,
+    // (3) POST Sales Invoice → created doc SINV-00001
+    let calls = 0;
+    fetchMock = vi.fn().mockImplementation(async (url: string) => {
+      calls++;
+      if (url.includes('Customer/')) return new Response('{}', { status: 404 }); // probe missing
+      if (url.includes('Customer')) return new Response(JSON.stringify({ data: { name: 'ERP Test Client' } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ data: { name: 'SINV-00001' } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     const res = await app.request('/api/erpnext/payments/pay-8001/sync', {

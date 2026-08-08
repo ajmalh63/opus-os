@@ -42,17 +42,54 @@ export async function erpLogin(env: ErpEnv, username: string, password: string):
   return null;
 }
 
-// Create or update a doctype doc via Resource API.
+// Create or update a doctype doc via Resource API (idempotent: PUT when present, POST when absent).
 export async function erpUpsert(env: ErpEnv, doctype: string, doc: Record<string, any>, docName?: string): Promise<ErpResult> {
-  const path = docName ? `${doctype}/${encodeURIComponent(docName)}` : doctype;
-  const res = await fetch(`${base(env)}/api/resource/${path}`, {
+  const name = docName || (doc as any).name || (doc as any).customer_name;
+  if (!name) return erpCreateDoc(env, doctype, doc);
+
+  // Existence check → PUT (update) or POST (create)
+  const probe = await fetch(`${base(env)}/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`, { headers: authHeaders(env) });
+  const exists = probe.ok;
+  const res = await fetch(`${base(env)}/api/resource/${exists ? encodeURIComponent(doctype) + '/' + encodeURIComponent(name) : doctype}`, {
+    method: exists ? 'PUT' : 'POST',
+    headers: authHeaders(env),
+    body: JSON.stringify({ ...doc, doctype: doctype }),
+  })
+const body = await res.json().catch(() => ({})) as any;
+  if (!res.ok) {
+    const msg = extractErpError(body);
+    return { ok: false, status: res.status, message: msg || `ERPNext [${res.status}]` };
+  }
+  return { ok: true, status: res.status, data: body.data };
+}
+
+async function erpCreateDoc(env: ErpEnv, doctype: string, doc: Record<string, any>): Promise<ErpResult> {
+  const res = await fetch(`${base(env)}/api/resource/${encodeURIComponent(doctype)}`, {
     method: 'POST',
     headers: authHeaders(env),
     body: JSON.stringify({ ...doc, doctype: doctype }),
   })
   const body = await res.json().catch(() => ({})) as any;
-  if (!res.ok) return { ok: false, status: res.status, message: body?.exc_type || body?.message || `ERPNext [${res.status}]` };
+  if (!res.ok) {
+    const msg = extractErpError(body);
+    return { ok: false, status: res.status, message: msg || `ERPNext [${res.status}]` };
+  }
   return { ok: true, status: res.status, data: body.data };
+}
+
+// Prefer Frappe's detailed (_server_messages) error; fallback exc_type or raw body.
+function extractErpError(body: any): string | null {
+  try {
+    const msgs = body?._server_messages;
+    if (Array.isArray(msgs) && msgs.length > 0) {
+      const parsed = JSON.parse(msgs[0]);
+      return parsed?.message || msgs[0];
+    }
+  } catch { /* fallthrough */ }
+  if (body?.exc_type) return body.exc_type as string;
+  if (body?.exception) return String(body.exception).slice(0, 300);
+  const raw = JSON.stringify(body);
+  return raw && raw !== '{}' ? raw.slice(0, 300) : null;
 }
 
 // Health probe without side effects.
@@ -67,15 +104,24 @@ export async function erpHealth(env: ErpEnv): Promise<ErpResult> {
 }
 
 // Payment (receipt) → Sales Invoice / received payment in ERPNext books.
+// cost_center + income_account are explicit so the doc validates even on a
+// fresh ERP where the Item lacks defaults (values created during first-run).
 export function buildInvoicePayload(payment: Record<string, any>, client: { name: string; email: string; phone?: string } | null) {
   return {
+    company: 'Opus Overseas',
     customer: client?.name || 'Walk-in Customer',
     customer_email: client?.email,
     due_date: new Date().toISOString().slice(0, 10),
     currency: 'INR',
     posting_date: new Date().toISOString().slice(0, 10),
-    // single fictitious item representing the consultancy service
-    items: [{ item_code: 'CONSULTANCY-SV', qty: 1, rate: payment.amount / 100, description: payment.milestone_name || 'Service Fees' }],
+    items: [{
+      item_code: 'CONSULTANCY-SV',
+      qty: 1,
+      rate: payment.amount / 100,
+      description: payment.milestone_name || 'Service Fees',
+      income_account: 'Sales - OO',
+      cost_center: 'Main - OO',
+    }],
     is_pos: 0,
   };
 }

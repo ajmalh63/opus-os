@@ -37,6 +37,16 @@ erpnextRouter.post('/payments/:id/sync', async (c) => {
     const client = await db.select().from(clients).where(eq(clients.id, payment.clientId)).get();
     const payload = buildInvoicePayload(payment as any, client ? { name: client.name, email: client.email, phone: client.phone } : null);
 
+    // Interlock: ERPNext requires the Customer link to exist before a Sales Invoice.
+    const custRes = await erpUpsert(c.env, 'Customer', {
+      customer_name: payload.customer || 'Walk-in Customer',
+      customer_type: 'Individual',
+      customer_group: 'Individual',
+      territory: 'India',
+    } as any);
+    const customerName = (custRes.data as any)?.name || payload.customer;
+    payload.customer = customerName;
+
     const res = await erpUpsert(c.env, 'Sales Invoice', payload as any);
     const now = Math.floor(Date.now() / 1000);
     const logId = crypto.randomUUID();

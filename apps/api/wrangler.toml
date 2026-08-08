@@ -28,7 +28,7 @@ OPENWA_SESSION_ID = "main"
 WA_WEBHOOK_SECRET = "dev-webhook-secret-change-me"
 
 # ERPNext back-office integration (Frappe REST) — owner-only sync endpoints
-ERPNEXT_BASE_URL = "http://100.87.71.38:8000"
+ERPNEXT_BASE_URL = "http://100.87.71.38:8080"
 
 [[d1_databases]]
 binding = "DB"
