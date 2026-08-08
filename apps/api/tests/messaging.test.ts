@@ -19,7 +19,7 @@ describe('Unified messaging (PENDING-CONFIGS #1/#3)', () => {
 
     const ok = await app.request('/api/webhooks/wa', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-wa-signature': 'whsec-1' },
+      headers: { 'Content-Type': 'application/json', 'x-webhook-secret': 'whsec-1' },
       body: JSON.stringify({ from: '919876500001', text: 'hello from wa' }),
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', WA_WEBHOOK_SECRET: 'whsec-1' });
     expect(ok.status).toBe(200);
@@ -36,7 +36,7 @@ describe('Unified messaging (PENDING-CONFIGS #1/#3)', () => {
   it('wa webhook increments unread on subsequent messages (single conversation)', async () => {
     const res = await app.request('/api/webhooks/wa', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-wa-signature': 'whsec-1' },
+      headers: { 'Content-Type': 'application/json', 'x-webhook-secret': 'whsec-1' },
       body: JSON.stringify({ from: '919876500001', text: 'second msg' }),
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', WA_WEBHOOK_SECRET: 'whsec-1' });
     expect(res.status).toBe(200);
@@ -50,7 +50,7 @@ describe('Unified messaging (PENDING-CONFIGS #1/#3)', () => {
   it('chatwoot webhook creates a conversation from sender metadata', async () => {
     const res = await app.request('/api/webhooks/chatwoot', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-wa-signature': 'whsec-1' },
+      headers: { 'Content-Type': 'application/json', 'x-webhook-secret': 'whsec-1' },
       body: JSON.stringify({
         event: 'message_created',
         conversation: { meta: { sender: { phone_number: '+919812345678', name: 'Ravi' } } },
@@ -63,5 +63,28 @@ describe('Unified messaging (PENDING-CONFIGS #1/#3)', () => {
     expect(conv).toBeTruthy();
     expect(conv.last_message).toBe('Need visa help');
     expect(conv.channel).toBe('whatsapp');
+  });
+
+  it('wa webhook accepts an OpenWA-style HMAC-SHA256 body signature (x-wa-signature)', async () => {
+    const body = JSON.stringify({ id: 'sim-1', sessionId: 'main', event: 'message.received', data: { from: '919876500001', message: { body: 'hmac test' } } });
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode('whsec-1'), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(body));
+    const hex = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
+
+    const res = await app.request('/api/webhooks/wa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-wa-signature': hex },
+      body,
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', WA_WEBHOOK_SECRET: 'whsec-1' });
+    expect(res.status).toBe(200);
+
+    // Tampered body must be rejected
+    const bad = await app.request('/api/webhooks/wa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-wa-signature': hex.slice(0, 10) },
+      body,
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', WA_WEBHOOK_SECRET: 'whsec-1' });
+    expect(bad.status).toBe(403);
   });
 });
