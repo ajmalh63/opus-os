@@ -11,6 +11,7 @@ import LandingPortal from './pages/LandingPortal.js';
 import PublicHome from './pages/PublicHome.js';
 import PublicService from './pages/PublicService.js';
 import Login from './pages/Login.js';
+import Signup from './pages/Signup.js';
 import ProductivityToolbox from './components/ProductivityToolbox.js';
 
 export default function App() {
@@ -39,6 +40,7 @@ export default function App() {
 
         {/* Central auth gateway */}
         <Route path="/login" component={Login} />
+        <Route path="/signup" component={Signup} />
 
         {/* Public self-service surfaces (token-based by design) */}
         <Route path="/portal" component={ClientPortal} />

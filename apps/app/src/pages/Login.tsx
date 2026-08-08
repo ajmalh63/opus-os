@@ -5,9 +5,9 @@ import Footer from '../components/Footer';
 import Logo from '../components/Logo';
 import { useSession } from '../lib/session';
 
-// Central authentication gateway (gold-standard 2026):
-//   email + password (primary) · email OTP (verification/reset) · TOTP 2FA step
-// All cookie session handling is same-origin.
+// Central login gateway. Every account type (staff, partner, public) signs in
+// here with the same page. Account creation is NOT in this page — public users
+// sign up on /signup, partners on /partner, and staff are created by an admin.
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -17,7 +17,6 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
-  const [name, setName] = useState('');
   const [twoFactorStep, setTwoFactorStep] = useState(false);
   const [totp, setTotp] = useState('');
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
@@ -57,7 +56,7 @@ export default function Login() {
         ok('Enter your 2FA code.');
         return;
       }
-      fail(r.data?.message || r.data?.error || r.data?.status || 'Sign-in failed.');
+      fail(r.data?.message || r.data?.error || 'Sign-in failed.');
     } finally { setBusy(false); }
   };
 
@@ -71,20 +70,6 @@ export default function Login() {
         await finish();
       } else {
         fail(r.data?.message || 'Invalid 2FA code.');
-      }
-    } finally { setBusy(false); }
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true); setMsg(null);
-    try {
-      const r = await post('/sign-up/email', { name, email, password });
-      if (r.status === 200) {
-        ok('Account created — check your inbox for the verification link (dev: see API logs).');
-        setMode('password');
-      } else {
-        fail(r.data?.message || r.data?.error || 'Sign-up failed.');
       }
     } finally { setBusy(false); }
   };
@@ -119,10 +104,7 @@ export default function Login() {
           <div className="glass-light rounded-[2rem] p-8 shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
             <div className="mb-7 flex flex-col items-center gap-3 text-center">
               <Logo className="h-10 w-auto" />
-              <div>
-                <h1 className="font-display text-2xl font-bold text-brand-navy">Sign in to OpusOS</h1>
-                <p className="mt-1 text-xs text-brand-textLight">Staff · Owners · Verified partners</p>
-              </div>
+              <h1 className="font-display text-2xl font-bold text-brand-navy">Sign In</h1>
             </div>
 
             {msg && (
@@ -156,32 +138,19 @@ export default function Login() {
                     </button>
                   </form>
                 ) : (
-                  <>
-                    <form onSubmit={handleOTP} className="space-y-4">
-                      <div>
-                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Email</label>
-                        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={baseInput} />
-                      </div>
-                      <div>
-                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">One-time code</label>
-                        <input inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} placeholder="6-digit code" maxLength={6} className={baseInput} />
-                      </div>
-                      <button disabled={busy} className="w-full rounded-full bg-brand-gold py-3.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] disabled:opacity-50">
-                        {busy ? 'Verifying…' : 'Verify OTP'}
-                      </button>
-                    </form>
-                    <div className="mt-5 border-t border-brand-navy/10 pt-5">
-                      <form onSubmit={handleSignup} className="space-y-4">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-brand-textLight">New partner / staff?</p>
-                        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={baseInput} />
-                        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={baseInput} />
-                        <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create password (min 8 chars)" className={baseInput} />
-                        <button disabled={busy} className="w-full rounded-full bg-brand-navy py-3.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:bg-brand-navy-800 active:scale-[0.98] disabled:opacity-50">
-                          {busy ? 'Creating…' : 'Create & Verify Account'}
-                        </button>
-                      </form>
+                  <form onSubmit={handleOTP} className="space-y-4">
+                    <div>
+                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Email</label>
+                      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={baseInput} />
                     </div>
-                  </>
+                    <div>
+                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">One-time code</label>
+                      <input inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} placeholder="6-digit code" maxLength={6} className={baseInput} />
+                    </div>
+                    <button disabled={busy} className="w-full rounded-full bg-brand-gold py-3.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] disabled:opacity-50">
+                      {busy ? 'Verifying…' : 'Verify OTP'}
+                    </button>
+                  </form>
                 )}
               </>
             )}
@@ -200,6 +169,17 @@ export default function Login() {
                 </button>
               </form>
             )}
+
+            <p className="mt-6 text-center text-xs text-brand-textLight">
+              Need an account?{' '}
+              <button onClick={() => setLocation('/signup')} className="font-bold text-brand-gold hover:text-brand-gold-hover">
+                Create one here
+              </button>{' '}
+              ·{' '}
+              <button onClick={() => setLocation('/partner')} className="font-bold text-brand-gold hover:text-brand-gold-hover">
+                Partner portal
+              </button>
+            </p>
           </div>
         </div>
       </main>

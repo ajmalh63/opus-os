@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="relative overflow-hidden bg-brand-navy text-white">
       <div className="hero-orb -left-20 -top-24 h-72 w-72 bg-brand-gold/10 blur-3xl" aria-hidden="true" />
       <div className="mx-auto max-w-6xl px-5 py-16 md:py-20">
-        <div className="grid gap-10 md:grid-cols-3">
+        <div className="grid gap-10 md:grid-cols-4">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Logo className="h-8 w-auto" />
@@ -57,6 +57,32 @@ export default function Footer() {
                 >
                   Chat on WhatsApp
                 </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">Quick Access</h4>
+            <ul className="space-y-2.5 text-sm text-white/70">
+              <li>
+                <button onClick={() => setLocation('/signup')} className="cursor-pointer transition-colors hover:text-brand-gold">
+                  Create Account
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setLocation('/login')} className="cursor-pointer transition-colors hover:text-brand-gold">
+                  Sign In
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setLocation('/partner')} className="cursor-pointer transition-colors hover:text-brand-gold">
+                  Partner Portal
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setLocation('/portal')} className="cursor-pointer transition-colors hover:text-brand-gold">
+                  Client Journey Portal
+                </button>
               </li>
             </ul>
           </div>
