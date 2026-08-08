@@ -70,9 +70,14 @@ describe('Marketing automation interlock â€” funnel + partner affiliate (Se
       }))
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
 
-    expect(res.status).toBe(200);
+expect(res.status).toBe(200);
     const data = await res.json() as any;
     expect(data.points_awarded).toBe(40); // 10 + 10 + 15 + 5
+
+    // Audit trail: LEAD_CREATED + CONSENT_GRANTED recorded at intake
+    const audits = mockD1.tables.audit_log as any[];
+    expect(audits.some((l) => l.action === 'LEAD_CREATED' && l.entity_id === data.token && l.actor_id === null)).toBe(true);
+    expect(audits.filter((l) => l.action === 'CONSENT_GRANTED' && l.entity_id === data.token).length).toBe(2);
 
     const client = mockD1.tables.clients.find((cl: any) => cl.id === data.token);
     expect(client).toBeTruthy();

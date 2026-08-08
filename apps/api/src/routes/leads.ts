@@ -7,6 +7,7 @@ import { and, eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 import { ensurePipelineStages } from '../db/seed.js';
+import { auditEvent } from '../middleware/audit.js';
 
 export const leadsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -67,6 +68,10 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
       sha256Hash: coreNoticeHash,
       grantedAt: Math.floor(Date.now() / 1000)
     });
+    await auditEvent(c, {
+      action: 'CONSENT_GRANTED', entityName: 'consents', entityId: token,
+      afterState: { clientId: token, consentType: 'core-processing', status: 'granted' },
+    });
 
     // Insert whatsapp updates consent
     if (data.consents.whatsappUpdates) {
@@ -78,6 +83,10 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
         ipAddress,
         sha256Hash: whatsappNoticeHash,
         grantedAt: Math.floor(Date.now() / 1000)
+      });
+      await auditEvent(c, {
+        action: 'CONSENT_GRANTED', entityName: 'consents', entityId: token,
+        afterState: { clientId: token, consentType: 'whatsapp-updates', status: 'granted' },
       });
     }
 
@@ -189,6 +198,18 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
       // Scoring must never break lead capture — log and continue.
       console.error('lead auto-scoring failed', scoreErr?.message);
     }
+
+    // Audit: lead capture is the funnel entry event (guest actor, IP recorded).
+    await auditEvent(c, {
+      action: 'LEAD_CREATED',
+      entityName: 'clients',
+      entityId: token,
+      afterState: {
+        division: data.division, leadSource: data.leadSource || 'website',
+        referralId, slaTaskId,
+        points: intentSignals.reduce((a, s) => a + s.points, 0),
+      },
+    });
 
     return c.json({
       success: true,

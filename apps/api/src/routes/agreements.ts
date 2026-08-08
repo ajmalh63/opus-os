@@ -215,6 +215,10 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
       sha256Hash: noticeHash,
       grantedAt: Math.floor(Date.now() / 1000)
     });
+    await auditEvent(c, {
+      action: 'CONSENT_GRANTED', entityName: 'consents', entityId: agreement.clientId,
+      afterState: { clientId: agreement.clientId, consentType: 'core-processing', via: 'agreement-sign', status: 'granted' },
+    });
 
     // 3. Partner affiliate interlock (Section 39): if this client came via a partner
     // referral, mature the commission now that they are a signed customer.
