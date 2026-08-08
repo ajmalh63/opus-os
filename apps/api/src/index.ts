@@ -19,6 +19,7 @@ import { nurtureRouter } from './routes/nurture.js';
 import { incentivesRouter, staffIncentivesRouter } from './routes/incentives.js';
 import { complianceRouter } from './routes/compliance.js';
 import { infraRouter } from './routes/infra.js';
+import { publicRouter } from './routes/public.js';
 import { OpusEnv } from './types.js';
 import { adminRouter } from './routes/admin.js';
 
@@ -37,6 +38,8 @@ app.route('/api/auth', authRouter);
 app.route('/api/public/leads', leadsRouter);
 // Client journey lookup /api/public/portal/lookup (Section 25) — public, token-based
 app.route('/api/public/portal', portalRouter);
+// Hero live artifacts (Section 24.1.1): jobs ticker, umrah departures, attestation chains, eligibility
+app.route('/api/public', publicRouter);
 // Partner KYC registration + partnerId-scoped referrals/commissions (Section 39) — public signup form
 app.route('/api/public/partners', partnerRouter);
 // Razorpay webhook (Section 44) - gateway POSTs here with HMAC; no session auth

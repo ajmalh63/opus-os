@@ -266,6 +266,39 @@ export const seatBookings = sqliteTable('seat_bookings', {
 });
 
 // ==========================================
+// 24.1.1 PUBLIC ARTIFACTS — homepage hero live widgets data (Section 24)
+// Real, D1-backed data for the hero carousel artifacts: job ticker (Manpower),
+// attestation chain builder, and university match (eligibility checker).
+// ==========================================
+export const jobPostings = sqliteTable('job_postings', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  country: text('country').notNull(),
+  sector: text('sector').notNull(),
+  salaryText: text('salary_text').notNull(),
+  status: text('status', { enum: ['open', 'filled'] }).notNull().default('open'),
+  createdAt: integer('created_at').notNull()
+});
+
+export const attestationChains = sqliteTable('attestation_chains', {
+  id: text('id').primaryKey(),
+  country: text('country').notNull(),
+  stepsJson: text('steps_json').notNull(), // [{"step":"Notary","feePaise":2000,"timelineDays":2}, ...]
+  createdAt: integer('created_at').notNull()
+});
+
+export const universities = sqliteTable('universities', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  country: text('country').notNull(),
+  minGpa: real('min_gpa').notNull().default(0),
+  ieltsMin: real('ielts_min').notNull().default(0),
+  budgetLpaMin: real('budget_lpa_min').notNull().default(0), // in lakh INR per year
+  intake: text('intake').notNull().default('Fall 2027'),
+  createdAt: integer('created_at').notNull()
+});
+
+// ==========================================
 // 16. TRANSIT SHIPMENTS (Attestation Courier tracking)
 // ==========================================
 export const transitShipments = sqliteTable('transit_shipments', {

@@ -45,7 +45,10 @@
     rate_limit: [] as any[],
     nurture_touches: [] as any[],
     experiments: [] as any[],
-    experiment_assignments: [] as any[]
+    experiment_assignments: [] as any[],
+    job_postings: [] as any[],
+    attestation_chains: [] as any[],
+    universities: [] as any[]
   };
 
   private getTableName(sql: string): string {
