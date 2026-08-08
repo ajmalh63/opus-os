@@ -1,70 +1,37 @@
 # Pending Configs & Integrations
 
-Status: PENDING — not yet implemented, documented for future sessions.
+Status: **MOSTLY IMPLEMENTED (repo side).** VPS provisioning remains external ops.
 
-## 1. OpenWA + Chatwoot integration (VPS ↔ Cloudflare)
+## 1 ✅ Unified messaging — repo side DONE (commit e6643f1)
+- `src/infra/messaging.ts` — `sendWhatsApp(env, to, text)` provider-agnostic:
+  `WA_PROVIDER='openwa'` (VPS Baileys) | `'meta'` (Meta Cloud API — fully Cloudflare, no VPS).
+- **Webhooks** (HMAC `x-wa-signature` verified, mirroring Razorpay):
+  - `POST /api/webhooks/wa` — OpenWA **and** Meta Cloud API payload shapes unified
+  - `POST /api/webhooks/chatwoot` — conversation_created / message_created
+  - Both persist into the **`conversations`** table (the unified customer inbox =
+    Chatwoot replacement, #3).
+- **Env (wrangler [vars] + OpusEnv):** `WA_PROVIDER` `OPENWA_BASE_URL`
+  `OPENWA_SESSION_TOKEN` `META_WHATSAPP_PHONE_ID` `META_WHATSAPP_TOKEN`
+  `WA_WEBHOOK_SECRET`.
+- Migration `0013_petite_mystique` (`conversations`), 3 tests.
 
-Connect the Oracle-VPS services to this Cloudflare project over HTTPS both ways.
-Workers can `fetch()` any public URL (outbound); VPS services POST webhooks to
-public Worker routes (inbound) — same pattern as the Razorpay webhook.
+### Still EXTERNAL (needs your Oracle VPS / Meta access — out of repo):
+- Provision OpenWA (if `WA_PROVIDER=openwa`) OR Meta Business API
+  (recommended — no VPS needed). Wire vault:
+  - VPS: `cloudflared` tunnel → `OPENWA_BASE_URL`, set `OPENWA_SESSION_TOKEN`,
+    point OpenWA webhooks at `POST /api/webhooks/wa` with `WA_WEBHOOK_SECRET`.
+  - Meta: create app + phone number → `META_WHATSAPP_PHONE_ID`/`TOKEN`, subscribe
+    webhooks → `/api/webhooks/wa`.
+- Nurture dispatch cron (5 min) → poll `/api/marketing/nurture/due` →
+  `sendWhatsApp(...)` → `POST /:id/send` — **api is ready**; schedule the Worker
+  cron in wrangler.toml `[triggers]` and paste credentials.
 
-### Data flows
+## 2 ✅ Decision (resolved)
+Use **Meta Cloud API** as the recommended delivery (all-in-Cloudflare). OpenWA
+only if you prefer the own-number Web route (VPS sidecar required — Workers
+cannot hold outbound WebSockets).
 
-```
-① OUTBOUND (Cloudflare → VPS)   Worker fetch() → OpenWA/Chatwoot REST APIs
-② INBOUND  (VPS → Cloudflare)   OpenWA/Chatwoot POST webhooks → public Worker URLs
-```
-
-### Step 1 — VPS reachability
-- Open ports on Oracle security list (OpenWA ~3000, Chatwoot ~3000/8080) + iptables;
-  run both behind a reverse proxy (Caddy/Nginx) with HTTPS.
-- PREFERRED: install `cloudflared` (Cloudflare Tunnel) on the VPS → stable
-  hostnames (e.g. `https://openwa.<tunnel>.trycloudflare.com`), no port exposure.
-
-### Step 2 — Worker env config (wrangler.toml [vars] + OpusEnv in src/types.ts)
-
-```toml
-[vars]
-OPENWA_BASE_URL = "https://openwa.yourdomain.com"
-CHATWOOT_BASE_URL = "https://chatwoot.yourdomain.com"
-CHATWOOT_API_TOKEN = "..."
-WA_WEBHOOK_SECRET = "..."
-```
-
-### Step 3 — Inbound webhook routes (public, no session — mirror Razorpay)
-
-| Route | Purpose | Inbound from |
-|---|---|---|
-| `POST /api/public/wa/webhook` | WhatsApp msgs, status updates, QR/session events | OpenWA |
-| `POST /api/public/chatwoot/webhook` | conversation_created / message_created | Chatwoot Inbox → Webhooks |
-
-Both verify signature/secret (HMAC or shared token like Razorpay), parse payload,
-write to D1 (communications / conversations), enqueue Workers AI auto-reply.
-
-### Step 4 — Outbound API clients (src/infra/, like kv.ts/vector.ts)
-- `sendWhatsApp(env, to, text)` → `POST {OPENWA_BASE_URL}/api/send` with OpenWA
-  session token — used by the nurture engine dispatch.
-- `chatwootSendMessage(env, inboxId, contactId, text)` →
-  `POST {CHATWOOT_BASE_URL}/api/v1/accounts/{id}/conversations/{id}/messages`
-  with CHATWOOT_API_TOKEN.
-
-### Step 5 — Wire marketing automation dispatch
-- Cron Trigger (every ~5 min) → handler: poll `GET /api/marketing/nurture/due` →
-  `sendWhatsApp(...)` → `POST /api/marketing/nurture/:id/send`.
-- Sequencing/AI stays in Cloudflare; OpenWA is only the socket courier.
-
-### Security
-- Never expose OpenWA session key/QR outside VPS↔Worker HTTPS.
-- Verify webhook secrets on both inbound routes.
-- Chatwoot: dedicated API agent token scoped to the inbox (not admin).
-
-## 2. WhatsApp delivery route decision (pending)
-- **Meta Cloud API** (official, HTTPS webhook): everything can live fully in
-  Cloudflare, no OpenWA on VPS at all.
-- **OpenWA Baileys** (unofficial Web-mode): only the persistent-socket process
-  stays on the VPS (Workers cannot hold outbound WebSockets).
-
-## 3. Chatwoot replacement option (pending)
-- Consider dropping Chatwoot: build the unified customer inbox (site chat +
-  WhatsApp threads) as a page in this app — D1 conversations table, Workers AI
-  auto-reply, staff reply UI. Saves the VPS from running both services.
+## 3 ✅ Unified inbox (Chatwoot replacement) — foundation DONE
+`conversations` table + webhooks landing there. Remaining (optional): the staff
+inbox UI page reading conversations (+ reply hook via `sendWhatsApp`). Next
+session candidate; the data layer is in place.

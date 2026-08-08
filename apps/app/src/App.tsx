@@ -12,7 +12,6 @@ import PublicHome from './pages/PublicHome.js';
 import PublicService from './pages/PublicService.js';
 import Login from './pages/Login.js';
 import Signup from './pages/Signup.js';
-import ProductivityToolbox from './components/ProductivityToolbox.js';
 
 export default function App() {
   return (
@@ -64,7 +63,6 @@ export default function App() {
           <Redirect to="/" />
         </Route>
       </Switch>
-      <ProductivityToolbox />
     </SessionProvider>
   );
 }

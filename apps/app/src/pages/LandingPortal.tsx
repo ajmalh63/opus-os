@@ -1,5 +1,7 @@
 ﻿import { useLocation } from 'wouter';
 import { useSession } from '../lib/session';
+import TwoFactorSetup from '../components/TwoFactorSetup';
+import StaffTools from '../components/StaffTools';
 
 // Authenticated workspace hub. Mock-login removed: session comes from the real
 // auth gateway (/login). Logout clears the httpOnly cookie via Better Auth.
@@ -65,6 +67,14 @@ export default function LandingPortal() {
             </div>
           ))}
         </div>
+
+        {/* Security: 2FA onboarding (staff workspace) */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <TwoFactorSetup />
+        </div>
+
+        {/* Staff tools moved INTO the workspace (no floating button) */}
+        <StaffTools />
       </div>
     </div>
   );
