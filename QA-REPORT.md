@@ -35,17 +35,24 @@ returns 404 on empty list (no engagement) — routing artifact, not a security g
 
 ## Bugs found & fixed (all committed)
 
-1. **Critical — staff accounts could not log in.** `register-staff` inserted users with
-   no password hash. Fix: route creation through `auth.api.signUpEmail` (single hash
-   path — eliminates nodejs_compat scrypt drift between manual `hashPassword` and
-   Better Auth's own verify). Returns a one-time temporary password when none given.
-   Commit `1fcfe30`.
-2. **Critical — fresh DB rejected lead submissions.** `engagements.stage_key` FK →
-   `pipeline_stages` → empty on a new DB → any lead POST 500. Fix: self-healing
-   `ensurePipelineStages()` invoked at intake (insert-or-ignore), plus `seedDatabase`
-   restructured (stages + clauses/perms/roles/profile). Test added. Commit `80a5e2e`.
+1. **Critical — staff accounts could not log in.** ... Commit `1fcfe30`.
+2. **Critical — fresh DB rejected lead submissions.** ... Commit `80a5e2e`.
 3. Mock D1 now honors `ON CONFLICT DO NOTHING` (test-only harness parity).
 
+## Interconnection + frontend-polish pass (`606c238`, `86784af`)
+
+- **Comms timeline real** — `POST /api/clients/:id/communications` (sender resolved
+  from the live session; zod-validated channel/direction/body). Client360's
+  "Send message" was a **client-side stub** — now persists and invalidates the
+  timeline (read side already existed in clients GET). 3 new tests.
+- **Simulate Role Session removed** — Client360 used a hardcoded `token-manager`
+  cookie toggle + fake 'Santhosh Kumar' sender; replaced with the real session
+  cookie + live name/role chip (AuthGuard already protects the route).
+- **Role-aware workspace cards** — LandingPortal applied its `roles` allow-lists
+  (counselor no longer sees the 403-prone Admin Desk).
+- **Agreement-sign → handover task** — signing an agreement now creates a
+  high-priority 2-day "Handover" task for the ops team (funnel loop close →
+  delivery kickoff), in addition to the existing commission maturation. Tested.
+
 ## Suite
-**109/109 vitest passing** (21 files). CI (`typecheck` + `test` + build) enforced by
-`.github/workflows/ci.yml`.
+**112/112 vitest passing** (22 files). CI enforced by `.github/workflows/ci.yml`.
