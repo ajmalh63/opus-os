@@ -16,7 +16,7 @@ const AUTH = {
 } as Record<string, string>;
 
 // Client-side mirror of the server Rbac gate. The server enforces the real
-// ceiling (403) — this mirror only decides what to render.
+// ceiling (403) Ã¢â‚¬â€ this mirror only decides what to render.
 const MODULE_ROLES: Record<string, string[]> = {
   funnel: ['super_admin', 'manager'],
   campaigns: ['super_admin'],
@@ -26,7 +26,7 @@ const MODULE_ROLES: Record<string, string[]> = {
   audit: ['super_admin'],
 };
 
-// Audit trail viewer (super_admin) — reads the same /api/admin/audit-logs the
+// Audit trail viewer (super_admin) Ã¢â‚¬â€ reads the same /api/admin/audit-logs the
 // AdminConsole uses, presented count-first like the compliance logs surface.
 function AuditView() {
   const { data } = useQuery<{ logs?: any[] }>({
@@ -41,12 +41,12 @@ function AuditView() {
   return (
     <div className="min-h-full bg-[#0A1128] p-6 md:p-8">
       <div className="mb-6">
-        <h2 className="font-display text-lg font-bold text-white">Audit Trail</h2>
-        <p className="mt-1 text-xs text-slate-400">Immutable record of every critical mutation — money, agreements, consents, RBAC, kanban moves, inbox replies.</p>
+        <h2 className="font-display text-lg font-bold text-brand-navy">Audit Trail</h2>
+        <p className="mt-1 text-xs text-slate-500">Immutable record of every critical mutation Ã¢â‚¬â€ money, agreements, consents, RBAC, kanban moves, inbox replies.</p>
       </div>
       <div className="overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.03]">
         <table className="w-full text-left text-xs">
-          <thead className="border-b border-white/10 text-[10px] uppercase tracking-wider text-slate-500">
+          <thead className="border-b border-brand-navy/10 text-[10px] uppercase tracking-wider text-slate-600">
             <tr>
               <th className="px-4 py-3">Time</th>
               <th className="px-4 py-3">Actor</th>
@@ -58,18 +58,18 @@ function AuditView() {
           </thead>
           <tbody>
             {logs.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">No audit events yet.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-600">No audit events yet.</td></tr>
             )}
             {logs.map((l: any) => (
-              <tr key={l.id} className="border-b border-white/5 text-slate-300">
+              <tr key={l.id} className="border-b border-white/5 text-slate-700">
                 <td className="whitespace-nowrap px-4 py-2.5">{new Date((l.createdAt || 0) * 1000).toLocaleString()}</td>
                 <td className="px-4 py-2.5">{l.actorId ? (l.actorName || 'staff') : 'system'}</td>
                 <td className="px-4 py-2.5">
                   <span className="rounded bg-brand-gold/10 px-1.5 py-0.5 font-mono text-[10px] text-brand-gold">{l.action}</span>
                 </td>
                 <td className="px-4 py-2.5">{l.entityName}</td>
-                <td className="px-4 py-2.5 font-mono text-[11px] text-slate-400">{l.entityId}</td>
-                <td className="px-4 py-2.5 text-slate-500">{l.ipAddress || '—'}</td>
+                <td className="px-4 py-2.5 font-mono text-[11px] text-slate-500">{l.entityId}</td>
+                <td className="px-4 py-2.5 text-slate-600">{l.ipAddress || 'Ã¢â‚¬â€'}</td>
               </tr>
             ))}
           </tbody>
@@ -86,8 +86,8 @@ function RestrictedModule({ name }: { name: string }) {
         <div className="mx-auto w-fit rounded-full border border-rose-800/60 bg-rose-950/30 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-rose-300">
           Restricted
         </div>
-        <p className="mt-4 text-sm text-slate-300">
-          The “{name}” module requires the right role. The server blocks it too — ask the owner if you need access.
+        <p className="mt-4 text-sm text-slate-700">
+          The Ã¢â‚¬Å“{name}Ã¢â‚¬Â module requires the right role. The server blocks it too Ã¢â‚¬â€ ask the owner if you need access.
         </p>
       </div>
     </div>
@@ -98,7 +98,7 @@ function NotFoundModule({ name }: { name: string }) {
   return (
     <div className="grid min-h-[70vh] place-items-center p-12">
       <div className="max-w-sm text-center">
-        <p className="text-sm text-slate-400">Module “{name}” not found — return to the dashboard.</p>
+        <p className="text-sm text-slate-500">Module Ã¢â‚¬Å“{name}Ã¢â‚¬Â not found Ã¢â‚¬â€ return to the dashboard.</p>
       </div>
     </div>
   );

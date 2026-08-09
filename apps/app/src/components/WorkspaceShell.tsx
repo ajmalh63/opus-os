@@ -43,8 +43,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'Overview',
     items: [
       { key: 'dashboard', label: 'Dashboard', to: '/workspaces', icon: I.dash, roles: ALL, match: '/workspaces' },
-      { key: 'kanban', label: 'Kanban Pipeline', to: '/kanban', icon: I.kanban, roles: ALL, match: '/kanban' },
-      { key: 'clients', label: 'Clients 360', to: '/kanban', icon: I.clients, roles: ALL, match: '/clients' },
+      { key: 'pipeline', label: 'Clients & Pipeline', to: '/kanban', icon: I.kanban, roles: ALL, match: '/kanban|/clients' },
     ],
   },
   {
@@ -98,8 +97,10 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   }, []);
 
   const sections = allowedNavFor(me);
-  const isActive = (match: string) =>
-    match === '/workspaces' ? location === '/workspaces' || location === '/' : location.startsWith(match);
+  const isActive = (match: string) => {
+    const patterns = match.split('|');
+    return patterns.some((p) => (p === '/workspaces' ? location === '/workspaces' || location === '/' : location.startsWith(p)));
+  };
 
   const signOut = async () => {
     await fetch('/api/auth/sign-out', { method: 'POST', credentials: 'include' });
@@ -188,9 +189,9 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.06] bg-[#0A1128]/85 px-6 backdrop-blur">
+<header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.06] bg-[#0A1128]/85 px-6 backdrop-blur">
           <div className="text-sm font-semibold text-white">
-            {sections.flatMap((s) => s.items).find((i) => isActive(i.to))?.label || 'Workspace'}
+            {sections.flatMap((s) => s.items).find((i) => isActive(i.match || i.to))?.label || 'Workspace'}
           </div>
           {me?.twoFactorEnabled && (
             <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">2FA on</span>
@@ -213,7 +214,7 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           </div>
         </header>
 
-<main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#0A1128]">
+<main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#FAF8F4]">
           <div className="min-h-full w-full flex-1 px-6 py-6 md:px-8 md:py-7">
             {children}
           </div>

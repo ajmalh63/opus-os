@@ -191,7 +191,7 @@ export default function Client360() {
   };
 
   // Real session cookie (AuthGuard protects this route). Removed the demo
-  // "Simulate Role Session" token-switch Ã¢â‚¬â€ RBAC is enforced server-side.
+  // "Simulate Role Session" token-switch ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â RBAC is enforced server-side.
   const [sessionToken] = useState<string>(() => {
     if (typeof document === 'undefined') return '';
     const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
@@ -466,7 +466,7 @@ export default function Client360() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client360', clientId] });
       if (data.wipLimitBreached) {
-        showToast(`ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Advanced with WIP Limit warning: Column reached capacity limit of ${data.limit}.`);
+        showToast(`ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Advanced with WIP Limit warning: Column reached capacity limit of ${data.limit}.`);
       } else {
         showToast('Application stage advanced successfully.');
       }
@@ -947,9 +947,9 @@ export default function Client360() {
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         
         {/* TOP HEADER */}
-        <header className="h-16 bg-brand-navyLight border-b border-slate-900 shadow-xl flex items-center justify-between px-8 z-10 shrink-0">
+        <header className="h-16 bg-white border-b border-brand-navy/10 shadow-xl flex items-center justify-between px-8 z-10 shrink-0">
           <div className="flex items-center gap-4">
-            <h2 className="font-display font-semibold text-lg text-white">
+            <h2 className="font-display font-semibold text-lg text-brand-navy">
               Client Profile: <span className="text-brand-gold">{client.name}</span>
             </h2>
             <span className="px-3 py-1 bg-brand-navy text-brand-gold border border-brand-gold/30 text-[10px] uppercase font-bold tracking-widest rounded-full">
@@ -984,9 +984,9 @@ export default function Client360() {
                           ? 'bg-brand-success/15 border-brand-success text-brand-success' 
                           : isActive 
                             ? 'bg-brand-gold/15 border-brand-gold text-brand-gold' 
-                            : 'bg-slate-900 border-slate-800 text-slate-500'
+                            : 'bg-white border-brand-navy/10 text-slate-500'
                       }`}>
-                        {isCompleted ? 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' : step.seq}
+                        {isCompleted ? 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' : step.seq}
                       </span>
                       <span>{step.label}</span>
                     </div>
@@ -1015,19 +1015,19 @@ export default function Client360() {
         <div className="flex-1 flex overflow-hidden">
           
           {/* LEFT COLUMN: Profile info, Passports & Consents audit */}
-          <section className="w-80 border-r border-slate-900 bg-slate-950 p-6 overflow-y-auto shrink-0 flex flex-col gap-6">
-            <div className="text-center pb-6 border-b border-slate-900">
+          <section className="w-80 border-r border-brand-navy/10 bg-slate-50 p-6 overflow-y-auto shrink-0 flex flex-col gap-6">
+            <div className="text-center pb-6 border-b border-brand-navy/10">
               <div className="w-24 h-24 rounded-full bg-brand-gold/10 border-2 border-brand-gold mx-auto flex items-center justify-center text-brand-gold font-display font-bold text-3xl mb-3 shadow-inner">
                 {client.name.split(' ').map(w => w[0]).join('').substring(0, 2)}
               </div>
-              <h3 className="font-display font-bold text-base text-white">{client.name}</h3>
+              <h3 className="font-display font-bold text-base text-brand-navy">{client.name}</h3>
               <p className="text-xs text-slate-400 mt-0.5">Token: {clientId}</p>
             </div>
 
             {/* Contact details */}
             <div className="space-y-4">
               <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider">Contact Details</h4>
-              <div className="space-y-3 text-xs bg-slate-900/60 p-3 rounded-lg border border-slate-900">
+              <div className="space-y-3 text-xs bg-slate-50 p-3 rounded-lg border border-brand-navy/10">
                 <div>
                   <span className="text-[10px] text-slate-400 block mb-0.5">Mobile Phone</span>
                   <span className="font-semibold text-slate-200">{client.phone}</span>
@@ -1046,7 +1046,7 @@ export default function Client360() {
             {/* Passport details */}
             <div className="space-y-4">
               <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider">PII Passport Vault</h4>
-              <div className="space-y-3 text-xs bg-slate-900 p-3 rounded-lg border border-slate-900">
+              <div className="space-y-3 text-xs bg-white p-3 rounded-lg border border-brand-navy/10">
                 <div>
                   <span className="text-[10px] text-slate-400 block mb-0.5">Passport Number (Masked)</span>
                   <span className="font-mono font-bold tracking-widest text-brand-gold">
@@ -1065,7 +1065,7 @@ export default function Client360() {
               <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider">DPDP-2023 Consents</h4>
               <div className="space-y-3">
                 {client.consents?.map((consent) => (
-                  <div key={consent.id} className="p-3 bg-slate-900/80 rounded-lg border border-slate-800 text-[10px] space-y-2">
+                  <div key={consent.id} className="p-3 bg-white/80 rounded-lg border border-brand-navy/10 text-[10px] space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-brand-gold uppercase">{consent.consentType.replace('-', ' ')}</span>
                       <span className="px-2 py-0.2 bg-emerald-950/80 text-brand-success border border-emerald-500/20 rounded font-bold uppercase tracking-widest text-[8px]">
@@ -1076,11 +1076,11 @@ export default function Client360() {
                       <span className="text-slate-400 block leading-none">SHA-256 Digest:</span>
                       <span className="font-mono text-[9px] break-all block mt-1 text-slate-300 font-semibold">{consent.sha256Hash}</span>
                     </div>
-                    <span className="text-[8px] text-slate-500 block">IP: {consent.ipAddress} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
+                    <span className="text-[8px] text-slate-500 block">IP: {consent.ipAddress} ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
                   </div>
                 ))}
                 {(!client.consents || client.consents.length === 0) && (
-                  <div className="p-4 text-center text-xs text-slate-500 bg-slate-900/40 rounded border border-dashed border-slate-800">
+                  <div className="p-4 text-center text-xs text-slate-500 bg-white/40 rounded border border-dashed border-brand-navy/10">
                     No active consent logs found
                   </div>
                 )}
@@ -1093,23 +1093,23 @@ export default function Client360() {
             
             {/* Active Engagement & Balance Summary */}
             {activeEng && (
-              <div className="bg-brand-navyLight p-5 rounded-xl border border-slate-900 shadow-lg flex flex-wrap justify-between items-center gap-4">
+              <div className="bg-white p-5 rounded-xl border border-brand-navy/10 shadow-lg flex flex-wrap justify-between items-center gap-4">
                 <div>
                   <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest">Active Engagement</span>
-                  <h3 className="font-display font-extrabold text-base text-white mt-1">{activeEng.title}</h3>
+                  <h3 className="font-display font-extrabold text-base text-brand-navy mt-1">{activeEng.title}</h3>
                   <p className="text-xs text-slate-400 mt-0.5">Status: <span className="font-bold text-brand-gold uppercase">{activeEng.status}</span></p>
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Outstanding Balance</span>
                   <span className="font-display font-extrabold text-xl text-brand-error block mt-0.5">
-                    ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(activeEng.outstandingBalance / 100).toFixed(2)}
+                    ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(activeEng.outstandingBalance / 100).toFixed(2)}
                   </span>
                 </div>
               </div>
             )}
 
             {/* TAB SELECTOR BAR */}
-            <div className="flex border-b border-slate-900 gap-1 bg-slate-950 p-1 rounded-lg">
+            <div className="flex border-b border-brand-navy/10 gap-1 bg-slate-50 p-1 rounded-lg">
               {[
                 { id: 'tasks', label: 'Tasks' },
                 { id: 'vault', label: 'Document Vault' },
@@ -1123,8 +1123,8 @@ export default function Client360() {
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex-1 text-center py-2.5 rounded-md text-xs font-bold transition duration-200 ${
                     activeTab === tab.id
-                      ? 'bg-brand-navyLight text-brand-gold shadow-md border border-slate-800/60'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                      ? 'bg-white text-brand-gold shadow-md border border-brand-navy/10/60'
+                      : 'text-slate-400 hover:text-brand-navy hover:bg-white'
                   }`}
                 >
                   {tab.label}
@@ -1136,13 +1136,13 @@ export default function Client360() {
                 TAB 0: TASKS (Section 8.2)
                 ========================================== */}
             {activeTab === 'tasks' && (
-              <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md flex flex-col gap-4">
+              <div className="bg-white p-6 rounded-xl border border-brand-navy/10 shadow-md flex flex-col gap-4">
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="font-display font-bold text-sm text-brand-gold">Client Tasks</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Assignments, reminders and follow-ups for this client.</p>
                   </div>
-                  <span className="text-[10px] uppercase bg-slate-950 text-slate-300 px-2.5 py-1 rounded font-bold">
+                  <span className="text-[10px] uppercase bg-slate-50 text-slate-300 px-2.5 py-1 rounded font-bold">
                     {clientTasks.filter(t => t.status !== 'done').length} open
                   </span>
                 </div>
@@ -1157,12 +1157,12 @@ export default function Client360() {
                     placeholder="New task title..."
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
-                    className="flex-1 min-w-[180px] bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-brand-gold focus:outline-none"
+                    className="flex-1 min-w-[180px] bg-slate-50 border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder-slate-500 focus:border-brand-gold focus:outline-none"
                   />
                   <select
                     value={newTaskPriority}
                     onChange={(e) => setNewTaskPriority(e.target.value as any)}
-                    className="bg-slate-950 border border-slate-800 rounded px-2 py-2 text-xs text-white focus:border-brand-gold focus:outline-none"
+                    className="bg-slate-50 border border-brand-navy/10 rounded px-2 py-2 text-xs text-brand-navy focus:border-brand-gold focus:outline-none"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -1173,7 +1173,7 @@ export default function Client360() {
                     type="date"
                     value={newTaskDue}
                     onChange={(e) => setNewTaskDue(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded px-2 py-2 text-xs text-white focus:border-brand-gold focus:outline-none"
+                    className="bg-slate-50 border border-brand-navy/10 rounded px-2 py-2 text-xs text-brand-navy focus:border-brand-gold focus:outline-none"
                   />
                   <button
                     type="submit"
@@ -1192,8 +1192,8 @@ export default function Client360() {
                     return (
                       <div
                         key={task.id}
-                        className={`flex items-center justify-between gap-3 bg-slate-950 border rounded-lg px-3 py-2.5 text-xs ${
-                          isOverdue ? 'border-brand-error/50' : 'border-slate-800'
+                        className={`flex items-center justify-between gap-3 bg-slate-50 border rounded-lg px-3 py-2.5 text-xs ${
+                          isOverdue ? 'border-brand-error/50' : 'border-brand-navy/10'
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -1201,19 +1201,19 @@ export default function Client360() {
                             type="button"
                             onClick={() => toggleTaskStatus.mutate({ id: task.id, status: task.status === 'done' ? 'open' : 'done' })}
                             className={`w-5 h-5 rounded border flex items-center justify-center transition shrink-0 ${
-                              task.status === 'done' ? 'bg-brand-success border-brand-success text-white' : 'border-slate-600 hover:border-brand-gold'
+                              task.status === 'done' ? 'bg-brand-success border-brand-success text-brand-navy' : 'border-slate-600 hover:border-brand-gold'
                             }`}
                             title={task.status === 'done' ? 'Mark open' : 'Mark done'}
                           >
-                            {task.status === 'done' ? 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' : ''}
+                            {task.status === 'done' ? 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' : ''}
                           </button>
                           <div className="min-w-0">
-                            <p className={`font-semibold text-white truncate ${task.status === 'done' ? 'line-through opacity-50' : ''}`}>
+                            <p className={`font-semibold text-brand-navy truncate ${task.status === 'done' ? 'line-through opacity-50' : ''}`}>
                               {task.title}
                             </p>
                             {task.dueDate && (
                               <p className={`text-[10px] ${isOverdue ? 'text-brand-error font-bold' : 'text-slate-500'}`}>
-                                {isOverdue ? 'Overdue Ãƒâ€šÃ‚Â· ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
+                                {isOverdue ? 'Overdue ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
                               </p>
                             )}
                           </div>
@@ -1237,7 +1237,7 @@ export default function Client360() {
                 TAB 1: DOCUMENT VAULT
                 ========================================== */}
             {activeTab === 'vault' && (
-              <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md flex flex-col gap-4">
+              <div className="bg-white p-6 rounded-xl border border-brand-navy/10 shadow-md flex flex-col gap-4">
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="font-display font-bold text-sm text-brand-gold">Document Vault</h3>
@@ -1258,7 +1258,7 @@ export default function Client360() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-900">
+                      <tr className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-brand-navy/10">
                         <th className="p-4">Document Name</th>
                         <th className="p-4">Version</th>
                         <th className="p-4">Upload Date</th>
@@ -1268,8 +1268,8 @@ export default function Client360() {
                     </thead>
                     <tbody className="divide-y divide-slate-900">
                       {client.documents?.map((doc) => (
-                        <tr key={doc.id} className="hover:bg-slate-900/40 transition">
-                          <td className="p-4 font-semibold text-white">{doc.fileName}</td>
+                        <tr key={doc.id} className="hover:bg-white/40 transition">
+                          <td className="p-4 font-semibold text-brand-navy">{doc.fileName}</td>
                           <td className="p-4 text-slate-400 font-mono">{doc.version}</td>
                           <td className="p-4 text-slate-300">{new Date(doc.uploadedAt * 1000).toLocaleDateString()}</td>
                           <td className="p-4">
@@ -1313,16 +1313,16 @@ export default function Client360() {
               <div className="flex flex-col gap-6">
                 
                 {/* Generation Block */}
-                <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md">
+                <div className="bg-white p-6 rounded-xl border border-brand-navy/10 shadow-md">
                   <h3 className="font-display font-bold text-sm text-brand-gold mb-3">Compile New Service Agreement</h3>
                   
-                  <form onSubmit={handleCreateDraftAgreement} className="flex flex-wrap gap-4 items-end bg-slate-950 p-4 rounded-lg border border-slate-900">
+                  <form onSubmit={handleCreateDraftAgreement} className="flex flex-wrap gap-4 items-end bg-slate-50 p-4 rounded-lg border border-brand-navy/10">
                     <div className="flex-1 min-w-[200px]">
                       <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Standard Templates</label>
                       <select 
                         value={selectedTemplateId}
                         onChange={(e) => setSelectedTemplateId(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                        className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold"
                       >
                         <option value="">-- Choose Agreement Template --</option>
                         {templatesData?.templates?.map(t => (
@@ -1343,20 +1343,20 @@ export default function Client360() {
                 {/* Agreement Index & Merged Clauses Preview */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Left Side: Draft list */}
-                  <div className="bg-brand-navyLight p-4 rounded-xl border border-slate-900 h-96 overflow-y-auto flex flex-col gap-3">
-                    <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider pb-2 border-b border-slate-900">Generated Agreements</h4>
+                  <div className="bg-white p-4 rounded-xl border border-brand-navy/10 h-96 overflow-y-auto flex flex-col gap-3">
+                    <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider pb-2 border-b border-brand-navy/10">Generated Agreements</h4>
                     {clientAgreements.map((agreement) => (
                       <button
                         key={agreement.id}
                         onClick={() => setSelectedAgreementId(agreement.id)}
                         className={`text-left p-3 rounded-lg border text-xs flex flex-col gap-1 transition duration-200 ${
                           selectedAgreementId === agreement.id
-                            ? 'bg-slate-900 border-brand-gold'
-                            : 'bg-slate-950 border-slate-900 hover:border-slate-800'
+                            ? 'bg-white border-brand-gold'
+                            : 'bg-slate-50 border-brand-navy/10 hover:border-brand-navy/10'
                         }`}
                       >
                         <div className="flex justify-between items-center w-full">
-                          <span className="font-bold text-white truncate max-w-[120px]">ID: {agreement.id.substring(0, 8)}...</span>
+                          <span className="font-bold text-brand-navy truncate max-w-[120px]">ID: {agreement.id.substring(0, 8)}...</span>
                           <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${
                             agreement.status === 'signed' 
                               ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' 
@@ -1367,7 +1367,7 @@ export default function Client360() {
                         </div>
                         <p className="text-[10px] text-slate-400">Created: {new Date(agreement.createdAt * 1000).toLocaleDateString()}</p>
                         {agreement.sha256Hash && (
-                          <div className="mt-1 bg-slate-900 p-1 rounded font-mono text-[9px] text-slate-300 break-all border border-slate-800">
+                          <div className="mt-1 bg-white p-1 rounded font-mono text-[9px] text-slate-300 break-all border border-brand-navy/10">
                             Checksum: {agreement.sha256Hash.substring(0, 16)}...
                           </div>
                         )}
@@ -1382,8 +1382,8 @@ export default function Client360() {
                   </div>
 
                   {/* Right Side: Preview Clauses Pane */}
-                  <div className="lg:col-span-2 bg-brand-navyLight p-5 rounded-xl border border-slate-900 flex flex-col gap-4 justify-between h-96">
-                    <div className="flex justify-between items-center border-b border-slate-900 pb-2">
+                  <div className="lg:col-span-2 bg-white p-5 rounded-xl border border-brand-navy/10 flex flex-col gap-4 justify-between h-96">
+                    <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
                       <div>
                         <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider">Agreement Draft Preview</h4>
                         <p className="text-[10px] text-slate-400 mt-0.5">Merged clauses audit trail.</p>
@@ -1391,19 +1391,19 @@ export default function Client360() {
                       {selectedAgreement && selectedAgreement.status === 'draft' && (
                         <button
                           onClick={() => handleOpenSignModal(selectedAgreement.id)}
-                          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-1 px-3 rounded text-[10px] transition shadow"
+                          className="bg-emerald-500 hover:bg-emerald-600 text-brand-navy font-bold py-1 px-3 rounded text-[10px] transition shadow"
                         >
                           eSign Document
                         </button>
                       )}
                     </div>
 
-                    <div className="flex-1 bg-slate-950 border border-slate-900 rounded p-4 overflow-y-auto text-[11px] font-mono whitespace-pre-wrap text-slate-300">
+                    <div className="flex-1 bg-slate-50 border border-brand-navy/10 rounded p-4 overflow-y-auto text-[11px] font-mono whitespace-pre-wrap text-slate-300">
                       {selectedAgreement ? selectedAgreement.content : 'Select an agreement from the list to preview merged clauses.'}
                     </div>
 
                     {selectedAgreement && selectedAgreement.sha256Hash && (
-                      <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800 flex items-center gap-3">
+                      <div className="bg-slate-50 p-3 rounded-lg border border-brand-navy/10 flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
                         <div className="flex-1 font-mono text-[10px] text-slate-300 truncate">
                           <span className="text-slate-400 font-sans font-bold">SHA-256 Consent Hash:</span> {selectedAgreement.sha256Hash}
@@ -1422,11 +1422,11 @@ export default function Client360() {
               <div className="flex flex-col gap-6">
                 
                 {/* Razorpay Online Collection (Section 44) */}
-                <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md">
+                <div className="bg-white p-6 rounded-xl border border-brand-navy/10 shadow-md">
                   <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
                     <div>
                       <h3 className="font-display font-bold text-sm text-brand-gold">Collect Online Payment (Razorpay)</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">UPI Ãƒâ€šÃ‚Â· Cards Ãƒâ€šÃ‚Â· Netbanking Ãƒâ€šÃ‚Â· Wallets ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â amount computed from the ledger.</p>
+                      <p className="text-xs text-slate-400 mt-0.5">UPI ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· Cards ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· Netbanking ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· Wallets ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â amount computed from the ledger.</p>
                     </div>
                     {razorpayStatus && (
                       <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${razorpayStatus.type === 'err' ? 'bg-brand-error/20 text-brand-error' : 'bg-brand-success/15 text-brand-success'}`}>
@@ -1443,11 +1443,11 @@ export default function Client360() {
                         value={razorpayMilestone}
                         onChange={(e) => setRazorpayMilestone(e.target.value)}
                         placeholder="e.g. 2nd Installment"
-                        className="w-56 text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                        className="w-56 text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹)</label>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹)</label>
                       <input
                         type="number"
                         min="1"
@@ -1455,7 +1455,7 @@ export default function Client360() {
                         value={razorpayAmount}
                         onChange={(e) => setRazorpayAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-40 text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                        className="w-40 text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold"
                       />
                     </div>
                     <button
@@ -1469,7 +1469,7 @@ export default function Client360() {
                 </div>
 
                 {/* Submit New Billing Log */}
-                <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md">
+                <div className="bg-white p-6 rounded-xl border border-brand-navy/10 shadow-md">
                   <h3 className="font-display font-bold text-sm text-brand-gold mb-3">Log Billing Entry (Charges & Invoices)</h3>
                   
                   <form onSubmit={handleLogPaymentSubmit} className="space-y-4">
@@ -1483,7 +1483,7 @@ export default function Client360() {
                           value={paymentMilestoneName}
                           onChange={(e) => setPaymentMilestoneName(e.target.value)}
                           placeholder="e.g. Visa Processing Fee, Onboarding Deposit"
-                          className="w-full text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                          className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold"
                         />
                       </div>
 
@@ -1493,7 +1493,7 @@ export default function Client360() {
                         <select 
                           value={paymentType}
                           onChange={(e) => setPaymentType(e.target.value as any)}
-                          className="w-full text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                          className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold"
                         >
                           <option value="invoice">Invoice (Increase Bal)</option>
                           <option value="charge">Debit Charge (Increase Bal)</option>
@@ -1504,20 +1504,20 @@ export default function Client360() {
 
                       {/* Amount in Rupees */}
                       <div>
-                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (Rupees ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹)</label>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (Rupees ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹)</label>
                         <input 
                           type="number" 
                           step="0.01"
                           value={paymentAmountInRupees}
                           onChange={(e) => setPaymentAmountInRupees(e.target.value)}
                           placeholder="0.00"
-                          className="w-full text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                          className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold"
                         />
                       </div>
 
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-900">
+                    <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-brand-navy/10">
                       
                       {/* Sub-fields for receipt/refund */}
                       {(paymentType === 'receipt' || paymentType === 'refund') ? (
@@ -1527,7 +1527,7 @@ export default function Client360() {
                             <select 
                               value={paymentMethod}
                               onChange={(e) => setPaymentMethod(e.target.value as any)}
-                              className="text-xs p-2 rounded bg-slate-900 border border-slate-800 text-white"
+                              className="text-xs p-2 rounded bg-white border border-brand-navy/10 text-brand-navy"
                             >
                               <option value="upi">UPI (GPay/PhonePe)</option>
                               <option value="bank_transfer">IMPS/NEFT Bank Transfer</option>
@@ -1541,7 +1541,7 @@ export default function Client360() {
                               value={paymentRefNumber}
                               onChange={(e) => setPaymentRefNumber(e.target.value)}
                               placeholder="UTR / Ref Number"
-                              className="text-xs p-2 rounded bg-slate-900 border border-slate-800 text-white focus:ring-brand-gold w-48"
+                              className="text-xs p-2 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-brand-gold w-48"
                             />
                           </div>
                         </div>
@@ -1553,7 +1553,7 @@ export default function Client360() {
                             id="interstate"
                             checked={paymentIsInterstate}
                             onChange={(e) => setPaymentIsInterstate(e.target.checked)}
-                            className="rounded border-slate-800 bg-slate-900 text-brand-gold focus:ring-0 w-4 h-4"
+                            className="rounded border-brand-navy/10 bg-white text-brand-gold focus:ring-0 w-4 h-4"
                           />
                           <label htmlFor="interstate" className="text-xs text-slate-300 font-medium cursor-pointer">
                             Interstate Transaction (Charges 18% IGST instead of 9% CGST + 9% SGST)
@@ -1574,7 +1574,7 @@ export default function Client360() {
                 </div>
 
                 {/* Overdue Milestone Escalation status warning banners */}
-                <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md">
+                <div className="bg-white p-6 rounded-xl border border-brand-navy/10 shadow-md">
                   <div className="flex justify-between items-center mb-4">
                     <div>
                       <h3 className="font-display font-bold text-sm text-brand-gold">Milestone Payment Escalation Warnings</h3>
@@ -1583,7 +1583,7 @@ export default function Client360() {
                     <button
                       onClick={() => evaluateEscalationsMutation.mutate()}
                       disabled={evaluateEscalationsMutation.isPending}
-                      className="bg-slate-900 hover:bg-slate-800 border border-slate-850 text-brand-gold px-3.5 py-2 rounded text-xs font-bold transition flex items-center gap-1 shadow"
+                      className="bg-white hover:bg-slate-800 border border-slate-850 text-brand-gold px-3.5 py-2 rounded text-xs font-bold transition flex items-center gap-1 shadow"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.23"></path></svg>
                       <span>Run Escalation Check</span>
@@ -1595,7 +1595,7 @@ export default function Client360() {
                       const isPending = milestone.status === 'pending';
                       const isOverdue = isPending && milestone.overdueLevel !== 'none';
                       
-                      let warningBadgeStyle = 'bg-slate-950 text-slate-400 border-slate-900';
+                      let warningBadgeStyle = 'bg-slate-50 text-slate-400 border-brand-navy/10';
                       let warningText = 'No Escalation';
 
                       if (isOverdue) {
@@ -1620,10 +1620,10 @@ export default function Client360() {
                       }
 
                       return (
-                        <div key={milestone.id} className="bg-slate-950 p-4 rounded-xl border border-slate-900 flex flex-col justify-between gap-3 shadow-inner">
+                        <div key={milestone.id} className="bg-slate-50 p-4 rounded-xl border border-brand-navy/10 flex flex-col justify-between gap-3 shadow-inner">
                           <div>
                             <div className="flex justify-between items-start">
-                              <h4 className="font-bold text-xs text-white truncate max-w-[130px]">{milestone.label}</h4>
+                              <h4 className="font-bold text-xs text-brand-navy truncate max-w-[130px]">{milestone.label}</h4>
                               <span className={`px-2 py-0.5 rounded text-[8px] font-bold border ${warningBadgeStyle}`}>
                                 {warningText.toUpperCase()}
                               </span>
@@ -1631,10 +1631,10 @@ export default function Client360() {
                             <p className="text-[10px] text-slate-400 mt-1">Due Date: {new Date(milestone.dueDate * 1000).toLocaleDateString()}</p>
                           </div>
                           
-                          <div className="flex justify-between items-end border-t border-slate-900 pt-2.5">
+                          <div className="flex justify-between items-end border-t border-brand-navy/10 pt-2.5">
                             <div>
                               <span className="text-[9px] text-slate-500 uppercase tracking-widest block leading-none">Milestone Fee</span>
-                              <span className="font-mono font-extrabold text-sm text-brand-gold">ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(milestone.amount / 100).toFixed(2)}</span>
+                              <span className="font-mono font-extrabold text-sm text-brand-gold">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(milestone.amount / 100).toFixed(2)}</span>
                             </div>
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
                               milestone.status === 'paid' 
@@ -1649,7 +1649,7 @@ export default function Client360() {
                     })}
 
                     {clientMilestones.length === 0 && (
-                      <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-slate-900/40 rounded border border-dashed border-slate-800">
+                      <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-white/40 rounded border border-dashed border-brand-navy/10">
                         No milestone payment schedules exist for this client's agreements.
                       </div>
                     )}
@@ -1657,13 +1657,13 @@ export default function Client360() {
                 </div>
 
                 {/* Milestone Billing Ledger Table (Precise paise tracking formatted at UI boundaries) */}
-                <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md">
+                <div className="bg-white p-6 rounded-xl border border-brand-navy/10 shadow-md">
                   <h3 className="font-display font-bold text-sm text-brand-gold mb-3">Billing & Tax Ledger (Paise Precision)</h3>
                   
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-900">
+                        <tr className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-brand-navy/10">
                           <th className="p-4">Date</th>
                           <th className="p-4">Transaction / Milestone</th>
                           <th className="p-4">Type</th>
@@ -1675,7 +1675,7 @@ export default function Client360() {
                       <tbody className="divide-y divide-slate-900">
                         {paymentsData?.payments?.map((ledger) => {
                           let typeBadge = '';
-                          let amountColor = 'text-white';
+                          let amountColor = 'text-brand-navy';
                           
                           switch(ledger.type) {
                             case 'invoice':
@@ -1699,10 +1699,10 @@ export default function Client360() {
                           const hasTax = ledger.taxableAmount !== null;
 
                           return (
-                            <tr key={ledger.id} className="hover:bg-slate-900/40 transition">
+                            <tr key={ledger.id} className="hover:bg-white/40 transition">
                               <td className="p-4 text-slate-400">{new Date(ledger.createdAt * 1000).toLocaleDateString()}</td>
                               <td className="p-4">
-                                <p className="font-semibold text-white">{ledger.milestoneName}</p>
+                                <p className="font-semibold text-brand-navy">{ledger.milestoneName}</p>
                                 {ledger.referenceNumber && (
                                   <span className="text-[10px] text-slate-400 font-mono">Ref: {ledger.referenceNumber} ({ledger.method?.toUpperCase()})</span>
                                 )}
@@ -1713,17 +1713,17 @@ export default function Client360() {
                                 </span>
                               </td>
                               <td className="p-4 font-mono text-slate-300">
-                                {hasTax ? `ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹${(ledger.taxableAmount! / 100).toFixed(2)}` : 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'}
+                                {hasTax ? `ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹${(ledger.taxableAmount! / 100).toFixed(2)}` : 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â'}
                               </td>
                               <td className="p-4">
                                 {hasTax ? (
                                   <div className="text-[10px] font-mono text-slate-400 space-y-0.5">
                                     {ledger.isInterstate ? (
-                                      <div>IGST (18%): ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(ledger.igst! / 100).toFixed(2)}</div>
+                                      <div>IGST (18%): ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(ledger.igst! / 100).toFixed(2)}</div>
                                     ) : (
                                       <>
-                                        <div>CGST (9%): ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(ledger.cgst! / 100).toFixed(2)}</div>
-                                        <div>SGST (9%): ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(ledger.sgst! / 100).toFixed(2)}</div>
+                                        <div>CGST (9%): ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(ledger.cgst! / 100).toFixed(2)}</div>
+                                        <div>SGST (9%): ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(ledger.sgst! / 100).toFixed(2)}</div>
                                       </>
                                     )}
                                   </div>
@@ -1732,7 +1732,7 @@ export default function Client360() {
                                 )}
                               </td>
                               <td className={`p-4 text-right font-mono font-extrabold ${amountColor}`}>
-                                ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(ledger.amount / 100).toFixed(2)}
+                                ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(ledger.amount / 100).toFixed(2)}
                               </td>
                             </tr>
                           );
@@ -1757,7 +1757,7 @@ export default function Client360() {
                 TAB 4: UMRAH GROUP DEPARTURES
                 ========================================== */}
             {activeTab === 'umrah' && (
-              <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 shadow-md">
+              <div className="bg-white p-6 rounded-xl border border-brand-navy/10 shadow-md">
                 <div className="mb-4">
                   <h3 className="font-display font-bold text-sm text-brand-gold">Umrah Scheduled Group Departure Calendar</h3>
                   <p className="text-xs text-slate-400 mt-0.5">Book clients into specific luxury departure flights and track remaining capacity seat limits.</p>
@@ -1775,7 +1775,7 @@ export default function Client360() {
                     }
 
                     return (
-                      <div key={dep.id} className="bg-slate-950 p-5 rounded-xl border border-slate-900 shadow-inner flex flex-col justify-between gap-4">
+                      <div key={dep.id} className="bg-slate-50 p-5 rounded-xl border border-brand-navy/10 shadow-inner flex flex-col justify-between gap-4">
                         <div className="flex justify-between items-start">
                           <div>
                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Flight Departure Date</span>
@@ -1791,19 +1791,19 @@ export default function Client360() {
                           </div>
                         </div>
 
-                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
+                        <div className="bg-white p-3 rounded-lg border border-brand-navy/10 flex justify-between items-center text-xs">
                           <div>
                             <span className="text-[8px] text-slate-500 uppercase block">Group Capacity</span>
                             <span className="font-bold text-slate-200 font-mono">{dep.bookedSeats} / {dep.capacity} Booked</span>
                           </div>
                           <div className="text-right">
                             <span className="text-[8px] text-slate-500 uppercase block">Booking Fee</span>
-                            <span className="font-bold text-slate-200 font-mono">ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(dep.bookingFee / 100).toFixed(2)}</span>
+                            <span className="font-bold text-slate-200 font-mono">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(dep.bookingFee / 100).toFixed(2)}</span>
                           </div>
                         </div>
 
                         <div className="flex justify-between items-center">
-                          <span className="font-mono text-xs font-bold text-white">Price: ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(dep.price / 100).toFixed(2)}</span>
+                          <span className="font-mono text-xs font-bold text-brand-navy">Price: ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(dep.price / 100).toFixed(2)}</span>
                           <button
                             onClick={() => bookUmrahSeatMutation.mutate(dep.id)}
                             disabled={bookUmrahSeatMutation.isPending || dep.status === 'cancelled'}
@@ -1817,7 +1817,7 @@ export default function Client360() {
                   })}
 
                   {(!departuresData?.departures || departuresData.departures.length === 0) && (
-                    <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-slate-900/40 rounded border border-dashed border-slate-800">
+                    <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-white/40 rounded border border-dashed border-brand-navy/10">
                       No Umrah scheduled group departures available.
                     </div>
                   )}
@@ -1832,7 +1832,7 @@ export default function Client360() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Shipment Registration Form */}
-                <div className="bg-brand-navyLight p-6 rounded-xl border border-slate-900 h-fit shadow-md">
+                <div className="bg-white p-6 rounded-xl border border-brand-navy/10 h-fit shadow-md">
                   <h3 className="font-display font-bold text-sm text-brand-gold mb-3">Register Attestation Shipment</h3>
                   
                   <form onSubmit={handleRegisterCourierSubmit} className="space-y-4">
@@ -1841,7 +1841,7 @@ export default function Client360() {
                       <select
                         value={courierPartner}
                         onChange={(e) => setCourierPartner(e.target.value as any)}
-                        className="w-full text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                        className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold"
                       >
                         <option value="blue-dart">Blue Dart Express</option>
                         <option value="dtdc">DTDC Courier</option>
@@ -1855,7 +1855,7 @@ export default function Client360() {
                         value={trackingNumber}
                         onChange={(e) => setTrackingNumber(e.target.value)}
                         placeholder="Enter courier reference tracking ID..."
-                        className="w-full text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold"
+                        className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold"
                       />
                     </div>
 
@@ -1866,7 +1866,7 @@ export default function Client360() {
                         onChange={(e) => setShippingAddress(e.target.value)}
                         placeholder="Enter consignee shipping address details..."
                         rows={3}
-                        className="w-full text-xs p-2.5 rounded bg-slate-900 border border-slate-800 text-white focus:ring-1 focus:ring-brand-gold resize-none"
+                        className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold resize-none"
                       />
                     </div>
 
@@ -1881,7 +1881,7 @@ export default function Client360() {
                 </div>
 
                 {/* Shipments List & Progress timelines */}
-                <div className="lg:col-span-2 bg-brand-navyLight p-6 rounded-xl border border-slate-900 flex flex-col gap-5 justify-between min-h-[400px]">
+                <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-brand-navy/10 flex flex-col gap-5 justify-between min-h-[400px]">
                   
                   {/* Track selector header */}
                   <div>
@@ -1895,8 +1895,8 @@ export default function Client360() {
                           onClick={() => setSelectedShipmentId(s.id)}
                           className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition duration-200 ${
                             selectedShipmentId === s.id
-                              ? 'bg-slate-900 border-brand-gold text-brand-gold'
-                              : 'bg-slate-950 border-slate-900 text-slate-400 hover:border-slate-800'
+                              ? 'bg-white border-brand-gold text-brand-gold'
+                              : 'bg-slate-50 border-brand-navy/10 text-slate-400 hover:border-brand-navy/10'
                           }`}
                         >
                           {s.courierPartner === 'blue-dart' ? 'Blue Dart' : 'DTDC'}: {s.trackingNumber}
@@ -1910,17 +1910,17 @@ export default function Client360() {
                   </div>
 
                   {/* Vertical Progress events timeline */}
-                  <div className="flex-1 bg-slate-950 rounded-lg p-5 border border-slate-900 overflow-y-auto">
+                  <div className="flex-1 bg-slate-50 rounded-lg p-5 border border-brand-navy/10 overflow-y-auto">
                     {isLoadingTracking ? (
                       <div className="text-center text-xs text-slate-500 py-12">Loading events from courier API...</div>
                     ) : activeTracking?.success ? (
                       <div className="space-y-6">
                         
                         {/* Summary Header */}
-                        <div className="flex justify-between items-center border-b border-slate-900 pb-3 mb-4">
+                        <div className="flex justify-between items-center border-b border-brand-navy/10 pb-3 mb-4">
                           <div>
                             <span className="text-[8px] text-slate-500 uppercase block">Courier Partner</span>
-                            <span className="font-bold text-xs text-white">{activeTracking.partner}</span>
+                            <span className="font-bold text-xs text-brand-navy">{activeTracking.partner}</span>
                           </div>
                           <div>
                             <span className="text-[8px] text-slate-500 uppercase block">Current Status</span>
@@ -1939,7 +1939,7 @@ export default function Client360() {
                         </div>
 
                         {/* Event list */}
-                        <div className="relative border-l-2 border-slate-900 pl-4 ml-2 space-y-6">
+                        <div className="relative border-l-2 border-brand-navy/10 pl-4 ml-2 space-y-6">
                           {activeTracking.events?.map((ev, i) => (
                             <div key={i} className="relative">
                               {/* Timeline dot */}
@@ -1947,7 +1947,7 @@ export default function Client360() {
                               
                               <div className="space-y-1">
                                 <div className="flex justify-between items-baseline">
-                                  <span className="font-bold text-xs text-white uppercase">{ev.status.replace('_', ' ')}</span>
+                                  <span className="font-bold text-xs text-brand-navy uppercase">{ev.status.replace('_', ' ')}</span>
                                   <span className="text-[10px] text-slate-500">{new Date(ev.timestamp * 1000).toLocaleString()}</span>
                                 </div>
                                 <p className="text-[10px] text-slate-400">Location: <span className="text-slate-200 font-semibold">{ev.location}</span></p>
@@ -1973,10 +1973,10 @@ export default function Client360() {
           </section>
 
           {/* RIGHT COLUMN: Communication logs & WhatsApp Console */}
-          <section className="w-96 border-l border-slate-900 bg-slate-950 flex flex-col justify-between shrink-0 overflow-hidden">
+          <section className="w-96 border-l border-brand-navy/10 bg-slate-50 flex flex-col justify-between shrink-0 overflow-hidden">
             
             {/* Timeline Filter Header */}
-            <div className="p-4 border-b border-slate-900 flex items-center justify-between bg-slate-900/60">
+            <div className="p-4 border-b border-brand-navy/10 flex items-center justify-between bg-slate-50">
               <h3 className="font-display font-bold text-xs text-brand-gold uppercase tracking-wider">Communication Logs</h3>
               <div className="flex gap-1 text-[10px]">
                 {(['all', 'whatsapp', 'email', 'system'] as const).map((tab) => (
@@ -1986,7 +1986,7 @@ export default function Client360() {
                     className={`px-2 py-1 rounded transition duration-200 text-[9px] font-bold ${
                       timelineFilter === tab 
                         ? 'bg-brand-gold text-brand-navy' 
-                        : 'hover:bg-slate-900 text-slate-400'
+                        : 'hover:bg-white text-slate-400'
                     }`}
                   >
                     {tab.toUpperCase()}
@@ -2007,12 +2007,12 @@ export default function Client360() {
                     <div key={item.id} className="flex gap-2 text-xs text-slate-400 flex-row">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[9px] shrink-0 border select-none ${
                         isWhatsApp 
-                          ? 'bg-emerald-600 text-white border-emerald-700' 
+                          ? 'bg-emerald-600 text-brand-navy border-emerald-700' 
                           : isEmail 
-                            ? 'bg-sky-600 text-white border-sky-700' 
-                            : 'bg-slate-800 text-slate-300 border-slate-700'
+                            ? 'bg-sky-600 text-brand-navy border-sky-700' 
+                            : 'bg-slate-800 text-slate-300 border-brand-navy/15'
                       }`}>
-                        {isWhatsApp ? 'WA' : isEmail ? 'EM' : 'ÃƒÂ¢Ã…Â¡Ã¢â€žÂ¢'}
+                        {isWhatsApp ? 'WA' : isEmail ? 'EM' : 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢'}
                       </div>
                       
                       <div className={`p-3 rounded-lg border flex-1 ${
@@ -2020,7 +2020,7 @@ export default function Client360() {
                           ? 'bg-emerald-950/20 border-emerald-900/60' 
                           : isEmail 
                             ? 'bg-sky-950/20 border-sky-900/60' 
-                            : 'bg-slate-900/40 border-slate-900'
+                            : 'bg-white/40 border-brand-navy/10'
                       }`}>
                         <p className="font-bold text-slate-200">{item.sender || 'System Operator'}</p>
                         {item.subject && (
@@ -2036,17 +2036,17 @@ export default function Client360() {
                 })}
 
               {(!client.timeline || client.timeline.length === 0) && (
-                <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-slate-900 rounded-lg">
+                <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-brand-navy/10 rounded-lg">
                   No Communications Recorded
                 </div>
               )}
             </div>
 
             {/* Timeline Editor Console */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-900 bg-slate-950/80 flex flex-col gap-3">
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-brand-navy/10 bg-slate-50 flex flex-col gap-3">
               
               {/* Channels Tabs */}
-              <div className="flex gap-1 border-b border-slate-900 pb-2">
+              <div className="flex gap-1 border-b border-brand-navy/10 pb-2">
                 {[
                   { id: 'whatsapp', label: 'WhatsApp' },
                   { id: 'email', label: 'Email' },
@@ -2059,7 +2059,7 @@ export default function Client360() {
                     className={`px-2.5 py-1 rounded text-[10px] font-bold transition duration-200 ${
                       editorTab === tab.id 
                         ? 'bg-brand-gold text-brand-navy' 
-                        : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                        : 'text-slate-400 hover:bg-white hover:text-brand-navy'
                     }`}
                   >
                     {tab.label}
@@ -2076,7 +2076,7 @@ export default function Client360() {
                     value={messageSubject}
                     onChange={(e) => setMessageSubject(e.target.value)}
                     placeholder="Enter email subject..."
-                    className="w-full text-xs p-2 border border-slate-900 bg-slate-900 text-white rounded focus:ring-1 focus:ring-brand-gold"
+                    className="w-full text-xs p-2 border border-brand-navy/10 bg-white text-brand-navy rounded focus:ring-1 focus:ring-brand-gold"
                   />
                 </div>
               )}
@@ -2086,7 +2086,7 @@ export default function Client360() {
                 <label className="text-[9px] text-slate-400 font-bold uppercase">Quick Templates</label>
                 <select 
                   onChange={handleTemplateChange}
-                  className="text-[10px] border border-slate-900 rounded px-2 py-1 bg-slate-900 text-white focus:ring-1 focus:ring-brand-gold"
+                  className="text-[10px] border border-brand-navy/10 rounded px-2 py-1 bg-white text-brand-navy focus:ring-1 focus:ring-brand-gold"
                 >
                   <option value="custom">-- Custom --</option>
                   <option value="welcome">Welcome Onboarding</option>
@@ -2101,7 +2101,7 @@ export default function Client360() {
                 onChange={(e) => setMessageText(e.target.value)}
                 placeholder={`Type ${editorTab} message body...`}
                 rows={3} 
-                className="w-full text-xs p-2.5 border border-slate-900 bg-slate-900 text-white rounded focus:ring-1 focus:ring-brand-gold resize-none"
+                className="w-full text-xs p-2.5 border border-brand-navy/10 bg-white text-brand-navy rounded focus:ring-1 focus:ring-brand-gold resize-none"
               />
 
               {/* Submit message */}
@@ -2132,24 +2132,24 @@ export default function Client360() {
           ESIGN CAPTURE MODAL
           ========================================== */}
       {isSignModalOpen && selectedAgreement && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-brand-navyLight border border-slate-800 rounded-xl shadow-2xl max-w-lg w-full flex flex-col justify-between overflow-hidden">
+        <div className="fixed inset-0 bg-slate-50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-brand-navy/10 rounded-xl shadow-2xl max-w-lg w-full flex flex-col justify-between overflow-hidden">
             
-            <div className="p-6 border-b border-slate-900">
+            <div className="p-6 border-b border-brand-navy/10">
               <h3 className="text-sm font-bold text-brand-gold uppercase tracking-wider">Execute Digital eSign Capture</h3>
               <p className="text-xs text-slate-400 mt-1">Aadhaar/OTP Consent Verification (DPDP compliance audit trail)</p>
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto space-y-4">
               
-              <div className="bg-slate-950 p-4 border border-slate-900 rounded font-mono text-[10px] text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">
+              <div className="bg-slate-50 p-4 border border-brand-navy/10 rounded font-mono text-[10px] text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">
                 {selectedAgreement.content}
               </div>
 
               <div>
                 <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">eSign Verification Method</label>
                 <div className="grid grid-cols-2 gap-3">
-                  <label className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-3 rounded-lg cursor-pointer text-xs">
+                  <label className="flex items-center gap-2 bg-white border border-brand-navy/10 p-3 rounded-lg cursor-pointer text-xs">
                     <input 
                       type="radio" 
                       name="esign-method"
@@ -2158,12 +2158,12 @@ export default function Client360() {
                       className="text-brand-gold focus:ring-0"
                     />
                     <div>
-                      <span className="font-bold text-white block">Aadhaar eSign</span>
+                      <span className="font-bold text-brand-navy block">Aadhaar eSign</span>
                       <span className="text-[10px] text-slate-400">UIDAI verified</span>
                     </div>
                   </label>
                   
-                  <label className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-3 rounded-lg cursor-pointer text-xs">
+                  <label className="flex items-center gap-2 bg-white border border-brand-navy/10 p-3 rounded-lg cursor-pointer text-xs">
                     <input 
                       type="radio" 
                       name="esign-method"
@@ -2172,20 +2172,20 @@ export default function Client360() {
                       className="text-brand-gold focus:ring-0"
                     />
                     <div>
-                      <span className="font-bold text-white block">OTP Signature</span>
+                      <span className="font-bold text-brand-navy block">OTP Signature</span>
                       <span className="text-[10px] text-slate-400">Mobile OTP verified</span>
                     </div>
                   </label>
                 </div>
               </div>
 
-              <div className="flex items-start gap-2 bg-slate-900 border border-slate-800 p-3 rounded-lg">
+              <div className="flex items-start gap-2 bg-white border border-brand-navy/10 p-3 rounded-lg">
                 <input 
                   type="checkbox" 
                   id="consent-declaration"
                   checked={esignChecked}
                   onChange={(e) => setEsignChecked(e.target.checked)}
-                  className="rounded border-slate-800 bg-slate-950 text-brand-gold focus:ring-0 w-4 h-4 mt-0.5"
+                  className="rounded border-brand-navy/10 bg-slate-50 text-brand-gold focus:ring-0 w-4 h-4 mt-0.5"
                 />
                 <label htmlFor="consent-declaration" className="text-[10px] text-slate-300 font-medium cursor-pointer leading-relaxed">
                   I hereby declare my explicit consent to electronically sign this Service Agreement under the regulations of DPDP Act 2023. I verify that all details mapped here are accurate, and I agree to bind the legal terms of this transaction.
@@ -2194,13 +2194,13 @@ export default function Client360() {
 
             </div>
 
-            <div className="p-6 bg-slate-950/60 border-t border-slate-900 flex justify-end gap-3">
+            <div className="p-6 bg-slate-50/60 border-t border-brand-navy/10 flex justify-end gap-3">
               <button
                 onClick={() => {
                   setIsSignModalOpen(false);
                   setEsignChecked(false);
                 }}
-                className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 px-4 py-2 rounded text-xs font-bold transition"
+                className="bg-white hover:bg-slate-800 border border-brand-navy/10 text-slate-300 px-4 py-2 rounded text-xs font-bold transition"
               >
                 Cancel
               </button>
@@ -2219,7 +2219,7 @@ export default function Client360() {
 
       {/* TOAST NOTIFICATION SYSTEM */}
       <div 
-        className={`fixed right-6 bottom-6 bg-slate-950 border-l-4 border-brand-gold text-white text-xs px-4 py-3.5 rounded-lg shadow-2xl transition duration-300 z-50 flex items-center gap-2 border border-slate-800 ${
+        className={`fixed right-6 bottom-6 bg-brand-navy border-l-4 border-brand-gold text-white text-xs px-4 py-3.5 rounded-lg shadow-2xl transition duration-300 z-50 flex items-center gap-2 border border-brand-navy/10 ${
           toast.show ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'
         }`}
       >

@@ -31,7 +31,7 @@ const STAGES: Record<string, string> = { value: 'Value', case_study: 'Case Study
 const STATUS_STYLE: Record<string, string> = {
   active: 'bg-emerald-950/60 text-emerald-300 border-emerald-700/50',
   paused: 'bg-amber-950/60 text-amber-300 border-amber-700/50',
-  draft: 'bg-slate-800/60 text-slate-300 border-slate-600/50',
+  draft: 'bg-white/60 text-slate-700 border-slate-600/50',
 };
 
 type FormTouch = { seq: number; day: number; stage: 'value' | 'case_study' | 'offer' | 'final'; body: string };
@@ -104,7 +104,7 @@ export default function CampaignsTab() {
     },
     onSuccess: (d) => {
       queryClient.invalidateQueries({ queryKey: ['adminCampaigns'] });
-      showToast(`Campaign ${d.key} → ${d.status}`);
+      showToast(`Campaign ${d.key} Ã¢â€ â€™ ${d.status}`);
     },
     onError: (e: any) => showToast((e as Error).message, 'error'),
   });
@@ -113,7 +113,7 @@ export default function CampaignsTab() {
     setForm(f => ({ ...f, touches: f.touches.map((t, idx) => (idx === i ? { ...t, ...patch } : t)) }));
   };
 
-  if (isLoading) return <div className="p-12 text-center text-xs text-slate-400">Loading campaign catalog...</div>;
+  if (isLoading) return <div className="p-12 text-center text-xs text-slate-500">Loading campaign catalog...</div>;
   if (isError || !data) {
     return (
       <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
@@ -134,8 +134,8 @@ export default function CampaignsTab() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-bold text-white uppercase tracking-wide">Nurture Campaigns</h2>
-          <p className="text-[11px] text-slate-400 mt-1">
+          <h2 className="text-sm font-bold text-brand-navy uppercase tracking-wide">Nurture Campaigns</h2>
+          <p className="text-[11px] text-slate-500 mt-1">
             Division + context targeted WhatsApp sequences (super-admin surface). Eligible leads are matched at nurture-plan time.
           </p>
         </div>
@@ -148,32 +148,32 @@ export default function CampaignsTab() {
       </div>
 
       {showForm && (
-        <div className="border border-slate-700/60 bg-slate-900/60 rounded-lg p-4 space-y-3 panel-entrance">
+        <div className="border border-brand-navy/15/60 bg-brand-navy/5 rounded-lg p-4 space-y-3 panel-entrance">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <input value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} placeholder="key (slug)" className="bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white" />
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Campaign name" className="bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white" />
-            <select value={form.division} onChange={(e) => setForm({ ...form, division: e.target.value })} className="bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white">
+            <input value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} placeholder="key (slug)" className="bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white" />
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Campaign name" className="bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white" />
+            <select value={form.division} onChange={(e) => setForm({ ...form, division: e.target.value })} className="bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white">
               {DIVISIONS.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
             </select>
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as any })} className="bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white">
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as any })} className="bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white">
               <option value="draft">Draft</option>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
             </select>
           </div>
-          <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white" />
-          <input value={form.eligibilityJson} onChange={(e) => setForm({ ...form, eligibilityJson: e.target.value })} placeholder={'Eligibility JSON — e.g. ' + '{"targetCountry":["US","UK"]} (empty = whole division)'} className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white font-mono" />
+          <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="w-full bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white" />
+          <input value={form.eligibilityJson} onChange={(e) => setForm({ ...form, eligibilityJson: e.target.value })} placeholder={'Eligibility JSON Ã¢â‚¬â€ e.g. ' + '{"targetCountry":["US","UK"]} (empty = whole division)'} className="w-full bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white font-mono" />
 
           <div className="space-y-2">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Touch plan (day offset, stage, body — {'{{name}}'} / {'{{targetCountry}}'} tokens supported)</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Touch plan (day offset, stage, body Ã¢â‚¬â€ {'{{name}}'} / {'{{targetCountry}}'} tokens supported)</p>
             {form.touches.map((t, i) => (
               <div key={i} className="grid grid-cols-[40px_60px_100px_1fr] gap-2 items-center">
-                <span className="text-[10px] text-slate-500">#{i + 1}</span>
-                <input type="number" min={0} value={t.day} onChange={(e) => setFormTouch(i, { day: Number(e.target.value) })} className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
-                <select value={t.stage} onChange={(e) => setFormTouch(i, { stage: e.target.value as any })} className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white">
+                <span className="text-[10px] text-slate-600">#{i + 1}</span>
+                <input type="number" min={0} value={t.day} onChange={(e) => setFormTouch(i, { day: Number(e.target.value) })} className="bg-white border border-brand-navy/15 rounded px-2 py-1 text-xs text-white" />
+                <select value={t.stage} onChange={(e) => setFormTouch(i, { stage: e.target.value as any })} className="bg-white border border-brand-navy/15 rounded px-2 py-1 text-xs text-white">
                   {Object.entries(STAGES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                 </select>
-                <input value={t.body} onChange={(e) => setFormTouch(i, { body: e.target.value })} placeholder="Message body" className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+                <input value={t.body} onChange={(e) => setFormTouch(i, { body: e.target.value })} placeholder="Message body" className="bg-white border border-brand-navy/15 rounded px-2 py-1 text-xs text-white" />
               </div>
             ))}
             <button onClick={() => setForm({ ...form, touches: [...form.touches, EMPTY_TOUCH()] })} className="text-[11px] text-brand-gold hover:underline">+ Add touch</button>
@@ -191,22 +191,22 @@ export default function CampaignsTab() {
 
       <div className="space-y-4">
         {campaigns.length === 0 && (
-          <div className="p-10 text-center text-xs text-slate-500 border border-dashed border-slate-700 rounded-lg">
-            No campaigns yet — create one to start targeting leads by division + context.
+          <div className="p-10 text-center text-xs text-slate-600 border border-dashed border-brand-navy/15 rounded-lg">
+            No campaigns yet Ã¢â‚¬â€ create one to start targeting leads by division + context.
           </div>
         )}
         {campaigns.map((c) => (
-          <div key={c.id} className="border border-slate-700/60 bg-slate-900/60 rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+          <div key={c.id} className="border border-brand-navy/15/60 bg-brand-navy/5 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-brand-navy/10">
               <div>
                 <div className="flex items-center gap-2">
                   <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${STATUS_STYLE[c.status] || STATUS_STYLE.draft}`}>{c.status}</span>
-                  <span className="text-xs font-bold text-white">{c.name}</span>
-                  <code className="text-[10px] text-slate-500">{c.key}</code>
+                  <span className="text-xs font-bold text-brand-navy">{c.name}</span>
+                  <code className="text-[10px] text-slate-600">{c.key}</code>
                 </div>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  {DIVISIONS.find(d => d.key === c.division)?.label || c.division} · {c.touches.length} touch(es) · {c.description || 'No description'}
-                  {c.eligibilityJson !== '{}' && c.eligibilityJson ? ` · eligibility: ${c.eligibilityJson}` : ''}
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  {DIVISIONS.find(d => d.key === c.division)?.label || c.division} Ã‚Â· {c.touches.length} touch(es) Ã‚Â· {c.description || 'No description'}
+                  {c.eligibilityJson !== '{}' && c.eligibilityJson ? ` Ã‚Â· eligibility: ${c.eligibilityJson}` : ''}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -216,7 +216,7 @@ export default function CampaignsTab() {
                       key={s}
                       onClick={() => setStatus.mutate({ key: c.key, status: s })}
                       disabled={setStatus.isPending}
-                      className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-600 text-slate-300 hover:border-brand-gold hover:text-brand-gold transition disabled:opacity-40"
+                      className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-600 text-slate-700 hover:border-brand-gold hover:text-brand-gold transition disabled:opacity-40"
                     >
                       {s}
                     </button>
@@ -227,9 +227,9 @@ export default function CampaignsTab() {
             <div className="px-4 py-3 space-y-1.5">
               {c.touches.map((t) => (
                 <div key={t.seq} className="flex items-start gap-3 text-[11px]">
-                  <span className="text-slate-500 shrink-0 w-6">D+{t.day}</span>
+                  <span className="text-slate-600 shrink-0 w-6">D+{t.day}</span>
                   <span className="text-brand-gold shrink-0 uppercase w-20">{STAGES[t.stage] || t.stage}</span>
-                  <span className="text-slate-300">{t.body}</span>
+                  <span className="text-slate-700">{t.body}</span>
                 </div>
               ))}
             </div>

@@ -260,7 +260,7 @@ export default function AdminConsole() {
       case 'coordinator':
         return 'bg-cyan-950/80 text-cyan-300 border border-cyan-800';
       default:
-        return 'bg-slate-800 text-slate-300 border border-slate-700';
+        return 'bg-slate-800 text-slate-300 border border-brand-navy/15';
     }
   };
 
@@ -282,23 +282,23 @@ export default function AdminConsole() {
     <div className="flex h-full min-h-full w-full flex-col overflow-hidden text-slate-100 font-sans">
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#070b19]">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#F7F8FA]">
         
         {/* TOP STATUS BAR */}
-        <header className="h-20 border-b border-slate-800 px-8 flex items-center justify-between shrink-0 bg-[#0b132b]/80 backdrop-blur-md z-10">
+        <header className="h-20 border-b border-brand-navy/10 px-8 flex items-center justify-between shrink-0 bg-white/85 backdrop-blur-md z-10">
           <div>
-            <h2 className="font-display font-bold text-xl text-white tracking-wide">System Control Console</h2>
+            <h2 className="font-display font-bold text-xl text-brand-navy tracking-wide">System Control Console</h2>
             <p className="text-xs text-slate-400">Manage staff access controls, scope limits, and system-wide write logs</p>
           </div>
 
           <div className="flex gap-4">
             {/* Quick Stats Panel */}
-            <div className="flex items-center gap-6 bg-slate-900/50 border border-slate-800 rounded-lg px-4 py-2 text-xs">
+            <div className="flex items-center gap-6 bg-white border border-brand-navy/10 rounded-lg px-4 py-2 text-xs">
               <div>
                 <span className="text-slate-400 block text-[9px] uppercase tracking-wider font-semibold">Staff Count</span>
                 <span className="text-brand-gold font-bold text-sm">{staffData?.staff?.length || 0}</span>
               </div>
-              <div className="border-l border-slate-800 h-6"></div>
+              <div className="border-l border-brand-navy/10 h-6"></div>
               <div>
                 <span className="text-slate-400 block text-[9px] uppercase tracking-wider font-semibold">Audit Logs</span>
                 <span className="text-brand-gold font-bold text-sm">{auditData?.logs?.length || 0}</span>
@@ -314,18 +314,18 @@ export default function AdminConsole() {
             toast.type === 'error' ? 'bg-rose-950 border-rose-800 text-rose-300' :
             'bg-amber-950 border-amber-800 text-amber-300'
           }`}>
-            <span>{toast.type === 'success' ? 'Ã¢Å“â€œ' : toast.type === 'error' ? 'Ã¢Å“â€¢' : 'Ã¢Å¡Â Ã¯Â¸Â'}</span>
+            <span>{toast.type === 'success' ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“' : toast.type === 'error' ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢' : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â'}</span>
             <span>{toast.msg}</span>
           </div>
         )}
 
         {/* SUBHEADER TABS */}
-        <div className="px-8 border-b border-slate-800 bg-[#0B132B]/30 flex justify-between items-center shrink-0">
+        <div className="px-8 border-b border-brand-navy/10 bg-[#F7F8FA]/30 flex justify-between items-center shrink-0">
           <div className="flex gap-4">
             <button
               onClick={() => setActiveTab('directory')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'directory' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                activeTab === 'directory' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
               }`}
             >
               Staff Directory & Scoping
@@ -333,7 +333,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('onboard')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'onboard' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                activeTab === 'onboard' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
               }`}
             >
               Onboard New Staff
@@ -341,7 +341,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('audit')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'audit' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                activeTab === 'audit' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
               }`}
             >
               System Audit Logs
@@ -349,7 +349,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('roles')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'roles' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                activeTab === 'roles' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
               }`}
             >
               Roles & Permissions
@@ -357,7 +357,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('growth')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'growth' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                activeTab === 'growth' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
               }`}
             >
               Growth & Incentives
@@ -365,7 +365,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('funnel')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'funnel' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                activeTab === 'funnel' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
               }`}
             >
               Sales Funnel
@@ -373,7 +373,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('compliance')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'compliance' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                activeTab === 'compliance' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
               }`}
             >
               Compliance (GST)
@@ -382,7 +382,7 @@ export default function AdminConsole() {
               <button
                 onClick={() => setActiveTab('campaigns')}
                 className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'campaigns' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                  activeTab === 'campaigns' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
                 }`}
               >
                 Campaigns
@@ -401,13 +401,13 @@ export default function AdminConsole() {
                 <div className="p-12 text-center text-xs text-slate-400">Retrieving secure staff roster...</div>
               ) : staffError ? (
                 <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  Ã¢Å¡Â Ã¯Â¸Â Failed to retrieve staff records. Please check that you have active super-admin credentials.
+                  ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Failed to retrieve staff records. Please check that you have active super-admin credentials.
                 </div>
               ) : (
-                <div className="bg-[#1C2541]/40 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-[#0b132b] border-b border-slate-800 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                      <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
                         <th className="p-4">Staff Member</th>
                         <th className="p-4">Role</th>
                         <th className="p-4">Division Scopes</th>
@@ -420,7 +420,7 @@ export default function AdminConsole() {
                         return (
                           <tr key={user.id} className="hover:bg-slate-800/20 transition duration-150">
                             <td className="p-4">
-                              <div className="font-semibold text-white">{user.name}</div>
+                              <div className="font-semibold text-brand-navy">{user.name}</div>
                               <div className="text-[10px] text-slate-400">{user.email}</div>
                               <div className="text-[9px] text-slate-500 mt-0.5">UID: {user.id}</div>
                             </td>
@@ -437,7 +437,7 @@ export default function AdminConsole() {
                                   {userScopes.map(scopeKey => {
                                     const match = DIVISIONS.find(d => d.key === scopeKey);
                                     return (
-                                      <span key={scopeKey} className="px-2 py-0.5 bg-slate-900 text-slate-300 border border-slate-800 rounded text-[9px] font-medium">
+                                      <span key={scopeKey} className="px-2 py-0.5 bg-white text-slate-300 border border-brand-navy/10 rounded text-[9px] font-medium">
                                         {match?.label || scopeKey}
                                       </span>
                                     );
@@ -448,7 +448,7 @@ export default function AdminConsole() {
                             <td className="p-4 text-right">
                               <button
                                 onClick={() => handleOpenEditScope(user)}
-                                className="px-3 py-1.5 bg-[#1C2541] hover:bg-slate-800 border border-slate-700 text-brand-gold text-[10px] uppercase font-semibold tracking-wider rounded transition duration-150 cursor-pointer"
+                                className="px-3 py-1.5 bg-[#1C2541] hover:bg-slate-800 border border-brand-navy/15 text-brand-gold text-[10px] uppercase font-semibold tracking-wider rounded transition duration-150 cursor-pointer"
                               >
                                 Edit Scope
                               </button>
@@ -465,8 +465,8 @@ export default function AdminConsole() {
 
           {/* TAB 2: REGISTER NEW STAFF */}
           {activeTab === 'onboard' && (
-            <div className="max-w-2xl mx-auto bg-[#1C2541]/40 border border-slate-800 p-8 rounded-xl shadow-2xl">
-              <h3 className="font-display font-semibold text-white text-base mb-6 border-b border-slate-800 pb-3 text-brand-gold">
+            <div className="max-w-2xl mx-auto bg-[#1C2541]/40 border border-brand-navy/10 p-8 rounded-xl shadow-2xl">
+              <h3 className="font-display font-semibold text-brand-navy text-base mb-6 border-b border-brand-navy/10 pb-3 text-brand-gold">
                 System Staff Onboarding & Scoping
               </h3>
               
@@ -481,7 +481,7 @@ export default function AdminConsole() {
                       placeholder="e.g. Rahul Sharma"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="w-full bg-[#0B132B]/80 border border-slate-800 rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                      className="w-full bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-500 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
                       required
                     />
                   </div>
@@ -494,7 +494,7 @@ export default function AdminConsole() {
                       placeholder="name@opusoverseas.com"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
-                      className="w-full bg-[#0B132B]/80 border border-slate-800 rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                      className="w-full bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-500 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
                       required
                     />
                   </div>
@@ -507,10 +507,10 @@ export default function AdminConsole() {
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as any)}
-                    className="w-full bg-[#0B132B]/80 border border-slate-800 rounded px-3 py-2 text-white focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                    className="w-full bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-3 py-2 text-brand-navy focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
                   >
                     {ROLES.map(role => (
-                      <option key={role.key} value={role.key} className="bg-[#0B132B] text-white">
+                      <option key={role.key} value={role.key} className="bg-[#F7F8FA] text-brand-navy">
                         {role.label}
                       </option>
                     ))}
@@ -524,7 +524,7 @@ export default function AdminConsole() {
                   <label className="block text-[10px] uppercase text-slate-400 font-semibold mb-2 tracking-wider">
                     Permitted Division Scopes (Employee Scoping)
                   </label>
-                  <div className="bg-[#0B132B]/80 border border-slate-800 rounded p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="bg-[#F7F8FA]/80 border border-brand-navy/10 rounded p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {DIVISIONS.map(div => {
                       const isChecked = newScopes.includes(div.key);
                       return (
@@ -533,8 +533,8 @@ export default function AdminConsole() {
                           onClick={() => toggleScope(div.key, false)}
                           className={`flex items-center gap-3 p-2.5 rounded border cursor-pointer select-none transition-all duration-150 ${
                             isChecked
-                              ? 'bg-slate-900 border-brand-gold/60 text-brand-gold'
-                              : 'bg-transparent border-slate-800 text-slate-300 hover:border-slate-700'
+                              ? 'bg-white border-brand-gold/60 text-brand-gold'
+                              : 'bg-transparent border-brand-navy/10 text-slate-300 hover:border-brand-navy/15'
                           }`}
                         >
                           <input
@@ -553,7 +553,7 @@ export default function AdminConsole() {
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-slate-800 flex justify-end">
+                <div className="pt-4 border-t border-brand-navy/10 flex justify-end">
                   <button
                     type="submit"
                     disabled={registerMutation.isPending}
@@ -578,7 +578,7 @@ export default function AdminConsole() {
             <div className="space-y-6">
               
               {/* FILTERS & SEARCH ROW */}
-              <div className="bg-[#1C2541]/40 border border-slate-800 p-4 rounded-xl flex flex-wrap gap-4 items-end text-xs">
+              <div className="bg-[#1C2541]/40 border border-brand-navy/10 p-4 rounded-xl flex flex-wrap gap-4 items-end text-xs">
                 <div className="flex-1 min-w-[200px]">
                   <label className="block text-[9px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
                     Search logs
@@ -588,7 +588,7 @@ export default function AdminConsole() {
                     placeholder="Search Action, Entity, Actor ID..."
                     value={actorSearch}
                     onChange={(e) => setActorSearch(e.target.value)}
-                    className="w-full bg-[#0B132B]/80 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-brand-gold"
+                    className="w-full bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none focus:border-brand-gold"
                   />
                 </div>
 
@@ -599,7 +599,7 @@ export default function AdminConsole() {
                   <select
                     value={actionFilter}
                     onChange={(e) => setActionFilter(e.target.value)}
-                    className="bg-[#0B132B]/80 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none"
+                    className="bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none"
                   >
                     <option value="all">All Actions</option>
                     {uniqueActions.map(action => (
@@ -615,7 +615,7 @@ export default function AdminConsole() {
                   <select
                     value={entityFilter}
                     onChange={(e) => setEntityFilter(e.target.value)}
-                    className="bg-[#0B132B]/80 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none"
+                    className="bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none"
                   >
                     <option value="all">All Entities</option>
                     {uniqueEntities.map(ent => (
@@ -630,7 +630,7 @@ export default function AdminConsole() {
                     setEntityFilter('all');
                     setActorSearch('');
                   }}
-                  className="px-3 py-1.5 bg-[#0B132B] hover:bg-slate-800 text-slate-400 hover:text-white rounded border border-slate-800 cursor-pointer font-medium"
+                  className="px-3 py-1.5 bg-[#F7F8FA] hover:bg-slate-800 text-slate-400 hover:text-brand-navy rounded border border-brand-navy/10 cursor-pointer font-medium"
                 >
                   Reset
                 </button>
@@ -641,13 +641,13 @@ export default function AdminConsole() {
                 <div className="p-12 text-center text-xs text-slate-400">Loading system write log pipeline...</div>
               ) : auditError ? (
                 <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  Ã¢Å¡Â Ã¯Â¸Â Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
+                  ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
                 </div>
               ) : (
-                <div className="bg-[#1C2541]/40 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-[#0b132b] border-b border-slate-800 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                      <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
                         <th className="p-4">Timestamp</th>
                         <th className="p-4">Action</th>
                         <th className="p-4">Entity Mapped</th>
@@ -669,13 +669,13 @@ export default function AdminConsole() {
                             <td className="p-4 text-slate-300 font-mono whitespace-nowrap">
                               {formatTime(log.createdAt)}
                             </td>
-                            <td className="p-4 font-mono font-bold text-white tracking-wider">
-                              <span className="px-1.5 py-0.5 rounded bg-slate-900/80 text-brand-gold border border-brand-gold/10">
+                            <td className="p-4 font-mono font-bold text-brand-navy tracking-wider">
+                              <span className="px-1.5 py-0.5 rounded bg-white/80 text-brand-gold border border-brand-gold/10">
                                 {log.action}
                               </span>
                             </td>
                             <td className="p-4">
-                              <div className="font-semibold text-white">{log.entityName}</div>
+                              <div className="font-semibold text-brand-navy">{log.entityName}</div>
                               <div className="text-[10px] text-slate-400 font-mono">{log.entityId}</div>
                             </td>
                             <td className="p-4 font-mono text-slate-400">
@@ -688,7 +688,7 @@ export default function AdminConsole() {
                               {(log.beforeState || log.afterState) ? (
                                 <button
                                   onClick={() => setSelectedLogDetail(log)}
-                                  className="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-brand-gold text-[10px] font-semibold rounded cursor-pointer transition"
+                                  className="px-2 py-1 bg-white hover:bg-slate-800 border border-brand-navy/10 hover:border-brand-navy/15 text-brand-gold text-[10px] font-semibold rounded cursor-pointer transition"
                                 >
                                   Inspect State
                                 </button>
@@ -711,9 +711,9 @@ export default function AdminConsole() {
       {/* MODAL / DRAWER: EDIT STAFF SCOPE */}
       {editingStaff && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#1C2541] border border-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
+          <div className="bg-[#1C2541] border border-brand-navy/10 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
             <div>
-              <h3 className="font-display font-bold text-white text-base">Modify Division Scopes</h3>
+              <h3 className="font-display font-bold text-brand-navy text-base">Modify Division Scopes</h3>
               <p className="text-xs text-slate-400 mt-1">
                 Updating scopes for <span className="text-brand-gold font-semibold">{editingStaff.name}</span> ({editingStaff.email})
               </p>
@@ -723,7 +723,7 @@ export default function AdminConsole() {
               <label className="block text-[10px] uppercase text-slate-400 font-bold tracking-wider">
                 Select Permitted Divisions
               </label>
-              <div className="space-y-2 bg-[#0B132B] p-4 border border-slate-800 rounded-lg max-h-60 overflow-y-auto">
+              <div className="space-y-2 bg-[#F7F8FA] p-4 border border-brand-navy/10 rounded-lg max-h-60 overflow-y-auto">
                 {DIVISIONS.map(div => {
                   const isChecked = editScopes.includes(div.key);
                   return (
@@ -747,10 +747,10 @@ export default function AdminConsole() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 text-xs pt-4 border-t border-slate-800/60">
+            <div className="flex justify-end gap-3 text-xs pt-4 border-t border-brand-navy/10/60">
               <button
                 onClick={() => setEditingStaff(null)}
-                className="px-4 py-2 border border-slate-700 text-slate-300 hover:text-white rounded hover:bg-slate-800 cursor-pointer font-medium"
+                className="px-4 py-2 border border-brand-navy/15 text-slate-300 hover:text-brand-navy rounded hover:bg-slate-800 cursor-pointer font-medium"
               >
                 Cancel
               </button>
@@ -769,26 +769,26 @@ export default function AdminConsole() {
       {/* MODAL: STATE DIFF INSPECTOR */}
       {selectedLogDetail && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#1C2541] border border-slate-800 rounded-xl shadow-2xl max-w-3xl w-full p-6 flex flex-col max-h-[85vh]">
+          <div className="bg-[#1C2541] border border-brand-navy/10 rounded-xl shadow-2xl max-w-3xl w-full p-6 flex flex-col max-h-[85vh]">
             
             {/* Header */}
-            <div className="flex justify-between items-start border-b border-slate-800 pb-4 shrink-0">
+            <div className="flex justify-between items-start border-b border-brand-navy/10 pb-4 shrink-0">
               <div>
-                <span className="text-[10px] uppercase font-bold text-brand-gold px-1.5 py-0.5 rounded bg-slate-900 border border-brand-gold/20">
+                <span className="text-[10px] uppercase font-bold text-brand-gold px-1.5 py-0.5 rounded bg-white border border-brand-gold/20">
                   {selectedLogDetail.action}
                 </span>
-                <h3 className="font-display font-bold text-white text-base mt-2">
+                <h3 className="font-display font-bold text-brand-navy text-base mt-2">
                   Audit State Inspector
                 </h3>
                 <p className="text-[10px] text-slate-400 mt-1">
-                  Entity: <span className="text-white font-mono">{selectedLogDetail.entityName}</span> (ID: <span className="text-white font-mono">{selectedLogDetail.entityId}</span>) | Actor: <span className="text-white font-mono">{selectedLogDetail.actorId || 'guest_user'}</span>
+                  Entity: <span className="text-brand-navy font-mono">{selectedLogDetail.entityName}</span> (ID: <span className="text-brand-navy font-mono">{selectedLogDetail.entityId}</span>) | Actor: <span className="text-brand-navy font-mono">{selectedLogDetail.actorId || 'guest_user'}</span>
                 </p>
               </div>
               <button
                 onClick={() => setSelectedLogDetail(null)}
-                className="text-slate-400 hover:text-white text-xl p-1 font-bold cursor-pointer"
+                className="text-slate-400 hover:text-brand-navy text-xl p-1 font-bold cursor-pointer"
               >
-                Ã¢Å“â€¢
+                ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢
               </button>
             </div>
 
@@ -803,7 +803,7 @@ export default function AdminConsole() {
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     - State Before Change
                   </div>
-                  <div className="bg-[#0B132B] border border-slate-800 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-rose-300">
+                  <div className="bg-[#F7F8FA] border border-brand-navy/10 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-rose-300">
                     {selectedLogDetail.beforeState ? (
                       (() => {
                         try {
@@ -824,7 +824,7 @@ export default function AdminConsole() {
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-emerald-400">
                     + State After Change
                   </div>
-                  <div className="bg-[#0B132B] border border-slate-800 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-emerald-300">
+                  <div className="bg-[#F7F8FA] border border-brand-navy/10 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-emerald-300">
                     {selectedLogDetail.afterState ? (
                       (() => {
                         try {
@@ -844,7 +844,7 @@ export default function AdminConsole() {
 
               {/* Structured Field changes if both exist */}
               {selectedLogDetail.beforeState && selectedLogDetail.afterState && (
-                <div className="bg-[#0B132B]/50 border border-slate-800 rounded-lg p-4 text-xs space-y-3">
+                <div className="bg-[#F7F8FA]/50 border border-brand-navy/10 rounded-lg p-4 text-xs space-y-3">
                   <h4 className="text-[10px] uppercase font-bold text-brand-gold tracking-wider">
                     Detected Value Modifications
                   </h4>
@@ -863,13 +863,13 @@ export default function AdminConsole() {
                           
                           if (valBefore !== valAfter) {
                             changedFields.push(
-                              <div key={key} className="border-b border-slate-800/80 py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div key={key} className="border-b border-brand-navy/10/80 py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <span className="text-slate-300 font-semibold">{key}</span>
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="px-1.5 py-0.5 rounded bg-rose-950/40 text-rose-400 line-through max-w-[200px] truncate">
                                     {valBefore === undefined ? 'undefined' : valBefore}
                                   </span>
-                                  <span className="text-slate-500">Ã¢â€ â€™</span>
+                                  <span className="text-slate-500">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢</span>
                                   <span className="px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-400 max-w-[200px] truncate">
                                     {valAfter === undefined ? 'undefined' : valAfter}
                                   </span>
@@ -894,10 +894,10 @@ export default function AdminConsole() {
             </div>
 
             {/* Footer */}
-            <div className="pt-4 border-t border-slate-800/60 flex justify-end shrink-0">
+            <div className="pt-4 border-t border-brand-navy/10/60 flex justify-end shrink-0">
               <button
                 onClick={() => setSelectedLogDetail(null)}
-                className="px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded font-semibold text-xs cursor-pointer"
+                className="px-4 py-2 bg-white border border-brand-navy/10 hover:bg-slate-800 text-slate-300 rounded font-semibold text-xs cursor-pointer"
               >
                 Close Inspector
               </button>

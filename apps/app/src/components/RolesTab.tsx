@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 interface Permission { code: string; family: string; label: string; ownerOnly: boolean; }
 interface Role { id: string; name: string; code: string; description: string | null; permissionsJson: string; system: boolean; editable: boolean; color: string; }
 
-// A-5: session-driven auth — read the live better-auth cookie; no forged admin token.
+// A-5: session-driven auth ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â read the live better-auth cookie; no forged admin token.
 const AUTH = {
   get Cookie() {
     const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
@@ -77,25 +77,25 @@ export default function RolesTab() {
       )}
 
       {/* CREATE ROLE BUILDER */}
-      <div className="bg-[#1C2541]/40 border border-slate-800 rounded-xl p-6 space-y-4">
+      <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl p-6 space-y-4">
         <div>
           <h3 className="font-display font-bold text-sm text-brand-gold">Create a Custom Role</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Assemble a role by ticking atomic permissions. Owner-only permissions (finance/compliance/audit/rbac) can never be added here.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Assemble a role by ticking atomic permissions. Owner-only permissions (finance/compliance/audit/rbac) can never be added here.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Role name — e.g. Visa Specialist"
-            className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white placeholder-slate-600 focus:border-brand-gold focus:outline-none" />
-          <input value={code} onChange={e => setCode(e.target.value)} placeholder="Code — e.g. visa_specialist"
-            className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white placeholder-slate-600 focus:border-brand-gold focus:outline-none" />
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Role name ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â e.g. Visa Specialist"
+            className="bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-600 focus:border-brand-gold focus:outline-none" />
+          <input value={code} onChange={e => setCode(e.target.value)} placeholder="Code ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â e.g. visa_specialist"
+            className="bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-600 focus:border-brand-gold focus:outline-none" />
           <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Short description (optional)"
-            className="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white placeholder-slate-600 focus:border-brand-gold focus:outline-none" />
+            className="bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-600 focus:border-brand-gold focus:outline-none" />
         </div>
 
         <div className="space-y-4">
           {families.map(fam => (
             <div key={fam}>
-              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block mb-2">{fam}</span>
+              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block mb-2">{fam}</span>
               <div className="flex flex-wrap gap-2">
                 {permissions.filter(p => p.family === fam && !p.ownerOnly).map(p => (
                   <button
@@ -105,7 +105,7 @@ export default function RolesTab() {
                     className={`px-3 py-1.5 rounded-md border text-[10px] font-semibold transition cursor-pointer ${
                       selectedPerms.includes(p.code)
                         ? 'bg-brand-gold text-brand-navy border-brand-gold'
-                        : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-brand-gold/50'
+                        : 'bg-white text-slate-700 border-brand-navy/10 hover:border-brand-gold/50'
                     }`}
                     title={p.label}
                   >
@@ -113,7 +113,7 @@ export default function RolesTab() {
                   </button>
                 ))}
                 {permissions.filter(p => p.family === fam && p.ownerOnly).map(p => (
-                  <span key={p.code} className="px-3 py-1.5 rounded-md border border-slate-800 text-[10px] text-slate-600 line-through" title="Owner-only - locked">{p.code} 🔒</span>
+                  <span key={p.code} className="px-3 py-1.5 rounded-md border border-brand-navy/10 text-[10px] text-slate-600 line-through" title="Owner-only - locked">{p.code} ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬â„¢</span>
                 ))}
               </div>
             </div>
@@ -130,13 +130,13 @@ export default function RolesTab() {
       </div>
 
       {/* EXISTING ROLES TABLE */}
-      <div className="bg-[#1C2541]/40 border border-slate-800 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-800">
-          <h3 className="font-display font-bold text-sm text-white">Role Inventory</h3>
+      <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-brand-navy/10">
+          <h3 className="font-display font-bold text-sm text-brand-navy">Role Inventory</h3>
         </div>
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-800">
+            <tr className="bg-white text-slate-500 uppercase tracking-wider text-[10px] border-b border-brand-navy/10">
               <th className="p-4">Role</th>
               <th className="p-4">Code</th>
               <th className="p-4">Permissions</th>
@@ -148,20 +148,20 @@ export default function RolesTab() {
               let perms: string[] = [];
               try { perms = JSON.parse(r.permissionsJson || '[]'); } catch { perms = []; }
               return (
-                <tr key={r.id} className="border-b border-slate-800/60 hover:bg-slate-900/40">
-                  <td className="p-4 font-semibold text-white">{r.name}</td>
-                  <td className="p-4 text-slate-400 font-mono">{r.code}</td>
+                <tr key={r.id} className="border-b border-brand-navy/10/60 hover:bg-slate-900/40">
+                  <td className="p-4 font-semibold text-brand-navy">{r.name}</td>
+                  <td className="p-4 text-slate-500 font-mono">{r.code}</td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-1 max-w-md">
                       {perms.slice(0, 8).map(p => (
-                        <span key={p} className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 text-[9px]">{p}</span>
+                        <span key={p} className="px-1.5 py-0.5 rounded bg-white border border-brand-navy/10 text-slate-700 text-[9px]">{p}</span>
                       ))}
-                      {perms.length > 8 && <span className="text-[9px] text-slate-500">+{perms.length - 8} more</span>}
+                      {perms.length > 8 && <span className="text-[9px] text-slate-600">+{perms.length - 8} more</span>}
                       {perms.length === 0 && <span className="text-[9px] text-slate-600">No permissions</span>}
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${r.system ? 'bg-slate-800 text-slate-300' : 'bg-brand-gold/15 text-brand-gold'}`}>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${r.system ? 'bg-white text-slate-700' : 'bg-brand-gold/15 text-brand-gold'}`}>
                       {r.system ? 'System' : 'Custom'}
                     </span>
                   </td>
@@ -169,7 +169,7 @@ export default function RolesTab() {
               );
             })}
             {roles.length === 0 && (
-              <tr><td colSpan={4} className="p-8 text-center text-slate-500">No roles yet. Use a role creation above, or seed defaults via the staff flow.</td></tr>
+              <tr><td colSpan={4} className="p-8 text-center text-slate-600">No roles yet. Use a role creation above, or seed defaults via the staff flow.</td></tr>
             )}
           </tbody>
         </table>

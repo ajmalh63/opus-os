@@ -18,7 +18,7 @@ interface Funnel {
   velocity: Record<string, number>;
 }
 
-interface InboxSummary { open: number; unread: number; }
+interface InboxSummary { total: number; unread: number; }
 
 const KPI_CARDS = [
   { key: 'leads', label: 'Total Leads' },
@@ -50,7 +50,7 @@ export default function DashboardHome() {
       if (!r.ok) throw new Error('inbox');
       const j = await r.json();
       const convs = j.conversations || [];
-      return { open: convs.length, unread: convs.reduce((a: number, c: any) => a + (c.unread || 0), 0) };
+      return { total: convs.length, unread: convs.reduce((a: number, c: any) => a + (c.unread || 0), 0) };
     },
   });
 
@@ -65,38 +65,38 @@ export default function DashboardHome() {
     customers: funnel?.customers ?? '–',
     conv: funnel ? `${(funnel.leadToCustomer * 100).toFixed(1)}%` : '–',
     stale: funnel?.staleCount ?? '–',
-    inboxOpen: inbox?.open ?? '–',
+    inboxOpen: inbox?.total ?? '–',
     inboxUnread: inbox?.unread ?? '–',
   };
 
   const actions = [
-    { label: 'Open Kanban', to: '/kanban', icon: 'M6 3h12M9 3v18M15 3v18M4 21h16', hint: 'Pipeline & cases' },
+    { label: 'Open Pipeline', to: '/kanban', icon: 'M6 3h12M9 3v18M15 3v18M4 21h16', hint: 'Clients & board' },
     { label: 'Open Inbox', to: '/inbox', icon: 'M22 12h-6l-2 3h-4l-2-3H2l2.2-6.4A2 2 0 018.1 4h7.8a2 2 0 001.9 1.27L22 12z', hint: 'WhatsApp + chat' },
   ];
-  if (canCampaigns) actions.unshift({ label: 'Manage Campaigns', to: '/workspaces/campaigns', icon: 'M11 5.88v13.36a1.76 1.76 0 01-3 1.25L3 15.8V9.2l5-6.33a1.76 1.76 0 013 1.01z', hint: `${campaigns?.campaigns?.length || 0} live` });
+  if (canCampaigns) actions.unshift({ label: 'Manage Campaigns', to: '/workspaces/campaigns', icon: 'M11 5.88v13.36a1.76 1.76 0 01-3 1.25L3 15.8V9.2l5-6.33a1.76 1.76 0 013 1.01z', hint: `${campaigns?.campaigns?.length || 0} campaign(s)` });
 
   return (
     <div className="min-h-full space-y-8">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-br from-brand-navy via-[#0c1a3d] to-[#0a1128] p-6 md:p-8">
+      <section className="relative overflow-hidden rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_1px_0_rgba(255,255,255,0.6)_inset] md:p-8">
         <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-brand-gold/10 blur-3xl" aria-hidden="true" />
         <div className="relative z-10 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">
               {me?.role?.replace('_', ' ') || 'Staff'} Command Center
             </p>
-            <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight md:text-3xl">
+            <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight text-brand-navy md:text-3xl">
               Welcome back, {me?.name?.split(' ')[0] || 'there'}
             </h1>
-            <p className="mt-2 max-w-xl text-sm text-slate-400">
+            <p className="mt-2 max-w-xl text-sm text-brand-textLight">
               Everything running for Opus Overseas in one place — pipeline, revenue, WhatsApp, compliance, campaigns.
-              {me?.twoFactorEnabled && <span className="ml-2 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">2FA ON</span>}
+              {me?.twoFactorEnabled && <span className="ml-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">2FA ON</span>}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {actions.slice(0, 2).map((a) => (
               <button key={a.to} onClick={() => setLocation(a.to)}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-gold px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-1 active:scale-[0.98]">
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-navy px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:bg-brand-gold active:scale-[0.98]">
                 {a.label}
               </button>
             ))}
@@ -107,14 +107,14 @@ export default function DashboardHome() {
       {/* KPI row */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">At a glance</h2>
+          <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-brand-navy/50">At a glance</h2>
           {canFunnel && <button onClick={() => setLocation('/workspaces/funnel')} className="cursor-pointer text-[11px] font-semibold text-brand-gold hover:underline">Full funnel →</button>}
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
           {KPI_CARDS.map((k) => (
-            <div key={k.key} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
+            <div key={k.key} className="rounded-xl border border-brand-navy/10 bg-white p-4">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{k.label}</div>
-              <div className="mt-2 font-display text-2xl font-extrabold text-white">{kpis[k.key]}</div>
+              <div className="mt-2 font-display text-2xl font-extrabold text-brand-navy">{kpis[k.key]}</div>
             </div>
           ))}
         </div>
@@ -122,16 +122,16 @@ export default function DashboardHome() {
 
       {/* Quick actions */}
       <section>
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Quick actions</h2>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Quick actions</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {actions.map((a) => (
             <button key={a.to} onClick={() => setLocation(a.to)}
-              className="group flex cursor-pointer items-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 text-left transition-all hover:border-brand-gold/50 hover:bg-white/[0.06]">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-brand-gold/10 text-brand-gold">
+              className="group flex cursor-pointer items-center gap-4 rounded-xl border border-brand-navy/10 bg-white p-4 text-left transition-all hover:border-brand-gold/60 hover:shadow-lg">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-brand-gold/15 text-brand-gold">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d={a.icon} /></svg>
               </span>
               <span>
-                <span className="block text-[13px] font-semibold text-white group-hover:text-brand-gold">{a.label}</span>
+                <span className="block text-[13px] font-semibold text-brand-navy group-hover:text-brand-gold">{a.label}</span>
                 <span className="mt-0.5 block text-[11px] text-slate-500">{a.hint}</span>
               </span>
             </button>
