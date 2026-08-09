@@ -5,11 +5,19 @@
 
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
-import { nurtureTouches, erpnextSyncLog } from '../db/schema.js';
+import { nurtureTouches, erpnextSyncLog, clients, communications } from '../db/schema.js';
 import { and, eq, lte } from 'drizzle-orm';
 import { erpHealth, erpUpsert } from '../infra/erpnext.js';
+import { sendWhatsApp } from '../infra/messaging.js';
+import { auditEvent } from '../middleware/audit.js';
 
-type Body = { DB: D1Database; AUTOMATION_TOKEN?: string; ERPNEXT_BASE_URL?: string; ERPNEXT_API_KEY?: string; ERPNEXT_API_SECRET?: string };
+type Body = {
+  DB: D1Database; AUTOMATION_TOKEN?: string;
+  ERPNEXT_BASE_URL?: string; ERPNEXT_API_KEY?: string; ERPNEXT_API_SECRET?: string;
+  WA_PROVIDER?: 'openwa' | 'meta';
+  OPENWA_BASE_URL?: string; OPENWA_API_KEY?: string; OPENWA_SESSION_ID?: string;
+  META_WHATSAPP_PHONE_ID?: string; META_WHATSAPP_TOKEN?: string;
+};
 
 export const automationRouter = new Hono<{ Bindings: Body }>();
 
@@ -36,16 +44,51 @@ automationRouter.get('/nurture/due', async (c) => {
   return c.json({ touches: rows });
 });
 
-// POST /api/automation/nurture/:id/send — mark touch dispatched (idempotent)
+// POST /api/automation/nurture/:id/send — dispatch a due touch for real:
+// personalizes the campaign body, sends via WhatsApp provider (OpenWA/Meta),
+// records a communication + audit, then marks the touch sent. Idempotent:
+// already-sent touches return without re-sending. On provider failure the
+// touch stays 'scheduled' so the n8n retry keeps polling.
 automationRouter.post('/nurture/:id/send', async (c) => {
   const db = getDb(c.env.DB);
   const id = c.req.param('id');
   const now = Math.floor(Date.now() / 1000);
-  const found = await db.select({id: nurtureTouches.id, status: nurtureTouches.status}).from(nurtureTouches).where(eq(nurtureTouches.id, id)).all();
+
+  const found = await db.select().from(nurtureTouches).where(eq(nurtureTouches.id, id)).all();
   if (found.length === 0) return c.json({ error: 'not found' }, 404);
-  if (found[0].status === 'sent') return c.json({ id, status: 'sent' });
+  const touch = found[0];
+  if (touch.status === 'sent') return c.json({ id, status: 'sent' });
+
+  const client = await db.select().from(clients).where(eq(clients.id, touch.clientId)).get();
+  if (!client) return c.json({ error: 'client not found', touchId: id }, 404);
+  if (!client.phone) return c.json({ error: 'client has no phone', touchId: id }, 400);
+
+  // Personalisation: {{name}} + any dynamicContext keys (targetCountry, sector, …)
+  let context: Record<string, any> = {};
+  try { context = client.intakeContext ? JSON.parse(client.intakeContext) : {}; } catch { /* keep {} */ }
+  const body = touch.body
+    .replace(/\{\{\s*name\s*\}\}/g, client.name || 'there')
+    .replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => String(context[k] ?? `{{${k}}}`));
+
+  const res = await sendWhatsApp(c.env as any, client.phone, body);
+  if (!res.ok) {
+    return c.json({ error: 'send failed', reason: res.reason || 'unknown', touchId: id }, 502);
+  }
+
+  // Durable record of the outbound message + audit — then flip the touch.
+  await db.insert(communications).values({
+    id: crypto.randomUUID(),
+    clientId: client.id,
+    senderId: null,
+    channel: 'whatsapp',
+    direction: 'outgoing',
+    subject: `nurture:${touch.campaignId || 'default'}:${touch.stage}`,
+    body,
+    createdAt: now,
+  }).catch(() => {});
+  await auditEvent(c, { action: 'NURTURE_DISPATCHED', entityName: 'nurture_touches', entityId: id, afterState: { clientId: client.id, stage: touch.stage, provider: res.provider, remoteId: res.remoteId } });
   await db.update(nurtureTouches).set({ status: 'sent', sentAt: now }).where(eq(nurtureTouches.id, id)).run();
-  return c.json({ id, status: 'sent' });
+  return c.json({ id, status: 'sent', provider: res.provider, remoteId: res.remoteId });
 });
 
 // GET /api/automation/erp/sync-log — n8n polls failed rows for alerting

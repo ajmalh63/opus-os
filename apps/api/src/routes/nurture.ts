@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+﻿import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
@@ -15,17 +15,17 @@ import { eq, and, lte } from 'drizzle-orm';
 // ACTIVE campaign for its division whose eligibility predicate passes against
 // its dynamicContext. Campaign touches override the legacy default SEQUENCE.
 //
-// Default cadence (gold-standard re-engagement — email-sequence skill):
-//   Day 0  value      — check-in, no pressure
-//   Day 3  case_study — a real recent result
-//   Day 5  offer      — free no-obligation consultation
-//   Day 12 final      — honest last check-in
+// Default cadence (gold-standard re-engagement â€” email-sequence skill):
+//   Day 0  value      â€” check-in, no pressure
+//   Day 3  case_study â€” a real recent result
+//   Day 5  offer      â€” free no-obligation consultation
+//   Day 12 final      â€” honest last check-in
 
 const SEQUENCE: { stage: 'value' | 'case_study' | 'offer' | 'final'; day: number; build: (name: string, division: string) => string }[] = [
   {
     stage: 'value',
     day: 0,
-    build: (n, d) => `Hi ${n}! You explored ${d.toUpperCase()} with Opus Overseas a while back. No pressure at all — just letting you know we're here if you'd like to pick it up again.`,
+    build: (n, d) => `Hi ${n}! You explored ${d.toUpperCase()} with Opus Overseas a while back. No pressure at all â€” just letting you know we're here if you'd like to pick it up again.`,
   },
   {
     stage: 'case_study',
@@ -40,7 +40,7 @@ const SEQUENCE: { stage: 'value' | 'case_study' | 'offer' | 'final'; day: number
   {
     stage: 'final',
     day: 12,
-    build: (n) => `Hi ${n}, last check-in from us unless you'd like more. If there's any way we can help with your journey, just reply — we're here.`,
+    build: (n) => `Hi ${n}, last check-in from us unless you'd like more. If there's any way we can help with your journey, just reply â€” we're here.`,
   },
 ];
 
@@ -60,7 +60,7 @@ function safeParse(raw: string | null | undefined): Record<string, any> {
 
 // Match the lead to the first ACTIVE campaign for its division whose eligibility
 // predicate passes against its intake context. Predicate shape in
-// campaigns.eligibilityJson: { "<contextKey>": [allowed] } — array = OR within
+// campaigns.eligibilityJson: { "<contextKey>": [allowed] } â€” array = OR within
 // key, keys = AND; empty/absent predicate applies to the whole division.
 export async function pickCampaign(db: D1, division: string, context: Record<string, any>): Promise<{ campaign: CampaignRow; touches: TouchRow[] } | null> {
   const rows = await db.select().from(campaigns).where(eq(campaigns.division, division as any)).all();
@@ -155,7 +155,7 @@ nurtureRouter.post('/plan', zValidator('json', planSchema), async (c) => {
   }
 });
 
-// GET /api/marketing/nurture?clientId=  — the client's plan
+// GET /api/marketing/nurture?clientId=  â€” the client's plan
 nurtureRouter.get('/', async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -169,7 +169,7 @@ nurtureRouter.get('/', async (c) => {
   }
 });
 
-// GET /api/marketing/nurture/due?now=  — provider-consumer pull of due touches
+// GET /api/marketing/nurture/due?now=  â€” provider-consumer pull of due touches
 nurtureRouter.get('/due', async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -184,7 +184,7 @@ nurtureRouter.get('/due', async (c) => {
   }
 });
 
-// POST /api/marketing/nurture/:id/send  — mark a dispatched touch delivered
+// POST /api/marketing/nurture/:id/send  â€” mark a dispatched touch delivered
 nurtureRouter.post('/:id/send', async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -197,94 +197,5 @@ nurtureRouter.post('/:id/send', async (c) => {
     return c.json({ success: true, id, status: 'sent' });
   } catch (error: any) {
     return c.json({ error: "Mark-sent failed", details: error.message }, 500);
-  }
-});
-
-// ==========================================
-// Campaign catalog (Wave 2 brainstorm) — manager+ surfaces
-// ==========================================
-
-// POST /api/marketing/nurture/campaigns  — create/activate a campaign
-const campaignSchema = z.object({
-  key: z.string().min(2).max(64),
-  name: z.string().min(2),
-  description: z.string().optional(),
-  division: z.enum(['study-abroad', 'visa', 'umrah', 'attestation', 'manpower']),
-  eligibilityJson: z.record(z.union([z.string(), z.array(z.string())])).optional(),
-  status: z.enum(['draft', 'active', 'paused']).default('draft'),
-  touches: z.array(z.object({
-    seq: z.number().int().min(1),
-    day: z.number().int().min(0),
-    stage: z.enum(['value', 'case_study', 'offer', 'final']),
-    body: z.string().min(1),
-  })).min(1).max(12),
-});
-nurtureRouter.post('/campaigns', zValidator('json', campaignSchema), async (c) => {
-  if (!c.env || !c.env.DB) return c.json({ error: 'DB not available' }, 500);
-  const db = getDb(c.env.DB);
-  const now = Math.floor(Date.now() / 1000);
-  const data = c.req.valid('json');
-  try {
-    const id = crypto.randomUUID();
-    await db.insert(campaigns).values({
-      id,
-      key: data.key,
-      name: data.name,
-      description: data.description || null,
-      division: data.division,
-      eligibilityJson: JSON.stringify(data.eligibilityJson || {}),
-      status: data.status,
-      createdAt: now,
-      updatedAt: now,
-    });
-    for (const t of data.touches) {
-      await db.insert(campaignTouches).values({
-        id: crypto.randomUUID(),
-        campaignId: id,
-        seq: t.seq,
-        day: t.day,
-        stage: t.stage,
-        body: t.body,
-        createdAt: now,
-      });
-    }
-    return c.json({ success: true, id, key: data.key, touchCount: data.touches.length });
-  } catch (e: any) {
-    return c.json({ error: 'Campaign create failed', details: e.message }, 500);
-  }
-});
-
-// GET /api/marketing/nurture/campaigns  — list catalog (with touches)
-nurtureRouter.get('/campaigns', async (c) => {
-  if (!c.env || !c.env.DB) return c.json({ error: 'DB not available' }, 500);
-  const db = getDb(c.env.DB);
-  try {
-    const rows = await db.select().from(campaigns).all();
-    const result = [];
-    for (const r of rows) {
-      const touches = await db.select().from(campaignTouches).where(eq(campaignTouches.campaignId, r.id)).all()
-        .then((t) => t.slice().sort((a, b) => a.seq - b.seq));
-      result.push({ ...r, touches });
-    }
-    return c.json({ campaigns: result });
-  } catch (e: any) {
-    return c.json({ error: 'Campaign list failed', details: e.message }, 500);
-  }
-});
-
-// PATCH /api/marketing/nurture/campaigns/:key/status  — activate/pause/draft
-nurtureRouter.patch('/campaigns/:key/status', async (c) => {
-  if (!c.env || !c.env.DB) return c.json({ error: 'DB not available' }, 500);
-  const db = getDb(c.env.DB);
-  const key = c.req.param('key');
-  const body = await c.req.json().catch(() => ({})) as { status?: string };
-  if (!body.status || !['draft', 'active', 'paused'].includes(body.status)) {
-    return c.json({ error: 'status must be draft|active|paused' }, 400);
-  }
-  try {
-    await db.update(campaigns).set({ status: body.status as any, updatedAt: Math.floor(Date.now() / 1000) }).where(eq(campaigns.key, key)).run();
-    return c.json({ success: true, key, status: body.status });
-  } catch (e: any) {
-    return c.json({ error: 'Campaign update failed', details: e.message }, 500);
   }
 });

@@ -23,6 +23,12 @@ vi.mock('../src/auth.js', () => {
                 session: { id: "s-m", token, userId: "mgr-1" }
               };
             }
+if (token === 'token-admin') {
+              return {
+                user: { id: "owner-1", name: "Owner", email: "o@test.com", role: "super_admin", userDivisions: JSON.stringify([]) },
+                session: { id: "s-o", token, userId: "owner-1" }
+              };
+            }
             return null;
           }
         }
@@ -347,10 +353,10 @@ const data = await res.json() as any;
 
   it('campaign create + activate: division campaign overrides default sequence for matching context', async () => {
     let mock9 = new MockD1Database();
-    // manager creates an ACTIVE study-abroad campaign targetting US/UK context
-    const create = await app.request('/api/marketing/nurture/campaigns', {
+    // super_admin creates an ACTIVE study-abroad campaign targetting US/UK context
+    const create = await app.request('/api/admin/campaigns', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
+      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-admin' },
       body: JSON.stringify({
         key: 'us-uk-deadline', name: 'US UK Deadline',
         division: 'study-abroad', status: 'active',

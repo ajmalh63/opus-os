@@ -17,6 +17,7 @@ import { rbacRouter } from './routes/rbac.js';
 import { razorpayRouter, razorpayWebhookRouter } from './routes/razorpay.js';
 import { marketingRouter } from './routes/marketing.js';
 import { nurtureRouter } from './routes/nurture.js';
+import { campaignsRouter } from './routes/campaigns.js';
 import { automationRouter } from './routes/automation.js';
 import { incentivesRouter, staffIncentivesRouter } from './routes/incentives.js';
 import { complianceRouter } from './routes/compliance.js';
@@ -125,6 +126,8 @@ app.route('/api/compliance', complianceRouter);
 app.route('/api/infrastructure', infraRouter);
 app.route('/api/admin', adminRouter);
 app.route('/api/admin/rbac', rbacRouter);
+// Campaign catalog — SUPER_ADMIN ONLY. Picks up the /api/admin owner ceiling.
+app.route('/api/admin/campaigns', campaignsRouter);
 app.route('/api/inbox', inboxRouter);
 app.route('/api/erpnext', erpnextRouter);
 
