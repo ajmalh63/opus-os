@@ -28,8 +28,9 @@ async function hmacHex(secret: string, body: string): Promise<string> {
 describe('Razorpay Integration (Section 44)', () => {
   let mockD1: MockD1Database;
 
-  beforeEach(() => {
+beforeEach(() => {
     mockD1 = new MockD1Database();
+    mockD1.tables.clients.push({ id: 'OP-2026-1001', name: 'Client One', phone: '+91 98765 12345', email: 'client1@example.com', highest_qualification: 'undergrad', lead_source: 'website', intake_context: null, created_at: 0, updated_at: 0 });
     mockD1.tables.engagements.push({
       id: 'eng-rzp-1', client_id: 'OP-2026-1001', division: 'study-abroad', title: 'Consulting',
       stage_key: 'documents', outstanding_balance: 5900000, status: 'active', created_at: 0, updated_at: 0
@@ -91,6 +92,9 @@ describe('Razorpay Integration (Section 44)', () => {
     // balance reduced by 5900000
     expect(mockD1.tables.engagements[0].outstanding_balance).toBe(0);
     expect(mockD1.tables.payments.length).toBe(1);
+    // §7.6: receipt email logged through the notification engine (stub channel)
+    const notifs = (mockD1.tables.notifications || []) as any[];
+    expect(notifs.some((n) => n.channel === 'email' && n.to === 'client1@example.com' && n.subject.includes('receipt'))).toBe(true);
   });
 
   it('POST /api/payments/razorpay/verify rejects bad signature with 403', async () => {

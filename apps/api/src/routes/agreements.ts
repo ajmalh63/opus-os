@@ -6,6 +6,7 @@ import { agreements, agreementTemplates, clauseLibrary, clients, consents, refer
 import { eq, inArray } from 'drizzle-orm';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 import { auditEvent } from '../middleware/audit.js';
+import { sendNotification } from '../infra/notify.js';
 
 export const agreementsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -249,7 +250,7 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
         clientId: agreement.clientId,
         engagementId: eng?.id || null,
         assigneeId: assignee,
-        title: `🤝 Handover: ${agreement.clientId} signed agreement`,
+        title: `Handover: ${agreement.clientId} signed agreement`,
         description: `Agreement ${agreement.id} signed (${data.esignMethod}). Begin delivery: collect outstanding balance, assign case owner, open vault stage.`,
         priority: 'high',
         dueInSeconds: 2 * 86400,
@@ -269,6 +270,23 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
         signedAt: Math.floor(Date.now() / 1000),
       },
     });
+
+    // §7.6 Transactional email — signed-agreement summary to the client
+    // (fail-open; dev stub channel, prod CF Email binding).
+    try {
+      const client = await db.select().from(clients).where(eq(clients.id, agreement.clientId)).get();
+      if (client?.email) {
+        await sendNotification(c.env as any, db as any, {
+          channel: 'email',
+          to: client.email,
+          subject: `Your service agreement is signed — ${agreement.id}`,
+          body: `Hi ${client.name}, your service agreement (${agreement.id}) with Opus Overseas has been executed via ${data.esignMethod}. We are starting delivery. Thank you — Opus Overseas.`,
+          clientId: client.id,
+        });
+      }
+    } catch (emailErr: any) {
+      console.error('agreement email failed', emailErr?.message);
+    }
 
     return c.json({
       success: true,

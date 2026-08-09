@@ -2,8 +2,9 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { payments, engagements, milestones } from '../db/schema.js';
+import { payments, engagements, milestones, clients } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { sendNotification } from '../infra/notify.js';
 
 export const razorpayRouter = new Hono<{
   Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }
@@ -174,6 +175,23 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       .update(engagements)
       .set({ outstandingBalance: eng.outstandingBalance - invoiceAmount, updatedAt: now })
       .where(eq(engagements.id, data.engagementId));
+
+    // §7.6 Transactional email — payment receipt to the client (never throws;
+    // dev uses the stub channel; prod uses the CF Email binding).
+    try {
+      const client = await db.select().from(clients).where(eq(clients.id, data.clientId)).get();
+      if (client?.email) {
+        await sendNotification(c.env as any, db as any, {
+          channel: 'email',
+          to: client.email,
+          subject: `Opus Overseas — payment receipt ${data.razorpay_payment_id}`,
+          body: `Hi ${client.name}, we have received your payment of ₹${(invoiceAmount / 100).toLocaleString('en-IN')} (${data.milestoneName?.trim() || 'Online payment'}). Reference: ${data.razorpay_payment_id}. Thank you — Opus Overseas.`,
+          clientId: client.id,
+        });
+      }
+    } catch (emailErr: any) {
+      console.error('receipt email failed', emailErr?.message);
+    }
 
     return c.json({
       success: true,

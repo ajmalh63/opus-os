@@ -21,6 +21,7 @@
     transit_shipments: [] as any[],
     partners: [] as any[],
     statutory_registers: [] as any[],
+    notifications: [] as any[],
     referrals: [] as any[],
     commission_ledger: [] as any[],
     tasks: [] as any[],
