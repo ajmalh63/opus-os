@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
+import PartnerThrive from '../components/PartnerThrive';
 
 // Partner / Affiliate Portal — gold-standard patterns (research 2026):
 //  1. Share-link generator one click from dashboard (Track360, Voucherify)
@@ -248,6 +249,9 @@ export default function PartnerDashboard() {
         ) : (
           /* ACTIVE PARTNER WORKSPACE */
           <div className="space-y-8">
+            {/* Zoho Thrive-style workspace: tier card, performance, my inventory */}
+            <PartnerThrive partnerId={partnerId} token={partnerToken} />
+
             {/* Welcome + join-link generator — one click from the dashboard */}
             <section className="relative overflow-hidden rounded-[2rem] border border-brand-navy/10 bg-white p-8 shadow-[0_24px_60px_-30px_rgba(10,45,80,0.25)]">
               <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-brand-gold/10 blur-3xl" aria-hidden="true" />

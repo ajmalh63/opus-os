@@ -128,6 +128,7 @@ publicThriveRouter.get('/:id/thrive', async (c) => {
     const totalClicks = links.reduce((a: number, l: any) => a + Number(l.clicks || 0), 0);
 
     return c.json({
+      ref: authed.referralCode,
       tier: tier ? { key: tier.key, name: tier.name, minPoints: tier.minPoints, boostPct: tier.commissionBoostPct, perks: JSON.parse(tier.perksJson || '[]'), color: tier.color } : null,
       nextTier: next ? { key: next.key, name: next.name, minPoints: next.minPoints } : null,
       totalPoints,
