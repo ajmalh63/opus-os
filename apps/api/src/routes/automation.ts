@@ -8,7 +8,7 @@ import { getDb } from '../db/client.js';
 import { nurtureTouches, erpnextSyncLog, clients, communications } from '../db/schema.js';
 import { and, eq, lte } from 'drizzle-orm';
 import { erpHealth, erpUpsert } from '../infra/erpnext.js';
-import { sendWhatsApp } from '../infra/messaging.js';
+import { sendNotification } from '../infra/notify.js';
 import { auditEvent } from '../middleware/audit.js';
 
 type Body = {
@@ -70,7 +70,9 @@ automationRouter.post('/nurture/:id/send', async (c) => {
     .replace(/\{\{\s*name\s*\}\}/g, client.name || 'there')
     .replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => String(context[k] ?? `{{${k}}}`));
 
-  const res = await sendWhatsApp(c.env as any, client.phone, body);
+  const res = await sendNotification(c.env as any, db as any, {
+    channel: 'whatsapp', to: client.phone, body, clientId: client.id,
+  });
   if (!res.ok) {
     return c.json({ error: 'send failed', reason: res.reason || 'unknown', touchId: id }, 502);
   }

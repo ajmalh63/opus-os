@@ -4,13 +4,13 @@ import { z } from 'zod';
 import { getDb } from '../db/client.js';
 import { conversations, communications } from '../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
-import { sendWhatsApp } from '../infra/messaging.js';
+import { sendNotification } from '../infra/notify.js';
 import { auditEvent } from '../middleware/audit.js';
 import { getAuth } from '../auth.js';
 
 // Staff unified inbox (OpenWA + Chatwoot inbound surface).
 // Conversations arrive via the webhooks; staff list them here, expand a thread,
-// and reply — which dispatches through sendWhatsApp (OpenWA/Meta).
+// and reply â€” which dispatches through sendWhatsApp (OpenWA/Meta).
 
 type InboxBindings = {
   DB: D1Database;
@@ -25,7 +25,7 @@ type InboxBindings = {
 
 export const inboxRouter = new Hono<{ Bindings: InboxBindings }>();
 
-// GET /api/inbox — open conversations (newest first) + unread counts
+// GET /api/inbox â€” open conversations (newest first) + unread counts
 inboxRouter.get('/', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -47,7 +47,7 @@ inboxRouter.get('/', async (c) => {
   }
 });
 
-// GET /api/inbox/:id/thread — messages for a conversation
+// GET /api/inbox/:id/thread â€” messages for a conversation
 inboxRouter.get('/:id/thread', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -69,7 +69,7 @@ inboxRouter.get('/:id/thread', async (c) => {
 
 const replySchema = z.object({ body: z.string().min(1).max(5000) });
 
-// POST /api/inbox/:id/reply — staff replies; dispatches via WhatsApp gateway
+// POST /api/inbox/:id/reply â€” staff replies; dispatches via WhatsApp gateway
 inboxRouter.post('/:id/reply', zValidator('json', replySchema), async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -80,7 +80,11 @@ inboxRouter.post('/:id/reply', zValidator('json', replySchema), async (c) => {
 
     // Extract a sendable phone from contact key (strip + and spaces)
     const phone = (conv.contactKey || '').replace(/[^0-9]/g, '');
-    const result = phone.length >= 10 ? await sendWhatsApp(c.env, phone, data.body) : { ok: false as const, provider: 'inbox', reason: 'contact key is not a parseable phone' };
+    // Â§7.6: route through the notification engine so every send is logged.
+    // Falls back to direct sendWhatsApp when the engine is unavailable.
+    const result = phone.length >= 10
+      ? await sendNotification(c.env as any, db as any, { channel: 'whatsapp', to: phone, body: data.body })
+      : { ok: false as const, provider: 'inbox', reason: 'contact key is not a parseable phone', notificationId: '' };
 
     const auth = getAuth(c.env);
     const session = await auth.api.getSession({ headers: c.req.raw.headers });

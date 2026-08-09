@@ -12,11 +12,11 @@ export const turnstileVerify = createMiddleware<{
   const secret = c.env?.TURNSTILE_SECRET_KEY;
   const token = c.req.header('cf-turnstile-response') || c.req.header('cf-turnstile-token') || '';
 
-  // No secret configured → fail-closed in production-ish envs, open in dev only.
+  // No secret configured → fail-closed ONLY when explicitly production;
+  // otherwise (dev/test without env) allow to keep local flows working.
   if (!secret) {
-    if (c.env?.TURNSTILE_SECRET_KEY === undefined && (c.env as any)?.ENVIRONMENT === 'development') {
-      return next(); // dev without secret: allow (local workers)
-    }
+    const envName = (c.env as any)?.ENVIRONMENT;
+    if (envName !== 'production') return next();
     return c.json({ error: { code: 'TURNSTILE_UNCONFIGURED', message: 'Bot check not configured' } }, 503);
   }
 
