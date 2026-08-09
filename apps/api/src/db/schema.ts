@@ -32,7 +32,7 @@ export const clients = sqliteTable('clients', {
   passportExpiry: text('passport_expiry'), // ISO date string: YYYY-MM-DD
   gstin: text('gstin'), // for B2B classification (GSTR-1)
   state: text('state'), // place of supply state code
-  // Funnel enrichment (Section 26) Ã¢â‚¬â€ captured at intake for qualification
+  // Funnel enrichment (Section 26) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â captured at intake for qualification
   leadSource: text('lead_source'), // website, whatsapp, walk-in, partner, referral
   intakeContext: text('intake_context'), // JSON: targetCountry/intake/budget/visaCategory/etc from lead form
   createdAt: integer('created_at').notNull(),
@@ -115,7 +115,7 @@ export const communications = sqliteTable('communications', {
 // ==========================================
 // 48. UNIFIED MESSAGING (PENDING-CONFIGS #1/#3)
 // Provider-agnostic conversations for WhatsApp (OpenWA or Meta Cloud API) and
-// web chat Ã¢â‚¬â€ the Chatwoot-replacement inbox. Webhook events land here; the
+// web chat ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the Chatwoot-replacement inbox. Webhook events land here; the
 // staff inbox UI (workspace) reads these rows.
 // ==========================================
 export const conversations = sqliteTable('conversations', {
@@ -287,7 +287,7 @@ export const seatBookings = sqliteTable('seat_bookings', {
 });
 
 // ==========================================
-// 24.1.1 PUBLIC ARTIFACTS Ã¢â‚¬â€ homepage hero live widgets data (Section 24)
+// 24.1.1 PUBLIC ARTIFACTS ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â homepage hero live widgets data (Section 24)
 // Real, D1-backed data for the hero carousel artifacts: job ticker (Manpower),
 // attestation chain builder, and university match (eligibility checker).
 // ==========================================
@@ -321,7 +321,7 @@ export const universities = sqliteTable('universities', {
 
 // ==========================================
 // 49. ERPNEXT SYNC LOG (back-office books integration)
-// One-way queue: OpusOS front office Ã¢â€ â€™ ERPNext official books. Each syncable
+// One-way queue: OpusOS front office ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ERPNext official books. Each syncable
 // business event (payments/invoices) gets a row; a worker/endpoint pushes rows
 // with status='pending' and records Frappe's response + any retry attempts.
 // ==========================================
@@ -625,7 +625,7 @@ export const campaigns = sqliteTable('campaigns', {
   description: text('description'),
   division: text('division', { enum: ['study-abroad', 'visa', 'umrah', 'attestation', 'manpower'] }).notNull(),
   // Eligibility: JSON predicate on the lead's dynamicContext, e.g.
-  // {"targetCountry": {"$in": ["USA", "UK"]}} Ã¢â‚¬â€ null/{} = applies to whole division.
+  // {"targetCountry": {"$in": ["USA", "UK"]}} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â null/{} = applies to whole division.
   eligibilityJson: text('eligibility_json').notNull().default('{}'),
   status: text('status', { enum: ['draft', 'active', 'paused'] }).notNull().default('draft'),
   createdAt: integer('created_at').notNull(),
@@ -643,7 +643,7 @@ export const campaignTouches = sqliteTable('campaign_touches', {
 });
 
 // ==========================================
-// 30. A/B EXPERIMENTS (Section 26.5 Ã¢â‚¬â€ ab-test-setup skill gates)
+// 30. A/B EXPERIMENTS (Section 26.5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ab-test-setup skill gates)
 // The hypothesis + primary metric + baseline + MDE are REQUIRED fields, forcing
 // the "commit before launch" discipline before an experiment can go active.
 // ==========================================
@@ -676,7 +676,7 @@ export const experimentAssignments = sqliteTable('experiment_assignments', {
 
 
 // ==========================================
-// 49. NOTIFICATIONS LOG (Â§7.6) â€” end-to-end tracking of every outbound
+// 49. NOTIFICATIONS LOG (Ã‚Â§7.6) Ã¢â‚¬â€ end-to-end tracking of every outbound
 // message across channels (whatsapp/email/sms). Written by infra/notify.ts.
 export const notifications = sqliteTable('notifications', {
   id: text('id').primaryKey(),
@@ -693,7 +693,7 @@ export const notifications = sqliteTable('notifications', {
   sentAt: integer('sent_at')
 });
 // ==========================================
-// 50. EMPLOYER COMPLIANCE REGISTERS (§6/§14.5.4) — PT, LWF, PF, ESI per month.
+// 50. EMPLOYER COMPLIANCE REGISTERS (Â§6/Â§14.5.4) â€” PT, LWF, PF, ESI per month.
 export const statutoryRegisters = sqliteTable('statutory_registers', {
   id: text('id').primaryKey(),
   month: text('month').notNull(), // YYYY-MM
@@ -707,6 +707,24 @@ export const statutoryRegisters = sqliteTable('statutory_registers', {
   paidAt: integer('paid_at'),
   status: text('status', { enum: ['pending', 'paid', 'overdue'] }).notNull().default('pending'),
   notes: text('notes'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+// ==========================================
+// 51. MANPOWER CANDIDATE PROFILES (§4) — persisted AI-resume-parser results.
+// DPDP-gated: only written when manpower-retain consent was granted; the raw
+// resume stays in R2 (resumes/), the profile is the searchable skill snapshot.
+export const candidateProfiles = sqliteTable('candidate_profiles', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  name: text('name').notNull(),
+  email: text('email'),
+  phone: text('phone'),
+  skillsJson: text('skills_json').notNull().default('[]'),
+  experienceJson: text('experience_json').notNull().default('[]'),
+  education: text('education'),
+  resumeKey: text('resume_key'),
+  source: text('source', { enum: ['ai', 'mock'] }).notNull().default('ai'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });

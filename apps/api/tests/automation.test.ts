@@ -15,6 +15,7 @@ describe('Automation lane (n8n spine, /api/automation)', () => {
   beforeAll(() => {
     mockD1 = new MockD1Database();
     mockD1.tables.clients.push({ id: 'OP-2026-8001', name: 'X', phone: '+91 98765 43210', email: 'x@b.c', intake_context: JSON.stringify({ targetCountry: 'US' }), created_at: 1, updated_at: 1 });
+    mockD1.tables.consents.push({ id: 'cons-1', client_id: 'OP-2026-8001', consent_type: 'whatsapp-updates', status: 'granted', ip_address: '1.1.1.1', sha256_hash: 'h', granted_at: 1, withdrawn_at: null });
     mockD1.tables.nurture_touches.push({
       id: 'nt-1', client_id: 'OP-2026-8001', engagement_id: 'eng-8001', channel: 'whatsapp',
       stage: 'value', body: 'Hi {{name}}! US deadlines soon for {{targetCountry}}.', due_at: 1000, status: 'scheduled', created_at: 1, sent_at: null,
@@ -23,6 +24,23 @@ describe('Automation lane (n8n spine, /api/automation)', () => {
       id: 'nt-2', client_id: 'OP-2026-8001', engagement_id: 'eng-8001', channel: 'whatsapp',
       stage: 'case_study', body: 'A recent case...', due_at: 999999999, status: 'scheduled', created_at: 1, sent_at: null,
     });
+    mockD1.tables.clients.push({ id: 'OP-2026-8002', name: 'Y', phone: '+91 99999 88888', email: 'y@b.c', intake_context: null, created_at: 1, updated_at: 1 });
+    mockD1.tables.nurture_touches.push({
+      id: 'nt-3', client_id: 'OP-2026-8002', engagement_id: 'eng-8002', channel: 'whatsapp',
+      stage: 'final', body: 'Last check-in.', due_at: 1000, status: 'scheduled', created_at: 1, sent_at: null,
+    });
+  });
+
+  it('dispatch skips when whatsapp consent was withdrawn since planning (DPDP)', async () => {
+    // nt-3 has no granted consent row on record → must be skipped, not sent.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ messageId: 'WA-X' }), { status: 200, headers: { 'Content-Type': 'application/json' } })));
+    const res = await app.request('/api/automation/nurture/nt-3/send', { method: 'POST', headers: { 'X-Service-Token': TOKEN } }, { DB: mockD1, AUTOMATION_TOKEN: TOKEN, ...WA_ENV });
+    expect(res.status).toBe(200);
+    const j = await res.json() as any;
+    expect(j.status).toBe('skipped');
+    expect(j.reason).toContain('withdrawn');
+    const row = (mockD1.tables.nurture_touches as any[]).find(t => t.id === 'nt-3');
+    expect(row.status).toBe('skipped');
   });
 
   afterEach(() => vi.unstubAllGlobals());

@@ -5,6 +5,7 @@ import { getDb } from '../db/client.js';
 import { payments, engagements, milestones, clients } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { sendNotification } from '../infra/notify.js';
+import { accrueIncentives } from '../services/incentiveAccrual.js';
 
 export const razorpayRouter = new Hono<{
   Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }
@@ -175,6 +176,22 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       .update(engagements)
       .set({ outstandingBalance: eng.outstandingBalance - invoiceAmount, updatedAt: now })
       .where(eq(engagements.id, data.engagementId));
+
+    // Interlock: incentive accrual on milestone_paid (plan §29.4). Idempotent
+    // per (rule, payment). Fail-open — never blocks a verified payment.
+    try {
+      const result = await accrueIncentives({
+        env: c.env as any,
+        clientId: data.clientId,
+        engagementId: data.engagementId,
+        triggerRef: data.razorpay_payment_id,
+        trigger: 'milestone_paid',
+        triggerAmountPaise: invoiceAmount,
+      });
+      if (result.accrued > 0) console.log(`incentives accrued: ${result.accrued} (payment ${data.razorpay_payment_id})`);
+    } catch (incErr: any) {
+      console.error('milestone incentive accrual failed', incErr?.message);
+    }
 
     // §7.6 Transactional email — payment receipt to the client (never throws;
     // dev uses the stub channel; prod uses the CF Email binding).

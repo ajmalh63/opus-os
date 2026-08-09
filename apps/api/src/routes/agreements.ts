@@ -7,6 +7,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 import { auditEvent } from '../middleware/audit.js';
 import { sendNotification } from '../infra/notify.js';
+import { accrueIncentives } from '../services/incentiveAccrual.js';
 
 export const agreementsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -237,6 +238,22 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
     } catch (refErr: any) {
       // Commission maturation must never block agreement signing.
       console.error('referral commission maturation failed', refErr?.message);
+    }
+
+    // Interlock: incentive accrual on agreement_signed (plan §29.4) — the
+    // assigned counselor earns when the customer boundary is reached. Idempotent.
+    try {
+      const engRow = await db.select().from(engagements).where(eq(engagements.clientId, agreement.clientId)).get();
+      const result = await accrueIncentives({
+        env: c.env as any,
+        clientId: agreement.clientId,
+        engagementId: engRow?.id || null,
+        triggerRef: agreement.id,
+        trigger: 'agreement_signed',
+      });
+      if (result.accrued > 0) console.log(`incentives accrued: ${result.accrued} (agreement ${agreement.id})`);
+    } catch (incErr: any) {
+      console.error('incentive accrual failed', incErr?.message);
     }
 
     // Interlock: agreement signed → handover task for the ops team (funnel loop

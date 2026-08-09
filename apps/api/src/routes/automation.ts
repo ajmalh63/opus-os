@@ -5,7 +5,7 @@
 
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
-import { nurtureTouches, erpnextSyncLog, clients, communications } from '../db/schema.js';
+import { nurtureTouches, erpnextSyncLog, clients, communications, consents } from '../db/schema.js';
 import { and, eq, lte } from 'drizzle-orm';
 import { erpHealth, erpUpsert } from '../infra/erpnext.js';
 import { sendNotification } from '../infra/notify.js';
@@ -62,6 +62,17 @@ automationRouter.post('/nurture/:id/send', async (c) => {
   const client = await db.select().from(clients).where(eq(clients.id, touch.clientId)).get();
   if (!client) return c.json({ error: 'client not found', touchId: id }, 404);
   if (!client.phone) return c.json({ error: 'client has no phone', touchId: id }, 400);
+
+  // DPDP re-check at SEND time (gold standard): the touch was planned under an
+  // earlier consent; if the client withdrew whatsapp-updates since, we must not
+  // send. The touch is flipped to 'skipped' so the poller stops retrying.
+  const liveConsent = await db.select().from(consents)
+    .where(and(eq(consents.clientId, touch.clientId), eq(consents.consentType, 'whatsapp-updates'), eq(consents.status, 'granted')))
+    .all();
+  if (liveConsent.length === 0) {
+    await db.update(nurtureTouches).set({ status: 'skipped', sentAt: now }).where(eq(nurtureTouches.id, id)).run();
+    return c.json({ id, status: 'skipped', reason: 'consent withdrawn since planning' });
+  }
 
   // Personalisation: {{name}} + any dynamicContext keys (targetCountry, sector, …)
   let context: Record<string, any> = {};

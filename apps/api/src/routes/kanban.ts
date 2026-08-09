@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
 import { moveCardSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
-import { engagements, pipelineStages, clients, auditLog } from '../db/schema.js';
+import { engagements, pipelineStages, clients, auditLog, tasks } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditBegin } from '../middleware/audit.js';
 import { kanbanFlowAnalytics } from '../infra/flowAnalytics.js';
@@ -58,9 +59,26 @@ kanbanRouter.get('/board', async (c) => {
       canSeeMoney ? card : { ...card, outstandingBalance: 0 }
     );
 
-    // Group cards by stageKey
+    // Group cards by stageKey, and attach each card's linked tasks (the
+    // gold-standard "task lane inside card" pattern — tasks bound to an
+    // engagement ride along on the board, so staff see work at a glance).
+    const allTasks = await db.select().from(tasks).all();
+    const tasksByEngagement = new Map<string, any[]>();
+    for (const t of allTasks) {
+      if (!t.engagementId) continue;
+      const arr = tasksByEngagement.get(t.engagementId) || [];
+      arr.push(t);
+      tasksByEngagement.set(t.engagementId, arr);
+    }
+
     const columns = stages.map(stage => {
-      const stageCards = cards.filter(card => card.stageKey === stage.key);
+      const stageCards = cards.filter(card => card.stageKey === stage.key).map((card) => ({
+        ...card,
+        tasks: (tasksByEngagement.get(card.id) || []).map((t) => ({
+          id: t.id, title: t.title, priority: t.priority, status: t.status,
+          assigneeId: t.assigneeId, dueDate: t.dueDate,
+        })),
+      }));
       return {
         ...stage,
         cards: stageCards
@@ -152,6 +170,67 @@ kanbanRouter.post('/board/move', zValidator('json', moveCardSchema), async (c) =
 
   } catch (error: any) {
     return c.json({ error: "Move transaction failed", details: error.message }, 500);
+  }
+});
+
+// POST /api/kanban/board/:cardId/tasks — create a task ON the card (gold
+// standard: "assign tasks directly from the pipeline screen"). The task is
+// bound to the card's engagement so it shows in the card's task lane.
+const cardTaskSchema = z.object({
+  title: z.string().min(2),
+  description: z.string().optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+  assigneeId: z.string().optional(),
+  dueDate: z.number().int().optional(),
+});
+kanbanRouter.post('/board/:cardId/tasks', zValidator('json', cardTaskSchema), async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const cardId = c.req.param('cardId');
+  const data = c.req.valid('json');
+  const now = Math.floor(Date.now() / 1000);
+
+  try {
+    const card = await db.select().from(engagements).where(eq(engagements.id, cardId)).get();
+    if (!card) return c.json({ error: 'Card not found' }, 404);
+
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      clientId: card.clientId,
+      engagementId: card.id,
+      assigneeId: data.assigneeId || null,
+      title: data.title,
+      description: data.description || null,
+      priority: data.priority,
+      dueDate: data.dueDate || null,
+      recurrence: 'none',
+      createdAt: now,
+      updatedAt: now,
+    });
+    return c.json({ success: true, id: taskId, message: 'Task added to card.' });
+  } catch (error: any) {
+    return c.json({ error: 'Card task creation failed', details: error.message }, 500);
+  }
+});
+
+// PATCH /api/kanban/board/tasks/:taskId — quick status toggle from the lane
+kanbanRouter.patch('/board/tasks/:taskId', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const taskId = c.req.param('taskId');
+  const body = await c.req.json().catch(() => ({})) as { status?: string };
+  if (!['open', 'in_progress', 'done', 'cancelled'].includes(body.status || '')) {
+    return c.json({ error: 'status must be open|in_progress|done|cancelled' }, 400);
+  }
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    await db.update(tasks)
+      .set({ status: body.status as any, ...(body.status === 'done' ? { completedAt: now } : {}), updatedAt: now })
+      .where(eq(tasks.id, taskId));
+    return c.json({ success: true, id: taskId, status: body.status });
+  } catch (error: any) {
+    return c.json({ error: 'Task update failed', details: error.message }, 500);
   }
 });
 

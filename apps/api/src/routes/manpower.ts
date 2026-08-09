@@ -1,10 +1,45 @@
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
-import { clients, engagements } from '../db/schema.js';
+import { clients, engagements, consents, candidateProfiles } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { parseResumeWithAI } from '../infra/ai.js';
 
 export const manpowerRouter = new Hono<{ Bindings: { DB: D1Database; MANPOWER_AI?: 'mock' | 'real'; AI?: unknown } }>();
+
+// Persist the parsed candidate profile (DPDP-gated: only when the client has a
+// granted manpower-retain consent). Fail-open — never blocks the parse itself.
+async function persistCandidate(env: { DB: D1Database }, clientId: string | undefined, candidate: any, resumeKey: string | null, source: 'ai' | 'mock') {
+  if (!clientId || !env?.DB || !candidate) return;
+  try {
+    const db = getDb(env.DB);
+    const consent = await db.select().from(consents)
+      .where(eq(consents.clientId, clientId))
+      .all();
+    const retain = consent.some((ct: any) => ct.consentType === 'manpower-retain' && ct.status === 'granted');
+    if (!retain) return; // DPDP: no retain consent → no profile storage
+
+    const now = Math.floor(Date.now() / 1000);
+    const existing = await db.select().from(candidateProfiles).where(eq(candidateProfiles.clientId, clientId)).get();
+    const fields = {
+      name: String(candidate.name || 'Unnamed'),
+      email: candidate.email || null,
+      phone: candidate.phone || null,
+      skillsJson: JSON.stringify(candidate.skills || []),
+      experienceJson: JSON.stringify(candidate.experience || []),
+      education: candidate.education || null,
+      resumeKey: resumeKey || null,
+      source,
+      updatedAt: now,
+    };
+    if (existing) {
+      await db.update(candidateProfiles).set({ ...fields, updatedAt: now }).where(eq(candidateProfiles.clientId, clientId));
+    } else {
+      await db.insert(candidateProfiles).values({ id: crypto.randomUUID(), clientId, createdAt: now, ...fields });
+    }
+  } catch (e: any) {
+    console.error('candidate profile persist failed', e?.message);
+  }
+}
 
 // Explicitly labeled demo candidates (B-3). Only used when MANPOWER_AI !== 'real'.
 // Never presented as a real Workers AI result.
@@ -55,6 +90,7 @@ manpowerRouter.post('/resume/parse', async (c) => {
       if (!result.ok || !result.candidate) {
         return c.json({ error: result.reason || 'AI resume parse failed' }, 502);
       }
+      await persistCandidate(c.env, String(body.clientId || ''), result.candidate, String(body.resumeKey || null), 'ai');
       return c.json({
         success: true,
         mocked: false,
@@ -64,12 +100,14 @@ manpowerRouter.post('/resume/parse', async (c) => {
       });
     }
 
-    // Mock mode (MANPOWER_AI !== 'real', e.g. dev default "mock"): return the
+// Mock mode (MANPOWER_AI !== 'real', e.g. dev default "mock"): return the
     // training/demo candidate wrapped so the response is EXPLICITLY demo data.
     const fileNameLower = file.name?.toLowerCase() || '';
     const mockCandidate = fileNameLower.includes('priya')
       ? MOCK_CANDIDATES.priya
       : MOCK_CANDIDATES.default;
+
+    await persistCandidate(c.env, String(body.clientId || ''), mockCandidate, String(body.resumeKey || null), 'mock').catch(() => {});
 
     return c.json({
       success: true,
