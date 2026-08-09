@@ -12,6 +12,16 @@ interface Card {
   status: string;
   counselorId: string | null;
   clientName: string;
+  tasks?: CardTask[];
+}
+
+interface CardTask {
+  id: string;
+  title: string;
+  priority: string;
+  status: string;
+  assigneeId: string | null;
+  dueDate: number | null;
 }
 
 interface Column {
@@ -64,10 +74,10 @@ export default function KanbanBoard() {
       }
       return res.json();
     },
-    onSuccess: (data) => {
+onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['kanbanBoard'] });
       if (data.wipLimitBreached) {
-        showToast(`âš ï¸ WIP Limit Warning! Column reached limit of ${data.limit}.`);
+        showToast(`WIP limit warning — column reached limit of ${data.limit}.`);
       } else {
         showToast('Card moved successfully.');
       }
@@ -78,6 +88,39 @@ export default function KanbanBoard() {
   });
 
   // Drag-and-Drop Handlers
+  // Card Task Interlock — create a task ON the card + status toggle (plan §16)
+  const [cardTaskTitle, setCardTaskTitle] = useState('');
+  const addCardTask = useMutation({
+    mutationFn: async () => {
+      if (!selectedCard) throw new Error('no card');
+      const res = await fetch(`/api/kanban/board/${selectedCard.id}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: cardTaskTitle.trim(), priority: 'medium' }),
+      });
+      if (!res.ok) throw new Error(await res.text() || 'task add failed');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kanbanBoard'] });
+      setCardTaskTitle('');
+      showToast('Task added to card.');
+    },
+    onError: (e: any) => showToast((e as Error).message || 'Add failed'),
+  });
+  const toggleCardTask = useMutation({
+    mutationFn: async ({ taskId, status }: { taskId: string; status: string }) => {
+      const res = await fetch(`/api/kanban/board/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error('toggle failed');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kanbanBoard'] }),
+  });
+
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [draggedSourceStage, setDraggedSourceStage] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
@@ -271,6 +314,24 @@ export default function KanbanBoard() {
                             {card.counselorId ? 'Assigned' : 'Unassigned'}
                           </span>
                         </div>
+
+                        {/* TASK LANE — engagement-bound tasks ride on the card */}
+                        {card.tasks && card.tasks.length > 0 && (
+                          <div className="pt-2 border-t border-gray-50 space-y-1">
+                            {card.tasks.slice(0, 3).map((t) => (
+                              <div key={t.id} className="flex items-center gap-1.5 text-[9px]">
+                                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                                  t.status === 'done' ? 'bg-emerald-500' : t.status === 'in_progress' ? 'bg-brand-gold' : 'bg-slate-300'
+                                }`} />
+                                <span className={`truncate ${t.status === 'done' ? 'line-through text-slate-400' : 'text-brand-textLight'}`}>{t.title}</span>
+                                {t.status === 'done' && <span className="ml-auto text-emerald-600 font-bold">✓</span>}
+                              </div>
+                            ))}
+                            {card.tasks.length > 3 && (
+                              <span className="text-[8px] text-slate-400">+{card.tasks.length - 3} more…</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -307,8 +368,44 @@ export default function KanbanBoard() {
                   onClick={() => setSelectedCard(null)}
                   className="w-6 h-6 rounded-full hover:bg-gray-100 text-gray-400 hover:text-brand-navy flex items-center justify-center transition"
                 >
-                  âœ•
+                  ✕
                 </button>
+              </div>
+
+              {/* CARD TASK LANE — engagement-bound work items */}
+              <div className="space-y-3 border rounded-xl border-gray-200 p-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-brand-navy uppercase tracking-wider">Card Tasks</h4>
+                  <span className="text-[9px] text-brand-textLight">linked to this card</span>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {(selectedCard.tasks || []).length === 0 && (
+                    <p className="text-[10px] text-brand-textLight text-center py-2">No tasks on this card yet.</p>
+                  )}
+                  {selectedCard.tasks?.map((t) => (
+                    <div key={t.id} className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-2.5 py-2 text-[10px]">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${t.status === 'done' ? 'bg-emerald-500' : t.status === 'in_progress' ? 'bg-brand-gold' : 'bg-slate-300'}`} />
+                      <span className={`flex-1 truncate ${t.status === 'done' ? 'line-through text-slate-400' : 'text-brand-navy font-medium'}`}>{t.title}</span>
+                      <button
+                        onClick={() => toggleCardTask.mutate({ taskId: t.id, status: t.status === 'done' ? 'open' : t.status === 'in_progress' ? 'done' : 'in_progress' })}
+                        className="text-[8px] font-bold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer"
+                      >
+                        {t.status === 'done' ? 'Reopen' : 'Complete'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); if (cardTaskTitle.trim()) addCardTask.mutate(undefined, { onSuccess: () => setCardTaskTitle('') }); }} className="flex gap-2">
+                  <input
+                    value={cardTaskTitle}
+                    onChange={(e) => setCardTaskTitle(e.target.value)}
+                    placeholder="Add a task…"
+                    className="flex-1 bg-gray-50 border border-gray-200 rounded px-2.5 py-2 text-[10px] text-brand-navy placeholder:text-brand-textLight focus:border-brand-gold focus:outline-none"
+                  />
+                  <button type="submit" disabled={addCardTask.isPending || !cardTaskTitle.trim()} className="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-3 rounded text-[10px] font-bold uppercase disabled:opacity-40 cursor-pointer">
+                    Add
+                  </button>
+                </form>
               </div>
 
               {/* Specs List */}
