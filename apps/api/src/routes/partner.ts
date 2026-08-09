@@ -139,3 +139,56 @@ partnerRouter.get('/:id/commissions', async (c) => {
     return c.json({ error: "Failed to fetch commissions", details: error.message }, 500);
   }
 });
+
+// GET /api/public/partners/:id/summary â€” the ONE dashboard payload the partner
+// portal needs (gold standard: single round-trip, self-evident numbers).
+// Returns profile (name/referralCode/status), rupee rollups per state, and
+// per-referral entries with compute-at-a-glance statuses. Token-bounded.
+partnerRouter.get('/:id/summary', async (c) => {
+  const partnerId = c.req.param('id');
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+
+  try {
+    const authed = await authPartner(db, partnerId, c);
+    if (!authed) return c.json({ error: "Unauthorized: valid partner token required" }, 401);
+
+    const partner = await db.select().from(partners).where(eq(partners.id, partnerId)).get();
+    if (!partner) return c.json({ error: "Partner not found" }, 404);
+
+    const partnerReferrals = await db.select().from(referrals).where(eq(referrals.partnerId, partnerId)).all();
+    const referralIds = partnerReferrals.map(r => r.id);
+    const ledger = await db.select().from(commissionLedger).all();
+    const entries = ledger.filter(e => referralIds.includes(e.referralId));
+
+    let matured = 0, pending = 0, paid = 0;
+    const referralRows = partnerReferrals.map(r => {
+      const entry = entries.find(e => e.referralId === r.id);
+      const amount = entry?.amount ?? 0;
+      const status = entry?.status ?? 'unmatured';
+      if (status === 'matured') matured += amount;
+      else if (status === 'paid') paid += amount;
+      else pending += amount;
+      return {
+        referralId: r.id,
+        referredClientId: r.clientId,
+        ratePct: r.commissionRate ?? 5,
+        amountPaise: amount,
+        status,
+      };
+    });
+
+    return c.json({
+      partner: {
+        name: partner.name,
+        referralCode: partner.referralCode ? `?ref=${partner.referralCode}` : null,
+        status: partner.status,
+        joinedAt: partner.createdAt,
+      },
+      totals: { matured, pending, paid, total: matured + pending + paid },
+      referrals: referralRows,
+    });
+  } catch (error: any) {
+    return c.json({ error: "Partner summary failed", details: error.message }, 500);
+  }
+});
