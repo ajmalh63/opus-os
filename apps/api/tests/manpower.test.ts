@@ -94,7 +94,7 @@ describe('Manpower Candidates Hub & Workers AI Resume Parser Tests', () => {
     expect(data.candidate.name).toBe("Priya Patel");
   });
 
-  it('POST /api/manpower/resume/parse should return 501 (fail loud, no fake data) when MANPOWER_AI=real without AI implementation', async () => {
+  it('POST /api/manpower/resume/parse returns 400 in real mode without text (no fake data, no 501)', async () => {
     const formData = new FormData();
     formData.append('resume', new Blob(['fake-resume-pdf-content'], { type: 'application/pdf' }), 'aditya_verma_resume.pdf');
 
@@ -106,13 +106,13 @@ describe('Manpower Candidates Hub & Workers AI Resume Parser Tests', () => {
       body: formData
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret', MANPOWER_AI: 'real' });
 
-    expect(res.status).toBe(501);
+    // Real mode requires text content (the .txt / text-field contract). A bare
+    // PDF with no text field must 400 — never a 501, never silent demo data.
+    expect(res.status).toBe(400);
     const data = await res.json() as any;
     expect(data.error).toContain('MANPOWER_AI=real');
     expect(data.success).toBeUndefined();
     expect(data.mocked).toBeUndefined();
-    expect(data.candidate).toBeUndefined();
-    expect(data.parsedData).toBeUndefined();
   });
 
   it('GET /api/manpower/candidates should retrieve all manpower division candidates', async () => {

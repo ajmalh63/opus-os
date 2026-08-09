@@ -2,8 +2,9 @@ import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
 import { clients, engagements } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { parseResumeWithAI } from '../infra/ai.js';
 
-export const manpowerRouter = new Hono<{ Bindings: { DB: D1Database; MANPOWER_AI?: 'mock' | 'real' } }>();
+export const manpowerRouter = new Hono<{ Bindings: { DB: D1Database; MANPOWER_AI?: 'mock' | 'real'; AI?: unknown } }>();
 
 // Explicitly labeled demo candidates (B-3). Only used when MANPOWER_AI !== 'real'.
 // Never presented as a real Workers AI result.
@@ -36,15 +37,31 @@ manpowerRouter.post('/resume/parse', async (c) => {
       return c.json({ error: "No resume file uploaded." }, 400);
     }
 
-    // B-3: demo data must never run silently in production paths.
-    // When MANPOWER_AI=real, only a real Workers AI parse is acceptable. The
-    // Workers AI resume parser is NOT implemented, so fail LOUD (501) instead
-    // of returning the hardcoded fake candidate.
+    // B-3: when MANPOWER_AI=real we use the real AI parser (no mock, no 501).
+    // Contract: resume TEXT arrives in the `text` form field (or a .txt file) —
+    // PDF text-extraction is a Queue job (§10 ms CPU rule). Silent demo data is
+    // never produced in real mode.
     if (c.env.MANPOWER_AI === 'real') {
-      return c.json(
-        { error: "MANPOWER_AI=real configured but Workers AI call not implemented" },
-        501
-      );
+      let text = String(body.text || '');
+      if (!text && file && (file.name || '').toLowerCase().endsWith('.txt')) {
+        const buf = await file.arrayBuffer().catch(() => null);
+        if (buf) text = new TextDecoder('utf-8').decode(buf);
+      }
+      if (!text) {
+        return c.json({ error: 'MANPOWER_AI=real requires a `text` form field (or .txt file) with the resume content' }, 400);
+      }
+
+      const result = await parseResumeWithAI(c.env, text);
+      if (!result.ok || !result.candidate) {
+        return c.json({ error: result.reason || 'AI resume parse failed' }, 502);
+      }
+      return c.json({
+        success: true,
+        mocked: false,
+        candidate: result.candidate,
+        parsedData: result.candidate,
+        message: 'Resume parsed by Workers AI (real mode).',
+      });
     }
 
     // Mock mode (MANPOWER_AI !== 'real', e.g. dev default "mock"): return the

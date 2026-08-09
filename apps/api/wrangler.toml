@@ -68,3 +68,11 @@ preview_id = "local-kv-preview-id"
 binding = "VECTOR_INDEX"
 index_name = "opusos-embeddings"
 index_id = "local-vectorize-index-id"
+
+# ============================================================
+# Workers AI - resume parsing / embeddings / summaries
+# (Section 12.2). Free tier 10k neurons/day. Binding only works
+# with a real Cloudflare account; local dev passes env mock.
+# ============================================================
+[[ai]]
+binding = "AI"
