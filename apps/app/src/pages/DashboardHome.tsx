@@ -55,6 +55,14 @@ export default function DashboardHome() {
     enabled: canCampaigns,
   });
 
+  // My Work (all staff roles) — open task count for the non-funnel KPI
+  const { data: myTasksData } = useQuery<{ openCount: number }>({
+    queryKey: ['dashMyTasks'],
+    queryFn: async () => { const r = await fetch('/api/tasks/assigned-to-me'); if (!r.ok) throw new Error('tasks'); return r.json(); },
+    enabled: !canFunnel,
+  });
+  const myOpenTasks = myTasksData?.openCount ?? 0;
+
   const leads = funnel?.totalLeads ?? 0;
   const customers = funnel?.customers ?? 0;
   const conv = funnel ? (funnel.leadToCustomer * 100) : null;
@@ -107,20 +115,30 @@ export default function DashboardHome() {
         </div>
       </section>
 
-      {/* Live KPI artifact row */}
+      {/* Live KPI artifact row — role-aware: funnel metrics only for mgr+ */}
       <section className="reveal grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <ArtifactShell title="Total Leads" caption="All intake across 5 divisions">
-          <div className="font-display text-3xl font-extrabold text-brand-navy" data-count="kpi-leads">{leads}</div>
-        </ArtifactShell>
-        <ArtifactShell title="Customers" caption="Signed engagements">
-          <div className="font-display text-3xl font-extrabold text-brand-navy" data-count="kpi-customers">{customers}</div>
-        </ArtifactShell>
-        <ArtifactShell title="Conversion" caption="lead → customer">
-          <div className="font-display text-3xl font-extrabold text-brand-gold">{conv !== null ? conv.toFixed(1) : '–'}%</div>
-        </ArtifactShell>
-        <ArtifactShell title="Stale" caption="awaiting reactivation">
-          <div className="font-display text-3xl font-extrabold text-brand-navy" data-count="kpi-stale">{stale}</div>
-        </ArtifactShell>
+        {canFunnel ? (
+          <>
+            <ArtifactShell title="Total Leads" caption="All intake across 5 divisions">
+              <div className="font-display text-3xl font-extrabold text-brand-navy" data-count="kpi-leads">{leads}</div>
+            </ArtifactShell>
+            <ArtifactShell title="Customers" caption="Signed engagements">
+              <div className="font-display text-3xl font-extrabold text-brand-navy" data-count="kpi-customers">{customers}</div>
+            </ArtifactShell>
+            <ArtifactShell title="Conversion" caption="lead → customer">
+              <div className="font-display text-3xl font-extrabold text-brand-gold">{conv !== null ? conv.toFixed(1) : '–'}%</div>
+            </ArtifactShell>
+            <ArtifactShell title="Stale" caption="awaiting reactivation">
+              <div className="font-display text-3xl font-extrabold text-brand-navy" data-count="kpi-stale">{stale}</div>
+            </ArtifactShell>
+          </>
+        ) : (
+          <>
+            <ArtifactShell title="My Open Tasks" caption="assigned to you">
+              <div className="font-display text-3xl font-extrabold text-brand-navy">{myOpenTasks}</div>
+            </ArtifactShell>
+          </>
+        )}
         <ArtifactShell title="Open chats" caption="unified inbox">
           <div className="font-display text-3xl font-extrabold text-brand-navy">{inOpen}</div>
         </ArtifactShell>
