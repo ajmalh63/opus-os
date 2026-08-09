@@ -117,6 +117,9 @@ const GST_ACCOUNTS = {
 
 export function buildInvoicePayload(payment: Record<string, any>, client: { name: string; email: string; phone?: string } | null) {
   const interstate = payment.isInterstate === true || payment.isInterstate === 1;
+  // Whole-rate override from the transaction entry (gstRate%) wins; otherwise
+  // fall back to the stored componentized split or the 18% default.
+  const overrideRate = payment.gstRate && Number(payment.gstRate) > 0 ? Number(payment.gstRate) : null;
 
   const taxes: Array<Record<string, any>> = [];
   const addTax = (accountHead: string, rate: number, description: string) => {
@@ -128,7 +131,15 @@ export function buildInvoicePayload(payment: Record<string, any>, client: { name
   const sgst = payment.sgst ?? 0;
   const igst = payment.igst ?? 0;
   const hasComponentized = cgst || sgst || igst;
-  if (hasComponentized && taxable > 0) {
+
+  if (overrideRate !== null) {
+    if (interstate) {
+      addTax(GST_ACCOUNTS.IGST, overrideRate, `IGST ${overrideRate}%`);
+    } else {
+      addTax(GST_ACCOUNTS.CGST, overrideRate / 2, `CGST ${overrideRate / 2}%`);
+      addTax(GST_ACCOUNTS.SGST, overrideRate / 2, `SGST ${overrideRate / 2}%`);
+    }
+  } else if (hasComponentized && taxable > 0) {
     if (cgst) addTax(GST_ACCOUNTS.CGST, (cgst / taxable) * 100, 'CGST');
     if (sgst) addTax(GST_ACCOUNTS.SGST, (sgst / taxable) * 100, 'SGST');
     if (igst) addTax(GST_ACCOUNTS.IGST, (igst / taxable) * 100, 'IGST');
@@ -142,10 +153,11 @@ export function buildInvoicePayload(payment: Record<string, any>, client: { name
   return {
     company: 'Opus Overseas',
     customer: client?.name || 'Walk-in Customer',
+    customer_gstin: payment.customerGstin || undefined,
     customer_email: client?.email,
-    due_date: new Date().toISOString().slice(0, 10),
+    due_date: payment.dueDate ? new Date(payment.dueDate * 1000).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+    posting_date: payment.invoiceDate ? new Date(payment.invoiceDate * 1000).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
     currency: 'INR',
-    posting_date: new Date().toISOString().slice(0, 10),
     items: [{
       item_code: 'CONSULTANCY-SV',
       qty: 1,

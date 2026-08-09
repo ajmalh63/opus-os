@@ -315,6 +315,8 @@ const profileSchema = z.object({
   address: z.string().optional(),
   hsn: z.record(z.string()).optional(), // { division: sac }
   rates: z.record(z.number()).optional(), // { division: pct }
+  autoConfirmEnabled: z.boolean().optional(),
+  autoConfirmThresholdPaise: z.number().int().min(0).optional(),
 });
 
 complianceRouter.post('/business-profile', zValidator('json', profileSchema), async (c) => {
@@ -337,7 +339,9 @@ complianceRouter.post('/business-profile', zValidator('json', profileSchema), as
         ...(data.tan !== undefined ? { tan: data.tan } : {}),
         ...(data.stateCode !== undefined ? { stateCode: data.stateCode } : {}),
         ...(data.stateName !== undefined ? { stateName: data.stateName } : {}),
-        ...(data.address !== undefined ? { address: data.address } : {}),
+...(data.address !== undefined ? { address: data.address } : {}),
+        ...(data.autoConfirmEnabled !== undefined ? { autoConfirmEnabled: data.autoConfirmEnabled } : {}),
+        ...(data.autoConfirmThresholdPaise !== undefined ? { autoConfirmThresholdPaise: data.autoConfirmThresholdPaise } : {}),
         hsnJson: JSON.stringify(hsn),
         gstRateJson: JSON.stringify(rates),
         updatedAt: now,
@@ -351,7 +355,9 @@ complianceRouter.post('/business-profile', zValidator('json', profileSchema), as
         tan: data.tan || null,
         stateCode: data.stateCode || null,
         stateName: data.stateName || null,
-        address: data.address || null,
+address: data.address || null,
+        autoConfirmEnabled: data.autoConfirmEnabled ?? false,
+        autoConfirmThresholdPaise: data.autoConfirmThresholdPaise ?? 0,
         hsnJson: JSON.stringify(hsn),
         gstRateJson: JSON.stringify(rates),
         updatedAt: now,

@@ -24,7 +24,7 @@ vi.mock('../src/auth.js', () => {
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
-const ENV = (m: MockD1Database) => ({ DB: m, BETTER_AUTH_SECRET: 's' });
+const ENV = (m: MockD1Database) => ({ DB: m, BETTER_AUTH_SECRET: 's', ERPNEXT_BASE_URL: 'http://erp:8080', ERPNEXT_API_KEY: 'k', ERPNEXT_API_SECRET: 'sec' });
 
 describe('Transactions module (all internal accounts)', () => {
   let mockD1: MockD1Database;
@@ -72,15 +72,21 @@ describe('Transactions module (all internal accounts)', () => {
     expect(res.status).toBe(403);
   });
 
-  it('manager confirms → balance applied + status confirmed', async () => {
+  it('manager confirms â†’ balance applied + status confirmed', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ data: { name: 'ACC-M1' } }), { status: 200, headers: { 'Content-Type': 'application/json' } }))));
     const draft = (mockD1.tables.payments as any[]).find((p) => p.status === 'draft' && p.type === 'invoice');
     const res = await app.request(`/api/transactions/${draft.id}/confirm`, {
       method: 'POST', headers: { cookie: 'better-auth.session_token=token-mgr' },
     }, ENV(mockD1));
     expect(res.status).toBe(200);
     const row = (mockD1.tables.payments as any[]).find((p) => p.id === draft.id);
-    expect(row.status).toBe('confirmed');
-    // invoice +1180000 ⇒ outstanding 1180000 (receipt still draft?)
+    const syncRows = (mockD1.tables.erpnext_sync_log || []) as any[];
+    if (row.status !== 'synced') console.log('MANUAL-SYNC-FAIL', row.status, JSON.stringify(syncRows[syncRows.length-1]?.error || 'no log'));
+    console.log('MANUAL-DOC', row.erp_doc_name, 'sync-rows', syncRows.length);
+    // manual confirm + instant ERP push → synced, with ERP doc name recorded
+    expect(['confirmed', 'synced']).toContain(row.status);
+    expect(row.erp_doc_name).toBeTruthy();
+    // invoice +1180000 ⇒ outstanding 1180000
     const eng = (mockD1.tables.engagements as any[]).find((e) => e.id === 'eng-tx');
     expect(eng.outstanding_balance).toBe(1180000);
   });
@@ -100,5 +106,47 @@ describe('Transactions module (all internal accounts)', () => {
     await app.request(`/api/transactions/${draft.id}/void`, { method: 'POST', headers: { cookie: 'better-auth.session_token=token-mgr' } }, ENV(mockD1));
     const row = (mockD1.tables.payments as any[]).find((p) => p.id === draft.id);
     expect(row.status).toBe('void');
+  });
+
+  describe('counselor auto-confirm + instant ERP (Wave-1/2 end-to-end)', () => {
+    it('auto-confirms an invoice within scope + under threshold and syncs to ERP', async () => {
+      // enable policy: threshold ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹25,000 (2500000 paise)
+      mockD1.tables.business_profile.push({ id: 'main', auto_confirm_enabled: 1, auto_confirm_threshold_paise: 2500000, gst_rate_json: '{}', hsn_json: '{}', updated_at: 0 });
+      // ERP reachable (mocked fetch)
+      vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => {
+        const s = String(url);
+        console.log('ERP fetch', s);
+        if (s.includes('/api/resource/Customer')) return Promise.resolve(new Response(JSON.stringify({ data: { name: 'Billing Client' } }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+        if (s.includes('/api/resource/Sales%20Invoice') || s.includes('/api/resource/Sales Invoice')) return Promise.resolve(new Response(JSON.stringify({ data: { name: 'ACC-TX-1' } }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+        return Promise.resolve(new Response('ok', { status: 200 }));
+      }));
+
+      const res = await app.request('/api/transactions/entries', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', cookie: 'better-auth.session_token=token-counselor' },
+        body: JSON.stringify({ clientId: 'OP-2026-TX1', engagementId: 'eng-tx', type: 'invoice', amount: 100000, milestoneName: 'Auto invoice', isInterstate: false, gstRate: 18 }),
+      }, ENV(mockD1));
+      expect(res.status).toBe(200);
+      const j = await res.json() as any;
+      expect(j.status).toBe('confirmed');
+      expect(j.autoConfirmed).toBe(true);
+
+      const row = (mockD1.tables.payments as any[]).find((p) => p.id === j.id);
+      const synclog = (mockD1.tables.erpnext_sync_log || []) as any[];
+      if (row.status !== 'synced') console.log('SYNC-FAIL', row.status, synclog[synclog.length - 1]?.error || 'no log', '[', synclog.length, 'rows ]');
+      expect(row.status).toBe('synced'); // instant ERP push flipped it
+      expect(row.erp_doc_name).toBeTruthy();
+      // balance from the confirmed amount only (invoice +100000, minus voided receipt excluded)
+      const eng = (mockD1.tables.engagements as any[]).find((e) => e.id === 'eng-tx');
+      expect(eng.outstanding_balance).toBeGreaterThan(0);
+    });
+
+    it('invoice above threshold stays draft (needs manager)', async () => {
+      const res = await app.request('/api/transactions/entries', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', cookie: 'better-auth.session_token=token-counselor' },
+        body: JSON.stringify({ clientId: 'OP-2026-TX1', engagementId: 'eng-tx', type: 'invoice', amount: 90000000, milestoneName: 'Big invoice', isInterstate: false }),
+      }, ENV(mockD1));
+      expect(res.status).toBe(200);
+      expect((await res.json() as any).status).toBe('draft');
+    });
   });
 });

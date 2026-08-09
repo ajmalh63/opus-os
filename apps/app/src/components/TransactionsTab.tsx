@@ -18,9 +18,12 @@ interface Tx {
   amount: number; type: 'invoice' | 'charge' | 'receipt' | 'refund';
   milestoneName: string; method: string | null; referenceNumber: string | null;
   taxableAmount: number | null; cgst: number | null; sgst: number | null; igst: number | null;
+  invoiceDate: number | null; dueDate: number | null; gstRate: number;
+  customerGstin: string | null;
   status: 'draft' | 'confirmed' | 'synced' | 'paid' | 'void';
   enteredBy: string | null; confirmedBy: string | null; createdAt: number;
 }
+interface EngBrief { id: string; clientId: string; division: string; title: string; }
 
 const rs = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
@@ -52,10 +55,14 @@ export default function TransactionsTab() {
   const [method, setMethod] = useState('upi');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [isInterstate, setIsInterstate] = useState(false);
+  const [invoiceDate, setInvoiceDate] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [gstRate, setGstRate] = useState(18);
+  const [customerGstin, setCustomerGstin] = useState('');
 
-  const { data: clientsData } = useQuery<{ clients: any[] }>({
+  const { data: clientsData } = useQuery<{ clients: any[]; engagements: EngBrief[] }>({
     queryKey: ['txClients'],
-    queryFn: async () => { const r = await fetch('/api/transactions/clients-brief', { headers: AUTH }).catch(() => null); return r ? r.json() : { clients: [] }; },
+    queryFn: async () => { const r = await fetch('/api/transactions/clients-brief', { headers: AUTH }).catch(() => null); return r ? r.json() : { clients: [], engagements: [] }; },
   });
 
   const { data: txData } = useQuery<{ transactions: Tx[] }>({
@@ -74,14 +81,20 @@ export default function TransactionsTab() {
     mutationFn: async () => {
       const r = await fetch('/api/transactions/entries', {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH },
-        body: JSON.stringify({ clientId, engagementId, type, amount: amountPaise, milestoneName, method, referenceNumber, isInterstate }),
+        body: JSON.stringify({
+          clientId, engagementId, type, amount: amountPaise, milestoneName, method, referenceNumber, isInterstate,
+          invoiceDate: invoiceDate ? Math.floor(new Date(invoiceDate).getTime() / 1000) : undefined,
+          dueDate: dueDate ? Math.floor(new Date(dueDate).getTime() / 1000) : undefined,
+          gstRate, customerGstin: customerGstin.trim() || undefined,
+        }),
       });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'entry failed'); }
       return r.json();
     },
     onSuccess: (d) => {
-      setToast(d.message || 'Saved'); setTimeout(() => setToast(''), 4000);
-      setMilestoneName(''); setAmountPaise(0); setReferenceNumber('');
+      setToast((d.message || 'Saved') + (d.autoConfirmed ? ' (auto-confirmed + synced)' : ''));
+      setTimeout(() => setToast(''), 5000);
+      setMilestoneName(''); setAmountPaise(0); setReferenceNumber(''); setInvoiceDate(''); setDueDate(''); setCustomerGstin('');
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
     onError: (e: any) => { setToast((e as Error).message); setTimeout(() => setToast(''), 4000); },
@@ -107,6 +120,32 @@ export default function TransactionsTab() {
 
   const rows = txData?.transactions || [];
   const clients = clientsData?.clients || [];
+
+  // Owner/manager: counselor auto-confirm settings (business_profile)
+  const { data: profileData } = useQuery<{ profile?: { autoConfirmEnabled?: boolean | number; autoConfirmThresholdPaise?: number } }>({
+    queryKey: ['billingProfile'],
+    queryFn: async () => { const r = await fetch('/api/compliance/business-profile', { headers: AUTH }); if (!r.ok) throw new Error('profile'); return r.json(); },
+    enabled: isMoneyManager,
+  });
+  const [autoConfirm, setAutoConfirm] = useState(false);
+  const [thresholdRs, setThresholdRs] = useState(0);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  if (isMoneyManager && profileData?.profile && !profileLoaded) {
+    setAutoConfirm(Number(profileData.profile.autoConfirmEnabled) === 1);
+    setThresholdRs((profileData.profile.autoConfirmThresholdPaise || 0) / 100);
+    setProfileLoaded(true);
+  }
+  const saveProfile = useMutation({
+    mutationFn: async () => {
+      const r = await fetch('/api/compliance/business-profile', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH },
+        body: JSON.stringify({ autoConfirmEnabled: autoConfirm, autoConfirmThresholdPaise: Math.round(thresholdRs * 100) }),
+      });
+      if (!r.ok) throw new Error('save');
+      return r.json();
+    },
+    onSuccess: () => { setToast('Auto-confirm settings saved.'); setTimeout(() => setToast(''), 4000); },
+  });
 
   return (
     <div className="min-h-full space-y-6">
@@ -139,6 +178,11 @@ export default function TransactionsTab() {
       <section className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_20px_40px_-20px_rgba(10,45,80,0.12)]">
         <h3 className="font-display text-sm font-bold text-brand-navy">Enter billing entry</h3>
         <p className="mt-0.5 text-[10px] text-slate-500 mt-1">Saved as a draft — a manager confirms before it affects the client's balance.</p>
+        {!isMoneyManager && type === 'invoice' && (
+          <div className="mt-3 rounded-xl border border-emerald-500/40 bg-emerald-50 p-3 text-[11px] text-emerald-800">
+            <span className="font-bold">Counselor auto-confirm:</span> invoices within your division scope are confirmed and synced to ERP instantly; anything above the owner's threshold goes to a manager for approval.
+          </div>
+        )}
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div>
             <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-brand-gold">Client</label>
@@ -149,7 +193,12 @@ export default function TransactionsTab() {
           </div>
           <div>
             <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-brand-gold">Engagement</label>
-            <input value={engagementId} onChange={(e) => setEngagementId(e.target.value)} placeholder="eng id (optional)" className="w-full rounded-lg border border-brand-navy/15 bg-slate-50 px-3 py-2 text-xs text-brand-navy" />
+            <select value={engagementId} onChange={(e) => setEngagementId(e.target.value)} className="w-full rounded-lg border border-brand-navy/15 bg-slate-50 px-3 py-2 text-xs text-brand-navy">
+              <option value="">Select engagement</option>
+              {(clientsData?.engagements || []).filter((e) => e.clientId === clientId).map((e) => (
+                <option key={e.id} value={e.id}>{e.title || e.id} · {e.division}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-brand-gold">Entry type</label>
@@ -177,12 +226,51 @@ export default function TransactionsTab() {
               <input type="checkbox" checked={isInterstate} onChange={(e) => setIsInterstate(e.target.checked)} title="Interstate (IGST)" className="accent-brand-gold" />
             </div>
           </div>
+          <div>
+            <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-brand-gold">Invoice date</label>
+            <input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="w-full rounded-lg border border-brand-navy/15 bg-slate-50 px-3 py-2 text-xs text-brand-navy" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-brand-gold">Due date</label>
+            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full rounded-lg border border-brand-navy/15 bg-slate-50 px-3 py-2 text-xs text-brand-navy" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-brand-gold">GST rate %</label>
+            <input type="number" min={0} max={100} value={gstRate} onChange={(e) => setGstRate(Number(e.target.value) || 0)} className="w-full rounded-lg border border-brand-navy/15 bg-slate-50 px-3 py-2 text-xs text-brand-navy" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-brand-gold">Customer GSTIN (15 chars)</label>
+            <input value={customerGstin} onChange={(e) => setCustomerGstin(e.target.value.toUpperCase())} placeholder="22AAAAA0000A1Z5" maxLength={15} className="w-full rounded-lg border border-brand-navy/15 bg-slate-50 px-3 py-2 font-mono text-xs text-brand-navy" />
+          </div>
         </div>
         <button onClick={() => createDraft.mutate()} disabled={createDraft.isPending || !clientId || amountPaise <= 0}
           className="mt-4 rounded-full bg-brand-navy px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy disabled:opacity-40">
           {createDraft.isPending ? 'Saving…' : 'Save as draft'}
         </button>
       </section>
+
+      {/* Owner/manager: auto-confirm policy for counselors */}
+      {isMoneyManager && (
+        <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_20px_40px_-20px_rgba(10,45,80,0.12)]">
+          <div>
+            <h3 className="font-display text-sm font-bold text-brand-navy">Counselor auto-confirm policy</h3>
+            <p className="mt-0.5 text-[10px] text-slate-500">When enabled, counselors' invoices within their division scope and under the threshold confirm + sync to ERP instantly; above it, they wait for your approval.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 text-xs font-semibold text-brand-navy">
+              <input type="checkbox" checked={autoConfirm} onChange={(e) => setAutoConfirm(e.target.checked)} className="h-4 w-4 accent-brand-gold" />
+              Auto-confirm
+            </label>
+            <label className="flex items-center gap-2 text-xs font-semibold text-brand-navy">
+              Threshold (₹)
+              <input type="number" min={0} value={thresholdRs} onChange={(e) => setThresholdRs(Number(e.target.value) || 0)} className="w-28 rounded-lg border border-brand-navy/15 bg-slate-50 px-3 py-2 text-xs text-brand-navy" />
+            </label>
+            <button onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending} className="rounded-full bg-brand-gold px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider text-brand-navy hover:bg-brand-1 disabled:opacity-40">
+              {saveProfile.isPending ? 'Saving…' : 'Save policy'}
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Ledger */}
       <section className="overflow-x-auto rounded-2xl border border-brand-navy/10 bg-white shadow-[0_20px_40px_-20px_rgba(10,45,80,0.12)]">
@@ -211,7 +299,12 @@ export default function TransactionsTab() {
                 <td className="px-5 py-3.5 text-slate-700">{t.milestoneName}</td>
                 <td className="px-5 py-3.5 font-mono font-bold text-brand-navy">{rs(t.amount)}</td>
                 <td className="px-5 py-3.5 text-[10px] text-slate-500">
-                  {t.taxableAmount != null ? `net ${rs(t.taxableAmount)} · CGST ${rs(t.cgst || 0)} · SGST ${rs(t.sgst || 0)}${t.igst ? ` · IGST ${rs(t.igst)}` : ''}` : '—'}
+                  {t.taxableAmount != null ? `${t.gstRate}% · net ${rs(t.taxableAmount)} · CGST ${rs(t.cgst || 0)} · SGST ${rs(t.sgst || 0)}${t.igst ? ` · IGST ${rs(t.igst)}` : ''}` : '—'}
+                  <span className="block">
+                    {t.invoiceDate ? new Date(t.invoiceDate * 1000).toLocaleDateString() : ''}
+                    {t.dueDate ? ` → due ${new Date(t.dueDate * 1000).toLocaleDateString()}` : ''}
+                    {t.customerGstin ? ` · ${t.customerGstin}` : ''}
+                  </span>
                 </td>
                 <td className="px-5 py-3.5"><span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${STATUS_STYLE[t.status] || STATUS_STYLE.draft}`}>{t.status}</span></td>
                 <td className="px-5 py-3.5 text-[10px] text-slate-500">{t.enteredBy ? t.enteredBy.slice(0, 8) : '—'}</td>

@@ -29,7 +29,7 @@ export const leadIntakeSchema = z.object({
     intakeSeason: z.string().optional(),
     visaCategory: z.string().optional(),
     packageTier: z.string().optional(),
-    budget: z.string().optional(), // e.g. "15-25L" — drives budget_given scoring
+    budget: z.string().optional(), // e.g. "15-25L" â€” drives budget_given scoring
     expectedDeparture: z.string().optional(),
     documentCategory: z.string().optional(),
     requiredAuthentication: z.string().optional(),
@@ -76,7 +76,11 @@ export const createPaymentSchema = z.object({
   milestoneName: z.string().min(1, { message: "Milestone name is required" }),
   method: z.enum(['upi', 'bank_transfer', 'cash']).optional(),
   referenceNumber: z.string().optional(),
-  isInterstate: z.boolean().optional()
+  isInterstate: z.boolean().optional(),
+  invoiceDate: z.number().int().optional(),
+  dueDate: z.number().int().optional(),
+  gstRate: z.number().int().min(0).max(100).optional(),
+  customerGstin: z.string().regex(/^[0-9A-Z]{15}$/).optional()
 });
 
 export type CreateTemplateInput = z.infer<typeof createTemplateSchema>;

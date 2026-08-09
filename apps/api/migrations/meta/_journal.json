@@ -169,6 +169,13 @@
       "when": 1786298967853,
       "tag": "0023_equal_thunderbolt_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1786300016856,
+      "tag": "0024_hot_morgan_stark",
+      "breakpoints": true
     }
   ]
 }

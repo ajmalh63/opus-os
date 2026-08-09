@@ -242,6 +242,10 @@ export const payments = sqliteTable('payments', {
   sgst: integer('sgst'),
   igst: integer('igst'),
   isInterstate: integer('is_interstate', { mode: 'boolean' }),
+  invoiceDate: integer('invoice_date'),
+  dueDate: integer('due_date'),
+  gstRate: integer('gst_rate').notNull().default(18),
+  customerGstin: text('customer_gstin'),
   status: text('status', { enum: ['draft', 'confirmed', 'synced', 'paid', 'void'] }).notNull().default('draft'),
   enteredBy: text('entered_by'),
   confirmedBy: text('confirmed_by'),
@@ -466,6 +470,8 @@ export const businessProfile = sqliteTable('business_profile', {
   address: text('address'),
   hsnJson: text('hsn_json').notNull().default('{}'), // { "study-abroad": "9983", ... } division->SAC
   gstRateJson: text('gst_rate_json').notNull().default('{}'), // { "study-abroad": 18 }
+  autoConfirmEnabled: integer('auto_confirm_enabled', { mode: 'boolean' }).notNull().default(false),
+  autoConfirmThresholdPaise: integer('auto_confirm_threshold_paise').notNull().default(0),
   updatedAt: integer('updated_at').notNull().default(0)
 });
 
