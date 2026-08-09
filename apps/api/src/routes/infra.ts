@@ -1,7 +1,23 @@
 import { Hono } from 'hono';
 import { vectorHealth } from '../infra/vector.js';
+import { integrationsStatus } from '../infra/integrations.js';
 
 export const infraRouter = new Hono<{ Bindings: any }>();
+
+// GET /api/infrastructure/integrations - one panel for every external app
+// (OpenWA, Chatwoot, Cal.diy, ERPNext, Listmonk, Umami, n8n, Kuma, Twenty).
+// Each entry: stub / live / down + latency. Owner-only (mount gate).
+infraRouter.get('/integrations', async (c) => {
+  try {
+    const statuses = await integrationsStatus(c.env || {});
+    const live = statuses.filter((s) => s.state === 'live').length;
+    const down = statuses.filter((s) => s.state === 'down').length;
+    const stub = statuses.filter((s) => s.state === 'stub').length;
+    return c.json({ success: true, integrations: statuses, summary: { live, down, stub, total: statuses.length } });
+  } catch (e: any) {
+    return c.json({ error: 'Integration status probe failed', details: e.message }, 500);
+  }
+});
 
 // GET /api/infrastructure/health - live status of every Cloudflare backend service
 // used by OpusOS (Sections 3/4). Mirrors the infra decision matrix:

@@ -7,6 +7,7 @@
 
 import { notifications } from '../db/schema.js';
 import { sendWhatsApp, type MessagingEnv, type SendResult } from './messaging.js';
+import { listmonkSendTransactional, listmonkUpsertSubscriber, type ListmonkEnv } from './listmonk.js';
 
 export type NotifyChannel = 'whatsapp' | 'email' | 'sms' | 'telegram';
 
@@ -18,8 +19,8 @@ export interface SendNotificationInput {
   clientId?: string | null;
 }
 
-export type NotifyEnv = MessagingEnv & {
-  EMAIL?: any; // Cloudflare Email Workers binding (from_email + send)
+export type NotifyEnv = MessagingEnv & ListmonkEnv & {
+  EMAIL?: any; // Cloudflare Email Workers binding (legacy fallback)
   TELEGRAM_BOT_TOKEN?: string;
   OPS_TELEGRAM_CHAT_ID?: string;
 };
@@ -28,6 +29,13 @@ export type NotifyDb = { insert(table: any): any };
 
 // Low-level per-channel senders (never throw → SendResult).
 async function sendEmail(env: NotifyEnv, to: string, subject: string, body: string): Promise<SendResult> {
+  // Wave 1: Listmonk is the email engine when configured (owns DKIM/bounce).
+  if (env.LISTMONK_BASE_URL) {
+    const mk = await listmonkUpsertSubscriber(env, to, { name: '', channel: 'os-email' });
+    const res = await listmonkSendTransactional(env, to, subject, `<p style="font-family:sans-serif">${body.replace(/</g, '&lt;')}</p>`);
+    if (res.ok) return { ok: true, provider: 'listmonk', remoteId: res.id != null ? String(res.id) : undefined };
+    return { ok: false, provider: 'listmonk', reason: res.reason || (mk.ok ? undefined : 'subscriber+send failed') };
+  }
   if (env.EMAIL) {
     try {
       const res = await env.EMAIL.send({

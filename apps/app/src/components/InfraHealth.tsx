@@ -20,6 +20,15 @@ interface ServiceRow {
   plan: string;
 }
 
+interface IntegrationRow {
+  key: string;
+  name: string;
+  kind: string;
+  state: 'stub' | 'live' | 'down';
+  detail?: string;
+  latencyMs?: number;
+}
+
 interface HealthReport {
   services: ServiceRow[];
   allUp: boolean;
@@ -86,6 +95,17 @@ export default function InfraHealth() {
     refetchInterval: 30_000, // live artifact: auto-refresh 30s
   });
 
+  // Wave 1: one panel for every external integration (stub/live/down + latency)
+  const { data: intData } = useQuery<{ integrations: IntegrationRow[]; summary: { live: number; down: number; stub: number; total: number } }>({
+    queryKey: ['infraIntegrations'],
+    queryFn: async () => {
+      const r = await fetch('/api/infrastructure/integrations', { headers: AUTH });
+      if (!r.ok) throw new Error('integrations');
+      return r.json();
+    },
+    refetchInterval: 60_000,
+  });
+
   useEffect(() => {
     if (!data) return;
     const ctx = gsap.context(() => {
@@ -143,6 +163,43 @@ export default function InfraHealth() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Wave 1: external integrations panel (stub → live → down) */}
+      {intData && (
+        <section className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_20px_40px_-20px_rgba(10,45,80,0.12)]">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-display text-sm font-bold text-brand-navy">External Integrations</h3>
+              <p className="mt-0.5 text-[10px] text-slate-500">Every app OpusOS talks to — probe status + latency. Stub = credentials not yet configured.</p>
+            </div>
+            <div className="flex gap-2 text-[10px] font-bold">
+              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-700">{intData.summary.live} live</span>
+              <span className="rounded-full bg-rose-100 px-2.5 py-1 text-rose-700">{intData.summary.down} down</span>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{intData.summary.stub} stub</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {intData.integrations.map((it) => {
+              const badge = it.state === 'live' ? 'bg-emerald-500/15 text-emerald-700'
+                : it.state === 'down' ? 'bg-rose-500/15 text-rose-700'
+                : 'bg-slate-500/15 text-slate-600';
+              const dot = it.state === 'live' ? 'bg-emerald-500' : it.state === 'down' ? 'bg-rose-500' : 'bg-slate-400';
+              return (
+                <div key={it.key} className="flex items-center justify-between rounded-xl border border-brand-navy/10 bg-[#FAF8F4] px-3.5 py-2.5 text-xs">
+                  <span className="flex items-center gap-2 font-semibold text-brand-navy">
+                    <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                    {it.name}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    {it.latencyMs != null && <span className="font-mono text-[9px] text-slate-400">{it.latencyMs}ms</span>}
+                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${badge}`}>{it.state}</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* Ops note */}

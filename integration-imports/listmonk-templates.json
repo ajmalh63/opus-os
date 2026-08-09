@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "comment": "OpusOS → Listmonk templates. Import: Listmonk UI → Templates → Import (one .zip per template OR use these bodies). Transactional sends use template_body over API when template_id not set — these are the canonical branded bodies.",
+  "templates": [
+    {
+      "name": "doc-optin",
+      "description": "Double opt-in confirmation (DPDP-aligned)",
+      "subject": "Confirm your subscription — Opus Overseas",
+      "body": "<h2>One last step!</h2><p>Hi {{ .Subscriber.Name }},</p><p>Please confirm you want to hear from Opus Overseas. This is required by our DPDP consent process.</p><p><a href=\"{{ .OptInUrl }}\" style=\"background:#d7a019;color:#0a2d50;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold\">Confirm my subscription</a></p><small>You received this because your details were submitted through opusoverseas.in. If this wasn't you, ignore this email.</small>"
+    },
+    {
+      "name": "doc-receipt",
+      "description": "Payment receipt (transactional, sent via /api/tx)",
+      "subject": "Payment receipt — Opus Overseas",
+      "body": "<h2>Thank you, {{ .Tx.Data.name }}!</h2><p>We have received your payment of <strong>₹{{ .Tx.Data.amount }}</strong> for {{ .Tx.Data.service }}.</p><p><strong>Reference:</strong> {{ .Tx.Data.reference }}</p><small>Opus Overseas · Telangana, India</small>"
+    },
+    {
+      "name": "doc-agreement",
+      "description": "Agreement signed confirmation (transactional)",
+      "subject": "Your service agreement is signed",
+      "body": "<h2>Signed and sealed, {{ .Tx.Data.name }}</h2><p>Your service agreement ({{ .Tx.Data.agreementId }}) with Opus Overseas has been executed via {{ .Tx.Data.method }}.</p><p>We are starting delivery. Reply to this email if anything needs adjusting.</p><small>This is a transactional message — you won't receive marketing from this address without separate consent.</small>"
+    },
+    {
+      "name": "doc-otp",
+      "description": "OTP for portal/account verification (transactional)",
+      "subject": "Your one-time code",
+      "body": "<h2>Verification code</h2><p>Your Opus Overseas code is <strong style=\"font-size:20px\">{{ .Tx.Data.code }}</strong></p><p>It expires in 10 minutes. If you didn't request this, ignore it.</p>"
+    },
+    {
+      "name": "nurture-value",
+      "description": "Nurture touch 1 — value (marketing list; needs explicit marketing consent)",
+      "subject": "No pressure {{ .Subscriber.Name }}, just an idea",
+      "body": "<p>Hi {{ .Subscriber.Name }},</p><p>You were curious about services from Opus Overseas — here's one useful guide we thought you'd like.</p><p><a href=\"{{ .Link }}\" style=\"color:#d7a019;font-weight:bold\">Read the guide</a></p>"
+    },
+    {
+      "name": "nurture-final",
+      "description": "Nurture touch 4 — final honest check-in",
+      "subject": "Last note unless you want more, {{ .Subscriber.Name }}",
+      "body": "<p>Hi {{ .Subscriber.Name }},</p><p>We'll stop here unless you'd like more help. Reply to this email any time when you're ready — no pressure.</p><p><a href=\"{{ .UnsubscribeUrl }}\" style=\"color:#888;font-size:11px\">Unsubscribe</a></p>"
+    }
+  ]
+}
