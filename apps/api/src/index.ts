@@ -34,6 +34,7 @@ import { OpusEnv } from './types.js';
 import { adminRouter } from './routes/admin.js';
 import { waWebhookRouter, chatwootWebhookRouter } from './routes/messagingWebhooks.js';
 import { inboxRouter } from './routes/inbox.js';
+import { teamHubRouter } from './routes/teamHub.js';
 import { erpnextRouter } from './routes/erpnext.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
@@ -138,6 +139,10 @@ app.use('/api/admin/*', rbacMiddleware(['super_admin'], true));
 app.use('/api/inbox', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
 app.use('/api/inbox/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
 
+// Team Hub (§5.5) — staff chat rooms + R2 team file drive (all staff roles)
+app.use('/api/teamhub', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.use('/api/teamhub/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+
 // ERPNext books integration — owner only (sensitive financial target)
 app.use('/api/erpnext', rbacMiddleware(['super_admin'], true));
 app.use('/api/erpnext/*', rbacMiddleware(['super_admin'], true));
@@ -173,6 +178,8 @@ app.route('/api/admin/partners', partnerAdminRouter);
 // Business data import (CSV) — owner ceiling.
 app.route('/api/admin/import', importRouter);
 app.route('/api/inbox', inboxRouter);
+// Team Hub chat + file drive
+app.route('/api/teamhub', teamHubRouter);
 app.route('/api/erpnext', erpnextRouter);
 
 // Automation lane (n8n spine, Wave 2) — scoped, fail-closed service token.
@@ -186,3 +193,6 @@ app.get('/api/health', (c) => c.json({ status: 'healthy', timestamp: Date.now() 
 
 export default app;
 export type AppType = typeof app;
+// Durable Object for Team Hub chat rooms (§5.5) — must be exported for wrangler
+// to route DO traffic to the class.
+export { TeamHubRoom } from './routes/teamHub.js';

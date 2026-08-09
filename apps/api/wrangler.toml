@@ -76,3 +76,15 @@ index_id = "local-vectorize-index-id"
 # ============================================================
 [[ai]]
 binding = "AI"
+
+# ============================================================
+# Durable Objects - Team Hub chat rooms (§5.5). Free tier 100k req/day.
+# Local dev: DOs run in workerd via `wrangler dev --local`.
+# ============================================================
+[[durable_objects.bindings]]
+name = "TEAM_HUB"
+class_name = "TeamHubRoom"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["TeamHubRoom"]
