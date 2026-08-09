@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 
-// Staff unified inbox Ã¢â‚¬â€ OpenWA + Chatwoot inbound conversations become visible
+// Staff unified inbox — OpenWA + Chatwoot inbound conversations become visible
 // here; replies dispatch via the WhatsApp gateway (sendWhatsApp).
 
 const baseAuth = (): HeadersInit => {
@@ -54,7 +54,7 @@ export default function Inbox() {
     onError: (e: any) => setToast({ kind: 'err', text: e.message }),
   });
 
-  const fmt = (ts: number | null) => ts ? new Date(ts * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Ã¢â‚¬â€';
+  const fmt = (ts: number | null) => ts ? new Date(ts * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
 
 return (
     <div className="min-h-full text-brand-navy">
@@ -79,7 +79,7 @@ return (
           {/* Conversation list */}
           <div className="rounded-2xl border border-brand-navy/10 bg-white p-3">
             <div className="mb-3 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Conversations</div>
-            {isLoading && <p className="p-6 text-center text-xs text-slate-500">LoadingÃ¢â‚¬Â¦</p>}
+            {isLoading && <p className="p-6 text-center text-xs text-slate-500">Loading-</p>}
             {!isLoading && (!data?.conversations || data.conversations.length === 0) && (
               <p className="p-6 text-center text-xs text-slate-500">No conversations yet. WhatsApp/web messages will appear here.</p>
             )}
@@ -94,8 +94,8 @@ return (
                     <span className="truncate text-sm font-semibold">{c.contactName || c.contactKey}</span>
                     {c.unread > 0 && <span className="h-2.5 w-2.5 rounded-full bg-brand-gold" />}
                   </div>
-                  <p className="mt-1 truncate text-[11px] text-slate-500">{c.lastMessage || 'Ã¢â‚¬â€'}</p>
-                  <p className="mt-1 text-[10px] text-slate-400">{fmt(c.lastMessageAt)} Ã‚Â· {c.channel}</p>
+                  <p className="mt-1 truncate text-[11px] text-slate-500">{c.lastMessage || '—'}</p>
+                  <p className="mt-1 text-[10px] text-slate-400">{fmt(c.lastMessageAt)} Â· {c.channel}</p>
                 </button>
               ))}
             </div>
@@ -110,7 +110,7 @@ return (
                 <div className="mb-3 flex items-center justify-between border-b border-brand-navy/10 pb-3">
                   <div>
                     <p className="font-display text-sm font-bold">{thread?.conversation.contactName || thread?.conversation.contactKey}</p>
-                    <p className="text-[10px] text-slate-500">{thread?.conversation.channel} Ã‚Â· {thread?.conversation.contactKey}</p>
+                    <p className="text-[10px] text-slate-500">{thread?.conversation.channel} Â· {thread?.conversation.contactKey}</p>
                   </div>
                   {me && <span className="text-[10px] text-slate-500">Replying as {me.name?.split(' ')[0]}</span>}
                 </div>
@@ -132,11 +132,11 @@ return (
                   <input
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
-                    placeholder="Type a WhatsApp replyÃ¢â‚¬Â¦"
+                    placeholder="Type a WhatsApp reply-"
                     className="flex-1 rounded-xl border border-brand-navy/10 bg-white px-4 py-3 text-sm text-brand-navy focus:border-brand-gold focus:outline-none"
                   />
                   <button type="submit" disabled={sendReply.isPending || !reply.trim()} className="rounded-xl bg-brand-gold px-5 py-3 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover disabled:opacity-40">
-                    {sendReply.isPending ? 'Ã¢â‚¬Â¦' : 'Send'}
+                    {sendReply.isPending ? '-' : 'Send'}
                   </button>
                 </form>
               </div>

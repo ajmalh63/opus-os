@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 
-// A-5: session-driven auth ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â read the live better-auth cookie; no forged admin token.
+// A-5: session-driven auth Ã¢â‚¬- read the live better-auth cookie; no forged admin token.
 const AUTH = {
   get Cookie() {
     const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
@@ -89,7 +89,7 @@ export default function GrowthTab() {
         <div className="px-6 py-4 border-b border-brand-navy/10 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="font-display font-bold text-sm text-brand-gold">Audience Temperature (Event-Driven Scoring)</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Each interaction earns points ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ auto band. Gold standard: cold &lt;50 Ãƒâ€šÃ‚Â· warm 50ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“75 Ãƒâ€šÃ‚Â· hot &gt;75.</p>
+            <p className="text-xs text-slate-500 mt-0.5">Each interaction earns points Ã¢ ’ auto band. Gold standard: cold &lt;50 Ã‚Â· warm 50Ã¢â‚¬–75 Ã‚Â· hot &gt;75.</p>
           </div>
           <div className="flex gap-3 text-[10px]">
             {segData?.segments?.map(s => (
@@ -135,7 +135,7 @@ export default function GrowthTab() {
         <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl p-6 space-y-4">
           <div>
             <h3 className="font-display font-bold text-sm text-brand-gold">Staff Incentive Rules</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Fixed amount (paise) per trigger per division ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â earnings auto-computed from real transactions.</p>
+            <p className="text-xs text-slate-500 mt-0.5">Fixed amount (paise) per trigger per division Ã¢â‚¬- earnings auto-computed from real transactions.</p>
           </div>
           <form onSubmit={(e) => { e.preventDefault(); createRule.mutate(); }} className="flex flex-wrap gap-2">
             <select value={division} onChange={e => setDivision(e.target.value)} className="bg-white border border-brand-navy/10 rounded px-2 py-2 text-xs text-brand-navy">
@@ -147,14 +147,14 @@ export default function GrowthTab() {
               <option value="visa_granted">Visa granted</option>
               <option value="placement_confirmed">Placement confirmed</option>
             </select>
-            <input type="number" min="1" step="0.01" value={amountRs} onChange={e => setAmountRs(e.target.value)} placeholder="ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹ per event" className="w-28 bg-white border border-brand-navy/10 rounded px-2 py-2 text-xs text-brand-navy placeholder-slate-400" />
+            <input type="number" min="1" step="0.01" value={amountRs} onChange={e => setAmountRs(e.target.value)} placeholder="Ã¢“Â¹ per event" className="w-28 bg-white border border-brand-navy/10 rounded px-2 py-2 text-xs text-brand-navy placeholder-slate-400" />
             <button type="submit" className="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-4 py-2 rounded text-xs font-bold">Add Rule</button>
           </form>
           <div className="space-y-1.5">
             {rulesData?.rules.map(r => (
               <div key={r.id} className="flex justify-between items-center bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs">
-                <span className="text-brand-navy font-semibold">{r.division} Ãƒâ€šÃ‚Â· {r.trigger}</span>
-                <span className="text-brand-gold font-mono">ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(r.amount / 100).toFixed(2)}</span>
+                <span className="text-brand-navy font-semibold">{r.division} Ã‚Â· {r.trigger}</span>
+                <span className="text-brand-gold font-mono">Ã¢“Â¹{(r.amount / 100).toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -164,7 +164,7 @@ export default function GrowthTab() {
         <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl p-6 space-y-4">
           <div>
             <h3 className="font-display font-bold text-sm text-brand-navy">Payout Statements</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Close a period ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ accruals are frozen (no double-count), statements drafted with TDS (<code className="text-brand-gold">10%</code>).</p>
+            <p className="text-xs text-slate-500 mt-0.5">Close a period Ã¢ ’ accruals are frozen (no double-count), statements drafted with TDS (<code className="text-brand-gold">10%</code>).</p>
           </div>
           <form onSubmit={(e) => { e.preventDefault(); closePeriod.mutate(); }} className="flex items-end gap-2">
             <div className="flex-1">
@@ -176,10 +176,10 @@ export default function GrowthTab() {
           <div className="space-y-1.5">
             {stmtData?.statements.map(s => (
               <div key={s.id} className="flex justify-between items-center bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs">
-                <span className="text-brand-navy font-semibold">{s.employeeId} Ãƒâ€šÃ‚Â· {s.period}</span>
+                <span className="text-brand-navy font-semibold">{s.employeeId} Ã‚Â· {s.period}</span>
                 <span className="flex gap-3">
-                  <span className="text-slate-500">Gross <b className="text-brand-navy">ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(s.gross / 100).toFixed(2)}</b></span>
-                  <span className="text-slate-500">Net <b className="text-brand-success">ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(s.net / 100).toFixed(2)}</b></span>
+                  <span className="text-slate-500">Gross <b className="text-brand-navy">Ã¢“Â¹{(s.gross / 100).toFixed(2)}</b></span>
+                  <span className="text-slate-500">Net <b className="text-brand-success">Ã¢“Â¹{(s.net / 100).toFixed(2)}</b></span>
                   <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold ${s.status === 'approved' ? 'bg-brand-success/15 text-brand-success' : 'bg-slate-700 text-slate-700'}`}>{s.status}</span>
                 </span>
               </div>

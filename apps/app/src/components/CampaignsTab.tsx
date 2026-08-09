@@ -104,7 +104,7 @@ export default function CampaignsTab() {
     },
     onSuccess: (d) => {
       queryClient.invalidateQueries({ queryKey: ['adminCampaigns'] });
-      showToast(`Campaign ${d.key} Ã¢â€ â€™ ${d.status}`);
+      showToast(`Campaign ${d.key} -> ${d.status}`);
     },
     onError: (e: any) => showToast((e as Error).message, 'error'),
   });
@@ -162,10 +162,10 @@ export default function CampaignsTab() {
             </select>
           </div>
           <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="w-full bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white" />
-          <input value={form.eligibilityJson} onChange={(e) => setForm({ ...form, eligibilityJson: e.target.value })} placeholder={'Eligibility JSON Ã¢â‚¬â€ e.g. ' + '{"targetCountry":["US","UK"]} (empty = whole division)'} className="w-full bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white font-mono" />
+          <input value={form.eligibilityJson} onChange={(e) => setForm({ ...form, eligibilityJson: e.target.value })} placeholder={'Eligibility JSON — e.g. ' + '{"targetCountry":["US","UK"]} (empty = whole division)'} className="w-full bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white font-mono" />
 
           <div className="space-y-2">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Touch plan (day offset, stage, body Ã¢â‚¬â€ {'{{name}}'} / {'{{targetCountry}}'} tokens supported)</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Touch plan (day offset, stage, body — {'{{name}}'} / {'{{targetCountry}}'} tokens supported)</p>
             {form.touches.map((t, i) => (
               <div key={i} className="grid grid-cols-[40px_60px_100px_1fr] gap-2 items-center">
                 <span className="text-[10px] text-slate-600">#{i + 1}</span>
@@ -192,7 +192,7 @@ export default function CampaignsTab() {
       <div className="space-y-4">
         {campaigns.length === 0 && (
           <div className="p-10 text-center text-xs text-slate-600 border border-dashed border-brand-navy/15 rounded-lg">
-            No campaigns yet Ã¢â‚¬â€ create one to start targeting leads by division + context.
+            No campaigns yet — create one to start targeting leads by division + context.
           </div>
         )}
         {campaigns.map((c) => (
@@ -205,8 +205,8 @@ export default function CampaignsTab() {
                   <code className="text-[10px] text-slate-600">{c.key}</code>
                 </div>
                 <p className="text-[10px] text-slate-500 mt-0.5">
-                  {DIVISIONS.find(d => d.key === c.division)?.label || c.division} Ã‚Â· {c.touches.length} touch(es) Ã‚Â· {c.description || 'No description'}
-                  {c.eligibilityJson !== '{}' && c.eligibilityJson ? ` Ã‚Â· eligibility: ${c.eligibilityJson}` : ''}
+                  {DIVISIONS.find(d => d.key === c.division)?.label || c.division} Â· {c.touches.length} touch(es) Â· {c.description || 'No description'}
+                  {c.eligibilityJson !== '{}' && c.eligibilityJson ? ` Â· eligibility: ${c.eligibilityJson}` : ''}
                 </p>
               </div>
               <div className="flex gap-2">

@@ -190,8 +190,8 @@ export default function Client360() {
     setTimeout(() => setToast({ show: false, msg: '' }), 4000);
   };
 
-  // Real session cookie (AuthGuard protects this route). Removed the demo
-  // "Simulate Role Session" token-switch ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â RBAC is enforced server-side.
+// Real session: AuthGuard protects this route; RBAC is enforced server-side
+  // (no demo role-switching here).
   const [sessionToken] = useState<string>(() => {
     if (typeof document === 'undefined') return '';
     const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
@@ -200,6 +200,8 @@ export default function Client360() {
 
   const { me } = useSession();
   const meName = me?.name || me?.email?.split('@')[0] || 'Staff';
+  const meRole = me?.role || '';
+  const meCanAgreements = ['super_admin', 'manager', 'counselor', 'coordinator'].includes(meRole);
 
 
   // Navigation tabs state
@@ -466,7 +468,7 @@ export default function Client360() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client360', clientId] });
       if (data.wipLimitBreached) {
-        showToast(`ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Advanced with WIP Limit warning: Column reached capacity limit of ${data.limit}.`);
+        showToast(`ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒ“Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â ÃƒÆ’Ã†’Ãƒ“Ã‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â Advanced with WIP Limit warning: Column reached capacity limit of ${data.limit}.`);
       } else {
         showToast('Application stage advanced successfully.');
       }
@@ -986,7 +988,7 @@ export default function Client360() {
                             ? 'bg-brand-gold/15 border-brand-gold text-brand-gold' 
                             : 'bg-white border-brand-navy/10 text-slate-500'
                       }`}>
-                        {isCompleted ? 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' : step.seq}
+                        {isCompleted ? 'ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢“Â¬Ã…–ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã¢â‚¬Å“' : step.seq}
                       </span>
                       <span>{step.label}</span>
                     </div>
@@ -1076,7 +1078,7 @@ export default function Client360() {
                       <span className="text-slate-400 block leading-none">SHA-256 Digest:</span>
                       <span className="font-mono text-[9px] break-all block mt-1 text-slate-300 font-semibold">{consent.sha256Hash}</span>
                     </div>
-                    <span className="text-[8px] text-slate-500 block">IP: {consent.ipAddress} ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
+                    <span className="text-[8px] text-slate-500 block">IP: {consent.ipAddress} ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢“Â¬Ã…Â¡Ãƒ“Ã‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¢ {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
                   </div>
                 ))}
                 {(!client.consents || client.consents.length === 0) && (
@@ -1102,22 +1104,24 @@ export default function Client360() {
                 <div className="text-right">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Outstanding Balance</span>
                   <span className="font-display font-extrabold text-xl text-brand-error block mt-0.5">
-                    ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(activeEng.outstandingBalance / 100).toFixed(2)}
+                    ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹{(activeEng.outstandingBalance / 100).toFixed(2)}
                   </span>
                 </div>
               </div>
             )}
 
-            {/* TAB SELECTOR BAR */}
+            {/* TAB SELECTOR BAR - money/agreements tabs are role-gated to match
+                the server: agreements (super/manager/counselor/coordinator),
+                payments (super_admin/manager only). */}
             <div className="flex border-b border-brand-navy/10 gap-1 bg-slate-50 p-1 rounded-lg">
               {[
                 { id: 'tasks', label: 'Tasks' },
                 { id: 'vault', label: 'Document Vault' },
-                { id: 'agreements', label: 'Service Agreements' },
-                { id: 'payments', label: 'Milestones & GST' },
-                { id: 'umrah', label: 'Umrah Departure' },
+                ...(meCanAgreements ? [{ id: 'agreements', label: 'Service Agreements' }] : []),
+                ...(meRole === 'super_admin' || meRole === 'manager' ? [{ id: 'payments', label: 'Milestones & GST' }] : []),
+                ...(meRole === 'super_admin' || meRole === 'manager' ? [{ id: 'umrah', label: 'Umrah Departure' }] : []),
                 { id: 'courier', label: 'Courier Tracker' },
-              ].map((tab) => (
+              ].map((tab: any) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
@@ -1205,7 +1209,7 @@ export default function Client360() {
                             }`}
                             title={task.status === 'done' ? 'Mark open' : 'Mark done'}
                           >
-                            {task.status === 'done' ? 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ' : ''}
+                            {task.status === 'done' ? 'ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢“Â¬Ã…–ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã¢â‚¬Å“' : ''}
                           </button>
                           <div className="min-w-0">
                             <p className={`font-semibold text-brand-navy truncate ${task.status === 'done' ? 'line-through opacity-50' : ''}`}>
@@ -1213,7 +1217,7 @@ export default function Client360() {
                             </p>
                             {task.dueDate && (
                               <p className={`text-[10px] ${isOverdue ? 'text-brand-error font-bold' : 'text-slate-500'}`}>
-                                {isOverdue ? 'Overdue ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
+                                {isOverdue ? 'Overdue ÃƒÆ’Ã†’ÃƒÂ¢Ã¢“Â¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â· ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
                               </p>
                             )}
                           </div>
@@ -1426,7 +1430,7 @@ export default function Client360() {
                   <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
                     <div>
                       <h3 className="font-display font-bold text-sm text-brand-gold">Collect Online Payment (Razorpay)</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">UPI ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· Cards ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· Netbanking ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· Wallets ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â amount computed from the ledger.</p>
+                      <p className="text-xs text-slate-400 mt-0.5">UPI ÃƒÆ’Ã†’ÃƒÂ¢Ã¢“Â¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â· Cards ÃƒÆ’Ã†’ÃƒÂ¢Ã¢“Â¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â· Netbanking ÃƒÆ’Ã†’ÃƒÂ¢Ã¢“Â¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â· Wallets ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢“Â¬Ã…Â¡Ãƒ“Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ“Ã‚Â amount computed from the ledger.</p>
                     </div>
                     {razorpayStatus && (
                       <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${razorpayStatus.type === 'err' ? 'bg-brand-error/20 text-brand-error' : 'bg-brand-success/15 text-brand-success'}`}>
@@ -1447,7 +1451,7 @@ export default function Client360() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹)</label>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹)</label>
                       <input
                         type="number"
                         min="1"
@@ -1504,7 +1508,7 @@ export default function Client360() {
 
                       {/* Amount in Rupees */}
                       <div>
-                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (Rupees ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹)</label>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (Rupees ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹)</label>
                         <input 
                           type="number" 
                           step="0.01"
@@ -1634,7 +1638,7 @@ export default function Client360() {
                           <div className="flex justify-between items-end border-t border-brand-navy/10 pt-2.5">
                             <div>
                               <span className="text-[9px] text-slate-500 uppercase tracking-widest block leading-none">Milestone Fee</span>
-                              <span className="font-mono font-extrabold text-sm text-brand-gold">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(milestone.amount / 100).toFixed(2)}</span>
+                              <span className="font-mono font-extrabold text-sm text-brand-gold">ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹{(milestone.amount / 100).toFixed(2)}</span>
                             </div>
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
                               milestone.status === 'paid' 
@@ -1713,17 +1717,17 @@ export default function Client360() {
                                 </span>
                               </td>
                               <td className="p-4 font-mono text-slate-300">
-                                {hasTax ? `ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹${(ledger.taxableAmount! / 100).toFixed(2)}` : 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â'}
+                                {hasTax ? `ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹${(ledger.taxableAmount! / 100).toFixed(2)}` : 'ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢“Â¬Ã…Â¡Ãƒ“Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ“Ã‚Â'}
                               </td>
                               <td className="p-4">
                                 {hasTax ? (
                                   <div className="text-[10px] font-mono text-slate-400 space-y-0.5">
                                     {ledger.isInterstate ? (
-                                      <div>IGST (18%): ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(ledger.igst! / 100).toFixed(2)}</div>
+                                      <div>IGST (18%): ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹{(ledger.igst! / 100).toFixed(2)}</div>
                                     ) : (
                                       <>
-                                        <div>CGST (9%): ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(ledger.cgst! / 100).toFixed(2)}</div>
-                                        <div>SGST (9%): ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(ledger.sgst! / 100).toFixed(2)}</div>
+                                        <div>CGST (9%): ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹{(ledger.cgst! / 100).toFixed(2)}</div>
+                                        <div>SGST (9%): ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹{(ledger.sgst! / 100).toFixed(2)}</div>
                                       </>
                                     )}
                                   </div>
@@ -1732,7 +1736,7 @@ export default function Client360() {
                                 )}
                               </td>
                               <td className={`p-4 text-right font-mono font-extrabold ${amountColor}`}>
-                                ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(ledger.amount / 100).toFixed(2)}
+                                ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹{(ledger.amount / 100).toFixed(2)}
                               </td>
                             </tr>
                           );
@@ -1798,12 +1802,12 @@ export default function Client360() {
                           </div>
                           <div className="text-right">
                             <span className="text-[8px] text-slate-500 uppercase block">Booking Fee</span>
-                            <span className="font-bold text-slate-200 font-mono">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(dep.bookingFee / 100).toFixed(2)}</span>
+                            <span className="font-bold text-slate-200 font-mono">ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹{(dep.bookingFee / 100).toFixed(2)}</span>
                           </div>
                         </div>
 
                         <div className="flex justify-between items-center">
-                          <span className="font-mono text-xs font-bold text-brand-navy">Price: ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹{(dep.price / 100).toFixed(2)}</span>
+                          <span className="font-mono text-xs font-bold text-brand-navy">Price: ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒ-Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒ“Ã‚Â¹{(dep.price / 100).toFixed(2)}</span>
                           <button
                             onClick={() => bookUmrahSeatMutation.mutate(dep.id)}
                             disabled={bookUmrahSeatMutation.isPending || dep.status === 'cancelled'}
@@ -2012,7 +2016,7 @@ export default function Client360() {
                             ? 'bg-sky-600 text-brand-navy border-sky-700' 
                             : 'bg-slate-800 text-slate-300 border-brand-navy/15'
                       }`}>
-                        {isWhatsApp ? 'WA' : isEmail ? 'EM' : 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢'}
+                        {isWhatsApp ? 'WA' : isEmail ? 'EM' : 'ÃƒÆ’Ã†’Ãƒ“Ã‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒ“Ã‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢“Â¬Ã…Â¾Ãƒ“Ã‚Â¢'}
                       </div>
                       
                       <div className={`p-3 rounded-lg border flex-1 ${

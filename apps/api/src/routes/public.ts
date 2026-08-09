@@ -1,4 +1,4 @@
-﻿import { Hono } from 'hono';
+import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
@@ -7,16 +7,16 @@ import { eq, asc } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
 
 // ============================================================
-// 24.1.1 PUBLIC ARTIFACTS â€” homepage hero live widgets
+// 24.1.1 PUBLIC ARTIFACTS ” homepage hero live widgets
 // Staff-auth-free by design: these feed the public website's
 // hero carousel (Eligibility Checker, Departure Countdown,
 // Attestation Chain, Job Ticker). All responses are real D1
-// data â€” never mocks. Empty stores return empty arrays.
+// data ” never mocks. Empty stores return empty arrays.
 // ============================================================
 
 export const publicRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
-// GET /api/public/jobs â€” open job postings for the Manpower job ticker
+// GET /api/public/jobs ” open job postings for the Manpower job ticker
 publicRouter.get('/jobs', async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -29,7 +29,7 @@ publicRouter.get('/jobs', async (c) => {
   }
 });
 
-// GET /api/public/umrah/departures â€” next scheduled departures with live availability bands
+// GET /api/public/umrah/departures ” next scheduled departures with live availability bands
 publicRouter.get('/umrah/departures', async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -60,7 +60,7 @@ const rows = await db.select().from(groupDepartures).where(eq(groupDepartures.st
   }
 });
 
-// GET /api/public/attestation/chains â€” attestation step chains per country
+// GET /api/public/attestation/chains ” attestation step chains per country
 publicRouter.get('/attestation/chains', async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -77,7 +77,7 @@ publicRouter.get('/attestation/chains', async (c) => {
   }
 });
 
-// POST /api/public/match/eligibility â€” GPA/test/budget/country â†’ ranked university matches
+// POST /api/public/match/eligibility ” GPA/test/budget/country -> ranked university matches
 const matchSchema = z.object({
   gpa: z.number().min(0).max(10),
   ielts: z.number().min(0).max(9).optional(),

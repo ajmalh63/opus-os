@@ -1,4 +1,4 @@
-﻿import { Hono } from 'hono';
+import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
@@ -15,17 +15,17 @@ import { eq, and, lte } from 'drizzle-orm';
 // ACTIVE campaign for its division whose eligibility predicate passes against
 // its dynamicContext. Campaign touches override the legacy default SEQUENCE.
 //
-// Default cadence (gold-standard re-engagement â€” email-sequence skill):
-//   Day 0  value      â€” check-in, no pressure
-//   Day 3  case_study â€” a real recent result
-//   Day 5  offer      â€” free no-obligation consultation
-//   Day 12 final      â€” honest last check-in
+// Default cadence (gold-standard re-engagement — email-sequence skill):
+//   Day 0  value      — check-in, no pressure
+//   Day 3  case_study — a real recent result
+//   Day 5  offer      — free no-obligation consultation
+//   Day 12 final      — honest last check-in
 
 const SEQUENCE: { stage: 'value' | 'case_study' | 'offer' | 'final'; day: number; build: (name: string, division: string) => string }[] = [
   {
     stage: 'value',
     day: 0,
-    build: (n, d) => `Hi ${n}! You explored ${d.toUpperCase()} with Opus Overseas a while back. No pressure at all â€” just letting you know we're here if you'd like to pick it up again.`,
+    build: (n, d) => `Hi ${n}! You explored ${d.toUpperCase()} with Opus Overseas a while back. No pressure at all — just letting you know we're here if you'd like to pick it up again.`,
   },
   {
     stage: 'case_study',
@@ -40,7 +40,7 @@ const SEQUENCE: { stage: 'value' | 'case_study' | 'offer' | 'final'; day: number
   {
     stage: 'final',
     day: 12,
-    build: (n) => `Hi ${n}, last check-in from us unless you'd like more. If there's any way we can help with your journey, just reply â€” we're here.`,
+    build: (n) => `Hi ${n}, last check-in from us unless you'd like more. If there's any way we can help with your journey, just reply — we're here.`,
   },
 ];
 
@@ -60,7 +60,7 @@ function safeParse(raw: string | null | undefined): Record<string, any> {
 
 // Match the lead to the first ACTIVE campaign for its division whose eligibility
 // predicate passes against its intake context. Predicate shape in
-// campaigns.eligibilityJson: { "<contextKey>": [allowed] } â€” array = OR within
+// campaigns.eligibilityJson: { "<contextKey>": [allowed] } — array = OR within
 // key, keys = AND; empty/absent predicate applies to the whole division.
 export async function pickCampaign(db: D1, division: string, context: Record<string, any>): Promise<{ campaign: CampaignRow; touches: TouchRow[] } | null> {
   const rows = await db.select().from(campaigns).where(eq(campaigns.division, division as any)).all();
@@ -155,7 +155,7 @@ nurtureRouter.post('/plan', zValidator('json', planSchema), async (c) => {
   }
 });
 
-// GET /api/marketing/nurture?clientId=  â€” the client's plan
+// GET /api/marketing/nurture?clientId=  — the client's plan
 nurtureRouter.get('/', async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -169,7 +169,7 @@ nurtureRouter.get('/', async (c) => {
   }
 });
 
-// GET /api/marketing/nurture/due?now=  â€” provider-consumer pull of due touches
+// GET /api/marketing/nurture/due?now=  — provider-consumer pull of due touches
 nurtureRouter.get('/due', async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -184,7 +184,7 @@ nurtureRouter.get('/due', async (c) => {
   }
 });
 
-// POST /api/marketing/nurture/:id/send  â€” mark a dispatched touch delivered
+// POST /api/marketing/nurture/:id/send  — mark a dispatched touch delivered
 nurtureRouter.post('/:id/send', async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);

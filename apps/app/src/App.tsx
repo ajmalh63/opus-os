@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { SessionProvider } from './lib/session';
 import AuthGuard from './components/AuthGuard';
+import RoleGate from './components/RoleGate';
 import PublicLeadForm from './pages/PublicLeadForm.js';
 import KanbanBoard from './pages/KanbanBoard.js';
 import Client360 from './pages/Client360.js';
@@ -73,7 +74,7 @@ export default function App() {
           <AuthGuard><WorkspaceRoute><Client360 /></WorkspaceRoute></AuthGuard>
         </Route>
         <Route path="/admin">
-          <AuthGuard><WorkspaceRoute><AdminConsole /></WorkspaceRoute></AuthGuard>
+          <AuthGuard><RoleGate roles={['super_admin']}><AdminConsole /></RoleGate></AuthGuard>
         </Route>
         <Route path="/inbox">
           <AuthGuard><WorkspaceRoute><Inbox /></WorkspaceRoute></AuthGuard>

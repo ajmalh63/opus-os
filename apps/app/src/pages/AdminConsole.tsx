@@ -314,7 +314,7 @@ export default function AdminConsole() {
             toast.type === 'error' ? 'bg-rose-950 border-rose-800 text-rose-300' :
             'bg-amber-950 border-amber-800 text-amber-300'
           }`}>
-            <span>{toast.type === 'success' ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“' : toast.type === 'error' ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢' : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â'}</span>
+            <span>{toast.type === 'success' ? 'ÃƒÆ’Ã‚Â¢Ãƒ-Ã¢â‚¬Å“ÃƒÂ¢Ã¢“Â¬Ã…–' : toast.type === 'error' ? 'ÃƒÆ’Ã‚Â¢Ãƒ-Ã¢â‚¬Å“ÃƒÂ¢Ã¢“Â¬Ã‚Â¢' : 'ÃƒÆ’Ã‚Â¢Ãƒ-Ã‚Â¡Ãƒ“Ã‚Â ÃƒÆ’Ã‚Â¯Ãƒ“Ã‚Â¸Ãƒ“Ã‚Â'}</span>
             <span>{toast.msg}</span>
           </div>
         )}
@@ -401,7 +401,7 @@ export default function AdminConsole() {
                 <div className="p-12 text-center text-xs text-slate-400">Retrieving secure staff roster...</div>
               ) : staffError ? (
                 <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Failed to retrieve staff records. Please check that you have active super-admin credentials.
+                  ÃƒÆ’Ã‚Â¢Ãƒ-Ã‚Â¡Ãƒ“Ã‚Â ÃƒÆ’Ã‚Â¯Ãƒ“Ã‚Â¸Ãƒ“Ã‚Â Failed to retrieve staff records. Please check that you have active super-admin credentials.
                 </div>
               ) : (
                 <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
@@ -641,7 +641,7 @@ export default function AdminConsole() {
                 <div className="p-12 text-center text-xs text-slate-400">Loading system write log pipeline...</div>
               ) : auditError ? (
                 <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
+                  ÃƒÆ’Ã‚Â¢Ãƒ-Ã‚Â¡Ãƒ“Ã‚Â ÃƒÆ’Ã‚Â¯Ãƒ“Ã‚Â¸Ãƒ“Ã‚Â Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
                 </div>
               ) : (
                 <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
@@ -788,7 +788,7 @@ export default function AdminConsole() {
                 onClick={() => setSelectedLogDetail(null)}
                 className="text-slate-400 hover:text-brand-navy text-xl p-1 font-bold cursor-pointer"
               >
-                ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢
+                ÃƒÆ’Ã‚Â¢Ãƒ-Ã¢â‚¬Å“ÃƒÂ¢Ã¢“Â¬Ã‚Â¢
               </button>
             </div>
 
@@ -869,7 +869,7 @@ export default function AdminConsole() {
                                   <span className="px-1.5 py-0.5 rounded bg-rose-950/40 text-rose-400 line-through max-w-[200px] truncate">
                                     {valBefore === undefined ? 'undefined' : valBefore}
                                   </span>
-                                  <span className="text-slate-500">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢</span>
+                                  <span className="text-slate-500">ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢“Â¬Ã‚Â ÃƒÂ¢Ã¢“Â¬Ã¢”Â¢</span>
                                   <span className="px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-400 max-w-[200px] truncate">
                                     {valAfter === undefined ? 'undefined' : valAfter}
                                   </span>

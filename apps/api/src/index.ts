@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { secureHeaders } from 'hono/secure-headers';
 import { leadsRouter } from './routes/leads.js';
 import { clientsRouter } from './routes/clients.js';
 import { kanbanRouter } from './routes/kanban.js';
@@ -31,13 +32,31 @@ import { erpnextRouter } from './routes/erpnext.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
-// Global Error Handler
+// Security headers (Hono secure-header middleware) — CSP, nosniff, referrer
+// policy, HSTS. Damage-control layer, never a substitute for auth/RBAC.
+app.use('*', secureHeaders());
+
+// Global Error Handler — gold-standard shape:
+//   - never leak stack traces to clients
+//   - structured { error: { code, message } }
+//   - full details only server-side
 app.onError((err, c) => {
-  return c.json({
-    error: err.message || "Internal Server Error",
-    details: err.stack
-  }, 500);
+  const status = (err as any)?.status || 500;
+  const code = status >= 400 && status < 600 ? 'HTTP_ERROR' : 'INTERNAL_ERROR';
+  console.error(`[error] ${c.req.method} ${c.req.path} -> ${err?.name}: ${err?.message}`);
+  return c.json(
+    {
+      error: {
+        code,
+        message: status >= 500 ? 'An unexpected error occurred' : (err?.message || 'Request failed'),
+      },
+    },
+    status as any
+  );
 });
+
+// JSON 404 handler — default Hono is plain text; gold standard is JSON.
+app.notFound((c) => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found' } }, 404));
 
 // ===== PUBLIC (no session) =====
 app.route('/api/auth', authRouter);

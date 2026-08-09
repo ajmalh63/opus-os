@@ -43,14 +43,15 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'Overview',
     items: [
       { key: 'dashboard', label: 'Dashboard', to: '/workspaces', icon: I.dash, roles: ALL, match: '/workspaces' },
-      { key: 'pipeline', label: 'Clients & Pipeline', to: '/kanban', icon: I.kanban, roles: ALL, match: '/kanban|/clients' },
+{ key: 'pipeline', label: 'Clients & Pipeline', to: '/kanban', icon: I.kanban, roles: ['super_admin', 'manager', 'counselor', 'coordinator'], match: '/kanban|/clients' },
     ],
   },
   {
     title: 'Work',
     items: [
       { key: 'inbox', label: 'Unified Inbox', to: '/inbox', icon: I.inbox, roles: ALL, match: '/inbox' },
-      { key: 'admindesk', label: 'Admin Control Desk', to: '/admin', icon: I.admindesk, roles: ['super_admin', 'manager'], match: '/admin' },
+      // Admin API is owner-ceiled server-side; managers never get past 403.
+      { key: 'admindesk', label: 'Admin Control Desk', to: '/admin', icon: I.admindesk, roles: ['super_admin'], match: '/admin' },
     ],
   },
   {

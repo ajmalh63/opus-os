@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -135,7 +135,7 @@ describe('Razorpay Integration (Section 44)', () => {
     expect(mockD1.tables.engagements[0].outstanding_balance).toBe(5900000 - 2500000);
   });
 
-  it('webhook is idempotent â€” replaying the same payment does not double-credit', async () => {
+  it('webhook is idempotent ” replaying the same payment does not double-credit', async () => {
     const body = JSON.stringify({
       event: 'payment.captured',
       payload: { payment: { entity: { id: 'pay_dup_1', amount: 1000000, notes: { engagementId: 'eng-rzp-1', clientId: 'OP-2026-1001' } } } }

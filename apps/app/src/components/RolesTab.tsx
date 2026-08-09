@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 interface Permission { code: string; family: string; label: string; ownerOnly: boolean; }
 interface Role { id: string; name: string; code: string; description: string | null; permissionsJson: string; system: boolean; editable: boolean; color: string; }
 
-// A-5: session-driven auth ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â read the live better-auth cookie; no forged admin token.
+// A-5: session-driven auth Ã¢â‚¬- read the live better-auth cookie; no forged admin token.
 const AUTH = {
   get Cookie() {
     const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
@@ -84,9 +84,9 @@ export default function RolesTab() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Role name ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â e.g. Visa Specialist"
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Role name Ã¢â‚¬- e.g. Visa Specialist"
             className="bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-600 focus:border-brand-gold focus:outline-none" />
-          <input value={code} onChange={e => setCode(e.target.value)} placeholder="Code ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â e.g. visa_specialist"
+          <input value={code} onChange={e => setCode(e.target.value)} placeholder="Code Ã¢â‚¬- e.g. visa_specialist"
             className="bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-600 focus:border-brand-gold focus:outline-none" />
           <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Short description (optional)"
             className="bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-600 focus:border-brand-gold focus:outline-none" />
@@ -113,7 +113,7 @@ export default function RolesTab() {
                   </button>
                 ))}
                 {permissions.filter(p => p.family === fam && p.ownerOnly).map(p => (
-                  <span key={p.code} className="px-3 py-1.5 rounded-md border border-brand-navy/10 text-[10px] text-slate-600 line-through" title="Owner-only - locked">{p.code} ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬â„¢</span>
+                  <span key={p.code} className="px-3 py-1.5 rounded-md border border-brand-navy/10 text-[10px] text-slate-600 line-through" title="Owner-only - locked">{p.code} Ã°Å¸-’</span>
                 ))}
               </div>
             </div>

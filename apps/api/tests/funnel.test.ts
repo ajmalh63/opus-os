@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -48,7 +48,7 @@ const leadPayload = (over: any = {}) => ({
   ...over
 });
 
-describe('Marketing automation interlock â€” funnel + partner affiliate (Sections 26/39)', () => {
+describe('Marketing automation interlock ” funnel + partner affiliate (Sections 26/39)', () => {
   let mockD1: MockD1Database;
 
   beforeAll(() => {

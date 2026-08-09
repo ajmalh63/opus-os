@@ -6,15 +6,28 @@ import { engagements, pipelineStages, clients, auditLog } from '../db/schema.js'
 import { eq, and } from 'drizzle-orm';
 import { auditBegin } from '../middleware/audit.js';
 
-export const kanbanRouter = new Hono<{ Bindings: { DB: D1Database } }>();
+export const kanbanRouter = new Hono<{
+  Bindings: { DB: D1Database };
+  Variables: { user?: { role?: string; userDivisions?: string } | null };
+}>();
 
 // GET /api/kanban/board
+// Division-scoped: counselors/coordinators see only their permitted divisions
+// (userDivisions on the session). Money fields (outstandingBalance) are only
+// exposed to roles with finance access (super_admin/manager).
 kanbanRouter.get('/board', async (c) => {
   if (!c.env || !c.env.DB) {
     return c.json({ error: "DB not available" }, 500);
   }
 
   const db = getDb(c.env.DB);
+  const user = (c.get('user') as any) ?? null;
+  const role = user?.role as string | undefined;
+  const canSeeMoney = role === 'super_admin' || role === 'manager';
+  let scopedDivisions: string[] | null = null;
+  if (role === 'counselor' || role === 'coordinator') {
+    try { scopedDivisions = JSON.parse((user?.userDivisions as string) || '[]'); } catch { scopedDivisions = []; }
+  }
 
   try {
     const stages = await db.select().from(pipelineStages).all();
@@ -35,12 +48,21 @@ kanbanRouter.get('/board', async (c) => {
       .where(eq(engagements.status, 'active'))
       .all();
 
+    const visible = scopedDivisions
+      ? activeEngagements.filter((card) => scopedDivisions!.includes(card.division))
+      : activeEngagements;
+
+    // Money is finance-tooling: strip for roles without it.
+    const cards = visible.map((card) =>
+      canSeeMoney ? card : { ...card, outstandingBalance: 0 }
+    );
+
     // Group cards by stageKey
     const columns = stages.map(stage => {
-      const cards = activeEngagements.filter(card => card.stageKey === stage.key);
+      const stageCards = cards.filter(card => card.stageKey === stage.key);
       return {
         ...stage,
-        cards
+        cards: stageCards
       };
     });
 

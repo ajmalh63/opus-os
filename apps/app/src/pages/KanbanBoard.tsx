@@ -67,7 +67,7 @@ export default function KanbanBoard() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['kanbanBoard'] });
       if (data.wipLimitBreached) {
-        showToast(`Ã¢Å¡Â Ã¯Â¸Â WIP Limit Warning! Column reached limit of ${data.limit}.`);
+        showToast(`âš ï¸ WIP Limit Warning! Column reached limit of ${data.limit}.`);
       } else {
         showToast('Card moved successfully.');
       }
@@ -266,7 +266,7 @@ export default function KanbanBoard() {
                         </div>
 
                         <div className="flex justify-between items-center text-[10px] text-brand-textLight pt-2 border-t border-gray-50">
-                          <span>Bal: Ã¢â€šÂ¹{(card.outstandingBalance / 100).toFixed(2)}</span>
+                          <span>Bal: ₹{(card.outstandingBalance / 100).toFixed(2)}</span>
                           <span className="font-medium text-brand-navy">
                             {card.counselorId ? 'Assigned' : 'Unassigned'}
                           </span>
@@ -307,7 +307,7 @@ export default function KanbanBoard() {
                   onClick={() => setSelectedCard(null)}
                   className="w-6 h-6 rounded-full hover:bg-gray-100 text-gray-400 hover:text-brand-navy flex items-center justify-center transition"
                 >
-                  Ã¢Å“â€¢
+                  âœ•
                 </button>
               </div>
 
@@ -319,7 +319,7 @@ export default function KanbanBoard() {
                 </div>
                 <div className="flex justify-between text-xs py-2 border-b border-gray-50">
                   <span className="text-brand-textLight font-semibold">Outstanding Balance</span>
-                  <span className="font-bold text-brand-error">Ã¢â€šÂ¹{(selectedCard.outstandingBalance / 100).toFixed(2)}</span>
+                  <span className="font-bold text-brand-error">₹{(selectedCard.outstandingBalance / 100).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs py-2 border-b border-gray-50">
                   <span className="text-brand-textLight font-semibold">Stage Position</span>

@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -64,7 +64,7 @@ mockD1.tables.communications.push(
     const res = await app.request('/api/inbox/conv-1/reply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Cookie': 'better-auth.session_token=token-counselor' },
-      body: JSON.stringify({ body: 'Your visa is in final processing â€” expect an update tomorrow.' }),
+      body: JSON.stringify({ body: 'Your visa is in final processing ” expect an update tomorrow.' }),
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret', WA_PROVIDER: 'openwa', OPENWA_BASE_URL: 'inval.d:1' });
     expect(res.status).toBe(200);
     const data = await res.json() as any;
