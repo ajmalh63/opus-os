@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import Logo from '../components/Logo';
 
@@ -117,6 +117,21 @@ export default function ClientPortal() {
     }
     setActiveToken(cleaned);
   };
+
+  // DPDP consent withdrawal (subject right): token-authenticated public action.
+  const withdrawConsent = useMutation({
+    mutationFn: async ({ token, consentType }: { token: string; consentType: string }) => {
+      const res = await fetch('/api/public/portal/consent/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, consentType }),
+      });
+      if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e?.error || 'Withdrawal failed'); }
+      return res.json();
+    },
+    onSuccess: () => { showToast('Consent withdrawn. Non-core outreach is now suppressed.'); },
+    onError: (e: any) => showToast((e as Error).message),
+  });
 
   const handleFillDemo = () => {
     setTokenInput('OP-2026-5555');
@@ -592,6 +607,17 @@ export default function ClientPortal() {
                         <span>Authorized Date</span>
                         <span>{new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
                       </div>
+                      {consent.status === 'granted' && consent.consentType !== 'core-processing' && (
+                        <div className="flex justify-end pt-1">
+                          <button
+                            onClick={() => withdrawConsent.mutate({ token: activeToken, consentType: consent.consentType })}
+                            disabled={withdrawConsent.isPending}
+                            className="cursor-pointer rounded-full border border-brand-error/40 px-2.5 py-1 text-[8px] font-bold uppercase tracking-widest text-brand-error transition-colors hover:bg-brand-error hover:text-white disabled:opacity-40"
+                          >
+                            {withdrawConsent.isPending ? 'Withdrawing…' : 'Withdraw'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {data.consents.length === 0 && (

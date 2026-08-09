@@ -4,11 +4,13 @@ import { getAuth } from '../auth.js';
 import { clients, engagements, consents, documents, payments, experiments, experimentAssignments } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
+import { auditEvent } from '../middleware/audit.js';
 
 export const portalRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string } }>();
 
 // Anti-abuse on the public journey lookup (Section 18.2.2): 10 lookups / hour / IP.
 portalRouter.use('/lookup', rateLimit({ bucket: 'lookup', windowSeconds: 3600, limit: 10 }));
+portalRouter.use('/consent/withdraw', rateLimit({ bucket: 'consent-withdraw', windowSeconds: 3600, limit: 10 }));
 
 function buildJourney(client: any, engs: any[], cons: any[], docs: any[], pays: any[]) {
   return {
@@ -30,6 +32,49 @@ function buildJourney(client: any, engs: any[], cons: any[], docs: any[], pays: 
     }))
   };
 }
+
+// POST /api/public/portal/consent/withdraw  — DPDP subject-right action.
+// Token-authenticated: the client withdraws a previously granted consent type.
+// Writes a 'withdrawn' row (immutable history) + audit; only affects future
+// outreach — nurture planning already gates on granted-only rows.
+portalRouter.post('/consent/withdraw', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { token?: string; consentType?: string };
+  const token = body.token || c.req.query('token');
+  const consentType = body.consentType;
+
+  if (!token) return c.json({ error: 'Token is required' }, 400);
+  if (!consentType) return c.json({ error: 'consentType is required' }, 400);
+
+  const VALID = ['core-processing', 'university-sharing', 'whatsapp-updates', 'marketing-campaigns', 'manpower-retain'];
+  if (!VALID.includes(consentType)) return c.json({ error: 'Unknown consent type' }, 400);
+
+  if (!c.env || !c.env.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+
+  try {
+    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    if (!client) return c.json({ error: 'Client not found for token' }, 404);
+
+    const now = Math.floor(Date.now() / 1000);
+    await db.insert(consents).values({
+      id: crypto.randomUUID(),
+      clientId: token,
+      consentType: consentType as any,
+      status: 'withdrawn',
+      ipAddress: c.req.header('x-real-ip') || c.req.header('cf-connecting-ip') || '127.0.0.1',
+      sha256Hash: 'withdraw-' + crypto.randomUUID().slice(0, 8),
+      grantedAt: now,
+      withdrawnAt: now,
+    });
+    await auditEvent(c, {
+      action: 'CONSENT_WITHDRAWN', entityName: 'consents', entityId: token,
+      afterState: { clientId: token, consentType, status: 'withdrawn', withdrawnAt: now },
+    });
+    return c.json({ success: true, message: `Consent '${consentType}' withdrawn. Non-core outreach to this contact is now suppressed.` });
+  } catch (error: any) {
+    return c.json({ error: 'Consent withdrawal failed', details: error.message }, 500);
+  }
+});
 
 // GET /api/public/portal/lookup?token=OP-2026-X (Public token-based journey lookup, Section 25)
 portalRouter.get('/lookup', async (c) => {
