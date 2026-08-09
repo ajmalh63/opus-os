@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { permissions, roles, userRoles, users } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
+import { auditEvent } from '../middleware/audit.js';
 
 export const rbacRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
 
@@ -117,12 +118,21 @@ rbacRouter.post('/roles', zValidator('json', createRoleSchema), async (c) => {
     const existing = await db.select().from(roles).where(eq(roles.code, data.code)).get();
     if (existing) return c.json({ error: "Role code already exists" }, 409);
 
+    // Security: ownerOnly permissions can never be granted via role-creation —
+    // they are reserved for the built-in super_admin role (ceiling invariant).
+    const allowedCodes = new Set(PERMISSION_SEED.filter((p) => !p.ownerOnly).map((p) => p.code));
+    const sanitized = data.permissions.filter((p) => allowedCodes.has(p));
+    const rejected = data.permissions.length - sanitized.length;
+    if (rejected > 0) {
+      await auditEvent(c, { action: 'OWNER_PERMS_BLOCKED', entityName: 'roles', entityId: data.code, afterState: { rejected } });
+    }
+
     await db.insert(roles).values({
       id: crypto.randomUUID(),
       name: data.name,
       code: data.code,
       description: data.description || null,
-      permissionsJson: JSON.stringify(data.permissions),
+      permissionsJson: JSON.stringify(sanitized),
       parentId: data.parentCode || null,
       system: false,
       editable: true,
@@ -131,7 +141,7 @@ rbacRouter.post('/roles', zValidator('json', createRoleSchema), async (c) => {
       updatedAt: now
     });
 
-    return c.json({ success: true, message: "Role created." });
+    return c.json({ success: true, message: "Role created.", filtered: rejected });
   } catch (error: any) {
     return c.json({ error: "Role creation failed", details: error.message }, 500);
   }
