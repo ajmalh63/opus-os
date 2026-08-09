@@ -47,10 +47,10 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'Work',
+    title: 'Operations',
     items: [
       { key: 'inbox', label: 'Unified Inbox', to: '/inbox', icon: I.inbox, roles: ALL, match: '/inbox' },
-      // Admin API is owner-ceiled server-side; managers never get past 403.
+      { key: 'flow', label: 'Flow Analytics', to: '/workspaces/flow', icon: I.audit, roles: ['super_admin', 'manager'], match: '/workspaces/flow' },
       { key: 'admindesk', label: 'Admin Control Desk', to: '/admin', icon: I.admindesk, roles: ['super_admin'], match: '/admin' },
     ],
   },

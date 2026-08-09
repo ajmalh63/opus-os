@@ -94,6 +94,8 @@ app.use('/api/clients/*', rbacMiddleware(['super_admin', 'manager', 'counselor',
 
 app.use('/api/kanban', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/kanban/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+// Flow analytics — manager+/owner only (forecasting tooling).
+app.use('/api/kanban/analytics', rbacMiddleware(['super_admin', 'manager'], true));
 
 app.use('/api/agreements', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/agreements/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));

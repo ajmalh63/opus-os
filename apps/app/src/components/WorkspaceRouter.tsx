@@ -7,6 +7,7 @@ import CampaignsTab from './CampaignsTab';
 import GrowthTab from './GrowthTab';
 import ComplianceTab from './ComplianceTab';
 import RolesTab from './RolesTab';
+import FlowAnalytics from './FlowAnalytics';
 import InfraHealth from './InfraHealth';
 
 const AUTH = {
@@ -26,6 +27,7 @@ const MODULE_ROLES: Record<string, string[]> = {
   compliance: ['super_admin', 'manager'],
   audit: ['super_admin'],
   infra: ['super_admin'],
+  flow: ['super_admin', 'manager'],
 };
 
 // Audit trail viewer (super_admin) - the immutable change log.
@@ -118,6 +120,7 @@ export function WorkspaceModule({ name }: { name: string }) {
     case 'compliance': return <ComplianceTab />;
     case 'roles': return <RolesTab />;
     case 'infra': return <InfraHealth />;
+    case 'flow': return <FlowAnalytics />;
     default: return <NotFoundModule name={name} />;
   }
 }

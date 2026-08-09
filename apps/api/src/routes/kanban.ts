@@ -5,6 +5,7 @@ import { getDb } from '../db/client.js';
 import { engagements, pipelineStages, clients, auditLog } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditBegin } from '../middleware/audit.js';
+import { kanbanFlowAnalytics } from '../infra/flowAnalytics.js';
 
 export const kanbanRouter = new Hono<{
   Bindings: { DB: D1Database };
@@ -151,5 +152,18 @@ kanbanRouter.post('/board/move', zValidator('json', moveCardSchema), async (c) =
 
   } catch (error: any) {
     return c.json({ error: "Move transaction failed", details: error.message }, 500);
+  }
+});
+
+// GET /api/kanban/analytics?days=30 — flow analytics (CFD + Monte Carlo, §16.4.5).
+// Mounted manager+/owner-only in index.ts.
+kanbanRouter.get('/analytics', async (c) => {
+  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
+  const days = Math.max(7, Math.min(90, Number(c.req.query('days')) || 30));
+  try {
+    const result = await kanbanFlowAnalytics(c.env, { days });
+    return c.json({ analytics: result });
+  } catch (error: any) {
+    return c.json({ error: "Flow analytics failed", details: error.message }, 500);
   }
 });
