@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { track, EVENTS } from '../lib/umami';
 
 // Chatwoot live-chat widget (official SDK contract).
 // SDK (packs/js/sdk.js) boots by setting window.chatwootSDK = { run(...) } and
@@ -18,6 +19,7 @@ const CHATWOOT_TOKEN = import.meta.env.VITE_CHATWOOT_WEBSITE_TOKEN || 'f36574fb9
 
 export default function ChatWidget() {
   useEffect(() => {
+    track(EVENTS.chatOpen); // Wave 1: chat widget surfaced to the visitor
     if (document.getElementById('chatwoot-sdk')) return; // mounted once
 
     window.chatwootSettings = {

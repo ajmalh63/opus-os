@@ -52,6 +52,27 @@ describe('Notification engine (§7.6)', () => {
     expect(row.error).toBeTruthy();
   });
 
+  it('telegram stub-oks when unconfigured and logs the row', async () => {
+    const db = fakeDb();
+    const res = await sendNotification({} as any, db as any, { channel: 'telegram', to: 'ops', body: '[DOWN] ERPNext' });
+    expect(res.ok).toBe(true);
+    expect(res.provider).toBe('stub-telegram');
+    const row = db.inserted[0];
+    expect(row.status).toBe('sent');
+    expect(row.channel).toBe('telegram');
+  });
+
+  it('telegram sends through the Bot API when configured', async () => {
+    const db = fakeDb();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, result: { message_id: 42 } }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    })));
+    const res = await sendNotification({ TELEGRAM_BOT_TOKEN: 'bot-t', OPS_TELEGRAM_CHAT_ID: '123' } as any, db as any, { channel: 'telegram', to: 'ops', body: '[UP] ERPNext' });
+    expect(res.ok).toBe(true);
+    expect(res.provider).toBe('telegram');
+    expect(res.remoteId).toBe('42');
+  });
+
   it('whatsapp provider failure → failed log row', async () => {
     const db = fakeDb();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('err', { status: 400 })));

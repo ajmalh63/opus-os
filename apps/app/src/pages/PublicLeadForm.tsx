@@ -4,6 +4,7 @@ import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import StickyCallBar from '../components/StickyCallBar';
 import TurnstileWidget from '../components/TurnstileWidget';
+import { track, EVENTS } from '../lib/umami';
 import { prefersReducedMotion, animateHeadlineWords } from '../lib/motion';
 
 const siteKeyConfigured = !!((import.meta.env.VITE_TURNSTILE_SITE_KEY as string) || '');
@@ -128,6 +129,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
       return res.json();
     },
     onSuccess: (data) => {
+      track(EVENTS.leadSubmit, { division, ref: refCode || undefined });
       showToast(`Success! Lead created. Access Token: ${data.token}`);
       // Auto fill search box
       setSearchPhone(phone);

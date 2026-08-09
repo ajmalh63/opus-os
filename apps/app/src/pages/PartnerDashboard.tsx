@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import PartnerThrive from '../components/PartnerThrive';
+import { track, EVENTS } from '../lib/umami';
 
 // Partner / Affiliate Portal — gold-standard patterns (research 2026):
 //  1. Share-link generator one click from dashboard (Track360, Voucherify)
@@ -62,6 +63,7 @@ export default function PartnerDashboard() {
     },
     onSuccess: (d) => {
       if (d.success && d.partnerId) {
+        track(EVENTS.partnerRegister);
         localStorage.setItem('opus_partner_id', d.partnerId);
         localStorage.setItem('opus_partner_name', kycName);
         if (d.apiToken) { localStorage.setItem('opus_partner_token', d.apiToken); setPartnerToken(d.apiToken); }

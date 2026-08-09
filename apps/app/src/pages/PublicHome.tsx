@@ -9,6 +9,7 @@ import StickyCallBar from '../components/StickyCallBar';
 import HeroCarousel from '../components/HeroCarousel';
 import Img from '../components/Img';
 import ChatWidget from '../components/ChatWidget';
+import { track, EVENTS } from '../lib/umami';
 import { imageFor } from '../config/images';
 
 const BOOKING_URL = import.meta.env.VITE_BOOKING_URL || 'http://100.87.71.38:3000/opus-owner/consultation'; // Cal.diy — keep tailnet for dev; swap to public domain in prod
@@ -50,7 +51,7 @@ export default function PublicHome() {
   const [, setLocation] = useLocation();
   // Partner attribution forwarder: ?ref= must survive to the lead form.
   const homeRef = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('ref') || '' : '';
-  const goLeadForm = () => setLocation(`/lead-form${homeRef ? `?ref=${encodeURIComponent(homeRef)}` : ''}`);
+  const goLeadForm = () => { track(EVENTS.bookingCta, { ref: homeRef || undefined }); setLocation(`/lead-form${homeRef ? `?ref=${encodeURIComponent(homeRef)}` : ''}`); };
   const marqueeRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLElement>(null);
   const gridRef = useRef<HTMLElement>(null);

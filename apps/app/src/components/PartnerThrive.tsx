@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { track, EVENTS } from '../lib/umami';
 
 // Zoho Thrive-style partner workspace surfaces:
 //  - VIP tier card + points progress to next tier
@@ -74,6 +75,7 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
 
   const copy = async (link: string, id: string) => {
     try { await navigator.clipboard.writeText(`${location.origin}${link}`); } catch { /* fallback */ }
+    track(EVENTS.shareCopied);
     setCopiedId(id); setTimeout(() => setCopiedId(null), 2000);
   };
 

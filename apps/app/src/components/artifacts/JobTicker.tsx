@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ArtifactShell from './ArtifactShell';
+import { track, EVENTS } from '../../lib/umami';
 
 interface Job { id: string; title: string; country: string; sector: string; salaryText: string; }
 
@@ -14,7 +15,10 @@ export default function JobTicker() {
       try {
         const res = await fetch('/api/public/jobs');
         const data = await res.json();
-        if (alive) setJobs(data.jobs ?? []);
+        if (alive) {
+          setJobs(data.jobs ?? []);
+          if ((data.jobs?.length || 0) > 0) track(EVENTS.jobsClick);
+        }
       } catch {
         if (alive) setJobs([]);
       } finally {

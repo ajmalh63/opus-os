@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import TurnstileWidget from '../components/TurnstileWidget';
+import { track, EVENTS } from '../lib/umami';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Nav from '../components/Nav';
@@ -247,6 +248,7 @@ export default function PublicService({ params }: { params: { division: string }
       const resData = await res.json();
       if (res.ok) {
         setSubmitted(`Inquiry logged! Your journey token: ${resData.token}`);
+        track(EVENTS.leadSubmit, { division });
         setLocation(`/portal?token=${encodeURIComponent(resData.token)}`);
       } else {
         setSubmitted(`Error: ${resData.error || resData.details || 'Submission failed'}`);

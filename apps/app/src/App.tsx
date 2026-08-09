@@ -1,4 +1,11 @@
 ﻿import { Route, Switch, Redirect } from 'wouter';
+import { useEffect } from 'react';
+import { ensureUmami } from './lib/umami';
+
+function TrackInjector() {
+  useEffect(() => { ensureUmami(); }, []);
+  return null;
+}
 import type { ReactNode } from 'react';
 import { SessionProvider } from './lib/session';
 import AuthGuard from './components/AuthGuard';
@@ -59,6 +66,9 @@ export default function App() {
         {/* Public self-service surfaces (token-based by design) */}
         <Route path="/portal" component={ClientPortal} />
         <Route path="/partner" component={PartnerDashboard} />
+
+        {/* Wave 1: inject the Umami tracker on boot (cookieless, public-site analytics) */}
+        <TrackInjector />
 
         {/* Authenticated surface — EVERY route inside the one workspace shell */}
         <Route path="/workspaces">
