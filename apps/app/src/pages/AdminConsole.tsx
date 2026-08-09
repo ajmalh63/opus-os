@@ -6,6 +6,7 @@ import GrowthTab from '../components/GrowthTab';
 import ComplianceTab from '../components/ComplianceTab';
 import FunnelTab from '../components/FunnelTab';
 import CampaignsTab from '../components/CampaignsTab';
+import PartnerAdminPanel from '../components/PartnerAdminPanel';
 
 // API interfaces matching Drizzle schemas & Zod validators
 interface AuditLog {
@@ -51,7 +52,7 @@ export default function AdminConsole() {
   const queryClient = useQueryClient();
   const { me } = useSession();
   const isOwner = me?.role === 'super_admin';
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners'>('directory');
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
@@ -388,6 +389,16 @@ export default function AdminConsole() {
                 Campaigns
               </button>
             )}
+            {isOwner && (
+              <button
+                onClick={() => setActiveTab('partners')}
+                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                  activeTab === 'partners' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                }`}
+              >
+                Partners
+              </button>
+            )}
           </div>
         </div>
 
@@ -573,6 +584,7 @@ export default function AdminConsole() {
           {activeTab === 'funnel' && <FunnelTab />}
           {activeTab === 'compliance' && <ComplianceTab />}
           {activeTab === 'campaigns' && isOwner && <CampaignsTab />}
+          {activeTab === 'partners' && isOwner && <PartnerAdminPanel />}
 
           {activeTab === 'audit' && (
             <div className="space-y-6">

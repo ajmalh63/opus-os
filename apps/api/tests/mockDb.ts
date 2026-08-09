@@ -25,6 +25,7 @@
     partner_tiers: [] as any[],
     partner_links: [] as any[],
     partner_points: [] as any[],
+    commission_plans: [] as any[],
     referrals: [] as any[],
     commission_ledger: [] as any[],
     tasks: [] as any[],
