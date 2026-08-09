@@ -393,7 +393,7 @@ export default function ClientPortal() {
         {!activeToken && (
           <div className="py-16 text-center border-2 border-dashed border-brand-navyLight rounded-xl p-8 bg-brand-navy/10">
             <div className="w-12 h-12 bg-brand-navyLight/60 rounded-full flex items-center justify-center mx-auto text-brand-gold mb-3">
-              🔍
+              ðŸ”
             </div>
             <h3 className="font-display font-semibold text-sm text-white">Awaiting Token Inquiry</h3>
             <p className="text-[11px] text-brand-cream/50 mt-1 max-w-sm mx-auto">
@@ -404,7 +404,7 @@ export default function ClientPortal() {
 
         {isError && (
           <div className="p-5 bg-brand-error/10 border border-brand-error/20 text-brand-error rounded-xl text-xs flex items-center gap-3">
-            <span className="text-lg">⚠️</span>
+            <span className="text-lg">âš ï¸</span>
             <div>
               <p className="font-bold">Lookup Unsuccessful</p>
               <p className="text-[11px] opacity-80">{error?.message || 'Verification timed out. Check token formatting.'}</p>
@@ -414,7 +414,7 @@ export default function ClientPortal() {
 
         {sessionIsError && (
           <div className="p-5 bg-brand-error/10 border border-brand-error/20 text-brand-error rounded-xl text-xs flex items-center gap-3">
-            <span className="text-lg">⚠️</span>
+            <span className="text-lg">âš ï¸</span>
             <div>
               <p className="font-bold">My Journey Unavailable</p>
               <p className="text-[11px] opacity-80">{sessionError?.message || 'Could not load your journeys.'}</p>
@@ -442,7 +442,7 @@ export default function ClientPortal() {
 
             {sessionData.journeys.length === 0 && (
               <div className="text-center border-2 border-dashed border-brand-navyLight rounded-xl p-10 bg-brand-navy/10">
-                <div className="text-3xl mb-3">🗂️</div>
+                <div className="text-3xl mb-3">ðŸ—‚ï¸</div>
                 <h3 className="font-display font-semibold text-sm text-white">No journeys yet</h3>
                 <p className="text-[11px] text-brand-cream/50 mt-1 max-w-sm mx-auto">
                   Use the "Link your journey token" box to attach a token to this account, or enroll through our services to begin.
@@ -469,7 +469,7 @@ export default function ClientPortal() {
                           <div key={i} className="flex justify-between items-center text-xs border-b border-brand-navyLight/40 pb-2">
                             <span className="text-brand-cream/70">{p.milestoneName || p.type}</span>
                             <span className={`font-mono font-bold ${p.type === 'receipt' ? 'text-brand-success' : 'text-brand-error'}`}>
-                              {p.type === 'receipt' ? '-' : '+'}₹{(p.amount / 100).toFixed(2)}
+                              {p.type === 'receipt' ? '-' : '+'}â‚¹{(p.amount / 100).toFixed(2)}
                             </span>
                           </div>
                         ))}
@@ -498,7 +498,7 @@ export default function ClientPortal() {
                           {eng.outstandingBalance > 0 && (
                             <div className="text-right">
                               <span className="text-[9px] text-brand-cream/50 uppercase tracking-wider block">Outstanding</span>
-                              <span className="text-brand-error font-mono font-bold text-lg">₹{(eng.outstandingBalance / 100).toFixed(2)}</span>
+                              <span className="text-brand-error font-mono font-bold text-lg">â‚¹{(eng.outstandingBalance / 100).toFixed(2)}</span>
                             </div>
                           )}
                         </div>
@@ -517,7 +517,7 @@ export default function ClientPortal() {
                                     : isActive ? 'bg-brand-gold border-brand-gold text-brand-navy animate-pulse'
                                     : 'bg-[#070B19] border-brand-navyLight text-brand-cream/40'
                                   }`}>
-                                    {isCompleted ? '✓' : stage.seq}
+                                    {isCompleted ? 'âœ“' : stage.seq}
                                   </span>
                                   <div>
                                     <h5 className={`font-bold ${isActive ? 'text-brand-gold text-sm' : 'text-white'}`}>{stage.label}</h5>
@@ -614,7 +614,7 @@ export default function ClientPortal() {
                             disabled={withdrawConsent.isPending}
                             className="cursor-pointer rounded-full border border-brand-error/40 px-2.5 py-1 text-[8px] font-bold uppercase tracking-widest text-brand-error transition-colors hover:bg-brand-error hover:text-white disabled:opacity-40"
                           >
-                            {withdrawConsent.isPending ? 'Withdrawing…' : 'Withdraw'}
+                            {withdrawConsent.isPending ? 'Withdrawingâ€¦' : 'Withdraw'}
                           </button>
                         </div>
                       )}
@@ -651,7 +651,7 @@ export default function ClientPortal() {
                         <div className="text-right">
                           <span className="text-[9px] text-brand-cream/50 uppercase tracking-wider block">Outstanding Fees</span>
                           <span className="text-brand-error font-mono font-bold text-lg">
-                            ₹{(eng.outstandingBalance / 100).toFixed(2)}
+                            â‚¹{(eng.outstandingBalance / 100).toFixed(2)}
                           </span>
                         </div>
                       )}
@@ -684,7 +684,7 @@ export default function ClientPortal() {
                                     ? 'bg-brand-gold border-brand-gold text-brand-navy animate-pulse' 
                                     : 'bg-[#070B19] border-brand-navyLight text-brand-cream/40'
                               }`}>
-                                {isCompleted ? '✓' : stage.seq}
+                                {isCompleted ? 'âœ“' : stage.seq}
                               </span>
 
                               <div>
@@ -778,11 +778,11 @@ export default function ClientPortal() {
             </span>
           </div>
           <div>
-            <span>© 2026 Opus Overseas (Telangana, India). All rights reserved.</span>
+            <span>Â© 2026 Opus Overseas (Telangana, India). All rights reserved.</span>
           </div>
           <div className="flex gap-4 font-semibold">
-            <a href="#" className="hover:text-brand-gold transition">Privacy Policy</a>
-            <a href="#" className="hover:text-brand-gold transition">DPDP Consent Terms</a>
+            <a href="/" className="hover:text-brand-gold transition">Home</a>
+            <a href="/lead-form" className="hover:text-brand-gold transition">DPDP Consent</a>
           </div>
         </div>
       </footer>
