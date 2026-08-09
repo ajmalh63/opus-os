@@ -9,6 +9,7 @@ import ComplianceTab from './ComplianceTab';
 import RolesTab from './RolesTab';
 import FlowAnalytics from './FlowAnalytics';
 import TeamHub from './TeamHub';
+import TransactionsTab from './TransactionsTab';
 import InfraHealth from './InfraHealth';
 
 const AUTH = {
@@ -30,6 +31,7 @@ const MODULE_ROLES: Record<string, string[]> = {
   infra: ['super_admin'],
   flow: ['super_admin', 'manager'],
   teamhub: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'],
+  transactions: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'],
 };
 
 // Audit trail viewer (super_admin) - the immutable change log.
@@ -124,6 +126,7 @@ export function WorkspaceModule({ name }: { name: string }) {
     case 'infra': return <InfraHealth />;
     case 'flow': return <FlowAnalytics />;
     case 'teamhub': return <TeamHub />;
+    case 'transactions': return <TransactionsTab />;
     default: return <NotFoundModule name={name} />;
   }
 }

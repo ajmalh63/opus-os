@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { createPaymentSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
-import { payments, engagements, milestones } from '../db/schema.js';
+import { payments, engagements, milestones, clients, businessProfile } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 
@@ -238,4 +238,5 @@ paymentsRouter.post('/milestones/evaluate-escalations', async (c) => {
     return c.json({ error: "Escalation evaluation transaction failed", details: error.message }, 500);
   }
 });
+
 

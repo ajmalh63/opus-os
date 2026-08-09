@@ -18,6 +18,7 @@ export const PERMISSION_SEED: { code: string; family: string; label: string; own
   { code: 'agreements:manage', family: 'legal', label: 'Create / sign agreements' },
   { code: 'consents:manage', family: 'legal', label: 'Capture / manage consents' },
   { code: 'payments:enter', family: 'finance', label: 'Record payments & calculate GST' },
+  { code: 'billing:enter', family: 'finance', label: 'Enter billing drafts (invoices/charges/receipts/refunds)' },
   { code: 'tasks:manage', family: 'operational', label: 'Create / update staff tasks' },
   { code: 'marketing:run', family: 'marketing', label: 'Run enabled campaigns' },
   { code: 'approvals:manage', family: 'admin', label: 'Approve within thresholds', ownerOnly: true },
@@ -31,10 +32,10 @@ export const PERMISSION_SEED: { code: string; family: string; label: string; own
 
 export const ROLES_SEED: { id: string; name: string; code: string; perms: string[]; desc: string }[] = [
   { id: 'role-super-admin', name: 'Super Admin (Owner)', code: 'super_admin', perms: PERMISSION_SEED.map(p => p.code), desc: 'Full system access (owner).' },
-  { id: 'role-manager', name: 'Manager / Team Lead', code: 'manager', perms: ['clients:read','clients:write','kanban:read','kanban:move','documents:manage','agreements:manage','consents:manage','payments:enter','tasks:manage','marketing:run','approvals:manage'], desc: 'Runs daily operations without owner financials.' },
-  { id: 'role-counselor', name: 'Counselor', code: 'counselor', perms: ['clients:read','clients:write','kanban:read','kanban:move','documents:manage','agreements:manage','consents:manage','payments:enter','tasks:manage'], desc: 'Client-facing counselor.' },
-  { id: 'role-receptionist', name: 'Receptionist', code: 'receptionist', perms: ['clients:read','payments:enter','tasks:manage'], desc: 'Front desk.' },
-  { id: 'role-coordinator', name: 'Coordinator', code: 'coordinator', perms: ['clients:read','kanban:read','documents:manage','tasks:manage'], desc: 'Back-office operations.' },
+  { id: 'role-manager', name: 'Manager / Team Lead', code: 'manager', perms: ['clients:read','clients:write','kanban:read','kanban:move','documents:manage','agreements:manage','consents:manage','payments:enter','tasks:manage','marketing:run','approvals:manage','billing:enter'], desc: 'Runs daily operations without owner financials.' },
+  { id: 'role-counselor', name: 'Counselor', code: 'counselor', perms: ['clients:read','clients:write','kanban:read','kanban:move','documents:manage','agreements:manage','consents:manage','payments:enter','tasks:manage','billing:enter'], desc: 'Client-facing counselor.' },
+  { id: 'role-receptionist', name: 'Receptionist', code: 'receptionist', perms: ['clients:read','payments:enter','tasks:manage','billing:enter'], desc: 'Front desk.' },
+  { id: 'role-coordinator', name: 'Coordinator', code: 'coordinator', perms: ['clients:read','kanban:read','documents:manage','tasks:manage','billing:enter'], desc: 'Back-office operations.' },
 ];
 
 // POST /api/admin/rbac/seed - idempotently ensure permission + default roles (owner-only via mount)
@@ -118,7 +119,7 @@ rbacRouter.post('/roles', zValidator('json', createRoleSchema), async (c) => {
     const existing = await db.select().from(roles).where(eq(roles.code, data.code)).get();
     if (existing) return c.json({ error: "Role code already exists" }, 409);
 
-    // Security: ownerOnly permissions can never be granted via role-creation —
+    // Security: ownerOnly permissions can never be granted via role-creation â€”
     // they are reserved for the built-in super_admin role (ceiling invariant).
     const allowedCodes = new Set(PERMISSION_SEED.filter((p) => !p.ownerOnly).map((p) => p.code));
     const sanitized = data.permissions.filter((p) => allowedCodes.has(p));

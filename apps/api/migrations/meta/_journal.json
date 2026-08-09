@@ -162,6 +162,13 @@
       "when": 1786288601435,
       "tag": "0022_mighty_maria_hill",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1786298967853,
+      "tag": "0023_equal_thunderbolt_ross",
+      "breakpoints": true
     }
   ]
 }

@@ -9,6 +9,7 @@ import { serviceTokenMiddleware } from './middleware/serviceToken.js';
 import { turnstileVerify } from './middleware/turnstile.js';
 import { agreementsRouter } from './routes/agreements.js';
 import { paymentsRouter } from './routes/payments.js';
+import { transactionsRouter } from './routes/transactions.js';
 import { umrahRouter } from './routes/umrah.js';
 import { transitRouter } from './routes/transit.js';
 import { manpowerRouter } from './routes/manpower.js';
@@ -164,6 +165,11 @@ app.route('/api/kanban', kanbanRouter);
 app.route('/api/agreements', agreementsRouter);
 app.route('/api/payments', paymentsRouter);
 app.route('/api/payments/razorpay', razorpayRouter);
+// Transactions module — unified billing surface for ALL internal accounts.
+// Entries are drafts; confirming/voiding stays owner/manager (payments router).
+app.use('/api/transactions', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.use('/api/transactions/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true, ['billing:enter']));
+app.route('/api/transactions', transactionsRouter);
 app.route('/api/umrah', umrahRouter);
 app.route('/api/transit', transitRouter);
 app.route('/api/manpower', manpowerRouter);
