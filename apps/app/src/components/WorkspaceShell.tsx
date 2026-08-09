@@ -192,7 +192,7 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto">
+<main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {children}
         </main>
       </div>

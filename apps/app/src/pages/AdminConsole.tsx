@@ -1,6 +1,5 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'wouter';
 import { useSession } from '../lib/session';
 import RolesTab from '../components/RolesTab';
 import GrowthTab from '../components/GrowthTab';
@@ -280,55 +279,10 @@ export default function AdminConsole() {
   };
 
   return (
-    <div className="bg-[#0B132B] text-slate-100 font-sans min-h-screen flex w-screen overflow-hidden">
-      
-      {/* LEFT SIDEBAR */}
-      <aside className="w-64 bg-[#1C2541] text-white flex flex-col justify-between shrink-0 shadow-2xl z-20 border-r border-slate-800">
-        <div>
-          {/* Brand Logo */}
-          <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-brand-gold flex items-center justify-center font-display font-bold text-[#0B132B]">O</div>
-            <div>
-              <h1 className="font-display font-bold text-lg leading-tight tracking-wider">OpusOS</h1>
-              <p className="text-[10px] text-brand-gold tracking-widest uppercase font-semibold">Business Engine</p>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="p-4 space-y-2">
-            <Link href="/kanban" className="flex items-center gap-3 px-4 py-3 rounded text-sm text-slate-300 hover:text-white hover:bg-slate-800/50 transition duration-200">
-              <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
-              </svg>
-              <span>Kanban Board</span>
-            </Link>
-            <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded text-sm text-slate-300 hover:text-white hover:bg-slate-800/50 transition duration-200">
-              <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-              <span>Public Lead Form</span>
-            </Link>
-            <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded text-sm text-white bg-slate-800/80 border-l-4 border-brand-gold font-medium transition duration-200">
-              <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-              </svg>
-              <span>Admin Console</span>
-            </Link>
-          </nav>
-        </div>
-
-        {/* Active Profile Footer */}
-        <div className="p-4 border-t border-slate-800 flex items-center gap-3 bg-slate-900/30">
-          <div className="w-10 h-10 rounded-full bg-brand-gold/10 flex items-center justify-center border border-brand-gold/30 text-brand-gold font-semibold">AD</div>
-          <div className="overflow-hidden">
-            <p className="text-xs font-semibold truncate text-white">Admin Owner</p>
-            <p className="text-[10px] text-brand-gold uppercase tracking-wider font-semibold">Super Admin</p>
-          </div>
-        </div>
-      </aside>
+    <div className="flex h-full min-h-full w-full flex-col overflow-hidden bg-[#0B132B] text-slate-100 font-sans">
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-h-screen overflow-hidden bg-[#070b19]">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#070b19]">
         
         {/* TOP STATUS BAR */}
         <header className="h-20 border-b border-slate-800 px-8 flex items-center justify-between shrink-0 bg-[#0b132b]/80 backdrop-blur-md z-10">

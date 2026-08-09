@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Card {
   id: string;
@@ -67,7 +67,7 @@ export default function KanbanBoard() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['kanbanBoard'] });
       if (data.wipLimitBreached) {
-        showToast(`⚠️ WIP Limit Warning! Column reached limit of ${data.limit}.`);
+        showToast(`âš ï¸ WIP Limit Warning! Column reached limit of ${data.limit}.`);
       } else {
         showToast('Card moved successfully.');
       }
@@ -143,45 +143,10 @@ export default function KanbanBoard() {
   }
 
   return (
-    <div className="bg-brand-cream text-brand-textDark font-sans min-h-screen flex overflow-hidden w-screen">
-      
-      {/* LEFT SIDEBAR */}
-      <aside className="w-64 bg-brand-navy text-white flex flex-col justify-between shrink-0 shadow-xl z-20">
-        <div>
-          {/* Brand Logo */}
-          <div className="p-6 border-b border-brand-navyLight flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-brand-gold flex items-center justify-center font-display font-bold text-brand-navy">O</div>
-            <div>
-              <h1 className="font-display font-bold text-lg leading-tight tracking-wider">OpusOS</h1>
-              <p className="text-[10px] text-brand-gold tracking-widest uppercase">Business Engine</p>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="p-4 space-y-2">
-            <Link href="/kanban" className="flex items-center gap-3 px-4 py-3 rounded text-sm text-white bg-brand-navyLight border-l-4 border-brand-gold font-medium transition duration-200">
-              <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
-              <span>Kanban Board</span>
-            </Link>
-            <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded text-sm text-brand-cream/80 hover:text-white hover:bg-brand-navyLight transition duration-200">
-              <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-              <span>Public Lead Form</span>
-            </Link>
-          </nav>
-        </div>
-
-        {/* Active Profile Footer */}
-        <div className="p-4 border-t border-brand-navyLight flex items-center gap-3 bg-brand-navyLight/30">
-          <div className="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center border border-brand-gold text-brand-gold font-semibold">SK</div>
-          <div className="overflow-hidden">
-            <p className="text-xs font-semibold truncate">Santhosh Kumar</p>
-            <p className="text-[10px] text-brand-cream/60 uppercase tracking-wider">Senior Counselor</p>
-          </div>
-        </div>
-      </aside>
+    <div className="flex h-full min-h-full w-full flex-col overflow-hidden bg-brand-cream text-brand-textDark font-sans">
 
       {/* MAIN CONTAINER */}
-      <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         
         {/* TOP FILTER BAR */}
         <header className="bg-white border-b border-gray-200 py-4 px-8 flex flex-wrap gap-4 items-center justify-between z-10 shrink-0">
@@ -301,7 +266,7 @@ export default function KanbanBoard() {
                         </div>
 
                         <div className="flex justify-between items-center text-[10px] text-brand-textLight pt-2 border-t border-gray-50">
-                          <span>Bal: ₹{(card.outstandingBalance / 100).toFixed(2)}</span>
+                          <span>Bal: â‚¹{(card.outstandingBalance / 100).toFixed(2)}</span>
                           <span className="font-medium text-brand-navy">
                             {card.counselorId ? 'Assigned' : 'Unassigned'}
                           </span>
@@ -342,7 +307,7 @@ export default function KanbanBoard() {
                   onClick={() => setSelectedCard(null)}
                   className="w-6 h-6 rounded-full hover:bg-gray-100 text-gray-400 hover:text-brand-navy flex items-center justify-center transition"
                 >
-                  ✕
+                  âœ•
                 </button>
               </div>
 
@@ -354,7 +319,7 @@ export default function KanbanBoard() {
                 </div>
                 <div className="flex justify-between text-xs py-2 border-b border-gray-50">
                   <span className="text-brand-textLight font-semibold">Outstanding Balance</span>
-                  <span className="font-bold text-brand-error">₹{(selectedCard.outstandingBalance / 100).toFixed(2)}</span>
+                  <span className="font-bold text-brand-error">â‚¹{(selectedCard.outstandingBalance / 100).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs py-2 border-b border-gray-50">
                   <span className="text-brand-textLight font-semibold">Stage Position</span>
