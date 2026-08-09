@@ -2,9 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import {
-  clients, payments, engagements, purchaseInvoices, tdsRecords, tcsRecords, businessProfile
-} from '../db/schema.js';
+import { clients, payments, engagements, purchaseInvoices, tdsRecords, tcsRecords, businessProfile, statutoryRegisters } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 export const complianceRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
@@ -446,5 +444,103 @@ complianceRouter.post('/tcs', zValidator('json', tcsSchema), async (c) => {
     return c.json({ success: true, message: "TCS recorded." });
   } catch (error: any) {
     return c.json({ error: "Failed to record TCS", details: error.message }, 500);
+  }
+});
+
+// ============================================================
+// 8. EMPLOYER COMPLIANCE REGISTERS (Â§14.5.4) â€” PT / LWF / PF / ESI
+// ============================================================
+
+const statutorySchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  type: z.enum(['pt', 'lwf', 'pf', 'esi']),
+  employeeName: z.string().min(1),
+  employeeId: z.string().optional(),
+  wageAmount: z.number().int().min(0),        // paise
+  deductionPaise: z.number().int().min(0),     // paise
+  employerShare: z.number().int().min(0).optional(),
+  dueDate: z.string().optional(),
+  status: z.enum(['pending', 'paid', 'overdue']).default('pending'),
+  notes: z.string().optional(),
+});
+
+// GET /api/compliance/statutory?month=YYYY-MM&type=pt â€” statutory register
+complianceRouter.get('/statutory', async (c) => {
+  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  const month = c.req.query('month');
+  const type = c.req.query('type') as any;
+
+  try {
+    let rows = await db.select().from(statutoryRegisters).all();
+    if (month) rows = rows.filter(r => r.month === month);
+    if (type) rows = rows.filter(r => r.type === type);
+    rows.sort((a: any, b: any) => b.createdAt - a.createdAt);
+
+    const byType: Record<string, { rows: any[]; totalWage: number; totalDeduction: number; paid: number; pending: number }> = {};
+    for (const r of rows) {
+      const key = r.type;
+      byType[key] = byType[key] || { rows: [], totalWage: 0, totalDeduction: 0, paid: 0, pending: 0 };
+      byType[key].rows.push(r);
+      byType[key].totalWage += r.wageAmount;
+      byType[key].totalDeduction += r.deductionPaise + (r.employerShare ?? 0);
+      if (r.status === 'paid') byType[key].paid++; else byType[key].pending++;
+    }
+    return c.json({ registers: rows, summary: byType, month, type: type || null });
+  } catch (error: any) {
+    return c.json({ error: "Statutory register lookup failed", details: error.message }, 500);
+  }
+});
+
+// POST /api/compliance/statutory â€” record an employee statutory entry
+complianceRouter.post('/statutory', zValidator('json', z.object({ entries: z.array(statutorySchema).min(1).max(200) })), async (c) => {
+  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  const data = c.req.valid('json');
+  const now = Math.floor(Date.now() / 1000);
+
+  try {
+    for (const e of data.entries) {
+      await db.insert(statutoryRegisters).values({
+        id: crypto.randomUUID(),
+        month: e.month,
+        type: e.type,
+        employeeName: e.employeeName,
+        employeeId: e.employeeId || null,
+        wageAmount: e.wageAmount,
+        deductionPaise: e.deductionPaise,
+        employerShare: e.employerShare ?? 0,
+        dueDate: e.dueDate || null,
+        status: e.status,
+        notes: e.notes || null,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+    return c.json({ success: true, count: data.entries.length, message: `Statutory register updated (${data.entries.length} entry/entries).` });
+  } catch (error: any) {
+    return c.json({ error: "Statutory register write failed", details: error.message }, 500);
+  }
+});
+
+// PATCH /api/compliance/statutory/:id â€” mark paid/overdue, edit note
+complianceRouter.patch('/statutory/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  const id = c.req.param('id');
+  const body = await c.req.json().catch(() => ({})) as { status?: 'pending' | 'paid' | 'overdue'; notes?: string };
+  const now = Math.floor(Date.now() / 1000);
+
+  try {
+    const patch: any = { updatedAt: now };
+    if (body.status) {
+      patch.status = body.status;
+      if (body.status === 'paid') patch.paidAt = now;
+    }
+    if (typeof body.notes === 'string') patch.notes = body.notes;
+    await db.update(statutoryRegisters).set(patch).where(eq(statutoryRegisters.id, id)).run();
+    return c.json({ success: true, message: "Statutory entry updated." });
+  } catch (error: any) {
+    return c.json({ error: "Statutory entry update failed", details: error.message }, 500);
   }
 });

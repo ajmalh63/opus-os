@@ -20,6 +20,7 @@
     seat_bookings: [] as any[],
     transit_shipments: [] as any[],
     partners: [] as any[],
+    statutory_registers: [] as any[],
     referrals: [] as any[],
     commission_ledger: [] as any[],
     tasks: [] as any[],

@@ -21,11 +21,14 @@ import { marketingRouter } from './routes/marketing.js';
 import { nurtureRouter } from './routes/nurture.js';
 import { campaignsRouter } from './routes/campaigns.js';
 import { notificationsRouter } from './routes/notifications.js';
+import { partnerAdminRouter } from './routes/partnerAdmin.js';
+import { importRouter } from './routes/import.js';
 import { automationRouter } from './routes/automation.js';
 import { incentivesRouter, staffIncentivesRouter } from './routes/incentives.js';
 import { complianceRouter } from './routes/compliance.js';
 import { infraRouter } from './routes/infra.js';
 import { publicRouter } from './routes/public.js';
+import { publicResumeRouter } from './routes/publicResume.js';
 import { OpusEnv } from './types.js';
 import { adminRouter } from './routes/admin.js';
 import { waWebhookRouter, chatwootWebhookRouter } from './routes/messagingWebhooks.js';
@@ -68,12 +71,15 @@ app.route('/api/auth', authRouter);
 app.use('/api/public/leads', turnstileVerify);
 app.use('/api/public/partners', turnstileVerify);
 app.use('/api/public/match', turnstileVerify);
+app.use('/api/public/manpower', turnstileVerify);
 
 app.route('/api/public/leads', leadsRouter);
 // Client journey lookup /api/public/portal/lookup (Section 25) — public, token-based
 app.route('/api/public/portal', portalRouter);
 // Hero live artifacts (Section 24.1.1): jobs ticker, umrah departures, attestation chains, eligibility
 app.route('/api/public', publicRouter);
+// Public resume intake → R2 vault (Manpower division, §14.6)
+app.route('/api/public/manpower/resume', publicResumeRouter);
 // Unified messaging webhooks (PENDING-CONFIGS #1) — WhatsApp + Chatwoot inbound
 app.route('/api/webhooks/wa', waWebhookRouter);
 app.route('/api/webhooks/chatwoot', chatwootWebhookRouter);
@@ -158,6 +164,10 @@ app.route('/api/admin/rbac', rbacRouter);
 app.route('/api/admin/campaigns', campaignsRouter);
 // Notification delivery log — owner ceiling (same mount family).
 app.route('/api/admin/notifications', notificationsRouter);
+// Partner management (approve/block) — owner ceiling.
+app.route('/api/admin/partners', partnerAdminRouter);
+// Business data import (CSV) — owner ceiling.
+app.route('/api/admin/import', importRouter);
 app.route('/api/inbox', inboxRouter);
 app.route('/api/erpnext', erpnextRouter);
 

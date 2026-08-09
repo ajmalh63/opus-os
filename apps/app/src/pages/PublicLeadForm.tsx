@@ -86,16 +86,37 @@ const [consentMarketing, setConsentMarketing] = useState(true);
     if (el) animateHeadlineWords(el, { delay: 0.15 });
   }, []);
 
-  // Submit Lead Mutation
+  // Submit Lead Mutation — uploads manpower resume first (if selected),
+  // then submits the lead with the returned resumeKey.
   const leadMutation = useMutation({
-    mutationFn: async (payload: LeadPayload) => {
+    mutationFn: async (payload: LeadPayload & { resumeFile?: File | null }) => {
+      let resumeKey: string | null = null;
+      if (division === 'manpower' && payload.resumeFile) {
+        const fd = new FormData();
+        fd.append('resume', payload.resumeFile);
+        const up = await fetch('/api/public/manpower/resume', {
+          method: 'POST',
+          headers: turnstileToken ? { 'cf-turnstile-response': turnstileToken } : {},
+          body: fd,
+        });
+        if (!up.ok) {
+          const e = await up.json().catch(() => null);
+          throw new Error(e?.error || 'Resume upload failed');
+        }
+        const upJson = await up.json();
+        resumeKey = upJson.resumeKey as string;
+      }
+
       const res = await fetch('/api/public/leads', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(turnstileToken ? { 'cf-turnstile-response': turnstileToken } : {}),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          dynamicContext: resumeKey ? { ...payload.dynamicContext, resumeFileKey: resumeKey } : payload.dynamicContext,
+        }),
       });
       if (!res.ok) {
         throw new Error(await res.text() || 'Failed to submit lead');
@@ -157,7 +178,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
       },
     };
 
-    leadMutation.mutate(payload);
+    leadMutation.mutate({ ...payload, resumeFile: manpowerFile });
   };
 
   const handleStatusSearch = (e: React.FormEvent) => {

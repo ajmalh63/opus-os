@@ -13,7 +13,7 @@ function fakeDb() {
 }
 
 describe('Notification engine (§7.6)', () => {
-  const env = { WA_PROVIDER: 'openwa', OPENWA_BASE_URL: 'http://wa:2785', OPENWA_API_KEY: 'k', OPENWA_SESSION_ID: 'main' };
+  const env = { WA_PROVIDER: 'openwa', OPENWA_BASE_URL: 'http://wa:2785', OPENWA_API_KEY: 'k', OPENWA_SESSION_ID: 'main' } as any;
 
   it('whatsapp send persists a sent log row (OpenWA mocked)', async () => {
     const db = fakeDb();
