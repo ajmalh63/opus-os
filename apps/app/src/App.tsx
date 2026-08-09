@@ -1,4 +1,5 @@
 ﻿import { Route, Switch, Redirect } from 'wouter';
+import type { ReactNode } from 'react';
 import { SessionProvider } from './lib/session';
 import AuthGuard from './components/AuthGuard';
 import PublicLeadForm from './pages/PublicLeadForm.js';
@@ -15,13 +16,13 @@ import Login from './pages/Login.js';
 import Signup from './pages/Signup.js';
 import Inbox from './pages/Inbox.js';
 
-// New-style workspace layout (role-aware side nav shell). Module bodies inside
-// it live at /workspaces/:slug (funnel, campaigns, growth, compliance, roles,
-// audit); nothing goes inside a shell for the legacy full-page workspaces.
-function WorkspaceRoute() {
+// ONE umbrella: every authenticated page renders inside the WorkspaceShell so
+// sidebar/brand/topbar persist across ALL modules. The workspace shell owns
+// navigation; pages are pure content beneath it. Dashboard = default module.
+function WorkspaceRoute({ children }: { children?: ReactNode }) {
   return (
     <WorkspaceShell>
-      <WorkspaceRouter />
+      {children ?? <WorkspaceRouter />}
     </WorkspaceShell>
   );
 }
@@ -58,7 +59,7 @@ export default function App() {
         <Route path="/portal" component={ClientPortal} />
         <Route path="/partner" component={PartnerDashboard} />
 
-        {/* Authenticated surface */}
+        {/* Authenticated surface — EVERY route inside the one workspace shell */}
         <Route path="/workspaces">
           <AuthGuard><WorkspaceRoute /></AuthGuard>
         </Route>
@@ -66,16 +67,16 @@ export default function App() {
           <AuthGuard><WorkspaceRoute /></AuthGuard>
         </Route>
         <Route path="/kanban">
-          <AuthGuard><KanbanBoard /></AuthGuard>
+          <AuthGuard><WorkspaceRoute><KanbanBoard /></WorkspaceRoute></AuthGuard>
         </Route>
         <Route path="/clients/:id">
-          <AuthGuard><Client360 /></AuthGuard>
+          <AuthGuard><WorkspaceRoute><Client360 /></WorkspaceRoute></AuthGuard>
         </Route>
         <Route path="/admin">
-          <AuthGuard><AdminConsole /></AuthGuard>
+          <AuthGuard><WorkspaceRoute><AdminConsole /></WorkspaceRoute></AuthGuard>
         </Route>
         <Route path="/inbox">
-          <AuthGuard><Inbox /></AuthGuard>
+          <AuthGuard><WorkspaceRoute><Inbox /></WorkspaceRoute></AuthGuard>
         </Route>
 
         <Route>

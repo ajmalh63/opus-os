@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useLocation } from 'wouter';
 import { useSession, type Me } from '../lib/session';
 import WorkspaceLogo from './WorkspaceLogo';
+import CommandPalette from './CommandPalette';
 
 export interface NavItem {
   key: string;
@@ -83,6 +84,18 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   const { me, refresh } = useSession();
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const sections = allowedNavFor(me);
   const isActive = (match: string) =>
@@ -182,7 +195,15 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           {me?.twoFactorEnabled && (
             <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">2FA on</span>
           )}
-          <div className="ml-auto flex items-center gap-3">
+<div className="ml-auto flex items-center gap-3">
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="hidden cursor-pointer items-center gap-2 rounded-md border border-white/10 px-2.5 py-1 text-[11px] text-slate-400 transition-colors hover:border-brand-gold/40 hover:text-white sm:flex"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" /></svg>
+              Jump…
+              <kbd className="rounded border border-white/15 bg-white/5 px-1 font-mono text-[9px]">⌘K</kbd>
+            </button>
             <span className="hidden rounded-full border border-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:inline">
               {me?.role?.replace('_', ' ')}
             </span>
@@ -192,10 +213,14 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           </div>
         </header>
 
-<main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          {children}
+<main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#0A1128]">
+          <div className="min-h-full w-full flex-1 px-6 py-6 md:px-8 md:py-7">
+            {children}
+          </div>
         </main>
       </div>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }

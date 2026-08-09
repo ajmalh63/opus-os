@@ -279,7 +279,7 @@ export default function AdminConsole() {
   };
 
   return (
-    <div className="flex h-full min-h-full w-full flex-col overflow-hidden bg-[#0B132B] text-slate-100 font-sans">
+    <div className="flex h-full min-h-full w-full flex-col overflow-hidden text-slate-100 font-sans">
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#070b19]">
@@ -314,7 +314,7 @@ export default function AdminConsole() {
             toast.type === 'error' ? 'bg-rose-950 border-rose-800 text-rose-300' :
             'bg-amber-950 border-amber-800 text-amber-300'
           }`}>
-            <span>{toast.type === 'success' ? 'âœ“' : toast.type === 'error' ? 'âœ•' : 'âš ï¸'}</span>
+            <span>{toast.type === 'success' ? 'Ã¢Å“â€œ' : toast.type === 'error' ? 'Ã¢Å“â€¢' : 'Ã¢Å¡Â Ã¯Â¸Â'}</span>
             <span>{toast.msg}</span>
           </div>
         )}
@@ -401,7 +401,7 @@ export default function AdminConsole() {
                 <div className="p-12 text-center text-xs text-slate-400">Retrieving secure staff roster...</div>
               ) : staffError ? (
                 <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  âš ï¸ Failed to retrieve staff records. Please check that you have active super-admin credentials.
+                  Ã¢Å¡Â Ã¯Â¸Â Failed to retrieve staff records. Please check that you have active super-admin credentials.
                 </div>
               ) : (
                 <div className="bg-[#1C2541]/40 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
@@ -641,7 +641,7 @@ export default function AdminConsole() {
                 <div className="p-12 text-center text-xs text-slate-400">Loading system write log pipeline...</div>
               ) : auditError ? (
                 <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  âš ï¸ Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
+                  Ã¢Å¡Â Ã¯Â¸Â Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
                 </div>
               ) : (
                 <div className="bg-[#1C2541]/40 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
@@ -788,7 +788,7 @@ export default function AdminConsole() {
                 onClick={() => setSelectedLogDetail(null)}
                 className="text-slate-400 hover:text-white text-xl p-1 font-bold cursor-pointer"
               >
-                âœ•
+                Ã¢Å“â€¢
               </button>
             </div>
 
@@ -869,7 +869,7 @@ export default function AdminConsole() {
                                   <span className="px-1.5 py-0.5 rounded bg-rose-950/40 text-rose-400 line-through max-w-[200px] truncate">
                                     {valBefore === undefined ? 'undefined' : valBefore}
                                   </span>
-                                  <span className="text-slate-500">â†’</span>
+                                  <span className="text-slate-500">Ã¢â€ â€™</span>
                                   <span className="px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-400 max-w-[200px] truncate">
                                     {valAfter === undefined ? 'undefined' : valAfter}
                                   </span>

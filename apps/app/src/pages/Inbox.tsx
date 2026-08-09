@@ -57,8 +57,8 @@ export default function Inbox() {
   const fmt = (ts: number | null) => ts ? new Date(ts * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'â€”';
 
 return (
-    <div className="min-h-full bg-brand-navy font-sans text-white">
-      <div className="mx-auto flex min-h-full max-w-7xl flex-col gap-6 px-5 py-8 md:px-8">
+    <div className="min-h-full text-white">
+      <div className="mx-auto flex min-h-full max-w-7xl flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-display text-2xl font-bold">Unified Inbox</h1>

@@ -76,7 +76,7 @@ export default function DashboardHome() {
   if (canCampaigns) actions.unshift({ label: 'Manage Campaigns', to: '/workspaces/campaigns', icon: 'M11 5.88v13.36a1.76 1.76 0 01-3 1.25L3 15.8V9.2l5-6.33a1.76 1.76 0 013 1.01z', hint: `${campaigns?.campaigns?.length || 0} live` });
 
   return (
-    <div className="min-h-full bg-[#0A1128] p-6 md:p-8 space-y-8">
+    <div className="min-h-full space-y-8">
       {/* Hero */}
       <section className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-br from-brand-navy via-[#0c1a3d] to-[#0a1128] p-6 md:p-8">
         <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-brand-gold/10 blur-3xl" aria-hidden="true" />

@@ -191,7 +191,7 @@ export default function Client360() {
   };
 
   // Real session cookie (AuthGuard protects this route). Removed the demo
-  // "Simulate Role Session" token-switch â€” RBAC is enforced server-side.
+  // "Simulate Role Session" token-switch Ã¢â‚¬â€ RBAC is enforced server-side.
   const [sessionToken] = useState<string>(() => {
     if (typeof document === 'undefined') return '';
     const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
@@ -466,7 +466,7 @@ export default function Client360() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client360', clientId] });
       if (data.wipLimitBreached) {
-        showToast(`Ã¢Å¡Â Ã¯Â¸Â Advanced with WIP Limit warning: Column reached capacity limit of ${data.limit}.`);
+        showToast(`ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Advanced with WIP Limit warning: Column reached capacity limit of ${data.limit}.`);
       } else {
         showToast('Application stage advanced successfully.');
       }
@@ -941,7 +941,7 @@ export default function Client360() {
   const selectedAgreement = clientAgreements.find(a => a.id === selectedAgreementId);
 
   return (
-    <div className="flex h-full min-h-full w-full flex-col overflow-hidden bg-brand-navy text-slate-100 font-sans">
+    <div className="flex h-full min-h-full w-full flex-col overflow-hidden text-slate-100 font-sans">
 
       {/* MAIN CONTAINER */}
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -986,7 +986,7 @@ export default function Client360() {
                             ? 'bg-brand-gold/15 border-brand-gold text-brand-gold' 
                             : 'bg-slate-900 border-slate-800 text-slate-500'
                       }`}>
-                        {isCompleted ? 'Ã¢Å“â€œ' : step.seq}
+                        {isCompleted ? 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' : step.seq}
                       </span>
                       <span>{step.label}</span>
                     </div>
@@ -1076,7 +1076,7 @@ export default function Client360() {
                       <span className="text-slate-400 block leading-none">SHA-256 Digest:</span>
                       <span className="font-mono text-[9px] break-all block mt-1 text-slate-300 font-semibold">{consent.sha256Hash}</span>
                     </div>
-                    <span className="text-[8px] text-slate-500 block">IP: {consent.ipAddress} Ã¢â‚¬Â¢ {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
+                    <span className="text-[8px] text-slate-500 block">IP: {consent.ipAddress} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
                   </div>
                 ))}
                 {(!client.consents || client.consents.length === 0) && (
@@ -1102,7 +1102,7 @@ export default function Client360() {
                 <div className="text-right">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Outstanding Balance</span>
                   <span className="font-display font-extrabold text-xl text-brand-error block mt-0.5">
-                    Ã¢â€šÂ¹{(activeEng.outstandingBalance / 100).toFixed(2)}
+                    ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(activeEng.outstandingBalance / 100).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -1205,7 +1205,7 @@ export default function Client360() {
                             }`}
                             title={task.status === 'done' ? 'Mark open' : 'Mark done'}
                           >
-                            {task.status === 'done' ? 'Ã¢Å“â€œ' : ''}
+                            {task.status === 'done' ? 'ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“' : ''}
                           </button>
                           <div className="min-w-0">
                             <p className={`font-semibold text-white truncate ${task.status === 'done' ? 'line-through opacity-50' : ''}`}>
@@ -1213,7 +1213,7 @@ export default function Client360() {
                             </p>
                             {task.dueDate && (
                               <p className={`text-[10px] ${isOverdue ? 'text-brand-error font-bold' : 'text-slate-500'}`}>
-                                {isOverdue ? 'Overdue Ã‚Â· ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
+                                {isOverdue ? 'Overdue Ãƒâ€šÃ‚Â· ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
                               </p>
                             )}
                           </div>
@@ -1426,7 +1426,7 @@ export default function Client360() {
                   <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
                     <div>
                       <h3 className="font-display font-bold text-sm text-brand-gold">Collect Online Payment (Razorpay)</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">UPI Ã‚Â· Cards Ã‚Â· Netbanking Ã‚Â· Wallets Ã¢â‚¬â€ amount computed from the ledger.</p>
+                      <p className="text-xs text-slate-400 mt-0.5">UPI Ãƒâ€šÃ‚Â· Cards Ãƒâ€šÃ‚Â· Netbanking Ãƒâ€šÃ‚Â· Wallets ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â amount computed from the ledger.</p>
                     </div>
                     {razorpayStatus && (
                       <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${razorpayStatus.type === 'err' ? 'bg-brand-error/20 text-brand-error' : 'bg-brand-success/15 text-brand-success'}`}>
@@ -1447,7 +1447,7 @@ export default function Client360() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (Ã¢â€šÂ¹)</label>
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹)</label>
                       <input
                         type="number"
                         min="1"
@@ -1504,7 +1504,7 @@ export default function Client360() {
 
                       {/* Amount in Rupees */}
                       <div>
-                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (Rupees Ã¢â€šÂ¹)</label>
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Amount (Rupees ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹)</label>
                         <input 
                           type="number" 
                           step="0.01"
@@ -1634,7 +1634,7 @@ export default function Client360() {
                           <div className="flex justify-between items-end border-t border-slate-900 pt-2.5">
                             <div>
                               <span className="text-[9px] text-slate-500 uppercase tracking-widest block leading-none">Milestone Fee</span>
-                              <span className="font-mono font-extrabold text-sm text-brand-gold">Ã¢â€šÂ¹{(milestone.amount / 100).toFixed(2)}</span>
+                              <span className="font-mono font-extrabold text-sm text-brand-gold">ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(milestone.amount / 100).toFixed(2)}</span>
                             </div>
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
                               milestone.status === 'paid' 
@@ -1713,17 +1713,17 @@ export default function Client360() {
                                 </span>
                               </td>
                               <td className="p-4 font-mono text-slate-300">
-                                {hasTax ? `Ã¢â€šÂ¹${(ledger.taxableAmount! / 100).toFixed(2)}` : 'Ã¢â‚¬â€'}
+                                {hasTax ? `ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹${(ledger.taxableAmount! / 100).toFixed(2)}` : 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'}
                               </td>
                               <td className="p-4">
                                 {hasTax ? (
                                   <div className="text-[10px] font-mono text-slate-400 space-y-0.5">
                                     {ledger.isInterstate ? (
-                                      <div>IGST (18%): Ã¢â€šÂ¹{(ledger.igst! / 100).toFixed(2)}</div>
+                                      <div>IGST (18%): ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(ledger.igst! / 100).toFixed(2)}</div>
                                     ) : (
                                       <>
-                                        <div>CGST (9%): Ã¢â€šÂ¹{(ledger.cgst! / 100).toFixed(2)}</div>
-                                        <div>SGST (9%): Ã¢â€šÂ¹{(ledger.sgst! / 100).toFixed(2)}</div>
+                                        <div>CGST (9%): ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(ledger.cgst! / 100).toFixed(2)}</div>
+                                        <div>SGST (9%): ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(ledger.sgst! / 100).toFixed(2)}</div>
                                       </>
                                     )}
                                   </div>
@@ -1732,7 +1732,7 @@ export default function Client360() {
                                 )}
                               </td>
                               <td className={`p-4 text-right font-mono font-extrabold ${amountColor}`}>
-                                Ã¢â€šÂ¹{(ledger.amount / 100).toFixed(2)}
+                                ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(ledger.amount / 100).toFixed(2)}
                               </td>
                             </tr>
                           );
@@ -1798,12 +1798,12 @@ export default function Client360() {
                           </div>
                           <div className="text-right">
                             <span className="text-[8px] text-slate-500 uppercase block">Booking Fee</span>
-                            <span className="font-bold text-slate-200 font-mono">Ã¢â€šÂ¹{(dep.bookingFee / 100).toFixed(2)}</span>
+                            <span className="font-bold text-slate-200 font-mono">ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(dep.bookingFee / 100).toFixed(2)}</span>
                           </div>
                         </div>
 
                         <div className="flex justify-between items-center">
-                          <span className="font-mono text-xs font-bold text-white">Price: Ã¢â€šÂ¹{(dep.price / 100).toFixed(2)}</span>
+                          <span className="font-mono text-xs font-bold text-white">Price: ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹{(dep.price / 100).toFixed(2)}</span>
                           <button
                             onClick={() => bookUmrahSeatMutation.mutate(dep.id)}
                             disabled={bookUmrahSeatMutation.isPending || dep.status === 'cancelled'}
@@ -2012,7 +2012,7 @@ export default function Client360() {
                             ? 'bg-sky-600 text-white border-sky-700' 
                             : 'bg-slate-800 text-slate-300 border-slate-700'
                       }`}>
-                        {isWhatsApp ? 'WA' : isEmail ? 'EM' : 'Ã¢Å¡â„¢'}
+                        {isWhatsApp ? 'WA' : isEmail ? 'EM' : 'ÃƒÂ¢Ã…Â¡Ã¢â€žÂ¢'}
                       </div>
                       
                       <div className={`p-3 rounded-lg border flex-1 ${
