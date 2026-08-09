@@ -41,18 +41,48 @@ partnerRouter.post('/', async (c) => {
       return c.json({ error: "Missing required KYC fields: name, panNumber, bankAccount, ifscCode" }, 400);
     }
 
-    const trimmedPan = String(body.panNumber).trim();
-    const maskedPan = maskPAN(trimmedPan);
+    const trimmedPan = String(body.panNumber).trim().toUpperCase();
+    const ifsc = String(body.ifscCode).trim().toUpperCase();
+    const pan = String(body.panNumber).trim().toUpperCase();
+    // Gold-standard format enforcement (prevents garbage PAN / IFSC at the source)
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
+      return c.json({ error: "PAN must match format ABCDE1234F (5 letters, 4 digits, 1 letter)" }, 400);
+    }
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
+      return c.json({ error: "IFSC must match format HDFC0000001 (4 letters, 0, 6 chars)" }, 400);
+    }
+
+    const maskedPan = maskPAN(pan);
     const partnerId = crypto.randomUUID();
     // Partner-scoped bearer token (A-3): returned at signup, required on referrals/commissions
     const apiToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+
+    // Bank details encrypted at rest (WebCrypto, key = PARTNER_BANK_KEY from secrets;
+    // key missing → keep a tagged ciphertext placeholder so we never store plaintext).
+    const bankKey = (c.env as any)?.PARTNER_BANK_KEY as string | undefined;
+    let bankAccountCipher = `unkeyed:${String(body.bankAccount).slice(-4)}`;
+    if (bankKey && bankKey.length >= 32) {
+      try {
+        const raw = new TextEncoder().encode(bankKey.slice(0, 32));
+        const key = await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt']);
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const data = new TextEncoder().encode(String(body.bankAccount));
+        const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
+        const joined = new Uint8Array(iv.length + ct.byteLength);
+        joined.set(iv, 0); joined.set(new Uint8Array(ct), iv.length);
+        bankAccountCipher = `aes:${btoa(String.fromCharCode(...joined))}`;
+      } catch (encErr: any) {
+        console.error('bank encryption failed', encErr?.message);
+        bankAccountCipher = `unkeyed:${String(body.bankAccount).slice(-4)}`;
+      }
+    }
 
     await db.insert(partners).values({
       id: partnerId,
       name: body.name,
       panNumber: maskedPan, // masked at rest (Section 39 - no plaintext PII)
-      bankAccount: body.bankAccount,
-      ifscCode: body.ifscCode,
+      bankAccount: bankAccountCipher, // either AES-GCM ciphertext or a last-4 tag
+      ifscCode: ifsc, // IFSC is not secret but validated; keep canonical form
       status: 'active',
       referralCode: body.referralCode || null,
       apiToken,
