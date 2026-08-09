@@ -34,7 +34,9 @@ const STATUS_STYLE: Record<string, string> = {
   draft: 'bg-slate-800/60 text-slate-300 border-slate-600/50',
 };
 
-const EMPTY_TOUCH = () => ({ seq: 1, day: 0, stage: 'value' as const, body: '' });
+type FormTouch = { seq: number; day: number; stage: 'value' | 'case_study' | 'offer' | 'final'; body: string };
+
+const EMPTY_TOUCH = (): FormTouch => ({ seq: 1, day: 0, stage: 'value', body: '' });
 
 export default function CampaignsTab() {
   const queryClient = useQueryClient();
@@ -160,10 +162,10 @@ export default function CampaignsTab() {
             </select>
           </div>
           <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white" />
-          <input value={form.eligibilityJson} onChange={(e) => setForm({ ...form, eligibilityJson: e.target.value })} placeholder='Eligibility JSON — e.g. {"targetCountry":["US","UK"]} (empty = whole division)' className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white font-mono" />
+          <input value={form.eligibilityJson} onChange={(e) => setForm({ ...form, eligibilityJson: e.target.value })} placeholder={'Eligibility JSON — e.g. ' + '{"targetCountry":["US","UK"]} (empty = whole division)'} className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white font-mono" />
 
           <div className="space-y-2">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Touch plan (day offset, stage, body — {{name}} / {{targetCountry}} tokens supported)</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Touch plan (day offset, stage, body — {'{{name}}'} / {'{{targetCountry}}'} tokens supported)</p>
             {form.touches.map((t, i) => (
               <div key={i} className="grid grid-cols-[40px_60px_100px_1fr] gap-2 items-center">
                 <span className="text-[10px] text-slate-500">#{i + 1}</span>

@@ -7,12 +7,24 @@ import Client360 from './pages/Client360.js';
 import ClientPortal from './pages/ClientPortal.js';
 import PartnerDashboard from './pages/PartnerDashboard.js';
 import AdminConsole from './pages/AdminConsole.js';
-import LandingPortal from './pages/LandingPortal.js';
+import WorkspaceShell from './components/WorkspaceShell.js';
+import { WorkspaceRouter } from './components/WorkspaceRouter.js';
 import PublicHome from './pages/PublicHome.js';
 import PublicService from './pages/PublicService.js';
 import Login from './pages/Login.js';
 import Signup from './pages/Signup.js';
 import Inbox from './pages/Inbox.js';
+
+// New-style workspace layout (role-aware side nav shell). Module bodies inside
+// it live at /workspaces/:slug (funnel, campaigns, growth, compliance, roles,
+// audit); nothing goes inside a shell for the legacy full-page workspaces.
+function WorkspaceRoute() {
+  return (
+    <WorkspaceShell>
+      <WorkspaceRouter />
+    </WorkspaceShell>
+  );
+}
 
 export default function App() {
   return (
@@ -48,7 +60,10 @@ export default function App() {
 
         {/* Authenticated surface */}
         <Route path="/workspaces">
-          <AuthGuard><LandingPortal /></AuthGuard>
+          <AuthGuard><WorkspaceRoute /></AuthGuard>
+        </Route>
+        <Route path="/workspaces/:slug">
+          <AuthGuard><WorkspaceRoute /></AuthGuard>
         </Route>
         <Route path="/kanban">
           <AuthGuard><KanbanBoard /></AuthGuard>
