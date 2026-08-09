@@ -46,7 +46,7 @@ export default function Login() {
     setBusy(true); setMsg(null);
     try {
       const r = await post('/sign-in/email', { email, password });
-      if (r.status === 200 && r.data.session) {
+      if (r.status === 200 && r.data?.user && r.data?.token) {
         ok('Signed in.');
         await finish();
         return;
