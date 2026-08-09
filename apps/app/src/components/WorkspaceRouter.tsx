@@ -7,6 +7,7 @@ import CampaignsTab from './CampaignsTab';
 import GrowthTab from './GrowthTab';
 import ComplianceTab from './ComplianceTab';
 import RolesTab from './RolesTab';
+import InfraHealth from './InfraHealth';
 
 const AUTH = {
   get Cookie() {
@@ -16,7 +17,7 @@ const AUTH = {
 } as Record<string, string>;
 
 // Client-side mirror of the server Rbac gate. The server enforces the real
-// ceiling (403) Ã¢â‚¬â€ this mirror only decides what to render.
+// ceiling (403) - this mirror only decides what to render.
 const MODULE_ROLES: Record<string, string[]> = {
   funnel: ['super_admin', 'manager'],
   campaigns: ['super_admin'],
@@ -24,10 +25,10 @@ const MODULE_ROLES: Record<string, string[]> = {
   roles: ['super_admin'],
   compliance: ['super_admin', 'manager'],
   audit: ['super_admin'],
+  infra: ['super_admin'],
 };
 
-// Audit trail viewer (super_admin) Ã¢â‚¬â€ reads the same /api/admin/audit-logs the
-// AdminConsole uses, presented count-first like the compliance logs surface.
+// Audit trail viewer (super_admin) - the immutable change log.
 function AuditView() {
   const { data } = useQuery<{ logs?: any[] }>({
     queryKey: ['auditTrail'],
@@ -39,14 +40,14 @@ function AuditView() {
   });
   const logs = data?.logs || [];
   return (
-    <div className="min-h-full bg-[#0A1128] p-6 md:p-8">
+    <div className="min-h-full p-6 md:p-8">
       <div className="mb-6">
-        <h2 className="font-display text-lg font-bold text-brand-navy">Audit Trail</h2>
-        <p className="mt-1 text-xs text-slate-500">Immutable record of every critical mutation Ã¢â‚¬â€ money, agreements, consents, RBAC, kanban moves, inbox replies.</p>
+        <h2 className="font-display text-lg font-bold text-brand-navy">Audit trail</h2>
+        <p className="mt-1 text-xs text-slate-500">Immutable record of every critical mutation: money, agreements, consents, RBAC, kanban moves, inbox replies.</p>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.03]">
+      <div className="overflow-x-auto rounded-2xl border border-brand-navy/10 bg-white shadow-[0_20px_40px_-15px_rgba(10,45,80,0.08)]">
         <table className="w-full text-left text-xs">
-          <thead className="border-b border-brand-navy/10 text-[10px] uppercase tracking-wider text-slate-600">
+          <thead className="border-b border-brand-navy/10 text-[10px] uppercase tracking-wider text-slate-500">
             <tr>
               <th className="px-4 py-3">Time</th>
               <th className="px-4 py-3">Actor</th>
@@ -58,10 +59,10 @@ function AuditView() {
           </thead>
           <tbody>
             {logs.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-600">No audit events yet.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">No audit events yet.</td></tr>
             )}
             {logs.map((l: any) => (
-              <tr key={l.id} className="border-b border-white/5 text-slate-700">
+              <tr key={l.id} className="border-b border-brand-navy/5 text-slate-700">
                 <td className="whitespace-nowrap px-4 py-2.5">{new Date((l.createdAt || 0) * 1000).toLocaleString()}</td>
                 <td className="px-4 py-2.5">{l.actorId ? (l.actorName || 'staff') : 'system'}</td>
                 <td className="px-4 py-2.5">
@@ -69,7 +70,7 @@ function AuditView() {
                 </td>
                 <td className="px-4 py-2.5">{l.entityName}</td>
                 <td className="px-4 py-2.5 font-mono text-[11px] text-slate-500">{l.entityId}</td>
-                <td className="px-4 py-2.5 text-slate-600">{l.ipAddress || 'Ã¢â‚¬â€'}</td>
+                <td className="px-4 py-2.5 text-slate-500">{l.ipAddress || '-'}</td>
               </tr>
             ))}
           </tbody>
@@ -87,7 +88,7 @@ function RestrictedModule({ name }: { name: string }) {
           Restricted
         </div>
         <p className="mt-4 text-sm text-slate-700">
-          The Ã¢â‚¬Å“{name}Ã¢â‚¬Â module requires the right role. The server blocks it too Ã¢â‚¬â€ ask the owner if you need access.
+          The "{name}" module requires the right role. The server blocks it too - ask the owner if you need access.
         </p>
       </div>
     </div>
@@ -98,7 +99,7 @@ function NotFoundModule({ name }: { name: string }) {
   return (
     <div className="grid min-h-[70vh] place-items-center p-12">
       <div className="max-w-sm text-center">
-        <p className="text-sm text-slate-500">Module Ã¢â‚¬Å“{name}Ã¢â‚¬Â not found Ã¢â‚¬â€ return to the dashboard.</p>
+        <p className="text-sm text-slate-500">Module "{name}" not found - return to the dashboard.</p>
       </div>
     </div>
   );
@@ -107,16 +108,16 @@ function NotFoundModule({ name }: { name: string }) {
 export function WorkspaceModule({ name }: { name: string }) {
   const { me } = useSession();
   const allowed = (MODULE_ROLES[name] || []).includes(me?.role || '');
-
-  if (name === 'audit') return allowed ? <AuditView /> : <RestrictedModule name={name} />;
   if (!allowed) return <RestrictedModule name={name} />;
 
   switch (name) {
+    case 'audit': return <AuditView />;
     case 'funnel': return <FunnelTab />;
     case 'campaigns': return <CampaignsTab />;
     case 'growth': return <GrowthTab />;
     case 'compliance': return <ComplianceTab />;
     case 'roles': return <RolesTab />;
+    case 'infra': return <InfraHealth />;
     default: return <NotFoundModule name={name} />;
   }
 }
