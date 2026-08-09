@@ -21,7 +21,15 @@ partnerAdminRouter.get('/', async (c) => {
   const db = getDb(c.env.DB);
   try {
     const rows = await db.select().from(partners).all();
-    return c.json({ partners: rows });
+    // Registry view sanitizes credentials/PII: apiToken is a live credential
+    // (returned once at signup); IFSC + bank are masked/omitted.
+    const safe = rows.map((r: any) => ({
+      ...r,
+      apiToken: undefined,
+      ifscCode: r.ifscCode ? `${String(r.ifscCode).slice(0, 4)}****${String(r.ifscCode).slice(-3)}` : null,
+      bankAccount: r.bankAccount && String(r.bankAccount).startsWith('aes:') ? 'encrypted' : (String(r.bankAccount || '').replace(/.*:/, '')),
+    }));
+    return c.json({ partners: safe });
   } catch (e: any) {
     return c.json({ error: 'Partner registry lookup failed', details: e.message }, 500);
   }

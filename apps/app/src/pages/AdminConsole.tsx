@@ -60,7 +60,8 @@ export default function AdminConsole() {
   const queryClient = useQueryClient();
   const { me } = useSession();
   const isOwner = me?.role === 'super_admin';
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners'>('directory');
+  const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as 'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | null;
+  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners'>(initialTab && ['directory','onboard','audit','roles','growth','funnel','compliance','campaigns','partners'].includes(initialTab) ? initialTab : 'directory');
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
