@@ -3,7 +3,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import StickyCallBar from '../components/StickyCallBar';
+import TurnstileWidget from '../components/TurnstileWidget';
 import { prefersReducedMotion, animateHeadlineWords } from '../lib/motion';
+
+const siteKeyConfigured = !!((import.meta.env.VITE_TURNSTILE_SITE_KEY as string) || '');
 
 type Division = 'study-abroad' | 'visa' | 'umrah' | 'attestation' | 'manpower';
 
@@ -54,6 +57,9 @@ const [consentProcessing, setConsentProcessing] = useState(false);
 const [consentWhatsApp, setConsentWhatsApp] = useState(true);
 const [consentMarketing, setConsentMarketing] = useState(true);
 
+  // Turnstile state (real bot check; null = waiting for challenge)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
   // Search State
   const [searchPhone, setSearchPhone] = useState('');
   const [searchToken, setSearchToken] = useState('');
@@ -85,7 +91,10 @@ const [consentMarketing, setConsentMarketing] = useState(true);
     mutationFn: async (payload: LeadPayload) => {
       const res = await fetch('/api/public/leads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(turnstileToken ? { 'cf-turnstile-response': turnstileToken } : {}),
+        },
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -113,6 +122,10 @@ const [consentMarketing, setConsentMarketing] = useState(true);
     }
     if (!highestQualification) {
       showToast('Please select your highest qualification.');
+      return;
+    }
+    if (siteKeyConfigured && !turnstileToken) {
+      showToast('Please complete the security check.');
       return;
     }
 
@@ -516,13 +529,15 @@ const [consentMarketing, setConsentMarketing] = useState(true);
             </div>
 
             {/* Bot Protection (Turnstile Simulator) */}
-            <div className="bg-gray-50 border border-gray-200 rounded p-3 flex justify-between items-center text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-brand-gold animate-spin"></div>
-                <span className="font-medium text-brand-navy">Cloudflare Turnstile Verified</span>
+            {siteKeyConfigured ? (
+              <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken(null)} />
+            ) : (
+              <div className="bg-gray-50 border border-gray-200 rounded p-3 flex justify-between items-center text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-brand-navy">Security check enabled in production</span>
+                </div>
               </div>
-              <span className="text-[9px] text-brand-textLight font-mono">Token: c1f845...</span>
-            </div>
+            )}
 
             {/* Submit Button */}
             <button 

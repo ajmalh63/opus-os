@@ -6,6 +6,7 @@ import { kanbanRouter } from './routes/kanban.js';
 import { authRouter } from './routes/auth.js';
 import { rbacMiddleware } from './middleware/rbac.js';
 import { serviceTokenMiddleware } from './middleware/serviceToken.js';
+import { turnstileVerify } from './middleware/turnstile.js';
 import { agreementsRouter } from './routes/agreements.js';
 import { paymentsRouter } from './routes/payments.js';
 import { umrahRouter } from './routes/umrah.js';
@@ -60,6 +61,13 @@ app.notFound((c) => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not 
 
 // ===== PUBLIC (no session) =====
 app.route('/api/auth', authRouter);
+
+// Bot protection (plan §18.2.2 / §6.3): real Turnstile on every public write.
+// Dev uses the mocked 1x secret (always-pass); prod uses wrangler secret.
+app.use('/api/public/leads', turnstileVerify);
+app.use('/api/public/partners', turnstileVerify);
+app.use('/api/public/match', turnstileVerify);
+
 app.route('/api/public/leads', leadsRouter);
 // Client journey lookup /api/public/portal/lookup (Section 25) — public, token-based
 app.route('/api/public/portal', portalRouter);
