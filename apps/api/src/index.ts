@@ -14,6 +14,9 @@ import { transitRouter } from './routes/transit.js';
 import { manpowerRouter } from './routes/manpower.js';
 import { portalRouter } from './routes/portal.js';
 import { partnerRouter } from './routes/partner.js';
+import { publicThriveRouter } from './routes/partnerThrive.js';
+import { goRouter } from './routes/goRedirect.js';
+import { seedPartnerTiers } from './services/partnerLoyalty.js';
 import { tasksRouter } from './routes/tasks.js';
 import { rbacRouter } from './routes/rbac.js';
 import { razorpayRouter, razorpayWebhookRouter } from './routes/razorpay.js';
@@ -82,6 +85,11 @@ app.route('/api/public/portal', portalRouter);
 app.route('/api/public', publicRouter);
 // Public resume intake → R2 vault (Manpower division, §14.6)
 app.route('/api/public/manpower/resume', publicResumeRouter);
+// Zoho Thrive-style partner workspace (catalog, links, tiers, /go redirects)
+app.route('/api/public/partners', publicThriveRouter);
+app.route('/api/public', publicThriveRouter); // /api/public/catalog (public inventory browse)
+// Public /go/:ref/:type/:id affiliate redirect (clean share URL, click-tracked)
+app.route('/go', goRouter);
 // Unified messaging webhooks (PENDING-CONFIGS #1) — WhatsApp + Chatwoot inbound
 app.route('/api/webhooks/wa', waWebhookRouter);
 app.route('/api/webhooks/chatwoot', chatwootWebhookRouter);
@@ -188,8 +196,11 @@ app.use('/api/automation', serviceTokenMiddleware);
 app.use('/api/automation/*', serviceTokenMiddleware);
 app.route('/api/automation', automationRouter);
 
-// Health check endpoint
-app.get('/api/health', (c) => c.json({ status: 'healthy', timestamp: Date.now() }));
+// Health check endpoint (also self-heals the partner VIP tier ladder — idempotent)
+app.get('/api/health', async (c) => {
+  try { await seedPartnerTiers(c.env); } catch { /* non-fatal */ }
+  return c.json({ status: 'healthy', timestamp: Date.now() });
+});
 
 export default app;
 export type AppType = typeof app;

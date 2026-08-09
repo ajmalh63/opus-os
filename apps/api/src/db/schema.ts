@@ -32,7 +32,7 @@ export const clients = sqliteTable('clients', {
   passportExpiry: text('passport_expiry'), // ISO date string: YYYY-MM-DD
   gstin: text('gstin'), // for B2B classification (GSTR-1)
   state: text('state'), // place of supply state code
-  // Funnel enrichment (Section 26) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â captured at intake for qualification
+  // Funnel enrichment (Section 26) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â captured at intake for qualification
   leadSource: text('lead_source'), // website, whatsapp, walk-in, partner, referral
   intakeContext: text('intake_context'), // JSON: targetCountry/intake/budget/visaCategory/etc from lead form
   createdAt: integer('created_at').notNull(),
@@ -115,7 +115,7 @@ export const communications = sqliteTable('communications', {
 // ==========================================
 // 48. UNIFIED MESSAGING (PENDING-CONFIGS #1/#3)
 // Provider-agnostic conversations for WhatsApp (OpenWA or Meta Cloud API) and
-// web chat ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the Chatwoot-replacement inbox. Webhook events land here; the
+// web chat ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the Chatwoot-replacement inbox. Webhook events land here; the
 // staff inbox UI (workspace) reads these rows.
 // ==========================================
 export const conversations = sqliteTable('conversations', {
@@ -287,7 +287,7 @@ export const seatBookings = sqliteTable('seat_bookings', {
 });
 
 // ==========================================
-// 24.1.1 PUBLIC ARTIFACTS ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â homepage hero live widgets data (Section 24)
+// 24.1.1 PUBLIC ARTIFACTS ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â homepage hero live widgets data (Section 24)
 // Real, D1-backed data for the hero carousel artifacts: job ticker (Manpower),
 // attestation chain builder, and university match (eligibility checker).
 // ==========================================
@@ -321,7 +321,7 @@ export const universities = sqliteTable('universities', {
 
 // ==========================================
 // 49. ERPNEXT SYNC LOG (back-office books integration)
-// One-way queue: OpusOS front office ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ERPNext official books. Each syncable
+// One-way queue: OpusOS front office ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ERPNext official books. Each syncable
 // business event (payments/invoices) gets a row; a worker/endpoint pushes rows
 // with status='pending' and records Frappe's response + any retry attempts.
 // ==========================================
@@ -625,7 +625,7 @@ export const campaigns = sqliteTable('campaigns', {
   description: text('description'),
   division: text('division', { enum: ['study-abroad', 'visa', 'umrah', 'attestation', 'manpower'] }).notNull(),
   // Eligibility: JSON predicate on the lead's dynamicContext, e.g.
-  // {"targetCountry": {"$in": ["USA", "UK"]}} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â null/{} = applies to whole division.
+  // {"targetCountry": {"$in": ["USA", "UK"]}} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â null/{} = applies to whole division.
   eligibilityJson: text('eligibility_json').notNull().default('{}'),
   status: text('status', { enum: ['draft', 'active', 'paused'] }).notNull().default('draft'),
   createdAt: integer('created_at').notNull(),
@@ -643,7 +643,7 @@ export const campaignTouches = sqliteTable('campaign_touches', {
 });
 
 // ==========================================
-// 30. A/B EXPERIMENTS (Section 26.5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ab-test-setup skill gates)
+// 30. A/B EXPERIMENTS (Section 26.5 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ab-test-setup skill gates)
 // The hypothesis + primary metric + baseline + MDE are REQUIRED fields, forcing
 // the "commit before launch" discipline before an experiment can go active.
 // ==========================================
@@ -676,7 +676,7 @@ export const experimentAssignments = sqliteTable('experiment_assignments', {
 
 
 // ==========================================
-// 49. NOTIFICATIONS LOG (Ã‚Â§7.6) Ã¢â‚¬â€ end-to-end tracking of every outbound
+// 49. NOTIFICATIONS LOG (Ãƒâ€šÃ‚Â§7.6) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â end-to-end tracking of every outbound
 // message across channels (whatsapp/email/sms). Written by infra/notify.ts.
 export const notifications = sqliteTable('notifications', {
   id: text('id').primaryKey(),
@@ -693,7 +693,7 @@ export const notifications = sqliteTable('notifications', {
   sentAt: integer('sent_at')
 });
 // ==========================================
-// 50. EMPLOYER COMPLIANCE REGISTERS (Â§6/Â§14.5.4) â€” PT, LWF, PF, ESI per month.
+// 50. EMPLOYER COMPLIANCE REGISTERS (Ã‚Â§6/Ã‚Â§14.5.4) Ã¢â‚¬â€ PT, LWF, PF, ESI per month.
 export const statutoryRegisters = sqliteTable('statutory_registers', {
   id: text('id').primaryKey(),
   month: text('month').notNull(), // YYYY-MM
@@ -711,7 +711,7 @@ export const statutoryRegisters = sqliteTable('statutory_registers', {
   updatedAt: integer('updated_at').notNull()
 });
 // ==========================================
-// 51. MANPOWER CANDIDATE PROFILES (§4) — persisted AI-resume-parser results.
+// 51. MANPOWER CANDIDATE PROFILES (Â§4) â€” persisted AI-resume-parser results.
 // DPDP-gated: only written when manpower-retain consent was granted; the raw
 // resume stays in R2 (resumes/), the profile is the searchable skill snapshot.
 export const candidateProfiles = sqliteTable('candidate_profiles', {
@@ -727,4 +727,44 @@ export const candidateProfiles = sqliteTable('candidate_profiles', {
   source: text('source', { enum: ['ai', 'mock'] }).notNull().default('ai'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
+});
+// ==========================================
+// 52. PARTNER TIERS + AFFILIATE LINKS (§39 / Zoho Thrive-style VIP program)
+// Tiers: loyalty points = lifetime matured+paid commissions (paise). Base
+// tier (0 points) + progressive tiers with commission boost + perks.
+export const partnerTiers = sqliteTable('partner_tiers', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(),           // bronze|silver|gold|platinum
+  name: text('name').notNull(),
+  minPoints: integer('min_points').notNull().default(0), // paise threshold
+  commissionBoostPct: integer('commission_boost_pct').notNull().default(0), // extra % on matured
+  perksJson: text('perks_json').notNull().default('[]'),
+  color: text('color').notNull().default('brand-gold'),
+  order: integer('order').notNull().default(0),
+  createdAt: integer('created_at').notNull()
+});
+
+// Partner share-links: one row per (partner, catalog item) — deep links that
+// redirect through /go/:ref/:type/:id and count clicks (Thrive tracking-link
+// pattern).
+export const partnerLinks = sqliteTable('partner_links', {
+  id: text('id').primaryKey(),
+  partnerId: text('partner_id').notNull().references(() => partners.id),
+  catalogType: text('catalog_type', { enum: ['university', 'departure', 'job', 'attestation'] }).notNull(),
+  catalogItemId: text('catalog_item_id').notNull(),
+  title: text('title').notNull(),            // snapshot for the partner UI
+  pricePaise: integer('price_paise').notNull().default(0),
+  clicks: integer('clicks').notNull().default(0),
+  createdAt: integer('created_at').notNull(),
+  lastClickedAt: integer('last_clicked_at')
+});
+
+// Loyalty points ledger (Thrive-style activity tracking).
+export const partnerPoints = sqliteTable('partner_points', {
+  id: text('id').primaryKey(),
+  partnerId: text('partner_id').notNull().references(() => partners.id),
+  points: integer('points').notNull(),           // paise-equivalent accrued
+  reason: text('reason').notNull(),              // referral_linked|client_signed|milestone_paid|share
+  referenceKey: text('reference_key').notNull(), // idempotency key
+  createdAt: integer('created_at').notNull()
 });

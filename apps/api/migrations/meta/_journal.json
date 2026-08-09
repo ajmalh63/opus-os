@@ -141,6 +141,13 @@
       "when": 1786271353921,
       "tag": "0019_sturdy_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1786277612392,
+      "tag": "0020_hot_paibok",
+      "breakpoints": true
     }
   ]
 }

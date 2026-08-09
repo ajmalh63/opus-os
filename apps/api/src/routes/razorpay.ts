@@ -2,10 +2,11 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { payments, engagements, milestones, clients } from '../db/schema.js';
+import { payments, engagements, milestones, clients, referrals } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { sendNotification } from '../infra/notify.js';
 import { accrueIncentives } from '../services/incentiveAccrual.js';
+import { accruePartnerPoints } from '../services/partnerLoyalty.js';
 
 export const razorpayRouter = new Hono<{
   Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }
@@ -53,7 +54,7 @@ razorpayRouter.post('/order', zValidator('json', orderSchema), async (c) => {
 
   try {
     if (!c.env.RAZORPAY_KEY_ID || !c.env.RAZORPAY_KEY_SECRET) {
-      return c.json({ error: "Razorpay not configured — set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
+      return c.json({ error: "Razorpay not configured â€” set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
     }
     // 1. Verify engagement exists and amount matches known ledger balance owed
     const eng = await db.select().from(engagements).where(eq(engagements.id, data.engagementId)).get();
@@ -126,7 +127,7 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
   const db = getDb(c.env.DB);
   // Fail-closed (A-1): no public fallback secret
   const secret = c.env.RAZORPAY_KEY_SECRET;
-  if (!secret || !c.env.RAZORPAY_KEY_ID) return c.json({ error: "Razorpay not configured — set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
+  if (!secret || !c.env.RAZORPAY_KEY_ID) return c.json({ error: "Razorpay not configured â€” set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
 
   try {
     const ok = await verifySignature(data.razorpay_order_id, data.razorpay_payment_id, data.razorpay_signature, secret);
@@ -177,8 +178,8 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       .set({ outstandingBalance: eng.outstandingBalance - invoiceAmount, updatedAt: now })
       .where(eq(engagements.id, data.engagementId));
 
-    // Interlock: incentive accrual on milestone_paid (plan §29.4). Idempotent
-    // per (rule, payment). Fail-open — never blocks a verified payment.
+    // Interlock: incentive accrual on milestone_paid (plan Â§29.4). Idempotent
+    // per (rule, payment). Fail-open â€” never blocks a verified payment.
     try {
       const result = await accrueIncentives({
         env: c.env as any,
@@ -193,7 +194,17 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       console.error('milestone incentive accrual failed', incErr?.message);
     }
 
-    // §7.6 Transactional email — payment receipt to the client (never throws;
+    // Thrive: milestone_paid loyalty points for the referring partner (2%).
+    try {
+      const ref = await db.select().from(referrals).where(eq(referrals.clientId, data.clientId)).get();
+      if (ref?.partnerId) {
+        await accruePartnerPoints({ env: c.env as any, partnerId: ref.partnerId, reason: 'milestone_paid', referenceKey: data.razorpay_payment_id, amountPaise: invoiceAmount }).catch(() => {});
+      }
+    } catch (ppErr: any) {
+      console.error('partner points accrual failed', ppErr?.message);
+    }
+
+    // Â§7.6 Transactional email â€” payment receipt to the client (never throws;
     // dev uses the stub channel; prod uses the CF Email binding).
     try {
       const client = await db.select().from(clients).where(eq(clients.id, data.clientId)).get();
@@ -201,8 +212,8 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
         await sendNotification(c.env as any, db as any, {
           channel: 'email',
           to: client.email,
-          subject: `Opus Overseas — payment receipt ${data.razorpay_payment_id}`,
-          body: `Hi ${client.name}, we have received your payment of ₹${(invoiceAmount / 100).toLocaleString('en-IN')} (${data.milestoneName?.trim() || 'Online payment'}). Reference: ${data.razorpay_payment_id}. Thank you — Opus Overseas.`,
+          subject: `Opus Overseas â€” payment receipt ${data.razorpay_payment_id}`,
+          body: `Hi ${client.name}, we have received your payment of â‚¹${(invoiceAmount / 100).toLocaleString('en-IN')} (${data.milestoneName?.trim() || 'Online payment'}). Reference: ${data.razorpay_payment_id}. Thank you â€” Opus Overseas.`,
           clientId: client.id,
         });
       }
@@ -236,7 +247,7 @@ razorpayWebhookRouter.post('/', async (c) => {
 
   if (!c.env.DB) return c.json({ error: "DB not available" }, 500);
   const secret = c.env.RAZORPAY_WEBHOOK_SECRET;
-  if (!secret) return c.json({ error: "Razorpay webhook not configured — set RAZORPAY_WEBHOOK_SECRET" }, 503);
+  if (!secret) return c.json({ error: "Razorpay webhook not configured â€” set RAZORPAY_WEBHOOK_SECRET" }, 503);
   const db = getDb(c.env.DB);
 
   // HMAC over raw body, timing-safe compare (A-2)

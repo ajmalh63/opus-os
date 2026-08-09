@@ -8,6 +8,7 @@ import { pickCounselorForDivision, createAssignmentTask } from '../services/lead
 import { auditEvent } from '../middleware/audit.js';
 import { sendNotification } from '../infra/notify.js';
 import { accrueIncentives } from '../services/incentiveAccrual.js';
+import { accruePartnerPoints } from '../services/partnerLoyalty.js';
 
 export const agreementsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -234,6 +235,8 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
         await db.update(commissionLedger)
           .set({ amount: commissionPaise, status: 'matured' })
           .where(eq(commissionLedger.referralId, referral.id));
+        // Thrive: client_signed loyalty points for the referring partner
+        await accruePartnerPoints({ env: c.env as any, partnerId: referral.partnerId, reason: 'client_signed', referenceKey: agreement.id }).catch(() => {});
       }
     } catch (refErr: any) {
       // Commission maturation must never block agreement signing.

@@ -7,6 +7,7 @@ import { and, eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 import { ensurePipelineStages } from '../db/seed.js';
+import { accruePartnerPoints } from '../services/partnerLoyalty.js';
 import { auditEvent } from '../middleware/audit.js';
 
 export const leadsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
@@ -189,6 +190,9 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
           referralId = rid;
           referredPartnerId = partner.id;
           intentSignals.push({ interactionCode: 'partner_referral', points: 15, description: 'Referral from partner' });
+          // Thrive: referral_linked loyalty points (10% of 0 = 0; flat sign points
+          // come at agreement; here we just record the activity marker).
+          await accruePartnerPoints({ env: c.env as any, partnerId: partner.id, reason: 'referral_linked', referenceKey: token, amountPaise: 0 }).catch(() => {});
         }
       } catch (refErr: any) {
         console.error('lead referral link failed', refErr?.message);
