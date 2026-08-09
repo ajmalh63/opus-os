@@ -76,6 +76,26 @@ const [rec, setRec] = useState<any>(null);
     onError: (e: any) => flash(e.message, false),
   });
 
+  // ---- Compliance calendar (§14.5.6) + CA export (§6) ----
+  const { data: cal, refetch: refetchCal, isFetching: isFetchingCal } = useQuery<any>({
+    queryKey: ['complianceCalendar'],
+    queryFn: async () => (await fetch('/api/compliance/calendar', { headers: AUTH })).json(),
+  });
+  const calItems = cal?.calendar || [];
+  const runCalendar = () => { refetchCal(); };
+  const [isExporting, setIsExporting] = useState(false);
+  const runExport = async () => {
+    setIsExporting(true);
+    try {
+      const r = await fetch(`/api/compliance/export?period=${period}`, { headers: AUTH });
+      const d = await r.json();
+      if (!r.ok || !d.success) throw new Error(d?.error || 'Export failed');
+      dl(`CA-PACK-${period}.json`, d.pack);
+      flash(`CA pack exported (${period}) — logged to audit.`);
+    } catch (er: any) { flash(er.message, false); }
+    setIsExporting(false);
+  };
+
   const { data: reg, refetch: refetchReg } = useQuery<any>({ queryKey: ['tdstcs', period], queryFn: async () => (await fetch(`/api/compliance/tds-tcs?period=${period}`, { headers: AUTH })).json() });
   const [v, setV] = useState(''); const [sec, setSec] = useState('194J'); const [g, setG] = useState(''); const [t, setT] = useState('');
   const addTds = useMutation({ mutationFn: async () => { const r = await fetch('/api/compliance/tds', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ vendorName: v, section: sec, code: sec === '194J' ? '1027' : sec === '194C' ? '1026' : '1028', grossAmount: Math.round(parseFloat(g || '0') * 100), tdsAmount: Math.round(parseFloat(t || '0') * 100), period }) }); if (!r.ok) throw new Error('TDS'); return r.json(); }, onSuccess: (d) => { flash(d.message || 'TDS recorded'); setV(''); setG(''); setT(''); refetchReg(); }, onError: (e: any) => flash(e.message, false) });
@@ -215,6 +235,52 @@ const [rec, setRec] = useState<any>(null);
             ))}
           </div>
         )}
+      </div>
+
+      {/* COMPLIANCE CALENDAR + CA EXPORT (§14.5.6 / §6) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl p-5 space-y-3">
+          <h3 className="font-display font-bold text-sm text-brand-navy">Statutory Calendar</h3>
+          <p className="text-[10px] text-slate-500">Next 3 months of GST / TDS / PF / ESI / LWF deadlines vs live books.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {calItems.map((item: any) => {
+              const badge = item.status === 'clear'
+                ? 'bg-emerald-500/15 text-emerald-700'
+                : item.status === 'overdue'
+                  ? 'bg-rose-500/15 text-rose-700'
+                  : 'bg-amber-500/15 text-amber-700';
+              const label = item.status === 'clear' ? 'Clear' : item.status === 'overdue' ? 'Overdue' : 'Due';
+              return (
+                <div key={`${item.key}-${item.date}`} className="flex justify-between items-center bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs">
+                  <span className="text-brand-navy font-semibold">{item.label}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono text-slate-500">{item.date}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${badge}`}>{label}</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {calItems.length === 0 && <p className="text-[10px] text-slate-500 text-center py-2">Calendar loading…</p>}
+        </div>
+
+        <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl p-5 space-y-3">
+          <h3 className="font-display font-bold text-sm text-brand-navy">CA Export Center</h3>
+          <p className="text-[10px] text-slate-500">One-click statutory pack (GST outward + purchases, TDS/TCS, statutory registers, profile).</p>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={runCalendar} disabled={isFetchingCal} className="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-4 py-2 rounded text-xs font-bold disabled:opacity-50">
+              {isFetchingCal ? 'Loading…' : 'Refresh Calendar'}
+            </button>
+            <button onClick={runExport} disabled={isExporting} className="border border-brand-navy/20 hover:border-brand-gold hover:text-brand-gold text-brand-navy px-4 py-2 rounded text-xs font-bold disabled:opacity-50 transition">
+              {isExporting ? 'Packing…' : `Export CA Pack (${period})`}
+            </button>
+          </div>
+          <div className="rounded-xl bg-white border border-brand-navy/10 p-3 text-[10px] text-slate-500 leading-relaxed">
+            The pack is a single JSON envelope covering:<br/>
+            <code className="font-mono">gst.outwardPayments · gst.purchaseInvoices · statutory · tds · tcs · businessProfile</code><br/>
+            Hand it to the CA; each export is written to the audit trail.
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -75,7 +75,7 @@ describe('Partner admin (owner)', () => {
     mockD1.tables.partners.push({ id: 'p-1', name: 'AgencyX', panNumber: '******1234F', bank_account: '999', ifsc_code: 'SBIN0000001', status: 'active', referral_code: 'OPUS-X', api_token: 't', created_at: 1 });
   });
 
-  it('PATCH /api/admin/partners/:id/status blocks a partner', async () => {
+it('PATCH /api/admin/partners/:id/status blocks a partner', async () => {
     const res = await app.request('/api/admin/partners/p-1/status', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-admin' },
       body: JSON.stringify({ status: 'blocked' }),
@@ -85,4 +85,30 @@ describe('Partner admin (owner)', () => {
     expect(row.status).toBe('blocked');
   });
   // Compliance router uses its own Rbac; owner-only admin path verified above.
+});
+
+describe('Compliance calendar + CA export (manager+)', () => {
+  let mockD1: MockD1Database;
+  beforeAll(() => {
+    mockD1 = new MockD1Database();
+    mockD1.tables.statutory_registers.push({ id: 's1', month: '2026-08', type: 'pf', employee_name: 'X', wage_amount: 100000, deduction_paise: 12000, employer_share: 13000, due_date: null, paid_at: null, status: 'paid', notes: null, created_at: 1, updated_at: 1 });
+  });
+
+  it('GET /api/compliance/calendar returns 3-month statutory deadlines', async () => {
+    const res = await app.request('/api/compliance/calendar', { headers: { cookie: 'better-auth.session_token=token-manager' } }, { DB: mockD1, BETTER_AUTH_SECRET: 's' });
+    expect(res.status).toBe(200);
+    const j = await res.json() as any;
+    expect(j.calendar.length).toBeGreaterThanOrEqual(18); // 6 rules × 3 months
+    expect(j.calendar.some((x: any) => x.key === 'pf' && x.status === 'clear')).toBe(true);
+  });
+
+  it('GET /api/compliance/export returns a CA-ready pack for the period', async () => {
+    const res = await app.request('/api/compliance/export?period=2026-08', { headers: { cookie: 'better-auth.session_token=token-manager' } }, { DB: mockD1, BETTER_AUTH_SECRET: 's' });
+    expect(res.status).toBe(200);
+    const j = await res.json() as any;
+    expect(j.success).toBe(true);
+    expect(j.pack).toHaveProperty('gst');
+    expect(j.pack).toHaveProperty('statutory');
+    expect(j.pack.businessProfile).toBe(null);
+  });
 });
