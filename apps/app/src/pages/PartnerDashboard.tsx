@@ -250,7 +250,7 @@ export default function PartnerDashboard() {
           /* ACTIVE PARTNER WORKSPACE */
           <div className="space-y-8">
             {/* Zoho Thrive-style workspace: tier card, performance, my inventory */}
-            <PartnerThrive partnerId={partnerId} token={partnerToken} />
+            <PartnerThrive partnerId={partnerId} token={partnerToken} maturedPaise={totals.matured} onNotice={(m, ok = true) => ok ? showToast(m) : showToast(m)} />
 
             {/* Welcome + join-link generator — one click from the dashboard */}
             <section className="relative overflow-hidden rounded-[2rem] border border-brand-navy/10 bg-white p-8 shadow-[0_24px_60px_-30px_rgba(10,45,80,0.25)]">

@@ -2,10 +2,10 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
-import { tasks } from '../db/schema.js';
+import { tasks, notifications } from '../db/schema.js';
 import { eq, and, desc } from 'drizzle-orm';
 
-export const tasksRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
+export const tasksRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string }; Variables: { user?: { id?: string } | null } }>();
 
 const createTaskSchema = z.object({
   clientId: z.string().optional(),
@@ -50,6 +50,28 @@ tasksRouter.post('/', zValidator('json', createTaskSchema), async (c) => {
       updatedAt: now
     });
 
+    // Assignment notification: if targeting a specific staff member, record an
+    // entry so their "My Work" unread count reflects it (notifications log,
+    // task channel). Fail-open.
+    if (data.assigneeId) {
+      try {
+        await db.insert(notifications).values({
+          id: crypto.randomUUID(),
+          channel: 'task',
+          to: data.assigneeId,
+          subject: `Task assigned: ${data.title}`,
+          body: `${data.title}${data.priority ? ` (${data.priority})` : ''}${data.dueDate ? ` · due ${new Date(data.dueDate * 1000).toLocaleDateString()}` : ''}`,
+          status: 'sent',
+          provider: 'internal',
+          clientId: data.clientId || null,
+          createdAt: now,
+          sentAt: now,
+        } as any);
+      } catch (notErr: any) {
+        console.error('task notification insert failed', notErr?.message);
+      }
+    }
+
     return c.json({ success: true, id, message: "Task created." });
   } catch (error: any) {
     return c.json({ error: "Task creation failed", details: error.message }, 500);
@@ -86,6 +108,20 @@ tasksRouter.get('/client/:clientId', async (c) => {
     return c.json({ tasks: list });
   } catch (error: any) {
     return c.json({ error: "Failed to fetch client tasks", details: error.message }, 500);
+  }
+});
+
+// GET /api/tasks/assigned-to-me — unread/undone tasks for the session user
+tasksRouter.get('/assigned-to-me', async (c) => {
+  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  const user = (c.get('user') as any) || {};
+  try {
+    const all = await db.select().from(tasks).all();
+    const mine = all.filter((t: any) => t.assigneeId === user.id && t.status !== 'done' && t.status !== 'cancelled');
+    return c.json({ tasks: mine, openCount: mine.length });
+  } catch (error: any) {
+    return c.json({ error: "Task lookup failed", details: error.message }, 500);
   }
 });
 

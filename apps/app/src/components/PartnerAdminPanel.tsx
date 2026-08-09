@@ -20,13 +20,14 @@ interface AnalyticsRow {
 }
 interface TierRow { id: string; key: string; name: string; minPoints: number; commissionBoostPct: number; perksJson: string; color: string; order: number; }
 interface PlanRow { id: string; partnerId: string | null; catalogType: string; catalogItemId: string | null; ratePct: number; }
+interface PayoutRow { id: string; partnerId: string; partnerName: string; amountPaise: number; status: 'requested' | 'approved' | 'paid' | 'rejected'; note: string | null; requestedAt: number; resolvedAt: number | null; }
 
 const rs = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const TIER_COLORS: Record<string, string> = { bronze: '#b87333', silver: '#8b8b8b', gold: '#d7a019', platinum: '#5b6b8a' };
 
 export default function PartnerAdminPanel() {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<'partners' | 'tiers' | 'plans' | 'analytics'>('partners');
+  const [tab, setTab] = useState<'partners' | 'tiers' | 'plans' | 'analytics' | 'payouts'>('partners');
   const [toast, setToast] = useState('');
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(''), 4000); };
@@ -88,11 +89,26 @@ export default function PartnerAdminPanel() {
     onSuccess: () => { flash('Plan removed'); queryClient.invalidateQueries({ queryKey: ['adminCommissionPlans'] }); },
   });
 
+  const { data: payouts } = useQuery<{ payouts: PayoutRow[] }>({
+    queryKey: ['adminPartnerPayouts'],
+    queryFn: async () => { const r = await fetch('/api/admin/partners/payouts', { headers: AUTH }); if (!r.ok) throw new Error('payouts'); return r.json(); },
+  });
+
+  const resolvePayout = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const r = await fetch(`/api/admin/partners/payouts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ status }) });
+      if (!r.ok) throw new Error('payout');
+      return r.json();
+    },
+    onSuccess: (d) => { flash(d.message || 'Payout updated'); queryClient.invalidateQueries({ queryKey: ['adminPartnerPayouts'] }); },
+  });
+
   const tabs: { id: typeof tab; label: string }[] = [
     { id: 'partners', label: 'Partners' },
     { id: 'tiers', label: 'Tiers' },
     { id: 'plans', label: 'Commissions' },
     { id: 'analytics', label: 'Analytics' },
+    { id: 'payouts', label: 'Payouts' },
   ];
 
   return (
@@ -300,6 +316,44 @@ export default function PartnerAdminPanel() {
                 </tr>
               ))}
               {(analytics?.analytics || []).length === 0 && <tr><td colSpan={8} className="px-5 py-10 text-center text-slate-400">No partner activity yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* PAYOUTS TAB */}
+      {tab === 'payouts' && (
+        <div className="overflow-x-auto rounded-2xl border border-brand-navy/10 bg-white shadow-[0_20px_40px_-20px_rgba(10,45,80,0.12)]">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-brand-navy/10 bg-[#FAF8F4] text-[10px] uppercase tracking-wider text-slate-500">
+                <th className="px-5 py-3">Partner</th>
+                <th className="px-5 py-3">Amount</th>
+                <th className="px-5 py-3">Requested</th>
+                <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(payouts?.payouts || []).map((p) => (
+                <tr key={p.id} className="border-b border-brand-navy/5 last:border-0 hover:bg-brand-gold/5">
+                  <td className="px-5 py-3.5 font-semibold text-brand-navy">{p.partnerName}</td>
+                  <td className="px-5 py-3.5 font-mono font-bold text-brand-gold">{rs(p.amountPaise)}</td>
+                  <td className="px-5 py-3.5 text-slate-500">{new Date(p.requestedAt * 1000).toLocaleDateString()}</td>
+                  <td className="px-5 py-3.5">
+                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${p.status === 'paid' ? 'bg-emerald-500/15 text-emerald-700' : p.status === 'requested' ? 'bg-amber-500/15 text-amber-700' : p.status === 'rejected' ? 'bg-rose-500/15 text-rose-700' : 'bg-sky-500/15 text-sky-700'}`}>{p.status}</span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {p.status === 'requested' && (
+                      <span className="flex gap-2">
+                        <button onClick={() => resolvePayout.mutate({ id: p.id, status: 'paid' })} className="rounded-full border border-emerald-500/40 px-3 py-1 text-[9px] font-bold uppercase text-emerald-700 hover:bg-emerald-600 hover:text-white">Pay</button>
+                        <button onClick={() => resolvePayout.mutate({ id: p.id, status: 'rejected' })} className="rounded-full border border-rose-500/40 px-3 py-1 text-[9px] font-bold uppercase text-rose-700 hover:bg-rose-600 hover:text-white">Reject</button>
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {(payouts?.payouts || []).length === 0 && <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-400">No payout requests yet — partners request them from their workspace.</td></tr>}
             </tbody>
           </table>
         </div>

@@ -65,6 +65,10 @@ const [consentMarketing, setConsentMarketing] = useState(true);
   const [searchToken, setSearchToken] = useState('');
   const [searchParams, setSearchParams] = useState<{ phone: string; token: string } | null>(null);
 
+  // Partner attribution: ?ref= (from /go/:ref/ share links or homepage links)
+  const urlRef = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('ref') || '' : '';
+  const [refCode] = useState(urlRef);
+
   // Status Check Query
   const { data: statusData, isError: searchError, isFetching: searchFetching } = useQuery({
     queryKey: ['leadStatus', searchParams],
@@ -170,6 +174,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
       email,
       highestQualification,
       division,
+      ...(refCode ? { refCode } : {}),
       dynamicContext,
       consents: {
         coreProcessing: consentProcessing,
@@ -561,6 +566,11 @@ const [consentMarketing, setConsentMarketing] = useState(true);
             )}
 
             {/* Submit Button */}
+            {refCode && (
+              <div className="rounded-xl border border-brand-gold/40 bg-brand-gold/5 px-3 py-2.5 text-[11px] text-brand-navy/70">
+                Referred by partner <span className="font-mono font-bold text-brand-gold">{refCode}</span> — the referral is credited automatically when this application is submitted.
+              </div>
+            )}
             <button 
               type="submit" 
               disabled={leadMutation.isPending}

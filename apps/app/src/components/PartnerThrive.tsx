@@ -17,14 +17,16 @@ interface ThriveSummary {
   totalClicks: number;
   linkCount: number;
 }
+interface PayoutRow { id: string; partnerId: string; amountPaise: number; status: 'requested' | 'approved' | 'paid' | 'rejected'; note: string | null; requestedAt: number; resolvedAt: number | null; }
 
 const rs = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const TYPES: Record<string, string> = { university: 'Universities', departure: 'Umrah Departures', job: 'Job Openings', attestation: 'Attestation' };
 
-export default function PartnerThrive({ partnerId, token }: { partnerId: string; token: string }) {
+export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNotice }: { partnerId: string; token: string; maturedPaise?: number; onNotice?: (msg: string, ok?: boolean) => void }) {
   const queryClient = useQueryClient();
   const [activeType, setActiveType] = useState('university');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const notice = onNotice || ((m: string, _ok?: boolean) => alert(m));
 
   const AUTH = { Authorization: `Bearer ${token}` };
 
@@ -41,6 +43,21 @@ export default function PartnerThrive({ partnerId, token }: { partnerId: string;
   const { data: links } = useQuery<{ links: PartnerLink[] }>({
     queryKey: ['partnerLinks', partnerId],
     queryFn: async () => { const r = await fetch(`/api/public/partners/${partnerId}/links`, { headers: AUTH }); if (!r.ok) throw new Error('links'); return r.json(); },
+  });
+
+  const { data: payouts } = useQuery<{ payouts: PayoutRow[] }>({
+    queryKey: ['partnerPayouts', partnerId],
+    queryFn: async () => { const r = await fetch(`/api/public/partners/${partnerId}/payouts`, { headers: AUTH }); if (!r.ok) throw new Error('payouts'); return r.json(); },
+  });
+
+  const requestPayout = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/public/partners/${partnerId}/payouts`, { method: 'POST', headers: { ...AUTH, 'Content-Type': 'application/json' } });
+      if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Request failed'); }
+      return r.json();
+    },
+    onSuccess: (d) => { queryClient.invalidateQueries({ queryKey: ['partnerPayouts', partnerId] }); notice(d.message || 'Payout requested'); },
+    onError: (e: any) => notice((e as Error).message, false),
   });
 
   const createLink = useMutation({
@@ -115,6 +132,39 @@ export default function PartnerThrive({ partnerId, token }: { partnerId: string;
             <p className="mt-2 font-display text-2xl font-extrabold text-brand-navy">{k.v}</p>
           </div>
         ))}
+      </section>
+
+      {/* PAYOUT SELF-SERVICE — request payment of the matured balance */}
+      <section className="flex flex-wrap items-center justify-between gap-4 rounded-[2rem] border border-brand-navy/10 bg-white p-6 shadow-[0_20px_40px_-20px_rgba(10,45,80,0.12)]">
+        <div>
+          <h3 className="font-display text-sm font-bold text-brand-navy">Payouts</h3>
+          <p className="mt-0.5 text-[10px] text-brand-navy/50">Request your earned balance — the owner approves and it is bank-transferred on the payout cycle.</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <span className="font-display text-lg font-extrabold text-emerald-700">{rs(maturedPaise)}</span>
+            <span className="text-[10px] text-slate-400">matured, ready to request</span>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {(payouts?.payouts || []).filter((p) => p.status === 'requested').length === 0 ? (
+            <button onClick={() => requestPayout.mutate()} disabled={requestPayout.isPending || maturedPaise <= 0}
+              className="rounded-full bg-emerald-600 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-emerald-500 active:scale-[0.97] disabled:opacity-40">
+              {requestPayout.isPending ? 'Requesting…' : 'Request payout'}
+            </button>
+          ) : (
+            <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-700">Payout pending approval</span>
+          )}
+        </div>
+        {(payouts?.payouts || []).length > 0 && (
+          <div className="w-full space-y-1.5 border-t border-brand-navy/10 pt-3">
+            {(payouts?.payouts || []).slice(0, 4).map((p) => (
+              <div key={p.id} className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-500">{new Date(p.requestedAt * 1000).toLocaleDateString()}</span>
+                <span className="font-mono font-bold text-brand-navy">{rs(p.amountPaise)}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${p.status === 'paid' ? 'bg-emerald-500/15 text-emerald-700' : p.status === 'requested' ? 'bg-amber-500/15 text-amber-700' : p.status === 'rejected' ? 'bg-rose-500/15 text-rose-700' : 'bg-sky-500/15 text-sky-700'}`}>{p.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* MY INVENTORY — browse catalog, create + copy share links */}

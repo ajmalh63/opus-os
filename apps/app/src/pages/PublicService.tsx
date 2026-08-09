@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
+import TurnstileWidget from '../components/TurnstileWidget';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Nav from '../components/Nav';
@@ -46,10 +47,15 @@ export default function PublicService({ params }: { params: { division: string }
   const [submitted, setSubmitted] = useState<string | null>(null);
   const reduced = prefersReducedMotion();
 
+  // Partner attribution: /go/:ref/:type/:id redirects land here with ?ref=
+  const inquiryRef = new URLSearchParams(typeof location !== 'undefined' ? location.search : '').get('ref') || '';
   const [inquiryName, setInquiryName] = useState('');
   const [inquiryPhone, setInquiryPhone] = useState('');
   const [inquiryEmail, setInquiryEmail] = useState('');
   const [consent, setConsent] = useState(false);
+  const [waConsent, setWaConsent] = useState(true);
+  const [mktConsent, setMktConsent] = useState(true);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [targetCountry, setTargetCountry] = useState('us');
   const [intakeSeason, setIntakeSeason] = useState('Fall 2027');
   const [visaCategory, setVisaCategory] = useState('student');
@@ -222,7 +228,10 @@ export default function PublicService({ params }: { params: { division: string }
     try {
       const res = await fetch('/api/public/leads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(turnstileToken ? { 'cf-turnstile-response': turnstileToken } : {}),
+        },
         body: JSON.stringify({
           name: inquiryName,
           phone: normalizedPhone,
@@ -230,8 +239,9 @@ export default function PublicService({ params }: { params: { division: string }
           highestQualification: 'undergrad',
           division,
           leadSource: 'website',
+          ...(inquiryRef ? { refCode: inquiryRef } : {}),
           dynamicContext,
-          consents: { coreProcessing: true, whatsappUpdates: true, marketingCampaigns: false },
+          consents: { coreProcessing: consent, whatsappUpdates: waConsent, marketingCampaigns: mktConsent },
         }),
       });
       const resData = await res.json();
@@ -401,6 +411,24 @@ export default function PublicService({ params }: { params: { division: string }
                 <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold" />
                 I consent to Opus Overseas processing my digital identity documents for this application under DPDP provisions.
               </label>
+
+              <label className="flex items-start gap-3 text-[10px] leading-normal text-brand-textLight">
+                <input type="checkbox" checked={waConsent} onChange={(e) => setWaConsent(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold" />
+                I consent to receive status updates and occasional tips on WhatsApp.
+              </label>
+
+              <label className="flex items-start gap-3 text-[10px] leading-normal text-brand-textLight">
+                <input type="checkbox" checked={mktConsent} onChange={(e) => setMktConsent(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold" />
+                I would like to receive occasional offers and campaign updates by email.
+              </label>
+
+              {inquiryRef && (
+                <div className="rounded-xl border border-brand-gold/40 bg-brand-gold/5 px-3 py-2 text-[10px] text-brand-navy/70">
+                  You arrived through a partner referral (code: <span className="font-mono font-bold text-brand-gold">{inquiryRef}</span>) — it will be credited automatically.
+                </div>
+              )}
+
+              <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken(null)} />
 
               {submitted && <p className="rounded-xl bg-brand-gold/10 px-4 py-3 text-xs font-semibold text-brand-gold">{submitted}</p>}
 

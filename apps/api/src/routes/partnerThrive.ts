@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { partners, partnerLinks, partnerTiers, partnerPoints, referrals, commissionLedger, universities, groupDepartures, jobPostings, attestationChains } from '../db/schema.js';
+import { partners, partnerLinks, partnerTiers, partnerPoints, referrals, commissionLedger, universities, groupDepartures, jobPostings, attestationChains, payoutRequests } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { accruePartnerPoints } from '../services/partnerLoyalty.js';
 
@@ -138,5 +138,50 @@ publicThriveRouter.get('/:id/thrive', async (c) => {
     });
   } catch (e: any) {
     return c.json({ error: 'Thrive summary failed', details: e.message }, 500);
+  }
+});
+// POST /api/public/partners/:id/payouts — request payment of matured balance
+publicThriveRouter.post('/:id/payouts', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const partnerId = c.req.param('id');
+  try {
+    const p = await authedPartner(db, partnerId, bearer(c));
+    if (!p) return c.json({ error: 'Unauthorized' }, 401);
+
+    // matured balance = matured ledger entries for this partner (clamped)
+    const myRefs = await db.select().from(referrals).where(eq(referrals.partnerId, partnerId)).all();
+    const ledger = await db.select().from(commissionLedger).all();
+    const matured = ledger
+      .filter((l: any) => myRefs.some((r) => r.id === l.referralId) && l.status === 'matured')
+      .reduce((a: number, l: any) => a + Number(l.amount || 0), 0);
+    if (matured <= 0) return c.json({ error: 'No matured balance to withdraw' }, 400);
+
+    const requested = await db.select().from(payoutRequests).where(eq(payoutRequests.partnerId, partnerId)).all();
+    if (requested.some((r: any) => r.status === 'requested')) {
+      return c.json({ error: 'A payout request is already pending' }, 409);
+    }
+
+    await db.insert(payoutRequests).values({
+      id: crypto.randomUUID(), partnerId, amountPaise: matured, status: 'requested',
+      note: 'Self-service payout request', requestedAt: Math.floor(Date.now() / 1000), resolvedAt: null, updatedBy: null,
+    });
+    return c.json({ success: true, amountPaise: matured, message: `Payout of the matured balance requested — owner will approve.` });
+  } catch (e: any) {
+    return c.json({ error: 'Payout request failed', details: e.message }, 500);
+  }
+});
+
+// GET /api/public/partners/:id/payouts — request history
+publicThriveRouter.get('/:id/payouts', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const p = await authedPartner(db, c.req.param('id'), bearer(c));
+    if (!p) return c.json({ error: 'Unauthorized' }, 401);
+    const rows = await db.select().from(payoutRequests).where(eq(payoutRequests.partnerId, c.req.param('id'))).all();
+    return c.json({ payouts: [...rows].sort((a: any, b: any) => b.requestedAt - a.requestedAt) });
+  } catch (e: any) {
+    return c.json({ error: 'Payout history failed', details: e.message }, 500);
   }
 });

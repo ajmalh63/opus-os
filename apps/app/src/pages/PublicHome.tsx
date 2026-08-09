@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -48,6 +48,9 @@ const STEPS = [
 
 export default function PublicHome() {
   const [, setLocation] = useLocation();
+  // Partner attribution forwarder: ?ref= must survive to the lead form.
+  const homeRef = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('ref') || '' : '';
+  const goLeadForm = () => setLocation(`/lead-form${homeRef ? `?ref=${encodeURIComponent(homeRef)}` : ''}`);
   const marqueeRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLElement>(null);
   const gridRef = useRef<HTMLElement>(null);
@@ -169,7 +172,7 @@ export default function PublicHome() {
               </div>
               <p className="text-sm leading-relaxed text-white/60">Book a free consultation — we'll map your goals to the right division in one call.</p>
             </div>
-            <button onClick={() => setLocation('/lead-form')} className="mt-6 self-start rounded-full bg-brand-gold px-5 py-3 text-xs font-bold text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white">
+            <button onClick={() => goLeadForm()} className="mt-6 self-start rounded-full bg-brand-gold px-5 py-3 text-xs font-bold text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white">
               Book Free Consultation
             </button>
           </div>
@@ -256,7 +259,7 @@ export default function PublicHome() {
           <h2 className="font-display text-3xl font-bold text-white md:text-4xl">Ready to Start?</h2>
           <p className="mt-4 text-sm text-white/60">Your journey to a global future begins with one conversation.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <button onClick={() => setLocation('/lead-form')} className="rounded-full bg-brand-gold px-10 py-4 text-sm font-bold text-brand-navy shadow-[0_8px_30px_rgba(215,160,25,0.4)] transition-all hover:bg-brand-gold-hover hover:text-white">
+            <button onClick={() => goLeadForm()} className="rounded-full bg-brand-gold px-10 py-4 text-sm font-bold text-brand-navy shadow-[0_8px_30px_rgba(215,160,25,0.4)] transition-all hover:bg-brand-gold-hover hover:text-white">
               Book Free Consultation
             </button>
             {BOOKING_URL && (

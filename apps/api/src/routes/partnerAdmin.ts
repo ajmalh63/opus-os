@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { partners, commissionPlans, partnerTiers, partnerPoints, partnerLinks, referrals, commissionLedger } from '../db/schema.js';
+import { partners, commissionPlans, partnerTiers, partnerPoints, partnerLinks, referrals, commissionLedger, payoutRequests } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 
@@ -230,5 +230,51 @@ partnerAdminRouter.get('/:id/activity', async (c) => {
     return c.json({ points, links });
   } catch (e: any) {
     return c.json({ error: 'Partner activity lookup failed', details: e.message }, 500);
+  }
+});
+// ---------- PAYOUT APPROVAL (owner) ----------
+// GET /api/admin/partners/payouts — all payout requests
+partnerAdminRouter.get('/payouts', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const rows = await db.select().from(payoutRequests).all();
+    const partnerRows = await db.select().from(partners).all();
+    const merged = [...rows].sort((a: any, b: any) => b.requestedAt - a.requestedAt).map((r: any) => ({
+      ...r, partnerName: partnerRows.find((p) => p.id === r.partnerId)?.name || 'Unknown',
+    }));
+    return c.json({ payouts: merged });
+  } catch (e: any) {
+    return c.json({ error: 'Payout list failed', details: e.message }, 500);
+  }
+});
+
+// PATCH /api/admin/partners/payouts/:id — approve (marks ledger paid) or reject
+partnerAdminRouter.patch('/payouts/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const body = await c.req.json().catch(() => ({})) as { status?: string };
+  if (!['approved', 'paid', 'rejected'].includes(body.status || '')) return c.json({ error: 'status must be approved|paid|rejected' }, 400);
+  const now = Math.floor(Date.now() / 1000);
+  const id = c.req.param('id');
+  try {
+    const req_ = await db.select().from(payoutRequests).where(eq(payoutRequests.id, id)).get();
+    if (!req_) return c.json({ error: 'Payout not found' }, 404);
+    await db.update(payoutRequests).set({ status: body.status as any, resolvedAt: now, updatedBy: (c.get('user') as any)?.id || null }).where(eq(payoutRequests.id, id));
+
+    // When paid, flip matching matured ledger entries to paid.
+    if (body.status === 'paid' && req_.amountPaise) {
+      const ledger = await db.select().from(commissionLedger).all();
+      const myRefs = await db.select().from(referrals).where(eq(referrals.partnerId, req_.partnerId)).all();
+      for (const l of ledger) {
+        if (myRefs.some((r: any) => r.id === l.referralId) && l.status === 'matured') {
+          await db.update(commissionLedger).set({ status: 'paid' }).where(eq(commissionLedger.id, l.id));
+        }
+      }
+    }
+    await auditEvent(c, { action: 'PARTNER_PAYOUT_' + String(body.status).toUpperCase(), entityName: 'payout_requests', entityId: id, afterState: { partnerId: req_.partnerId, amount: req_.amountPaise, status: body.status } });
+    return c.json({ success: true, message: `Payout marked ${body.status}.` });
+  } catch (e: any) {
+    return c.json({ error: 'Payout update failed', details: e.message }, 500);
   }
 });

@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { useSession, type Me } from '../lib/session';
 import WorkspaceLogo from './WorkspaceLogo';
 import CommandPalette from './CommandPalette';
@@ -87,6 +88,18 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // My Work badge: open tasks assigned to this staff member (live)
+  const { data: myTasks } = useQuery<{ openCount: number }>({
+    queryKey: ['myOpenTasks'],
+    queryFn: async () => {
+      const res = await fetch('/api/tasks/assigned-to-me');
+      if (!res.ok) throw new Error('tasks');
+      return res.json();
+    },
+    refetchInterval: 60_000,
+  });
+  const openTasks = myTasks?.openCount || 0;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -200,6 +213,13 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
             <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">2FA on</span>
           )}
 <div className="ml-auto flex items-center gap-3">
+            {openTasks > 0 && (
+              <button onClick={() => setLocation('/kanban')}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-300 transition-colors hover:bg-amber-500/20">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+                My Work · {openTasks}
+              </button>
+            )}
             <button
               onClick={() => setPaletteOpen(true)}
               className="hidden cursor-pointer items-center gap-2 rounded-md border border-white/10 px-2.5 py-1 text-[11px] text-slate-400 transition-colors hover:border-brand-gold/40 hover:text-white sm:flex"

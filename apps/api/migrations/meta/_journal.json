@@ -155,6 +155,13 @@
       "when": 1786283900871,
       "tag": "0021_oval_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1786288601435,
+      "tag": "0022_mighty_maria_hill",
+      "breakpoints": true
     }
   ]
 }
