@@ -99,7 +99,7 @@ app.use('/api/agreements', rbacMiddleware(['super_admin', 'manager', 'counselor'
 app.use('/api/agreements/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 
 app.use('/api/payments', rbacMiddleware(['super_admin', 'manager'], true));
-app.use('/api/payments/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/payments/*', rbacMiddleware(['super_admin', 'manager'], true, ['payments:enter']));
 
 app.use('/api/umrah', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
 app.use('/api/umrah/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
@@ -114,13 +114,13 @@ app.use('/api/tasks', rbacMiddleware(['super_admin', 'manager', 'counselor', 're
 app.use('/api/tasks/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
 
 app.use('/api/marketing', rbacMiddleware(['super_admin', 'manager'], true));
-app.use('/api/marketing/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/marketing/*', rbacMiddleware(['super_admin', 'manager'], true, ['marketing:run']));
 
 app.use('/api/incentives', rbacMiddleware(['super_admin', 'manager'], true));
-app.use('/api/incentives/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/incentives/*', rbacMiddleware(['super_admin', 'manager'], true, ['incentives:config']));
 
 app.use('/api/compliance', rbacMiddleware(['super_admin', 'manager'], true));
-app.use('/api/compliance/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/compliance/*', rbacMiddleware(['super_admin', 'manager'], true, ['compliance:view']));
 
 app.use('/api/infrastructure', rbacMiddleware(['super_admin'], true));
 app.use('/api/infrastructure/*', rbacMiddleware(['super_admin'], true));
