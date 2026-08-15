@@ -195,11 +195,31 @@ export default function DashboardHome() {
           <p className="py-6 text-center text-xs text-brand-navy/40 italic">No client activity yet — sales and requests will appear here instantly.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {alerts.slice(0, 9).map((a) => (
-              <div key={a.id} className={`rounded-xl border p-3.5 transition-all ${a.status === 'new' ? 'border-brand-gold/40 bg-brand-gold/[0.06] animate-in fade-in slide-in-from-top-2 duration-300' : 'border-brand-navy/10 bg-brand-navy/[0.03]'}`}>
+            {alerts.slice(0, 9).map((a) => {
+              const sev = a.severity || 'info';
+              const sevStyle: Record<string, string> = {
+                urgent: 'border-rose-300 bg-rose-50/80',
+                warning: 'border-amber-300 bg-amber-50/70',
+                info: 'border-brand-navy/10 bg-brand-navy/[0.03]',
+              };
+              const sevDot: Record<string, string> = {
+                urgent: 'bg-rose-500',
+                warning: 'bg-amber-400',
+                info: 'bg-brand-gold',
+              };
+              const sevBadge: Record<string, string> = {
+                urgent: 'bg-rose-500/15 text-rose-600',
+                warning: 'bg-amber-500/15 text-amber-700',
+                info: 'bg-brand-navy/[0.06] text-brand-navy/50',
+              };
+              return (
+              <div key={a.id} className={`rounded-xl border p-3.5 transition-all ${a.status === 'new' ? `${sevStyle[sev]} animate-in fade-in slide-in-from-top-2 duration-300` : sevStyle[sev]}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] font-bold text-brand-navy truncate">{a.title}</span>
-                  {a.status === 'new' && <span className="shrink-0 h-2 w-2 rounded-full bg-brand-gold animate-pulse" />}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {sev !== 'info' && <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${sevBadge[sev]}`}>{sev}</span>}
+                    {a.status === 'new' && <span className={`shrink-0 h-2 w-2 rounded-full animate-pulse ${sevDot[sev]}`} />}
+                  </div>
                 </div>
                 {a.body && <p className="text-[10px] text-brand-navy/50 mt-1 truncate">{a.body}</p>}
                 <div className="flex items-center justify-between mt-2">
@@ -207,7 +227,8 @@ export default function DashboardHome() {
                   <span className="text-[9px] text-brand-navy/40">{new Date(a.createdAt * 1000).toLocaleTimeString()}</span>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

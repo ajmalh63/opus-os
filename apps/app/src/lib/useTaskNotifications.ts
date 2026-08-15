@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// Sound + toast notification for new open tasks (quote requests etc.).
-// Polls /api/tasks?status=open, plays a Web Audio beep when a NEW task appears
+// Sound + toast notification for new staff alerts (Live Activity feed).
+// Polls /api/staff/alerts, plays a Web Audio beep when a NEW alert appears
 // (urgent = two-tone higher pitch), and shows a toast banner on the dashboard.
 // No audio asset needed — synthesized with the Web Audio API.
 
-const SEEN_KEY = 'opusos_seen_task_ids';
+const SEEN_KEY = 'opusos_seen_alert_ids';
 
 function playBeep(urgent: boolean) {
   try {
@@ -32,6 +32,7 @@ function playBeep(urgent: boolean) {
 
 export function useTaskNotifications(intervalMs = 20000) {
   const [toast, setToast] = useState<{ title: string; urgent: boolean } | null>(null);
+  const [newCount, setNewCount] = useState(0);
   const seenRef = useRef<Set<string>>(new Set());
 
   // Load previously seen ids once
@@ -44,21 +45,22 @@ export function useTaskNotifications(intervalMs = 20000) {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch('/api/tasks?status=open');
+      const r = await fetch('/api/staff/alerts');
       if (!r.ok) return;
       const j = await r.json();
-      const tasks: any[] = j.tasks || [];
-      const fresh = tasks.filter(t => !seenRef.current.has(t.id));
+      const alerts: any[] = j.alerts || [];
+      setNewCount(j.newCount || 0);
+      const fresh = alerts.filter(a => !seenRef.current.has(a.id));
       if (fresh.length > 0) {
         const newest = fresh[0];
-        const urgent = newest.priority === 'urgent';
+        const urgent = newest.severity === 'urgent';
         playBeep(urgent);
         setToast({ title: newest.title, urgent });
         // Auto-dismiss after 6s
         setTimeout(() => setToast(null), 6000);
       }
       // Remember all current ids (so re-polls don't re-alert)
-      const ids = new Set(tasks.map(t => t.id));
+      const ids = new Set(alerts.map(a => a.id));
       seenRef.current = ids;
       try { localStorage.setItem(SEEN_KEY, JSON.stringify([...ids])); } catch { /* ignore */ }
     } catch { /* poll silently */ }
@@ -72,5 +74,5 @@ export function useTaskNotifications(intervalMs = 20000) {
 
   const dismissToast = useCallback(() => setToast(null), []);
 
-  return { toast, dismissToast };
+  return { toast, dismissToast, newCount };
 }

@@ -638,6 +638,7 @@ export const staffAlerts = sqliteTable('staff_alerts', {
   payloadJson: text('payload_json'),
   clientId: text('client_id'),
   status: text('status', { enum: ['new', 'seen'] }).notNull().default('new'),
+  severity: text('severity', { enum: ['info', 'warning', 'urgent'] }).notNull().default('info'),
   createdAt: integer('created_at').notNull()
 });
 

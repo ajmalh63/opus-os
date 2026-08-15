@@ -384,7 +384,7 @@ describe('Attestation — supplier-check intake (deadline/urgency/scan)', () => 
   });
 });
 
-describe('Attestation — dashboard task + urgency color', () => {
+describe('Attestation — Live Activity severity (dashboard)', () => {
   let mockD1: MockD1Database;
   const now = Math.floor(Date.now() / 1000);
 
@@ -393,7 +393,7 @@ describe('Attestation — dashboard task + urgency color', () => {
     mockD1.tables.clients.push({ id: 'OP-2026-9901', name: 'Task Client', phone: '+91 99999 55551', email: 'tc@test.com', created_at: now, updated_at: now });
   });
 
-  it('urgent quote request creates an URGENT open task (dashboard color)', async () => {
+  it('urgent quote request fires an URGENT-severity alert (Live Activity red)', async () => {
     const res = await app.request('/api/public/portal/attestation/applications?token=OP-2026-9901', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -405,15 +405,15 @@ describe('Attestation — dashboard task + urgency color', () => {
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     expect(res.status).toBe(200);
 
-    const task = mockD1.tables.tasks.find((t: any) => t.title.includes('Quote request'));
-    expect(task).toBeTruthy();
-    expect(task.priority).toBe('urgent');
-    expect(task.status).toBe('open');
-    expect(task.title).toContain('⚡');
-    expect(task.due_date).toBe(now + 10 * 86400);
+    const alert = mockD1.tables.staff_alerts.find((a: any) => a.type === 'attestation_quote');
+    expect(alert).toBeTruthy();
+    expect(alert.severity).toBe('urgent');
+    expect(alert.body).toContain('URGENT');
+    // No dashboard task created — Live Activity is the notification channel
+    expect(mockD1.tables.tasks.filter((t: any) => t.title.includes('Quote request')).length).toBe(0);
   });
 
-  it('normal quote request creates a HIGH priority open task', async () => {
+  it('normal quote request fires a WARNING-severity alert (Live Activity amber)', async () => {
     const res = await app.request('/api/public/portal/attestation/applications?token=OP-2026-9901', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -424,10 +424,9 @@ describe('Attestation — dashboard task + urgency color', () => {
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     expect(res.status).toBe(200);
 
-    const tasks = mockD1.tables.tasks.filter((t: any) => t.title.includes('Quote request'));
-    const normal = tasks.find((t: any) => t.title.includes('Birth Certificate'));
+    const alerts = mockD1.tables.staff_alerts.filter((a: any) => a.type === 'attestation_quote');
+    const normal = alerts.find((a: any) => a.body.includes('Birth Certificate'));
     expect(normal).toBeTruthy();
-    expect(normal.priority).toBe('high');
-    expect(normal.title).toContain('📨');
+    expect(normal.severity).toBe('warning');
   });
 });

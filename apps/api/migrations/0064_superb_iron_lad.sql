@@ -1,0 +1,1 @@
+ALTER TABLE `staff_alerts` ADD `severity` text DEFAULT 'info' NOT NULL;

@@ -703,14 +703,7 @@ portalAttestationRouter.put('/applications/:id/document/upload', async (c) => {
       notes: scan.status === 'flagged' ? `⚠️ ${scan.note}` : row.notes,
       updatedAt: now
     }).where(eq(attestationApplications.id, row.id));
-    await createStaffAlert(c.env as any, { division: 'attestation', type: 'doc_scan_uploaded', title: 'Document scan uploaded with quote request', body: `${safeName} — ready to forward to the processing partner.`, clientId: token, payload: { applicationId: row.id } });
-
-    // Update the open quote task so the dashboard shows the scan is ready
-    const openTasks = await db.select().from(tasks).where(and(eq(tasks.clientId, token), eq(tasks.status, 'open'))).all();
-    const quoteTask = openTasks.find((t: any) => t.title.includes('Quote request'));
-    if (quoteTask) {
-      await db.update(tasks).set({ description: `${quoteTask.description || ''} ✓ Scan uploaded — ready to forward.`, updatedAt: now }).where(eq(tasks.id, quoteTask.id));
-    }
+    await createStaffAlert(c.env as any, { division: 'attestation', type: 'doc_scan_uploaded', title: 'Document scan uploaded with quote request', body: `${safeName} — ready to forward to the processing partner.`, clientId: token, payload: { applicationId: row.id }, severity: 'info' });
 
     return c.json({ success: true, documentStatus: scan.status === 'flagged' ? 'rejected' : 'received', message: scan.status === 'flagged' ? 'Document flagged — our team will review.' : 'Document scan received.' });
   } catch (e: any) {
@@ -782,15 +775,7 @@ portalAttestationRouter.post('/applications', zValidator('json', createAttestati
       updatedAt: now
     });
 
-    await createStaffAlert(c.env as any, { division: 'attestation', type: 'attestation_quote', title: 'New attestation quote requested', body: `${body.document.documentName || body.category} → ${body.destinationCountry}${body.urgency === 'urgent' ? ' (URGENT)' : ''}`, clientId: token, payload: { applicationId: id, urgency: body.urgency ?? 'normal' } });
-
-    // Open task on the dashboard (priority = urgency color)
-    await createTask(db, token,
-      `${body.urgency === 'urgent' ? '⚡ ' : '📨 '}Quote request: ${body.document.documentName || body.category} → ${body.destinationCountry}`,
-      `${body.document.holderName} · ${body.document.issuingState} · ${body.category}${body.urgency === 'urgent' ? ' · URGENT' : ''}${body.deadline ? ` · needed by ${new Date(body.deadline * 1000).toLocaleDateString('en-IN')}` : ''} — check with the processing partner, set exact fees, confirm quote.`,
-      body.urgency === 'urgent' ? 'urgent' : 'high',
-      body.deadline ?? Math.floor(Date.now() / 1000) + 3 * 86400
-    );
+    await createStaffAlert(c.env as any, { division: 'attestation', type: 'attestation_quote', title: 'New attestation quote requested', body: `${body.document.documentName || body.category} → ${body.destinationCountry}${body.urgency === 'urgent' ? ' (URGENT)' : ''}`, clientId: token, payload: { applicationId: id, urgency: body.urgency ?? 'normal' }, severity: body.urgency === 'urgent' ? 'urgent' : 'warning' });
 
     return c.json({
       success: true, id,
