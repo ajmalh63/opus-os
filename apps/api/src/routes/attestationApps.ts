@@ -92,7 +92,7 @@ attestationAppsRouter.get('/rate-cards', async (c) => {
   const db = getDb(c.env.DB);
   try {
     const rows = await db.select().from(attestationRateCards).all();
-    return c.json({ success: true, rateCards: rows.map(r => ({ ...r, steps: JSON.parse(r.stepsJson || '[]') })) });
+    return c.json({ success: true, rateCards: rows.map(r => ({ ...r, steps: JSON.parse(r.stepsJson || '[]'), documentTypes: JSON.parse(r.documentTypesJson || '[]') })) });
   } catch (e: any) {
     return c.json({ error: 'Rate cards fetch failed', details: e?.message }, 500);
   }
@@ -111,9 +111,16 @@ attestationAppsRouter.post('/rate-cards', zValidator('json', createAttestationRa
       country: body.country,
       category: body.category,
       route: body.route,
+      title: body.title ?? null,
+      description: body.description ?? null,
+      documentTypesJson: JSON.stringify(body.documentTypes || []),
       pricePaise: body.pricePaise,
+      govtFeePaise: body.govtFeePaise ?? 0,
+      courierFeePaise: body.courierFeePaise ?? 0,
+      translationFeePaise: body.translationFeePaise ?? 0,
       timelineDays: body.timelineDays ?? 10,
       stepsJson: JSON.stringify(body.steps || []),
+      featured: body.featured ?? false,
       active: body.active ?? true,
       createdAt: now,
       updatedAt: now
@@ -135,14 +142,40 @@ attestationAppsRouter.patch('/rate-cards/:id', zValidator('json', updateAttestat
     const row = await db.select().from(attestationRateCards).where(eq(attestationRateCards.id, c.req.param('id'))).get();
     if (!row) return c.json({ error: 'Rate card not found' }, 404);
     const updates: any = { updatedAt: now };
+    if (body.country !== undefined) updates.country = body.country;
+    if (body.category !== undefined) updates.category = body.category;
+    if (body.route !== undefined) updates.route = body.route;
+    if (body.title !== undefined) updates.title = body.title;
+    if (body.description !== undefined) updates.description = body.description;
+    if (body.documentTypes !== undefined) updates.documentTypesJson = JSON.stringify(body.documentTypes);
     if (body.pricePaise !== undefined) updates.pricePaise = body.pricePaise;
+    if (body.govtFeePaise !== undefined) updates.govtFeePaise = body.govtFeePaise;
+    if (body.courierFeePaise !== undefined) updates.courierFeePaise = body.courierFeePaise;
+    if (body.translationFeePaise !== undefined) updates.translationFeePaise = body.translationFeePaise;
     if (body.timelineDays !== undefined) updates.timelineDays = body.timelineDays;
     if (body.steps !== undefined) updates.stepsJson = JSON.stringify(body.steps);
+    if (body.featured !== undefined) updates.featured = body.featured;
     if (body.active !== undefined) updates.active = body.active;
     await db.update(attestationRateCards).set(updates).where(eq(attestationRateCards.id, row.id));
+    await auditEvent(c as any, { action: 'RATE_CARD_UPDATED', entityName: 'attestation_rate_cards', entityId: row.id, afterState: { fields: Object.keys(updates) } }).catch(() => {});
     return c.json({ success: true, message: 'Rate card updated.' });
   } catch (e: any) {
     return c.json({ error: 'Rate card update failed', details: e?.message }, 500);
+  }
+});
+
+// DELETE /api/attestation/rate-cards/:id — remove a product from inventory
+attestationAppsRouter.delete('/rate-cards/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const row = await db.select().from(attestationRateCards).where(eq(attestationRateCards.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Rate card not found' }, 404);
+    await db.delete(attestationRateCards).where(eq(attestationRateCards.id, row.id));
+    await auditEvent(c as any, { action: 'RATE_CARD_DELETED', entityName: 'attestation_rate_cards', entityId: row.id, afterState: { country: row.country, category: row.category } }).catch(() => {});
+    return c.json({ success: true, message: 'Rate card deleted.' });
+  } catch (e: any) {
+    return c.json({ error: 'Rate card deletion failed', details: e?.message }, 500);
   }
 });
 
@@ -331,7 +364,7 @@ portalAttestationRouter.get('/rate-cards', async (c) => {
     return c.json({
       success: true,
       countries,
-      rateCards: rows.map(r => ({ country: r.country, category: r.category, route: r.route, pricePaise: r.pricePaise, timelineDays: r.timelineDays, steps: JSON.parse(r.stepsJson || '[]') })),
+      rateCards: rows.map(r => ({ country: r.country, category: r.category, route: r.route, title: r.title, description: r.description, documentTypes: JSON.parse(r.documentTypesJson || '[]'), pricePaise: r.pricePaise, govtFeePaise: r.govtFeePaise, courierFeePaise: r.courierFeePaise, translationFeePaise: r.translationFeePaise, timelineDays: r.timelineDays, steps: JSON.parse(r.stepsJson || '[]'), featured: !!r.featured })),
       disclaimer: 'Prices shown are indicative ranges and are not guaranteed — final cost may vary based on government fees, document type and processing. Subject to change without notice.'
     });
   } catch (e: any) {

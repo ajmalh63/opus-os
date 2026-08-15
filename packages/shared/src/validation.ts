@@ -400,16 +400,33 @@ export const createAttestationRateCardSchema = z.object({
   country: z.string().min(2),
   category: z.enum(['educational', 'personal', 'commercial']),
   route: z.enum(['apostille', 'embassy']),
+  title: z.string().min(2).optional(),
+  description: z.string().max(1000).optional(),
+  documentTypes: z.array(z.string()).optional(),
   pricePaise: z.number().int().min(0),
+  govtFeePaise: z.number().int().min(0).optional(),
+  courierFeePaise: z.number().int().min(0).optional(),
+  translationFeePaise: z.number().int().min(0).optional(),
   timelineDays: z.number().int().min(1).optional(),
   steps: z.array(z.string()).optional(),
+  featured: z.boolean().optional(),
   active: z.boolean().optional()
 });
 
 export const updateAttestationRateCardSchema = z.object({
+  country: z.string().min(2).optional(),
+  category: z.enum(['educational', 'personal', 'commercial']).optional(),
+  route: z.enum(['apostille', 'embassy']).optional(),
+  title: z.string().min(2).optional(),
+  description: z.string().max(1000).optional(),
+  documentTypes: z.array(z.string()).optional(),
   pricePaise: z.number().int().min(0).optional(),
+  govtFeePaise: z.number().int().min(0).optional(),
+  courierFeePaise: z.number().int().min(0).optional(),
+  translationFeePaise: z.number().int().min(0).optional(),
   timelineDays: z.number().int().min(1).optional(),
   steps: z.array(z.string()).optional(),
+  featured: z.boolean().optional(),
   active: z.boolean().optional()
 });
 

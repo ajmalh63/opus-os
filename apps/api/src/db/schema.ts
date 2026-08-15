@@ -1209,9 +1209,17 @@ export const attestationRateCards = sqliteTable('attestation_rate_cards', {
   country: text('country').notNull(),
   category: text('category', { enum: ['educational', 'personal', 'commercial'] }).notNull(),
   route: text('route', { enum: ['apostille', 'embassy'] }).notNull(),
+  // Product inventory (owner-controlled, shown to clients in their portal)
+  title: text('title'), // service name, e.g. "Degree Attestation — UAE"
+  description: text('description'), // what's included
+  documentTypesJson: text('document_types_json').notNull().default('[]'), // covered docs
   pricePaise: integer('price_paise').notNull(), // indicative quote (service + govt, excl. courier/translation)
+  govtFeePaise: integer('govt_fee_paise').notNull().default(0),
+  courierFeePaise: integer('courier_fee_paise').notNull().default(0),
+  translationFeePaise: integer('translation_fee_paise').notNull().default(0),
   timelineDays: integer('timeline_days').notNull().default(10),
   stepsJson: text('steps_json').notNull().default('[]'), // chain step labels
+  featured: integer('featured', { mode: 'boolean' }).notNull().default(false),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
