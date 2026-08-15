@@ -383,3 +383,51 @@ describe('Attestation — supplier-check intake (deadline/urgency/scan)', () => 
     expect(presigned2.status).toBe(403);
   });
 });
+
+describe('Attestation — dashboard task + urgency color', () => {
+  let mockD1: MockD1Database;
+  const now = Math.floor(Date.now() / 1000);
+
+  beforeAll(() => {
+    mockD1 = new MockD1Database();
+    mockD1.tables.clients.push({ id: 'OP-2026-9901', name: 'Task Client', phone: '+91 99999 55551', email: 'tc@test.com', created_at: now, updated_at: now });
+  });
+
+  it('urgent quote request creates an URGENT open task (dashboard color)', async () => {
+    const res = await app.request('/api/public/portal/attestation/applications?token=OP-2026-9901', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientId: 'OP-2026-9901',
+        document: { holderName: 'Ravi Kumar', documentName: 'Degree Certificate', issuingState: 'Telangana' },
+        category: 'educational', route: 'embassy', destinationCountry: 'UAE',
+        urgency: 'urgent', deadline: now + 10 * 86400
+      })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+
+    const task = mockD1.tables.tasks.find((t: any) => t.title.includes('Quote request'));
+    expect(task).toBeTruthy();
+    expect(task.priority).toBe('urgent');
+    expect(task.status).toBe('open');
+    expect(task.title).toContain('⚡');
+    expect(task.due_date).toBe(now + 10 * 86400);
+  });
+
+  it('normal quote request creates a HIGH priority open task', async () => {
+    const res = await app.request('/api/public/portal/attestation/applications?token=OP-2026-9901', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientId: 'OP-2026-9901',
+        document: { holderName: 'Ravi Kumar', documentName: 'Birth Certificate', issuingState: 'Kerala' },
+        category: 'personal', route: 'embassy', destinationCountry: 'Qatar'
+      })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+
+    const tasks = mockD1.tables.tasks.filter((t: any) => t.title.includes('Quote request'));
+    const normal = tasks.find((t: any) => t.title.includes('Birth Certificate'));
+    expect(normal).toBeTruthy();
+    expect(normal.priority).toBe('high');
+    expect(normal.title).toContain('📨');
+  });
+});

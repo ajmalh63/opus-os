@@ -5,6 +5,7 @@ import { useLocation } from 'wouter';
 import { useSession } from '../lib/session';
 import { useRevealRoot, useCountUp } from '../lib/reveal';
 import { useStaffAlerts } from '../lib/useStaffAlerts';
+import { useTaskNotifications } from '../lib/useTaskNotifications';
 import { Panel, PanelHead, KpiTile, WorkButton, EmptyState } from '../components/WorkChrome';
 
 const AUTH = {
@@ -24,7 +25,7 @@ interface Funnel {
 }
 
 interface InboxSummary { total: number; unread: number; }
-interface Task { id: string; title: string; status: 'open' | 'in_progress' | 'done'; }
+interface Task { id: string; title: string; status: 'open' | 'in_progress' | 'done'; priority?: string; }
 
 const LABELS: Record<string, string> = { lead: 'Leads', qualified: 'Qualified', documents: 'Documents', processing: 'Processing', complete: 'Complete' };
 
@@ -116,6 +117,8 @@ export default function DashboardHome() {
     queryKey: ['dashTasksFeed'],
     queryFn: async () => { const r = await fetch('/api/tasks'); if (!r.ok) throw new Error('tasks'); return r.json(); }
   });
+
+  const { toast: taskToast, dismissToast: dismissTaskToast } = useTaskNotifications(20000);
 
   const myTasks = myTasksData?.tasks || [];
   const openTasksList = myTasks.filter(t => t.status === 'open');
@@ -248,6 +251,21 @@ export default function DashboardHome() {
         </Panel>
       )}
 
+      {/* New-task notification toast */}
+      {taskToast && (
+        <div className={`fixed top-4 right-4 z-[100] max-w-sm rounded-xl border p-4 shadow-lg animate-in slide-in-from-top-2 duration-300 ${taskToast.urgent ? 'border-rose-300 bg-rose-50' : 'border-brand-gold/40 bg-white'}`}>
+          <div className="flex items-start gap-3">
+            <span className={`text-lg ${taskToast.urgent ? 'text-rose-500' : 'text-brand-gold'}`}>{taskToast.urgent ? '🔔⚡' : '🔔'}</span>
+            <div className="flex-1">
+              <div className={`text-[10px] font-bold uppercase tracking-widest ${taskToast.urgent ? 'text-rose-600' : 'text-brand-gold'}`}>{taskToast.urgent ? 'URGENT — New task' : 'New task'}</div>
+              <div className="text-xs font-semibold text-brand-navy mt-0.5">{taskToast.title}</div>
+              <div className="text-[9px] text-brand-navy/40 mt-0.5">See it in My Assigned Open Tasks below.</div>
+            </div>
+            <button onClick={dismissTaskToast} className="text-brand-navy/40 hover:text-brand-navy cursor-pointer">✕</button>
+          </div>
+        </div>
+      )}
+
       {/* Live widgets Grid */}
       <section ref={gridRef} className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {widgets.filter(w => w.visible).map(w => {
@@ -258,8 +276,22 @@ export default function DashboardHome() {
                 <Panel key={w.key} className={`${spanClass} reveal-widget p-6 hover:border-brand-gold/40`}>
                   <PanelHead title={`📋 My Assigned Open Tasks (${openTasksList.length})`} caption="Check off to complete" />
                   <div className="mt-2 max-h-56 space-y-1.5 overflow-y-auto pr-1">
-                    {openTasksList.map(t => (
-                      <div key={t.id} className="flex items-center gap-2.5 rounded-lg bg-brand-navy/[0.04] p-2.5 text-xs transition-colors hover:bg-brand-navy/[0.05]">
+                    {openTasksList.map(t => {
+                      const prio = t.priority || 'medium';
+                      const prioStyle: Record<string, string> = {
+                        urgent: 'border-l-4 border-rose-500 bg-rose-50/80',
+                        high: 'border-l-4 border-amber-400 bg-amber-50/60',
+                        medium: 'border-l-4 border-blue-400 bg-blue-50/40',
+                        low: 'border-l-4 border-brand-navy/20 bg-brand-navy/[0.04]',
+                      };
+                      const prioBadge: Record<string, string> = {
+                        urgent: 'bg-rose-500/15 text-rose-600',
+                        high: 'bg-amber-500/15 text-amber-700',
+                        medium: 'bg-blue-500/15 text-blue-700',
+                        low: 'bg-brand-navy/[0.06] text-brand-navy/50',
+                      };
+                      return (
+                      <div key={t.id} className={`flex items-center gap-2.5 rounded-lg p-2.5 text-xs transition-colors hover:brightness-95 ${prioStyle[prio] || prioStyle.medium}`}>
                         <input
                           type="checkbox"
                           className="h-4 w-4 cursor-pointer rounded accent-brand-gold"
@@ -272,9 +304,11 @@ export default function DashboardHome() {
                             queryClient.invalidateQueries({ queryKey: ['dashTasksFeed'] });
                           }}
                         />
-                        <span className="font-medium text-brand-navy/80">{t.title}</span>
+                        <span className="font-medium text-brand-navy/80 flex-1">{t.title}</span>
+                        <span className={`shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${prioBadge[prio] || prioBadge.medium}`}>{prio}</span>
                       </div>
-                    ))}
+                      );
+                    })}
                     {openTasksList.length === 0 && (
                       <p className="py-6 text-center text-brand-navy/30 italic">No pending tasks for today.</p>
                     )}
