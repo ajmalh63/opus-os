@@ -31,12 +31,21 @@ interface Shipment {
 interface AttestationApplication {
   id: string;
   clientId: string;
-  documentType: string;
+  document?: { holderName: string; documentName: string; issuingState: string; issuingYear?: number; documentNumber?: string; purpose?: string };
+  category?: string;
+  route?: string;
   destinationCountry: string;
-  currentStep: string;
-  status: string;
-  notes: string | null;
+  chain?: { key: string; label: string; status: string; date: number | null; note: string | null }[];
+  fees?: { govtFeePaise: number; serviceFeePaise: number; courierFeePaise: number; translationFeePaise: number; totalQuotePaise: number };
+  translationNeeded?: boolean;
+  pickup?: { status: string; address: string | null; courierInbound: string | null; courierOutbound: string | null; courierReturn: string | null };
+  stage?: string;
+  documentType?: string;
+  status?: string;
+  currentStep?: string;
+  notes?: string | null;
   createdAt: number;
+  updatedAt: number;
 }
 
 const DOC_TYPES = [
@@ -47,7 +56,7 @@ const DOC_TYPES = [
   { value: 'pcc', label: 'Police Clearance Certificate' },
 ];
 
-const STEP_LABEL: Record<string, string> = { hrd: 'State HRD Authentication', mea: 'MEA Legalization', embassy: 'Embassy Submission', apostille: 'Apostille' };
+
 
 const FALLBACK_RATES = [
   { name: 'Degree Certificate Attestation', desc: 'Legalization by State HRD, MEA, and Saudi / UAE Embassy.', feePaise: 450000 },
@@ -119,6 +128,64 @@ export default function AttestationPortal() {
     },
     enabled: !!selectedClient?.id && activeSubTab === 'applications'
   });
+
+  const updateStageMutation = useMutation({
+    mutationFn: async ({ id, stage }: { id: string; stage: string }) => {
+      const r = await fetch(`/api/attestation/applications/${id}/stage`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Stage update failed');
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attestationApps', selectedClient?.id] }),
+    onError: (e: any) => alert(e.message)
+  });
+
+  const updateChainMutation = useMutation({
+    mutationFn: async ({ id, stepKey, status }: { id: string; stepKey: string; status: string }) => {
+      const r = await fetch(`/api/attestation/applications/${id}/chain`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stepKey, status })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Chain update failed');
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attestationApps', selectedClient?.id] }),
+    onError: (e: any) => alert(e.message)
+  });
+
+  const updatePickupMutation = useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
+      const r = await fetch(`/api/attestation/applications/${id}/pickup`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Pickup update failed');
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attestationApps', selectedClient?.id] }),
+    onError: (e: any) => alert(e.message)
+  });
+
+  const STAGE_TRANSITIONS: Record<string, string[]> = {
+    quote: ['docs_awaiting', 'rejected'],
+    docs_awaiting: ['in_process', 'rejected'],
+    in_process: ['completed', 'rejected'],
+    completed: ['dispatched'],
+    dispatched: ['delivered'],
+    delivered: [], rejected: [],
+  };
+  const STAGE_LABEL: Record<string, string> = {
+    quote: 'Quote', docs_awaiting: 'Awaiting Docs', in_process: 'In Process', completed: 'Completed', dispatched: 'Dispatched', delivered: 'Delivered', rejected: 'Rejected',
+  };
+  const PICKUP_LABEL: Record<string, string> = {
+    awaiting_docs: 'Awaiting docs', docs_received: 'Docs received', dispatched_to_supplier: 'With supplier', returned: 'Returned', delivered: 'Delivered',
+  };
+  const INR = (p: number) => '₹' + (p / 100).toLocaleString('en-IN');
 
   const chains = chainsData?.chains || [];
   const rates: (Chain & { fallbackFeePaise?: number })[] = chains.length > 0
@@ -200,20 +267,6 @@ export default function AttestationPortal() {
       queryClient.invalidateQueries({ queryKey: ['attestationApps', selectedClient?.id] });
       setShowNewApp(false);
     },
-    onError: (e: any) => alert(e.message)
-  });
-
-  const updateAppMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/attestation/applications/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!r.ok) throw new Error('Failed to update application');
-      return r.json();
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attestationApps', selectedClient?.id] }),
     onError: (e: any) => alert(e.message)
   });
 
@@ -313,36 +366,71 @@ export default function AttestationPortal() {
                   <p className="text-xs text-brand-navy/50 italic">No attestation applications yet. Click "+ New App" to start a legalization workflow.</p>
                 ) : (
                   <div className="space-y-3">
-                    {(appsData?.applications || []).map(app => (
-                      <div key={app.id} className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.04] p-4">
-                        <div className="flex items-center justify-between mb-3">
+                    {(appsData?.applications || []).map(app => {
+                      const next = STAGE_TRANSITIONS[(app.stage || 'quote') as string] || [];
+                      const doc: any = app.document || {};
+                      return (
+                      <div key={app.id} className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-3">
+                        <div className="flex items-start justify-between gap-2">
                           <div>
-                            <span className="font-bold text-brand-navy">{DOC_TYPES.find(d => d.value === app.documentType)?.label || app.documentType}</span>
-                            <span className="text-brand-navy/50 ml-2">→ {app.destinationCountry}</span>
+                            <div className="font-bold text-brand-navy">{doc.documentName || app.documentType}</div>
+                            <div className="text-[10px] text-brand-navy/40 mt-0.5">{doc.holderName} · {doc.issuingState} → {app.destinationCountry} · {app.route === 'apostille' ? 'Apostille' : 'Embassy'}{app.translationNeeded ? ' · 🈶 Arabic translation' : ''}</div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[10px] text-brand-navy/50 font-mono">#{app.id.slice(0, 8)}</span>
+                            {next.length > 0 ? (
+                              <select
+                                value={app.stage}
+                                onChange={(e) => updateStageMutation.mutate({ id: app.id, stage: e.target.value })}
+                                className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[10px] font-bold text-brand-navy outline-none cursor-pointer [&>option]:bg-white"
+                              >
+                                <option value={app.stage}>{STAGE_LABEL[(app.stage || 'quote') as string] || app.stage}</option>
+                                {next.map((n: string) => <option key={n} value={n}>{STAGE_LABEL[n]}</option>)}
+                              </select>
+                            ) : (
+                              <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${app.stage === 'delivered' ? 'bg-emerald-500/15 text-emerald-700' : app.stage === 'rejected' ? 'bg-rose-500/15 text-rose-600' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{STAGE_LABEL[(app.stage || 'quote') as string]}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Chain timeline */}
+                        <div className="space-y-1">
+                          {(app.chain || []).map((step: any, i: number) => (
+                            <div key={step.key} className="flex items-center gap-2">
+                              <button
+                                onClick={() => updateChainMutation.mutate({ id: app.id, stepKey: step.key, status: step.status === 'done' ? 'pending' : 'done' })}
+                                title="Click to toggle done"
+                                className={`w-4 h-4 rounded-full grid place-items-center text-[8px] font-bold shrink-0 cursor-pointer ${step.status === 'done' ? 'bg-emerald-500 text-white' : step.status === 'failed' ? 'bg-rose-500 text-white' : 'bg-brand-navy/[0.08] text-brand-navy/40 hover:bg-brand-gold/30'}`}
+                              >
+                                {step.status === 'done' ? '✓' : step.status === 'failed' ? '✕' : i + 1}
+                              </button>
+                              <span className={`text-[10px] ${step.status === 'done' ? 'text-brand-navy font-semibold' : 'text-brand-navy/50'}`}>{step.label}</span>
+                              {step.date && <span className="text-[9px] text-brand-navy/30 ml-auto">{new Date(step.date * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Fees + pickup */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-brand-navy/[0.08] pt-2.5">
+                          <div className="text-[10px] text-brand-navy/70">
+                            Quote: <b>{INR(app.fees?.totalQuotePaise || 0)}</b>
+                            <span className="ml-2 text-brand-navy/40">Pickup: {PICKUP_LABEL[(app.pickup?.status || 'awaiting_docs') as string] || app.pickup?.status}</span>
+                            {app.pickup?.courierInbound && <span className="ml-2 text-brand-navy/40 font-mono">In: {app.pickup.courierInbound}</span>}
+                            {app.pickup?.courierOutbound && <span className="ml-2 text-brand-navy/40 font-mono">Out: {app.pickup.courierOutbound}</span>}
+                            {app.pickup?.courierReturn && <span className="ml-2 text-brand-navy/40 font-mono">Ret: {app.pickup.courierReturn}</span>}
                           </div>
                           <select
-                            value={app.status}
-                            onChange={(e) => updateAppMutation.mutate({ id: app.id, payload: { status: e.target.value } })}
-                            className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[11px] font-semibold text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
+                            value={app.pickup?.status || 'awaiting_docs'}
+                            onChange={(e) => updatePickupMutation.mutate({ id: app.id, payload: { pickupStatus: e.target.value } })}
+                            className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[9px] font-bold text-brand-navy outline-none cursor-pointer [&>option]:bg-white"
                           >
-                            {['pending', 'in_transit', 'in_progress', 'completed', 'rejected'].map(s => <option key={s} value={s}>{s}</option>)}
+                            {Object.entries(PICKUP_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                           </select>
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {['hrd', 'mea', 'embassy', 'apostille'].map(step => (
-                            <button
-                              key={step}
-                              onClick={() => updateAppMutation.mutate({ id: app.id, payload: { currentStep: step } })}
-                              className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${app.currentStep === step ? 'border-brand-gold bg-brand-gold/10 text-brand-navy' : 'border-brand-navy/10 text-brand-navy/50 hover:border-brand-gold/60 hover:text-brand-navy'}`}
-                            >
-                              {STEP_LABEL[step]}
-                            </button>
-                          ))}
-                          <span className="text-[10px] text-brand-navy/50 ml-auto font-mono">#{app.id.slice(0, 8)}</span>
-                        </div>
-                        {app.notes && <p className="text-[10px] text-brand-navy/40 mt-2 italic">{app.notes}</p>}
+                        {app.notes && <p className="text-[10px] text-brand-navy/40 italic">{app.notes}</p>}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </>

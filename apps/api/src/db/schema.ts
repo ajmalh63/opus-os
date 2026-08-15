@@ -1013,7 +1013,7 @@ export const partnerTiers = sqliteTable('partner_tiers', {
 export const partnerLinks = sqliteTable('partner_links', {
   id: text('id').primaryKey(),
   partnerId: text('partner_id').notNull().references(() => partners.id),
-  catalogType: text('catalog_type', { enum: ['university', 'departure', 'job', 'attestation', 'visa', 'umrah_package'] }).notNull(),
+  catalogType: text('catalog_type', { enum: ['university', 'departure', 'job', 'visa', 'umrah_package'] }).notNull(),
   catalogItemId: text('catalog_item_id').notNull(),
   title: text('title').notNull(),            // snapshot for the partner UI
   pricePaise: integer('price_paise').notNull().default(0),
@@ -1038,7 +1038,7 @@ export const partnerPoints = sqliteTable('partner_points', {
 export const commissionPlans = sqliteTable('commission_plans', {
   id: text('id').primaryKey(),
   partnerId: text('partner_id').references(() => partners.id),   // null = global default
-  catalogType: text('catalog_type', { enum: ['university', 'departure', 'job', 'attestation', 'visa', 'umrah_package', '*'] }).notNull().default('*'),
+  catalogType: text('catalog_type', { enum: ['university', 'departure', 'job', 'visa', 'umrah_package', '*'] }).notNull().default('*'),
   catalogItemId: text('catalog_item_id'),                        // null = type-wide
   ratePct: integer('rate_pct').notNull(),                        // 0-100
   updatedBy: text('updated_by'),
@@ -1169,11 +1169,50 @@ export const umrahChecklists = sqliteTable('umrah_checklists', {
 export const attestationApplications = sqliteTable('attestation_applications', {
   id: text('id').primaryKey(),
   clientId: text('client_id').notNull().references(() => clients.id),
-  documentType: text('document_type', { enum: ['degree', 'diploma', 'birth_certificate', 'marriage_certificate', 'pcc'] }).notNull(),
+  documentType: text('document_type', { enum: ['degree', 'diploma', 'birth_certificate', 'marriage_certificate', 'pcc'] }).notNull().default('degree'),
   destinationCountry: text('destination_country').notNull(),
   currentStep: text('current_step', { enum: ['hrd', 'mea', 'embassy', 'apostille'] }).notNull().default('hrd'),
   status: text('status', { enum: ['pending', 'in_transit', 'in_progress', 'completed', 'rejected'] }).notNull().default('pending'),
+  // ── Phase 4 gold-standard additions ──
+  // Snapshot of the document being attested (holder, document, issuing state…)
+  documentJson: text('document_json').notNull().default('{}'),
+  category: text('category', { enum: ['educational', 'personal', 'commercial'] }).notNull().default('personal'),
+  route: text('route', { enum: ['apostille', 'embassy'] }).notNull().default('apostille'),
+  // Chain timeline: [{key, label, status: pending|done|failed, date, note}]
+  chainJson: text('chain_json').notNull().default('[]'),
+  // Fees (integer paise): govt + service + courier + translation
+  govtFeePaise: integer('govt_fee_paise').notNull().default(0),
+  serviceFeePaise: integer('service_fee_paise').notNull().default(0),
+  courierFeePaise: integer('courier_fee_paise').notNull().default(0),
+  translationFeePaise: integer('translation_fee_paise').notNull().default(0),
+  totalQuotePaise: integer('total_quote_paise').notNull().default(0),
+  translationNeeded: integer('translation_needed', { mode: 'boolean' }).notNull().default(false),
+  // Pickup flow: client sends docs to US → we dispatch to supplier → return → deliver
+  pickupStatus: text('pickup_status', { enum: ['awaiting_docs', 'docs_received', 'dispatched_to_supplier', 'returned', 'delivered'] }).notNull().default('awaiting_docs'),
+  pickupAddress: text('pickup_address'),
+  courierInbound: text('courier_inbound'), // client → us tracking (AWB)
+  courierOutbound: text('courier_outbound'), // us → supplier (AWB)
+  courierReturn: text('courier_return'), // supplier → us → client (AWB)
+  // New status machine (no-jump): quote → docs_awaiting → in_process → completed → dispatched → delivered / rejected
+  stage: text('stage', { enum: ['quote', 'docs_awaiting', 'in_process', 'completed', 'dispatched', 'delivered', 'rejected'] }).notNull().default('quote'),
   notes: text('notes'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 59.1 ATTESTATION RATE CARDS — configurable price list (country × category × route).
+// Seeded with market ranges; owner edits. NEVER shown with supplier names (B2C).
+// ==========================================
+export const attestationRateCards = sqliteTable('attestation_rate_cards', {
+  id: text('id').primaryKey(),
+  country: text('country').notNull(),
+  category: text('category', { enum: ['educational', 'personal', 'commercial'] }).notNull(),
+  route: text('route', { enum: ['apostille', 'embassy'] }).notNull(),
+  pricePaise: integer('price_paise').notNull(), // indicative quote (service + govt, excl. courier/translation)
+  timelineDays: integer('timeline_days').notNull().default(10),
+  stepsJson: text('steps_json').notNull().default('[]'), // chain step labels
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });

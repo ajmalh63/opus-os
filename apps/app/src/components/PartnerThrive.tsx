@@ -21,7 +21,7 @@ interface ThriveSummary {
 interface PayoutRow { id: string; partnerId: string; amountPaise: number; status: 'requested' | 'approved' | 'paid' | 'rejected'; note: string | null; requestedAt: number; resolvedAt: number | null; }
 
 const rs = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-const TYPES: Record<string, string> = { university: 'Universities', departure: 'Umrah Departures', umrah_package: 'Umrah Packages', job: 'Job Openings', attestation: 'Attestation', visa: 'Visa' };
+const TYPES: Record<string, string> = { university: 'Universities', departure: 'Umrah Departures', umrah_package: 'Umrah Packages', job: 'Job Openings', visa: 'Visa' };
 
 interface VisaProductRow { id: string; country: string; visaType: string; entryType: string; processingTime: string; feePaise: number; status: string; }
 

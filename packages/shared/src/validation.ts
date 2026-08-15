@@ -358,3 +358,63 @@ export const registerStaffSchema = z.object({
 
 export type RegisterStaffInput = z.infer<typeof registerStaffSchema>;
 
+// 11. Attestation (Phase 4 — gold standard)
+export const attestationDocumentSchema = z.object({
+  holderName: z.string().min(2, 'Holder name is required'),
+  documentName: z.string().min(2, 'Document name is required'),
+  issuingState: z.string().min(2, 'Issuing state is required'),
+  issuingYear: z.number().int().min(1950).max(2100).optional(),
+  documentNumber: z.string().max(40).optional(),
+  purpose: z.string().max(200).optional()
+});
+
+export const createAttestationApplicationSchema = z.object({
+  clientId: z.string().min(1),
+  document: attestationDocumentSchema,
+  category: z.enum(['educational', 'personal', 'commercial']),
+  route: z.enum(['apostille', 'embassy']),
+  destinationCountry: z.string().min(2, 'Destination country is required'),
+  translationNeeded: z.boolean().default(false),
+  notes: z.string().max(2000).optional()
+});
+
+export const updateAttestationStageSchema = z.object({
+  stage: z.enum(['quote', 'docs_awaiting', 'in_process', 'completed', 'dispatched', 'delivered', 'rejected'])
+});
+
+export const updateAttestationChainSchema = z.object({
+  stepKey: z.string().min(1),
+  status: z.enum(['pending', 'done', 'failed']),
+  note: z.string().max(500).optional()
+});
+
+export const updateAttestationPickupSchema = z.object({
+  pickupStatus: z.enum(['awaiting_docs', 'docs_received', 'dispatched_to_supplier', 'returned', 'delivered']).optional(),
+  pickupAddress: z.string().max(500).optional(),
+  courierInbound: z.string().max(100).optional(),
+  courierOutbound: z.string().max(100).optional(),
+  courierReturn: z.string().max(100).optional()
+});
+
+export const createAttestationRateCardSchema = z.object({
+  country: z.string().min(2),
+  category: z.enum(['educational', 'personal', 'commercial']),
+  route: z.enum(['apostille', 'embassy']),
+  pricePaise: z.number().int().min(0),
+  timelineDays: z.number().int().min(1).optional(),
+  steps: z.array(z.string()).optional(),
+  active: z.boolean().optional()
+});
+
+export const updateAttestationRateCardSchema = z.object({
+  pricePaise: z.number().int().min(0).optional(),
+  timelineDays: z.number().int().min(1).optional(),
+  steps: z.array(z.string()).optional(),
+  active: z.boolean().optional()
+});
+
+export type CreateAttestationApplicationInput = z.infer<typeof createAttestationApplicationSchema>;
+export type UpdateAttestationStageInput = z.infer<typeof updateAttestationStageSchema>;
+export type UpdateAttestationChainInput = z.infer<typeof updateAttestationChainSchema>;
+export type UpdateAttestationPickupInput = z.infer<typeof updateAttestationPickupSchema>;
+export type CreateAttestationRateCardInput = z.infer<typeof createAttestationRateCardSchema>;

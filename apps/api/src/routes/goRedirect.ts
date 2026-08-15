@@ -10,7 +10,6 @@ const VALID: Record<string, string> = {
   university: '/study-abroad',
   departure: '/umrah-travel',
   job: '/recruitment',
-  attestation: '/attestation',
   visa: '/visa-services',
   umrah_package: '/umrah-travel',
 };

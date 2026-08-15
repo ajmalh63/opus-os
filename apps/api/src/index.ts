@@ -49,7 +49,7 @@ import { erpnextRouter } from './routes/erpnext.js';
 import { studyAbroadRouter } from './routes/studyAbroad.js';
 import { studyAbroadAppsRouter, portalStudyAbroadRouter } from './routes/studyAbroadApps.js';
 import { visaRouter } from './routes/visa.js';
-import { attestationRouter } from './routes/attestation.js';
+import { attestationAppsRouter, portalAttestationRouter } from './routes/attestationApps.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
@@ -207,7 +207,8 @@ app.route('/api/visa', visaRouter);
 
 app.use('/api/attestation', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/attestation/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
-app.route('/api/attestation', attestationRouter);
+app.route('/api/attestation', attestationAppsRouter);
+app.route('/api/public/portal/attestation', portalAttestationRouter);
 
 app.route('/api/tasks', tasksRouter);
 app.route('/api/tasks', boardRouter);

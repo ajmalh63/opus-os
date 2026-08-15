@@ -119,11 +119,36 @@ OpusOS stores **application snapshots** (form modal) per student; Match/Reach/Sa
 
 ---
 
-## ⏳ 5. Attestation — PENDING
+## ✅ 5. Attestation — COMPLETE (Phase 5, 2026-08-15)
 
-### To do
-- Rates, applications & stamping, India Post/courier tracking (staff-side exists).
-- Client-facing + richer workflow pass: quote per chain, pickup booking, chain timeline (HRD → MEA → Embassy → MOFA), delivery proof.
+**Direction (owner):** B2C — prices shown as INDICATIVE RANGES, never guaranteed, never
+supplier names. One application = one document. Client sends originals to US → we dispatch
+to supplier → chain → return → deliver. **Partner portal: attestation REMOVED & disabled**
+(no pricing knowledge → no affiliate section).
+
+### What was built
+- **Rate cards** (`attestation_rate_cards`, migration 0057): country × category × route →
+  indicative price + timeline + chain steps. Seeded with market ranges (apostille ₹2,200–5,000;
+  GCC embassy ₹5,500–9,500; +15% Arabic translation). Owner-editable. Client page shows
+  "indicative, not guaranteed, subject to change" disclaimer.
+- **Application snapshot** (`attestation_applications` extended): documentJson (holder,
+  document, issuing state), category (educational/personal/commercial), route
+  (apostille/embassy), **chain timeline** (per-step status/date/note), fees (govt/service/
+  courier/translation), pickup flow (client → us → supplier → return → deliver with AWB
+  tracking), **no-jump stage machine** (quote → docs_awaiting → in_process → completed →
+  dispatched → delivered / rejected) + auto-tasks (awaiting docs, dispatch).
+- **Routes** `attestationApps.ts`: staff rate-card CRUD + applications (quote from rate
+  card, stage machine, chain advance with auto-complete, pickup) · portal (token-auth):
+  rate cards + disclaimer, create application, pickup booking (ownership-bound), tracker.
+- **Client portal 🧾 tab** (`AttestationClientSection.tsx`): Get a Quote (country/category/
+  document + live indicative price + chain preview) → My Applications (chain timeline
+  stepper, fees, pickup booking with AWB).
+- **Staff desk**: applications upgraded to chain timeline + stage machine + pickup status;
+  rate cards editable.
+- **Partner**: attestation removed from partnerLinks/commissionPlans enums, goRedirect,
+  partner catalog + frontend TYPES.
+- **Tests**: `attestationApps.test.ts` (10) — **418 total green**. Legacy attestation.ts
+  routes + test removed (superseded).
 
 ---
 

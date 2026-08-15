@@ -400,6 +400,13 @@
       "when": 1786802854771,
       "tag": "0056_overrated_havok",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1786804353587,
+      "tag": "0057_bitter_shockwave",
+      "breakpoints": true
     }
   ]
 }

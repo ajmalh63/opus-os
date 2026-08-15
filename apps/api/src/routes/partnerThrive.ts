@@ -101,10 +101,6 @@ if (!type || type === 'departure') {
       const rows = await db.select().from(jobPostings).all();
       items.push(...rows.map((r: any) => ({ type: 'job', id: r.id, title: r.title || 'Job posting', pricePaise: 0, meta: { country: r.country || '' } })));
     }
-    if (!type || type === 'attestation') {
-      const rows = await db.select().from(attestationChains).all();
-      items.push(...rows.map((r: any) => ({ type: 'attestation', id: r.id, title: r.name || 'Attestation chain', pricePaise: 0, meta: { steps: Array.isArray(r.steps) ? r.steps.length : 0 } })));
-    }
     if (!type || type === 'visa') {
       const rows = await db.select().from(visaProducts).where(eq(visaProducts.status, 'active')).all();
       items.push(...rows.map((r: any) => ({ type: 'visa', id: r.id, title: `${r.visaType} — ${r.country}`, pricePaise: Number(r.feePaise || 0), meta: { country: r.country, entryType: r.entryType, processingTime: r.processingTime } })));
@@ -117,7 +113,7 @@ if (!type || type === 'departure') {
 });
 
 // ---------- PARTNER LINK CRUD (token-bound) ----------
-const linkSchema = z.object({ catalogType: z.enum(['university', 'departure', 'job', 'attestation', 'visa', 'umrah_package']), catalogItemId: z.string().min(1), title: z.string().min(1), pricePaise: z.number().int().min(0).default(0) });
+const linkSchema = z.object({ catalogType: z.enum(['university', 'departure', 'job', 'visa', 'umrah_package']), catalogItemId: z.string().min(1), title: z.string().min(1), pricePaise: z.number().int().min(0).default(0) });
 
 // POST /api/public/partners/:id/links — create a share link for an inventory item
 publicThriveRouter.post('/:id/links', zValidator('json', linkSchema), async (c) => {

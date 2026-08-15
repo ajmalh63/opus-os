@@ -75,6 +75,7 @@ export class MockD1Database {
     payout_requests: [] as any[],
     staff_alerts: [] as any[],
     attestation_applications: [] as any[],
+    attestation_rate_cards: [] as any[],
     manpower_deployments: [] as any[],
     membership_plans: [] as any[],
   };

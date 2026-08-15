@@ -1,7 +1,7 @@
 import { getDb } from './client.js';
 import {
   pipelineStages, clauseLibrary, permissions, roles, businessProfile, campaigns, campaignTouches, visaProducts,
-  universities, jobPostings, attestationChains, groupDepartures
+  universities, jobPostings, attestationChains, groupDepartures, attestationRateCards
 } from './schema.js';
 import { eq } from 'drizzle-orm';
 import { PERMISSION_SEED, ROLES_SEED } from '../routes/rbac.js';
@@ -843,4 +843,69 @@ export async function seedSuperAdmin(db: DbClient, adminEmail: string, adminPass
     updatedAt: new Date(),
   } as any);
   return { created: true, email: adminEmail };
+}
+// ── Attestation rate cards (Phase 4) — market ranges, NO supplier names (B2C).
+// Prices are indicative; the client page shows "not guaranteed, subject to change".
+const ATTESTATION_RATE_CARDS: { country: string; category: 'educational' | 'personal' | 'commercial'; route: 'apostille' | 'embassy'; pricePaise: number; timelineDays: number; steps: string[] }[] = [
+  // ── Apostille route (Hague Convention — 125+ countries) ──
+  { country: 'USA', category: 'educational', route: 'apostille', pricePaise: 250000, timelineDays: 8, steps: ['State HRD / GAD', 'MEA Apostille'] },
+  { country: 'USA', category: 'personal', route: 'apostille', pricePaise: 220000, timelineDays: 7, steps: ['Notary', 'SDM / Home Dept', 'MEA Apostille'] },
+  { country: 'USA', category: 'commercial', route: 'apostille', pricePaise: 450000, timelineDays: 10, steps: ['Chamber of Commerce', 'MEA Apostille'] },
+  { country: 'UK', category: 'educational', route: 'apostille', pricePaise: 250000, timelineDays: 8, steps: ['State HRD / GAD', 'MEA Apostille'] },
+  { country: 'UK', category: 'personal', route: 'apostille', pricePaise: 220000, timelineDays: 7, steps: ['Notary', 'SDM / Home Dept', 'MEA Apostille'] },
+  { country: 'UK', category: 'commercial', route: 'apostille', pricePaise: 450000, timelineDays: 10, steps: ['Chamber of Commerce', 'MEA Apostille'] },
+  { country: 'Canada', category: 'educational', route: 'apostille', pricePaise: 250000, timelineDays: 8, steps: ['State HRD / GAD', 'MEA Apostille'] },
+  { country: 'Canada', category: 'personal', route: 'apostille', pricePaise: 220000, timelineDays: 7, steps: ['Notary', 'SDM / Home Dept', 'MEA Apostille'] },
+  { country: 'Canada', category: 'commercial', route: 'apostille', pricePaise: 450000, timelineDays: 10, steps: ['Chamber of Commerce', 'MEA Apostille'] },
+  { country: 'Australia', category: 'educational', route: 'apostille', pricePaise: 250000, timelineDays: 8, steps: ['State HRD / GAD', 'MEA Apostille'] },
+  { country: 'Australia', category: 'personal', route: 'apostille', pricePaise: 220000, timelineDays: 7, steps: ['Notary', 'SDM / Home Dept', 'MEA Apostille'] },
+  { country: 'Australia', category: 'commercial', route: 'apostille', pricePaise: 450000, timelineDays: 10, steps: ['Chamber of Commerce', 'MEA Apostille'] },
+  { country: 'Germany', category: 'educational', route: 'apostille', pricePaise: 250000, timelineDays: 8, steps: ['State HRD / GAD', 'MEA Apostille'] },
+  { country: 'Germany', category: 'personal', route: 'apostille', pricePaise: 220000, timelineDays: 7, steps: ['Notary', 'SDM / Home Dept', 'MEA Apostille'] },
+  { country: 'Germany', category: 'commercial', route: 'apostille', pricePaise: 450000, timelineDays: 10, steps: ['Chamber of Commerce', 'MEA Apostille'] },
+  { country: 'Saudi Arabia', category: 'educational', route: 'apostille', pricePaise: 300000, timelineDays: 10, steps: ['State HRD / GAD', 'MEA Apostille'] },
+  { country: 'Saudi Arabia', category: 'personal', route: 'apostille', pricePaise: 280000, timelineDays: 9, steps: ['Notary', 'SDM / Home Dept', 'MEA Apostille'] },
+  { country: 'Saudi Arabia', category: 'commercial', route: 'apostille', pricePaise: 500000, timelineDays: 12, steps: ['Chamber of Commerce', 'MEA Apostille'] },
+  { country: 'China', category: 'educational', route: 'apostille', pricePaise: 300000, timelineDays: 10, steps: ['State HRD / GAD', 'MEA Apostille'] },
+  { country: 'China', category: 'personal', route: 'apostille', pricePaise: 280000, timelineDays: 9, steps: ['Notary', 'SDM / Home Dept', 'MEA Apostille'] },
+  { country: 'China', category: 'commercial', route: 'apostille', pricePaise: 500000, timelineDays: 12, steps: ['Chamber of Commerce', 'MEA Apostille'] },
+  // ── Embassy route (non-Hague — GCC + others) ──
+  { country: 'UAE', category: 'educational', route: 'embassy', pricePaise: 600000, timelineDays: 18, steps: ['State HRD / GAD', 'MEA', 'UAE Embassy', 'UAE MOFA (in destination)'] },
+  { country: 'UAE', category: 'personal', route: 'embassy', pricePaise: 550000, timelineDays: 16, steps: ['Notary', 'SDM / Home Dept', 'MEA', 'UAE Embassy', 'UAE MOFA (in destination)'] },
+  { country: 'UAE', category: 'commercial', route: 'embassy', pricePaise: 900000, timelineDays: 20, steps: ['Chamber of Commerce', 'MEA', 'UAE Embassy', 'UAE MOFA (in destination)'] },
+  { country: 'Qatar', category: 'educational', route: 'embassy', pricePaise: 650000, timelineDays: 20, steps: ['State HRD / GAD', 'MEA', 'Qatar Embassy', 'Qatar MOFA (in destination)'] },
+  { country: 'Qatar', category: 'personal', route: 'embassy', pricePaise: 600000, timelineDays: 18, steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Qatar Embassy', 'Qatar MOFA (in destination)'] },
+  { country: 'Qatar', category: 'commercial', route: 'embassy', pricePaise: 950000, timelineDays: 22, steps: ['Chamber of Commerce', 'MEA', 'Qatar Embassy', 'Qatar MOFA (in destination)'] },
+  { country: 'Kuwait', category: 'educational', route: 'embassy', pricePaise: 650000, timelineDays: 20, steps: ['State HRD / GAD', 'MEA', 'Kuwait Embassy', 'Kuwait MOFA (in destination)'] },
+  { country: 'Kuwait', category: 'personal', route: 'embassy', pricePaise: 600000, timelineDays: 18, steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Kuwait Embassy', 'Kuwait MOFA (in destination)'] },
+  { country: 'Kuwait', category: 'commercial', route: 'embassy', pricePaise: 950000, timelineDays: 22, steps: ['Chamber of Commerce', 'MEA', 'Kuwait Embassy', 'Kuwait MOFA (in destination)'] },
+  { country: 'Oman', category: 'educational', route: 'embassy', pricePaise: 650000, timelineDays: 20, steps: ['State HRD / GAD', 'MEA', 'Oman Embassy', 'Oman MOFA (in destination)'] },
+  { country: 'Oman', category: 'personal', route: 'embassy', pricePaise: 600000, timelineDays: 18, steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Oman Embassy', 'Oman MOFA (in destination)'] },
+  { country: 'Oman', category: 'commercial', route: 'embassy', pricePaise: 950000, timelineDays: 22, steps: ['Chamber of Commerce', 'MEA', 'Oman Embassy', 'Oman MOFA (in destination)'] },
+  { country: 'Bahrain', category: 'educational', route: 'embassy', pricePaise: 650000, timelineDays: 20, steps: ['State HRD / GAD', 'MEA', 'Bahrain Embassy', 'Bahrain MOFA (in destination)'] },
+  { country: 'Bahrain', category: 'personal', route: 'embassy', pricePaise: 600000, timelineDays: 18, steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Bahrain Embassy', 'Bahrain MOFA (in destination)'] },
+  { country: 'Bahrain', category: 'commercial', route: 'embassy', pricePaise: 950000, timelineDays: 22, steps: ['Chamber of Commerce', 'MEA', 'Bahrain Embassy', 'Bahrain MOFA (in destination)'] },
+  { country: 'Malaysia', category: 'educational', route: 'embassy', pricePaise: 550000, timelineDays: 15, steps: ['State HRD / GAD', 'MEA', 'Malaysia Embassy'] },
+  { country: 'Malaysia', category: 'personal', route: 'embassy', pricePaise: 500000, timelineDays: 14, steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Malaysia Embassy'] },
+  { country: 'Malaysia', category: 'commercial', route: 'embassy', pricePaise: 850000, timelineDays: 18, steps: ['Chamber of Commerce', 'MEA', 'Malaysia Embassy'] },
+];
+
+export async function seedAttestationRateCards(db: DbClient): Promise<void> {
+  const existing = await db.select().from(attestationRateCards).all();
+  if (existing.length > 0) return; // idempotent
+  const now = Math.floor(Date.now() / 1000);
+  for (const rc of ATTESTATION_RATE_CARDS) {
+    await db.insert(attestationRateCards).values({
+      id: crypto.randomUUID(),
+      country: rc.country,
+      category: rc.category,
+      route: rc.route,
+      pricePaise: rc.pricePaise,
+      timelineDays: rc.timelineDays,
+      stepsJson: JSON.stringify(rc.steps),
+      active: true,
+      createdAt: now,
+      updatedAt: now
+    });
+  }
 }

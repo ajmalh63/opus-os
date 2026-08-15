@@ -109,6 +109,13 @@ cd apps/api && pnpm run db:generate   # incremental Drizzle migration
 - **Tests**: `studyAbroadApplications.test.ts` (10), `studyAbroadMatch.test.ts` (9), `studyAbroadPortalProfile.test.ts` (6). Plan: `docs/study-abroad-division-plan.md`.
 - Legacy `universities`/`study_abroad_shortlists` untouched (drop later). Deferred: reminder dispatch, Razorpay deposits, partner surface, OpusAI.
 
+### Attestation division (Phase 5 — COMPLETE 2026-08-15)
+- **B2C pricing**: `attestation_rate_cards` (country × category × route) — INDICATIVE ranges only, never guaranteed, never supplier names; client page shows disclaimer. One application = one document.
+- **Flow**: client sends originals to US (pickup booking + AWB) → we dispatch to supplier → chain (HRD/SDM/Chamber → MEA → Embassy/Apostille, per-step tracked) → return → deliver. No-jump stage machine (quote → docs_awaiting → in_process → completed → dispatched → delivered / rejected) + auto-tasks.
+- **Routes** `attestationApps.ts` (staff + portal token-auth); client portal 🧾 tab; staff desk chain timeline + rate card editor.
+- **Partner: attestation REMOVED & disabled** (no affiliate section — no pricing knowledge).
+- **Tests**: `attestationApps.test.ts` (10). Legacy `attestation.ts` removed (superseded).
+
 ### Messaging (OpenWA / Chatwoot / inbox)
 - `src/infra/messaging.ts` — `sendWhatsApp` (OpenWA 0.14.2: `X-API-Key` + `/api/sessions/{id}/messages/send-text` with `{chatId, text}`; or Meta Cloud API).
 - Webhooks: `/api/webhooks/wa` (HMAC-SHA256 body or plaintext secret header; both timing-safe), `/api/webhooks/chatwoot` → land in `conversations`.
