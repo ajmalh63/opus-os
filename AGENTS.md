@@ -24,6 +24,9 @@ Welcome! This is the living specification and rulebook for AI agents working on 
 
 ## 2. Non-Negotiable Rules
 
+### User Approval Gate
+- **Strict User Approval:** No action (including executing commands, editing code files, creating new files, defining/spawning subagents, or proceeding with any task execution steps) should be taken by the AI agent unless explicitly approved by the user.
+
 ### Local-First
 - Dev runs locally (`pnpm wrangler dev --port 8787 --ip 0.0.0.0` + `pnpm dev` in app on 5173). No remote Cloudflare deploys until explicitly told.
 - **Detached startup (persistent):** use `Start-Process cmd /c '... > log 2>&1'` from PowerShell. Start-Job/background jobs DIE when the shell exits. Restart pattern that works:
@@ -88,6 +91,15 @@ cd apps/api && pnpm run db:generate   # incremental Drizzle migration
 - Public lead intake POST `/api/public/leads` (rate-limited, self-heals pipeline_stages, auto-scoring, SLA task, referral↔commission).
 - `/api/marketing/funnel`, `/partners`, `/experiments`, `/stale/:id/reactivate`, `/nurture/plan|due|:id/send`.
 - Artifact endpoints: `/api/public/jobs`, `/umrah/departures`, `/attestation/chains`, `/match/eligibility`.
+
+### Umrah division (Phase 3 — COMPLETE 2026-08-14)
+- **Inventory**: `umrah_packages` (60 cols: flight/hotels/visa/transport/duration/pricing/content; wholesale vs retail paise; `soloAvailable`+`soloSupplementPaise`; **family pricing** `childWithBedPricePaise`/`childNoBedPricePaise`/`infantPricePaise` — null = adult rate). Staff CRUD in `routes/umrah.ts`; client browse in `routes/portalUmrah.ts`.
+- **Calendar**: `group_departures` (capacity 30, `packageId`, `endDate` for trip ranges, `departureCity`). Staff announce via calendar; client/partner see availability (aggregate only — who-booked is staff-only via manifest).
+- **Booking model (party)**: one booking = one **party** (`paxCount` + `booking_passengers` rows: name/dob/passport/category/specialNeeds; passport masked at API boundary via `lib/umrahParty.ts`). ₹500×pax non-refundable advance → seats `held` → Razorpay order → `verify-advance` → `reserved` 3 days (`reserveHoldHours`=72) → balance online (`pay-balance`/`verify-balance`) or office (`confirm-office`). Pricing per person by category (adult / child_with_bed / child_no_bed / infant), solo supplement only for pax=1 & solo, **group discount wired** (`groupDiscountPct` ≥ `groupDiscountMinPax`). Capacity & advance scale by pax; self-heal releases pax-count seats (held>24h / reserved>72h, no cron). Waitlist = whole party when pax > available.
+- **Coming Soon switch**: `app_settings` key `umrah_inventory_enabled` — gates client/partner surfaces until owner flips it.
+- **Partner**: catalog `departure` (fixed) + `umrah_package` types; `/go` links; commission plans support `umrah_package`.
+- **Frontend**: `UmrahCalendar.tsx` (reusable, staff/client/partner modes), `UmrahPortal.tsx` (Packages tab + calendar + party manifest w/ travellers + CSV), `UmrahClientSection.tsx` (browse→party builder→book→tracker), ClientPortal 🕋 tab.
+- **Tests**: `umrahPackages.test.ts`, `umrahPortalBooking.test.ts` (incl. solo supplement), `umrahFamilyBooking.test.ts` (party pax/capacity/advance/child pricing/group discount/waitlist/masking). Plan: `docs/umrah-division-plan.md` §13.
 
 ### Messaging (OpenWA / Chatwoot / inbox)
 - `src/infra/messaging.ts` — `sendWhatsApp` (OpenWA 0.14.2: `X-API-Key` + `/api/sessions/{id}/messages/send-text` with `{chatId, text}`; or Meta Cloud API).

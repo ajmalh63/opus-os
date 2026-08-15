@@ -1,0 +1,1 @@
+ALTER TABLE `clients` ADD `status` text DEFAULT 'active' NOT NULL;

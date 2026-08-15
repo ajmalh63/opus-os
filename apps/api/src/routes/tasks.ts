@@ -1,8 +1,8 @@
-import { Hono } from 'hono';
+﻿import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
-import { tasks, notifications } from '../db/schema.js';
+import { tasks, notifications, users } from '../db/schema.js';
 import { eq, and, desc } from 'drizzle-orm';
 
 export const tasksRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string }; Variables: { user?: { id?: string } | null } }>();
@@ -25,6 +25,8 @@ const updateTaskSchema = z.object({
   dueDate: z.number().int().nullable().optional(),
   title: z.string().min(2).optional(),
   description: z.string().nullable().optional(),
+  cos: z.enum(['standard', 'expedite', 'fixed_date']).optional(),
+  blockedReason: z.string().max(300).nullable().optional(),
 });
 
 // POST /api/tasks (create)
@@ -91,7 +93,9 @@ tasksRouter.get('/', async (c) => {
     if (assignee) list = list.filter(t => t.assigneeId === assignee);
     if (status) list = list.filter(t => t.status === status);
 
-    return c.json({ tasks: list });
+    const userRows = await db.select().from(users).all().catch(() => []);
+    const nameOf = new Map(userRows.map((u: any) => [u.id, u.name]));
+    return c.json({ tasks: list.map((t: any) => ({ ...t, assigneeName: nameOf.get(t.assigneeId) || null })) });
   } catch (error: any) {
     return c.json({ error: "Failed to fetch tasks", details: error.message }, 500);
   }
@@ -112,6 +116,24 @@ tasksRouter.get('/client/:clientId', async (c) => {
 });
 
 // GET /api/tasks/assigned-to-me — unread/undone tasks for the session user
+// GET /api/tasks/staff-directory - minimal staff list for the board picker
+// (id/name/role only; all-staff rbac at mount). Powers "assign to" + the
+// workspace staff count on Task Boards.
+tasksRouter.get('/staff-directory', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const user = (c.get('user') as any) || {};
+  try {
+    const rows = await db.select().from(users).all().catch(() => []);
+    const staff = rows
+      .filter((u: any) => u.role !== 'super_admin' || u.id === user.id)
+      .map((u: any) => ({ id: u.id, name: u.name, role: u.role }));
+    return c.json({ staff, total: staff.length });
+  } catch (e: any) {
+    return c.json({ error: 'Staff directory failed', details: e.message }, 500);
+  }
+});
+
 tasksRouter.get('/assigned-to-me', async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -152,9 +174,33 @@ tasksRouter.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
 
-  try {
+try {
     const existing = await db.select().from(tasks).where(eq(tasks.id, id)).get();
     if (!existing) return c.json({ error: "Task not found" }, 404);
+
+    // ── Kanban WIP enforcement (gold standard: finish-before-start, enforced
+    // server-side so the API can't bypass the UI). Expedite bypasses the
+    // column cap (class-of-service override); the person cap is soft.
+    let warning: string | null = null;
+    if (data.status === 'in_progress' && existing.status !== 'in_progress' && existing.cos !== 'expedite') {
+      const { getBoardPrefs } = await import('./board.js');
+      const prefs = await getBoardPrefs(db);
+      const inProgressCount = await db.select({ id: tasks.id }).from(tasks)
+        .where(and(eq(tasks.status, 'in_progress'), eq(tasks.cos, 'standard' as any)))
+        .all().catch(() => []);
+      const filtered = inProgressCount.filter((t: any) => t.id !== id);
+      if (filtered.length >= Number(prefs.columnLimitInProgress)) {
+        return c.json({ error: `WIP limit reached (${prefs.columnLimitInProgress}) — finish or pull something else first`, code: 'wip_limit' }, 409);
+      }
+      if (existing.assigneeId) {
+        const mine = await db.select({ id: tasks.id }).from(tasks)
+          .where(and(eq(tasks.status, 'in_progress'), eq(tasks.assigneeId, existing.assigneeId as any)))
+          .all().catch(() => []);
+        if (mine.filter((t: any) => t.id !== id).length >= Number(prefs.personLimitInProgress)) {
+          warning = `watch: ${prefs.personLimitInProgress}+ active tasks per person — finish before starting`;
+        }
+      }
+    }
 
     await db
       .update(tasks)
@@ -165,12 +211,16 @@ tasksRouter.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
         ...(data.dueDate !== undefined ? { dueDate: data.dueDate } : {}),
         ...(data.title !== undefined ? { title: data.title } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.cos !== undefined ? { cos: data.cos } : {}),
+        ...(data.blockedReason !== undefined ? { blockedReason: data.blockedReason } : {}),
         ...(data.status === 'done' ? { completedAt: now } : {}),
+        // TRUE cycle time: timestamp the FIRST move into in_progress (one-shot)
+        ...(data.status === 'in_progress' && !existing.inProgressAt ? { inProgressAt: now } : {}),
         updatedAt: now
       })
       .where(eq(tasks.id, id));
 
-    return c.json({ success: true, id, message: "Task updated." });
+    return c.json({ success: true, id, message: "Task updated.", ...(warning ? { warning } : {}) });
   } catch (error: any) {
     return c.json({ error: "Task update failed", details: error.message }, 500);
   }
@@ -189,3 +239,4 @@ tasksRouter.delete('/:id', async (c) => {
     return c.json({ error: "Task deletion failed", details: error.message }, 500);
   }
 });
+

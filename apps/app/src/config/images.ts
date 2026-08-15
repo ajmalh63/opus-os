@@ -15,30 +15,35 @@ export const IMAGES: Record<string, ImageSpec> = {
   'hero-study-abroad': {
     label: 'Study Abroad Hero',
     ratio: '16/9',
+    src: '/img/hero-study-abroad.jpg',
     prompt:
       'Cinematic wide shot of a happy South-Asian graduate student in a navy gown walking across a historic UK university quad at golden hour, warm amber and deep navy tones, shallow depth of field, editorial photography, 16:9',
   },
-  'hero-visa': {
+  'hero-visa-services': {
     label: 'Visa Services',
     ratio: '16/9',
+    src: '/img/hero-visa-services.jpg',
     prompt:
       'A sleek boarding pass and passport with a golden visa stamp resting on dark navy linen, soft studio light, luxury travel editorial photography, shallow DOF, 16:9',
   },
-  'hero-umrah': {
+  'hero-umrah-travel': {
     label: 'Umrah & Travel',
     ratio: '16/9',
+    src: '/img/hero-umrah-travel.jpg',
     prompt:
       'Serene low-angle view of the Kaaba at dusk with warm lantern glow and soft haze, reverent and calm, cinematic color grade with gold and deep blue, 16:9 editorial photography',
   },
   'hero-attestation': {
     label: 'Attestation',
     ratio: '16/9',
+    src: '/img/hero-attestation.jpg',
     prompt:
       'Close-up of official documents with a gold embassy seal and red apostille ribbon being pressed by a stamp, navy desk surface, premium legal editorial photography, 16:9',
   },
-  'hero-manpower': {
+  'hero-recruitment': {
     label: 'Global Careers',
     ratio: '16/9',
+    src: '/img/hero-recruitment.jpg',
     prompt:
       'Confident Indian construction engineer and healthcare nurse standing on a modern city rooftop at sunrise holding a hard hat, hopeful and aspirational, warm golden light, 16:9 editorial photography',
   },

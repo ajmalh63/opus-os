@@ -1,0 +1,14 @@
+# Opus OS — encoding & style guardrails (mojibake prevention, 2026-08-12)
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{ts,tsx,js,json,md,toml,yml,yaml,ps1,sh}]
+charset = utf-8
+
+# NEVER round-trip source files through PowerShell Get-Content/Set-Content
+# (PS 5.1 reads as Windows-1252 → double-encoding corruption). Use the
+# edit/write tools, or node, with explicit UTF-8.

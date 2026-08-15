@@ -24,7 +24,7 @@ const SERVICES = [
   { id: 'recruitment', title: 'Manpower Recruitment', desc: 'Connecting skilled professionals with leading overseas corporations and employers.', path: '/recruitment' },
 ];
 
-const FLAGS = ['🇺🇸', '🇬🇧', '🇨🇦', '🇦🇺', '🇳🇿', '🇩🇪', '🇮🇪', '🇦🇪', '🇫🇷', '🇳🇱'];
+const FLAG_CODES = ['us', 'gb', 'ca', 'au', 'nz', 'de', 'ie', 'ae', 'fr', 'nl'];
 const FLAG_NAMES = ['USA', 'UK', 'Canada', 'Australia', 'New Zealand', 'Germany', 'Ireland', 'UAE', 'France', 'Netherlands'];
 
 const STATS = [
@@ -119,9 +119,13 @@ export default function PublicHome() {
       {/* TIER-ONE FLAG MARQUEE */}
       <div className="relative overflow-hidden border-y border-brand-navy/10 bg-white py-5">
         <div ref={marqueeRef} className="flex w-max items-center gap-16 whitespace-nowrap will-change-transform">
-          {[...FLAGS, ...FLAGS].map((flag, i) => (
+          {[...FLAG_CODES, ...FLAG_CODES].map((code, i) => (
             <div key={i} className="flex shrink-0 items-center gap-3">
-              <span className="text-3xl drop-shadow">{flag}</span>
+              <img
+                src={`/img/flags/${code}.png`}
+                alt={FLAG_NAMES[i % FLAG_NAMES.length]}
+                className="h-5 w-7.5 rounded object-cover shadow-xs border border-slate-100"
+              />
               <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-navy/60">{FLAG_NAMES[i % FLAG_NAMES.length]}</span>
             </div>
           ))}
@@ -153,7 +157,7 @@ export default function PublicHome() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {SERVICES.map((svc) => (
             <div key={svc.id} onClick={() => setLocation(svc.path)} className="svc-card group clay-card cursor-pointer p-5">
-              <Img prompt={imageFor(`hero-${svc.id}`).prompt} label={svc.title} className="mb-5" />
+              <Img src={imageFor(`hero-${svc.id}`).src} prompt={imageFor(`hero-${svc.id}`).prompt} label={svc.title} className="mb-5" />
               <div className="mb-3 flex items-center gap-3">
                 <span className="gold-dot !h-2.5 !w-2.5" />
                 <h3 className="font-display text-lg font-semibold transition-colors group-hover:text-brand-gold-hover">{svc.title}</h3>

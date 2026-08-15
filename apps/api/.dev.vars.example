@@ -1,0 +1,29 @@
+# Template for local development secrets — copy to `.dev.vars` and fill in.
+# `.dev.vars` is gitignored; never commit real values. In production, set each
+# of these with `wrangler secret put <KEY>` (encrypted at rest, hidden in dashboard).
+
+# --- REQUIRED: auth gateway ---
+# Signs better-auth session cookies + presigned upload URLs. Generate with:
+#   node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=http://127.0.0.1:5173
+
+# --- Back-office (ERPNext) ---
+ERPNEXT_API_KEY=
+ERPNEXT_API_SECRET=
+
+# --- Automation lane (n8n) ---
+AUTOMATION_TOKEN=
+
+# --- Wave 1 integrations (fill per-VPS after each wizard) ---
+TELEGRAM_BOT_TOKEN=
+OPS_TELEGRAM_CHAT_ID=
+LISTMONK_BASE_URL=
+LISTMONK_API_USER=
+LISTMONK_API_PASS=
+CHATWOOT_BASE_URL=
+CAL_BASE_URL=
+UMAMI_BASE_URL=
+N8N_BASE_URL=
+KUMA_BASE_URL=
+TWENTY_BASE_URL=

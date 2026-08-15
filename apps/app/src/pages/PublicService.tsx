@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { track, EVENTS } from '../lib/umami';
@@ -293,7 +293,7 @@ export default function PublicService({ params }: { params: { division: string }
             </div>
           </div>
 
-          <Img prompt={imageFor(`hero-${currentDiv}`).prompt} label={data.title} className="hidden lg:block" />
+          <Img src={imageFor(`hero-${currentDiv}`).src} prompt={imageFor(`hero-${currentDiv}`).prompt} label={data.title} className="hidden lg:block" />
         </div>
       </section>
 
@@ -442,7 +442,7 @@ export default function PublicService({ params }: { params: { division: string }
 
           <div className="clay-card p-6 text-xs leading-relaxed text-brand-textLight">
             <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-brand-navy">Division Support Office</p>
-            <p>📍 Nizamabad GPO complex block, Hyderabad Road, Telangana, India</p>
+            <p>📍 Nizamabad GPO complex block, Hyderabad Road, Telangana, India</p>
             <p className="mt-1">📧 support@opusoverseas.com</p>
           </div>
         </div>

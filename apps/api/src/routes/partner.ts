@@ -3,6 +3,7 @@ import { getDb } from '../db/client.js';
 import { clients, partners, referrals, commissionLedger } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
+import { getAuth } from '../auth.js';
 
 export const partnerRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
 
@@ -15,15 +16,64 @@ function maskPAN(pan: string): string {
   return "******" + pan.substring(pan.length - 4);
 }
 
-// Partner-scoped auth (A-3): bearer token from the 'Authorization' header must
-// match the partner's stored apiToken. Returns the matched partner or null.
-async function authPartner(db: ReturnType<typeof getDb>, id: string, c: { req: { header: (name: string) => string | undefined } }): Promise<any | null> {
-  const auth = c.req.header('Authorization') || '';
-  const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!bearer) return null;
+// Partner-scoped auth (A-3). Accepts either:
+//   1. the legacy bearer apiToken from the 'Authorization' header, OR
+//   2. a Better Auth session whose email matches the partner's account email.
+// Returns the matched partner or null.
+async function authPartner(db: ReturnType<typeof getDb>, id: string, c: { env: { DB: D1Database; BETTER_AUTH_SECRET: string }; req: { header: (name: string) => string | undefined; raw: Request } }): Promise<any | null> {
   const partner = await db.select().from(partners).where(eq(partners.id, id)).get();
   if (!partner || partner.status !== 'active') return null;
-  return partner.apiToken && bearer === partner.apiToken ? partner : null;
+
+  const authHeader = c.req.header('Authorization') || '';
+  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  if (bearer && partner.apiToken && bearer === partner.apiToken) return partner;
+
+  if (partner.email) {
+    const auth = getAuth(c.env);
+    const session = await auth.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
+    if (session?.user?.email && session.user.email.toLowerCase() === partner.email.toLowerCase()) return partner;
+  }
+  return null;
+}
+
+// Shared dashboard payload (Section 39: one round-trip, self-evident numbers).
+async function buildPartnerSummary(db: ReturnType<typeof getDb>, partnerId: string) {
+  const partner = await db.select().from(partners).where(eq(partners.id, partnerId)).get();
+  if (!partner) return null;
+
+  const partnerReferrals = await db.select().from(referrals).where(eq(referrals.partnerId, partnerId)).all();
+  const referralIds = partnerReferrals.map(r => r.id);
+  const ledger = await db.select().from(commissionLedger).all();
+  const entries = ledger.filter(e => referralIds.includes(e.referralId));
+
+  let matured = 0, pending = 0, paid = 0;
+  const referralRows = partnerReferrals.map(r => {
+    const entry = entries.find(e => e.referralId === r.id);
+    const amount = entry?.amount ?? 0;
+    const status = entry?.status ?? 'unmatured';
+    if (status === 'matured') matured += amount;
+    else if (status === 'paid') paid += amount;
+    else pending += amount;
+    return {
+      referralId: r.id,
+      referredClientId: r.clientId,
+      ratePct: r.commissionRate ?? 5,
+      amountPaise: amount,
+      status,
+    };
+  });
+
+  return {
+    partner: {
+      id: partner.id,
+      name: partner.name,
+      referralCode: partner.referralCode ? `?ref=${partner.referralCode}` : null,
+      status: partner.status,
+      joinedAt: partner.createdAt,
+    },
+    totals: { matured, pending, paid, total: matured + pending + paid },
+    referrals: referralRows,
+  };
 }
 
 // POST /api/public/partners (Register Partner with KYC - PUBLIC signup, Section 39)
@@ -50,6 +100,39 @@ partnerRouter.post('/', async (c) => {
     }
     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
       return c.json({ error: "IFSC must match format HDFC0000001 (4 letters, 0, 6 chars)" }, 400);
+    }
+
+    // Optional portal account (Section 25.x). When email + password are given we
+    // create a Better Auth user (session-based login, mirroring the client portal)
+    // and link the partner row to it via partners.email. Legacy KYC-only signups
+    // stay token-based.
+    let accountEmail: string | null = null;
+    let accountCreated = false;
+    if (body.email) {
+      accountEmail = String(body.email).trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(accountEmail)) {
+        return c.json({ error: "Enter a valid email address." }, 400);
+      }
+      if (!body.password || String(body.password).length < 8) {
+        return c.json({ error: "Password is required (min 8 characters) when registering with an email." }, 400);
+      }
+      const existing = await db.select().from(partners).where(eq(partners.email, accountEmail)).get();
+      if (existing) {
+        return c.json({ error: "A partner account with this email already exists. Sign in instead." }, 409);
+      }
+      try {
+        const auth = getAuth(c.env);
+        await auth.api.signUpEmail({
+          body: { name: body.name, email: accountEmail, password: String(body.password), role: 'counselor', userDivisions: '[]' },
+        });
+        accountCreated = true;
+      } catch (signupErr: any) {
+        const msg = String(signupErr?.message || '');
+        if (/already exists|taken/i.test(msg)) {
+          return c.json({ error: "An account with this email already exists. Sign in instead." }, 409);
+        }
+        return c.json({ error: "Account creation failed", details: msg || (signupErr?.body || signupErr?.status || 'unknown') }, 500);
+      }
     }
 
     const maskedPan = maskPAN(pan);
@@ -80,11 +163,12 @@ partnerRouter.post('/', async (c) => {
     await db.insert(partners).values({
       id: partnerId,
       name: body.name,
+      email: accountEmail,
       panNumber: maskedPan, // masked at rest (Section 39 - no plaintext PII)
       bankAccount: bankAccountCipher, // either AES-GCM ciphertext or a last-4 tag
       ifscCode: ifsc, // IFSC is not secret but validated; keep canonical form
       status: 'active',
-      referralCode: body.referralCode || null,
+      referralCode: body.referralCode || `OPUS-${body.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)}-${Math.floor(1000 + Math.random() * 9000)}`,
       apiToken,
       createdAt: Math.floor(Date.now() / 1000)
     });
@@ -93,8 +177,12 @@ partnerRouter.post('/', async (c) => {
       success: true,
       partnerId,
       apiToken,
+      accountCreated,
+      email: accountEmail,
       maskedPan,
-      message: "Partner registered successfully with KYC validation."
+      message: accountCreated
+        ? "Partner registered successfully. Check your inbox (dev: API log) for the email verification link, then sign in."
+        : "Partner registered successfully with KYC validation."
     });
 
   } catch (error: any) {
@@ -140,6 +228,41 @@ partnerRouter.post('/referrals', async (c) => {
   }
 });
 
+// GET /api/public/partners/session — Authenticated partner session (mirrors the
+// client portal's /api/public/portal/session). Resolves the Better Auth session
+// to the partner record by email and returns the full dashboard payload.
+partnerRouter.get('/session', async (c) => {
+  if (!c.env || !c.env.DB) {
+    return c.json({ error: "DB not available" }, 500);
+  }
+
+  const db = getDb(c.env.DB);
+  const auth = getAuth(c.env);
+  const sessionResult = await auth.api.getSession({ headers: c.req.raw.headers });
+
+  if (!sessionResult?.user) {
+    return c.json({ error: "Not authenticated. Please sign in." }, 401);
+  }
+
+  try {
+    const user = sessionResult.user;
+    const partner = await db.select().from(partners).where(eq(partners.email, user.email)).get();
+
+    if (!partner) {
+      return c.json({ success: true, authenticated: false, email: user.email });
+    }
+
+    if (partner.status === 'blocked') {
+      return c.json({ error: "Access Denied: Your partner account has been blocked by system administrator." }, 403);
+    }
+
+    const summary = await buildPartnerSummary(db, partner.id);
+    return c.json({ success: true, authenticated: true, email: user.email, ...summary });
+  } catch (error: any) {
+    return c.json({ error: "Partner session failed", details: error.message }, 500);
+  }
+});
+
 // GET /api/public/partners/:id/commissions (Partner Commission Ledger) - partner-token bound
 partnerRouter.get('/:id/commissions', async (c) => {
   const partnerId = c.req.param('id');
@@ -170,10 +293,10 @@ partnerRouter.get('/:id/commissions', async (c) => {
   }
 });
 
-// GET /api/public/partners/:id/summary â€” the ONE dashboard payload the partner
+// GET /api/public/partners/:id/summary — the ONE dashboard payload the partner
 // portal needs (gold standard: single round-trip, self-evident numbers).
 // Returns profile (name/referralCode/status), rupee rollups per state, and
-// per-referral entries with compute-at-a-glance statuses. Token-bounded.
+// per-referral entries with compute-at-a-glance statuses. Session- or token-bound.
 partnerRouter.get('/:id/summary', async (c) => {
   const partnerId = c.req.param('id');
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
@@ -181,43 +304,12 @@ partnerRouter.get('/:id/summary', async (c) => {
 
   try {
     const authed = await authPartner(db, partnerId, c);
-    if (!authed) return c.json({ error: "Unauthorized: valid partner token required" }, 401);
+    if (!authed) return c.json({ error: "Unauthorized: valid partner token or account session required" }, 401);
 
-    const partner = await db.select().from(partners).where(eq(partners.id, partnerId)).get();
-    if (!partner) return c.json({ error: "Partner not found" }, 404);
+    const summary = await buildPartnerSummary(db, partnerId);
+    if (!summary) return c.json({ error: "Partner not found" }, 404);
 
-    const partnerReferrals = await db.select().from(referrals).where(eq(referrals.partnerId, partnerId)).all();
-    const referralIds = partnerReferrals.map(r => r.id);
-    const ledger = await db.select().from(commissionLedger).all();
-    const entries = ledger.filter(e => referralIds.includes(e.referralId));
-
-    let matured = 0, pending = 0, paid = 0;
-    const referralRows = partnerReferrals.map(r => {
-      const entry = entries.find(e => e.referralId === r.id);
-      const amount = entry?.amount ?? 0;
-      const status = entry?.status ?? 'unmatured';
-      if (status === 'matured') matured += amount;
-      else if (status === 'paid') paid += amount;
-      else pending += amount;
-      return {
-        referralId: r.id,
-        referredClientId: r.clientId,
-        ratePct: r.commissionRate ?? 5,
-        amountPaise: amount,
-        status,
-      };
-    });
-
-    return c.json({
-      partner: {
-        name: partner.name,
-        referralCode: partner.referralCode ? `?ref=${partner.referralCode}` : null,
-        status: partner.status,
-        joinedAt: partner.createdAt,
-      },
-      totals: { matured, pending, paid, total: matured + pending + paid },
-      referrals: referralRows,
-    });
+    return c.json(summary);
   } catch (error: any) {
     return c.json({ error: "Partner summary failed", details: error.message }, 500);
   }

@@ -47,12 +47,11 @@ kanbanRouter.get('/board', async (c) => {
       })
       .from(engagements)
       .innerJoin(clients, eq(engagements.clientId, clients.id))
-      .where(eq(engagements.status, 'active'))
       .all();
 
     const visible = scopedDivisions
-      ? activeEngagements.filter((card) => scopedDivisions!.includes(card.division))
-      : activeEngagements;
+      ? activeEngagements.filter((card) => scopedDivisions!.includes(card.division) && card.status !== 'archived')
+      : activeEngagements.filter((card) => card.status !== 'archived');
 
     // Money is finance-tooling: strip for roles without it.
     const cards = visible.map((card) =>
@@ -132,6 +131,16 @@ kanbanRouter.post('/board/move', zValidator('json', moveCardSchema), async (c) =
 
     if (!currentEngagement) {
       return c.json({ error: "Engagement card not found" }, 404);
+    }
+
+    // ── Pipeline invariants (Workflow Audit 2026-08-12 F1/F2) ──────────────
+    // F2b: source must match the card's CURRENT stage (no jumps/invalid moves)
+    if (currentEngagement.stageKey !== data.sourceStage) {
+      return c.json({ error: `Card is at '${currentEngagement.stageKey}', not '${data.sourceStage}'`, code: 'stage_mismatch' }, 409);
+    }
+    // F1: WIP ceiling enforced on the PULL side (finish-before-start)
+    if (isWipBreached) {
+      return c.json({ error: `WIP limit reached (${targetStage.wipLimit}) on '${targetStage.key}' — finish or pull something else first`, code: 'wip_limit', limit: targetStage.wipLimit }, 409);
     }
 
     // 4. Update the card stage
@@ -231,6 +240,175 @@ kanbanRouter.patch('/board/tasks/:taskId', async (c) => {
     return c.json({ success: true, id: taskId, status: body.status });
   } catch (error: any) {
     return c.json({ error: 'Task update failed', details: error.message }, 500);
+  }
+});
+
+// POST /api/kanban/board/create - manual card creation
+kanbanRouter.post('/board/create', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const body = await c.req.json().catch(() => ({})) as {
+    clientId: string;
+    division: 'study-abroad' | 'visa' | 'umrah' | 'attestation' | 'manpower';
+    title: string;
+    stageKey: string;
+    counselorId?: string;
+  };
+
+  if (!body.clientId || !body.division || !body.title || !body.stageKey) {
+    return c.json({ error: 'Missing required fields: clientId, division, title, stageKey' }, 400);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const id = crypto.randomUUID();
+    await db.insert(engagements).values({
+      id,
+      clientId: body.clientId,
+      division: body.division,
+      title: body.title,
+      stageKey: body.stageKey,
+      counselorId: body.counselorId || null,
+      outstandingBalance: 0,
+      status: 'active',
+      createdAt: now,
+      updatedAt: now
+    });
+    return c.json({ success: true, id, message: 'Card created successfully.' });
+  } catch (error: any) {
+    return c.json({ error: 'Failed to create card', details: error.message }, 500);
+  }
+});
+
+// PATCH /api/kanban/board/:cardId/status - update card status
+kanbanRouter.patch('/board/:cardId/status', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const cardId = c.req.param('cardId');
+  const body = await c.req.json().catch(() => ({})) as { status?: string };
+
+  if (!body.status) {
+    return c.json({ error: 'status is required' }, 400);
+  }
+
+  try {
+    await db.update(engagements)
+      .set({ status: body.status, updatedAt: Math.floor(Date.now() / 1000) })
+      .where(eq(engagements.id, cardId));
+    return c.json({ success: true, id: cardId, status: body.status });
+  } catch (error: any) {
+    return c.json({ error: 'Failed to update card status', details: error.message }, 500);
+  }
+});
+
+// PATCH /api/kanban/board/:cardId/counselor - assign counselor to engagement
+kanbanRouter.patch('/board/:cardId/counselor', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const cardId = c.req.param('cardId');
+  const body = await c.req.json().catch(() => ({})) as { counselorId?: string | null };
+
+  try {
+    await db.update(engagements)
+      .set({ 
+        counselorId: body.counselorId || null, 
+        updatedAt: Math.floor(Date.now() / 1000) 
+      })
+      .where(eq(engagements.id, cardId));
+    return c.json({ success: true, id: cardId, counselorId: body.counselorId || null });
+  } catch (error: any) {
+    return c.json({ error: 'Failed to update card counselor', details: error.message }, 500);
+  }
+});
+
+// PATCH /api/kanban/board/:cardId/metadata - update card title, balance, and status
+kanbanRouter.patch('/board/:cardId/metadata', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const cardId = c.req.param('cardId');
+  const body = await c.req.json().catch(() => ({})) as { 
+    title?: string; 
+    outstandingBalance?: number; 
+    status?: 'active' | 'archived' | 'cancelled'
+  };
+
+  try {
+    const updatePayload: any = { updatedAt: Math.floor(Date.now() / 1000) };
+    if (body.title !== undefined) updatePayload.title = body.title;
+    if (body.outstandingBalance !== undefined) updatePayload.outstandingBalance = body.outstandingBalance;
+    if (body.status !== undefined) updatePayload.status = body.status;
+
+    await db.update(engagements)
+      .set(updatePayload)
+      .where(eq(engagements.id, cardId));
+
+    return c.json({ success: true, id: cardId, ...body });
+  } catch (error: any) {
+    return c.json({ error: 'Failed to update card metadata', details: error.message }, 500);
+  }
+});
+
+// DELETE /api/kanban/board/:cardId - delete/purge card
+kanbanRouter.delete('/board/:cardId', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const cardId = c.req.param('cardId');
+
+  try {
+    await db.delete(engagements).where(eq(engagements.id, cardId));
+    return c.json({ success: true, id: cardId, message: 'Card deleted successfully.' });
+  } catch (error: any) {
+    return c.json({ error: 'Failed to delete card', details: error.message }, 500);
+  }
+});
+
+
+// POST /api/kanban/board/tasks - Create manual task directly
+const manualTaskSchema = z.object({
+  title: z.string().min(2),
+  description: z.string().optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+  assigneeId: z.string().optional(),
+  dueDate: z.number().int().optional(),
+  clientId: z.string().optional(),
+  engagementId: z.string().optional(),
+});
+kanbanRouter.post('/board/tasks', zValidator('json', manualTaskSchema), async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const data = c.req.valid('json');
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      clientId: data.clientId || null,
+      engagementId: data.engagementId || null,
+      assigneeId: data.assigneeId || null,
+      title: data.title,
+      description: data.description || null,
+      priority: data.priority,
+      dueDate: data.dueDate || null,
+      recurrence: 'none',
+      createdAt: now,
+      updatedAt: now,
+    });
+    return c.json({ success: true, id: taskId, message: 'Task created.' });
+  } catch (error: any) {
+    return c.json({ error: 'Task creation failed', details: error.message }, 500);
+  }
+});
+
+// DELETE /api/kanban/board/tasks/:taskId
+kanbanRouter.delete('/board/tasks/:taskId', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const taskId = c.req.param('taskId');
+  try {
+    await db.delete(tasks).where(eq(tasks.id, taskId));
+    return c.json({ success: true, id: taskId, message: 'Task deleted successfully.' });
+  } catch (error: any) {
+    return c.json({ error: 'Task deletion failed', details: error.message }, 500);
   }
 });
 

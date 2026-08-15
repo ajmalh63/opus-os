@@ -4,7 +4,7 @@ import { getDb } from '../db/client.js';
 import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
-// Team Hub (Â§5.5) â€” a Durable Object per room gives us persistent, low-latency
+// Team Hub (§5.5) — a Durable Object per room gives us persistent, low-latency
 // chat with zero D1 writes on the hot path. Messages live in DO storage;
 // the file drive is R2 under `team/`. Free-tier safe: one DO per room.
 
@@ -75,7 +75,7 @@ function roomStub(env: Env, roomId: string) {
   return env.TEAM_HUB.get(id);
 }
 
-// GET /api/teamhub/rooms/:id/messages?after= â€” poll chat history
+// GET /api/teamhub/rooms/:id/messages?after= — poll chat history
 teamHubRouter.get('/rooms/:id/messages', async (c) => {
   if (!c.env?.TEAM_HUB) return c.json({ error: 'Team Hub not configured (Durable Object binding)' }, 503);
   const after = c.req.query('after') || '0';
@@ -104,7 +104,7 @@ teamHubRouter.post('/rooms/:id/messages', async (c) => {
   }
 });
 
-// GET /api/teamhub/files â€” R2 team drive listing
+// GET /api/teamhub/files — R2 team drive listing
 teamHubRouter.get('/files', async (c) => {
   if (!c.env?.BUCKET) return c.json({ files: [] });
   try {

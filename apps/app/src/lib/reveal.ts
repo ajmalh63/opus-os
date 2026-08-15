@@ -14,11 +14,26 @@ export function useRevealRoot<T extends HTMLElement>() {
   const ref = { current: null as T | null };
   useEffect(() => {
     if (!ref.current) return;
+    // The workspace scrolls inside the shell's <main> (and AdminConsole has its
+    // own inner scroller), never the window — so pin each trigger to the nearest
+    // scrollable ancestor or reveals below the fold would never fire.
+    const scrollerOf = (el: HTMLElement): Element | null => {
+      let p = el.parentElement;
+      while (p) {
+        const oy = getComputedStyle(p).overflowY;
+        if (oy === 'auto' || oy === 'scroll') return p;
+        p = p.parentElement;
+      }
+      return null;
+    };
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>(ref.current!.querySelectorAll('.reveal')).forEach((el) => {
+        const vars: ScrollTrigger.Vars = { trigger: el, start: 'top 86%', once: true };
+        const scroller = scrollerOf(el);
+        if (scroller) vars.scroller = scroller;
         gsap.fromTo(el, { y: 34, opacity: 0 }, {
           y: 0, opacity: 1, duration: 0.9, ease: 'power3.out',
-          scrollTrigger: { trigger: el, start: 'top 86%', once: true },
+          scrollTrigger: vars,
         });
       });
     }, ref);

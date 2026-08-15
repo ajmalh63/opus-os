@@ -60,7 +60,7 @@ partnerAdminRouter.patch('/:id/status', zValidator('json', statusSchema), async 
 // Resolution order: partner+item > partner+type > global+item > global+type > default 5%.
 const planSchema = z.object({
   partnerId: z.string().optional().nullable(),
-  catalogType: z.enum(['university', 'departure', 'job', 'attestation', '*']).default('*'),
+  catalogType: z.enum(['university', 'departure', 'job', 'attestation', 'visa', 'umrah_package', '*']).default('*'),
   catalogItemId: z.string().optional().nullable(),
   ratePct: z.number().int().min(0).max(100),
 });

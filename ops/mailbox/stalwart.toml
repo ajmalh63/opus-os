@@ -1,0 +1,75 @@
+# Stalwart Mailbox Server — Deployment Kit (VPS + SMTP2GO smarthost)
+# Zero-cost, open-source (AGPL) per-staff mailboxes. Fill the <PLACEHOLDER>s,
+# then follow 00-README.md order. This file is the canonical config base.
+
+# ── Networking ──────────────────────────────────────────────────────────────
+[server.listener."0.0.0.0:25"]                     # inbound SMTP (MX target)
+protocol = "smtp"
+
+[server.listener."0.0.0.0:465"]                     # staff client submission (SSL)
+protocol = "smtp"
+tls.implicit = true
+
+[server.listener."0.0.0.0:587"]                     # staff client submission (STARTTLS)
+protocol = "smtp"
+
+[server.listener."0.0.0.0:993"]                     # staff IMAP (SSL)
+protocol = "imap"
+tls.implicit = true
+
+# ── Identity ────────────────────────────────────────────────────────────────
+[server.hostname]                                  # MX/PTR hostname must match!
+hostname = "mail.<YOUR_DOMAIN>"
+[server.hostname."<YOUR_DOMAIN>"]
+listener = "0.0.0.0:25"
+
+# ── Storage (SQLite + Maildir on disk) ──────────────────────────────────────
+[storage]
+type = "sqlite"
+path = "/var/lib/stalwart/data/stalwart.db"
+[storage.blob]
+type = "filesystem"
+directory = "/var/lib/stalwart/data/blobs"
+[storage.fts]
+type = "sqlite"
+
+# ── TLS (self-signed OK behind Cloudflare Tunnel; or ACME for direct) ───────
+[server.tls]
+certificate = ["/var/lib/stalwart/certs/fullchain.pem"]
+private-key = "/var/lib/stalwart/certs/privkey.pem"
+
+# ── Outbound via SMTP2GO free smarthost (Oracle blocks port 25 egress) ──────
+[queue.outbound."smtp2go"]
+host = "smtp2go.com"
+port = 587
+starttls = true
+credentials = "smtp2go:api/<SMTP2GO_API_KEY>"
+source-ip = ""
+
+# Route all outbound through the smarthost (blank = smarthost for everything)
+[queue.outbound]
+strategy = "smtp2go"
+
+# ── Security basics ────────────────────────────────────────────────────────
+[session.smtp]
+# never an open relay: local-submission-only auth rules (defaults in Stalwart
+# already refuse unauthenticated remote relaying — keep them; only tighten)
+[session.smtp."0.0.0.0:25"]
+allow-plain = false
+[session.imap."0.0.0.0:993"]
+require-tls = true
+
+# ── Anti-abuse / limits ─────────────────────────────────────────────────────
+[session.smtp]
+hostname = "mail.<YOUR_DOMAIN>"
+[session.smtp."0.0.0.0:25"].limits
+rate = { limit = 50, burst = 10 }
+concurrency = 20
+
+# ── DKIM ────────────────────────────────────────────────────────────────────
+# Generate: alert the key via the management UI/CLI:
+#   stalwart-cli dkim key /var/lib/stalwart/data/dkim "<YOUR_DOMAIN>" mail
+# Then add the DNS TXT (selector `mail._domainkey`) from the key's public side.
+[signing.dkim]
+keys = { "<YOUR_DOMAIN>" = { key = "/var/lib/stalwart/data/dkim/mail-<YOUR_DOMAIN>.pem", selector = "mail" } }
+authorized-domains = ["<YOUR_DOMAIN>"]

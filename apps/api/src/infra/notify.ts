@@ -32,7 +32,11 @@ async function sendEmail(env: NotifyEnv, to: string, subject: string, body: stri
   // Wave 1: Listmonk is the email engine when configured (owns DKIM/bounce).
   if (env.LISTMONK_BASE_URL) {
     const mk = await listmonkUpsertSubscriber(env, to, { name: '', channel: 'os-email' });
-    const res = await listmonkSendTransactional(env, to, subject, `<p style="font-family:sans-serif">${body.replace(/</g, '&lt;')}</p>`);
+    // Escape text but auto-link URLs — OTP/reset links must be clickable
+    // (transactional gold standard), receipts too.
+    const safe = body.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/(https?:\/\/[^\s<]+)/g, (u) => `<a href="${u}" style="color:#C7A24B">${u}</a>`);
+    const res = await listmonkSendTransactional(env, to, subject, `<p style="font-family:sans-serif">${safe}</p>`);
     if (res.ok) return { ok: true, provider: 'listmonk', remoteId: res.id != null ? String(res.id) : undefined };
     return { ok: false, provider: 'listmonk', reason: res.reason || (mk.ok ? undefined : 'subscriber+send failed') };
   }

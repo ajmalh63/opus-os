@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
+import { useRevealRoot } from '../lib/reveal';
 
-// Staff unified inbox — OpenWA + Chatwoot inbound conversations become visible
+// Staff unified inbox  OpenWA + Chatwoot inbound conversations become visible
 // here; replies dispatch via the WhatsApp gateway (sendWhatsApp).
 
 const baseAuth = (): HeadersInit => {
@@ -17,6 +18,7 @@ interface Conversation {
 interface Msg { id: string; direction: string; body: string; createdAt: number; }
 
 export default function Inbox() {
+  const rootRef = useRevealRoot<HTMLDivElement>();
   const { me } = useSession();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
@@ -54,75 +56,75 @@ export default function Inbox() {
     onError: (e: any) => setToast({ kind: 'err', text: e.message }),
   });
 
-  const fmt = (ts: number | null) => ts ? new Date(ts * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+  const fmt = (ts: number | null) => ts ? new Date(ts * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
 return (
-    <div className="min-h-full text-brand-navy">
+    <div ref={rootRef} className="min-h-full text-brand-navy">
       <div className="mx-auto flex min-h-full max-w-7xl flex-col gap-6">
-        <div className="flex items-center justify-between">
+        <div className="reveal flex items-center justify-between">
           <div>
             <h1 className="font-display text-2xl font-bold">Unified Inbox</h1>
-            <p className="text-xs text-slate-500">WhatsApp + website chat (OpenWA / Chatwoot)</p>
+            <p className="text-xs text-brand-navy/40">WhatsApp + website chat (OpenWA / Chatwoot)</p>
           </div>
           <div className="flex items-center gap-3">
             {data?.unreadTotal ? (
-              <span className="rounded-full bg-rose-500/20 px-3 py-1 text-[10px] font-bold text-rose-300">{data.unreadTotal} unread</span>
+              <span className="rounded-full bg-rose-500/20 px-3 py-1 text-[10px] font-bold text-rose-700">{data.unreadTotal} unread</span>
             ) : (
-              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[10px] font-bold text-emerald-300">Live</span>
+              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[10px] font-bold text-emerald-700">Live</span>
             )}
           </div>
         </div>
 
-        {toast && <div className={`rounded-xl px-4 py-3 text-xs font-semibold ${toast.kind === 'ok' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/15 text-rose-300'}`}>{toast.text}</div>}
+        {toast && <div className={`rounded-xl px-4 py-3 text-xs font-semibold ${toast.kind === 'ok' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-700'}`}>{toast.text}</div>}
 
         <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Conversation list */}
-          <div className="rounded-2xl border border-brand-navy/10 bg-white p-3">
-            <div className="mb-3 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Conversations</div>
-            {isLoading && <p className="p-6 text-center text-xs text-slate-500">Loading-</p>}
+          <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-3">
+            <div className="mb-3 px-2 text-[10px] font-bold uppercase tracking-wider text-brand-gold">Conversations</div>
+            {isLoading && <p className="p-6 text-center text-xs text-brand-navy/40">Loading…</p>}
             {!isLoading && (!data?.conversations || data.conversations.length === 0) && (
-              <p className="p-6 text-center text-xs text-slate-500">No conversations yet. WhatsApp/web messages will appear here.</p>
+              <p className="p-6 text-center text-xs text-brand-navy/40">No conversations yet. WhatsApp/web messages will appear here.</p>
             )}
             <div className="space-y-2">
               {(data?.conversations || []).map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelected(c.id)}
-                  className={`w-full rounded-xl p-3 text-left transition-all ${selected === c.id ? 'bg-brand-gold/15 border border-brand-gold/40' : 'bg-white border border-transparent hover:bg-white'}`}
+                  className={`w-full rounded-xl p-3 text-left transition-all ${selected === c.id ? 'bg-brand-gold/15 border border-brand-gold/40' : 'bg-brand-navy/[0.04] border border-transparent hover:bg-brand-navy/[0.06]'}`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="truncate text-sm font-semibold">{c.contactName || c.contactKey}</span>
                     {c.unread > 0 && <span className="h-2.5 w-2.5 rounded-full bg-brand-gold" />}
                   </div>
-                  <p className="mt-1 truncate text-[11px] text-slate-500">{c.lastMessage || '—'}</p>
-                  <p className="mt-1 text-[10px] text-slate-400">{fmt(c.lastMessageAt)} Â· {c.channel}</p>
+                  <p className="mt-1 truncate text-[11px] text-brand-navy/40">{c.lastMessage || '\u200B'}</p>
+                  <p className="mt-1 text-[10px] text-brand-navy/50">{fmt(c.lastMessageAt)} · {c.channel}</p>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Thread */}
-          <div className="rounded-2xl border border-brand-navy/10 bg-white p-4 lg:col-span-2">
+          <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-4 lg:col-span-2">
             {!selected ? (
-              <div className="flex h-full min-h-[320px] items-center justify-center text-xs text-slate-500">Select a conversation to reply.</div>
+              <div className="flex h-full min-h-[320px] items-center justify-center text-xs text-brand-navy/40">Select a conversation to reply.</div>
             ) : (
               <div className="flex h-full flex-col">
                 <div className="mb-3 flex items-center justify-between border-b border-brand-navy/10 pb-3">
                   <div>
                     <p className="font-display text-sm font-bold">{thread?.conversation.contactName || thread?.conversation.contactKey}</p>
-                    <p className="text-[10px] text-slate-500">{thread?.conversation.channel} Â· {thread?.conversation.contactKey}</p>
+                    <p className="text-[10px] text-brand-navy/40">{thread?.conversation.channel} · {thread?.conversation.contactKey}</p>
                   </div>
-                  {me && <span className="text-[10px] text-slate-500">Replying as {me.name?.split(' ')[0]}</span>}
+                  {me && <span className="text-[10px] text-brand-navy/40">Replying as {me.name?.split(' ')[0]}</span>}
                 </div>
 
                 <div className="flex-1 space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '46vh' }}>
                   {(thread?.messages || []).map((m) => (
-                    <div key={m.id} className={`max-w-[80%] rounded-xl px-3.5 py-2.5 text-xs ${m.direction === 'outgoing' ? 'ml-auto bg-emerald-600 text-white' : 'bg-white text-brand-navy border border-brand-navy/10'}`}>
+                    <div key={m.id} className={`max-w-[80%] rounded-xl px-3.5 py-2.5 text-xs ${m.direction === 'outgoing' ? 'ml-auto bg-emerald-600 text-white' : 'bg-brand-navy/[0.06] text-brand-navy border border-brand-navy/10'}`}>
                       <p className="leading-relaxed">{m.body}</p>
-                      <p className="mt-1 text-[9px] text-slate-400">{fmt(m.createdAt)}</p>
+                      <p className="mt-1 text-[9px] text-brand-navy/50">{fmt(m.createdAt)}</p>
                     </div>
                   ))}
-                  {thread && thread.messages.length === 0 && <p className="p-4 text-center text-xs text-slate-400">No messages in this thread yet.</p>}
+                  {thread && thread.messages.length === 0 && <p className="p-4 text-center text-xs text-brand-navy/50">No messages in this thread yet.</p>}
                 </div>
 
                 <form
@@ -132,11 +134,11 @@ return (
                   <input
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
-                    placeholder="Type a WhatsApp reply-"
-                    className="flex-1 rounded-xl border border-brand-navy/10 bg-white px-4 py-3 text-sm text-brand-navy focus:border-brand-gold focus:outline-none"
+                    placeholder="Type a WhatsApp reply…"
+                    className="flex-1 rounded-xl border border-brand-navy/10 bg-white px-4 py-3 text-sm text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none"
                   />
                   <button type="submit" disabled={sendReply.isPending || !reply.trim()} className="rounded-xl bg-brand-gold px-5 py-3 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover disabled:opacity-40">
-                    {sendReply.isPending ? '-' : 'Send'}
+                    {sendReply.isPending ? '…' : 'Send'}
                   </button>
                 </form>
               </div>

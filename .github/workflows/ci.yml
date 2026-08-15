@@ -2,37 +2,87 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
 
 jobs:
-  ci:
+  unit:
+    name: Typecheck · Tests · Hygiene
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
-          version: 10.2.1
+          version: 9
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: pnpm -r typecheck
 
-      - name: Test
+      - name: Unit & integration tests
         run: pnpm test
 
-      - name: Build app
-        run: pnpm --filter app build
+      - name: Mojibake hygiene gate
+        run: node scripts/mojibake-gate.mjs
+
+  e2e:
+    name: E2E smoke (local stack)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install headless Chromium (playwright-core)
+        run: npx playwright-core install chromium
+
+      - name: Seed local D1 (migrations)
+        working-directory: apps/api
+        run: npx wrangler d1 migrations apply opusos-db --local
+
+      - name: Start API dev (local D1)
+        working-directory: apps/api
+        env:
+          BETTER_AUTH_SECRET: ci-secret
+          ADMIN_EMAIL: owner@opusoverseas.com
+          ADMIN_PASSWORD: OwnerPass2026!
+        run: |
+          npx wrangler dev --port 8787 --local &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8787/api/health && break
+            sleep 2
+          done
+          curl -s -X POST http://localhost:8787/api/auth/bootstrap-admin \
+            -H 'Content-Type: application/json' -d '{}' || true
+          wait
+
+      - name: Start app dev (Vite)
+        working-directory: apps/app
+        run: |
+          pnpm dev > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:5173/ > /dev/null && break
+            sleep 2
+          done
+          wait
+
+      - name: Interactive smoke suite
+        env:
+          SMOKE_CHANNEL: chromium
+        run: node scripts/smoke-interactions.mjs

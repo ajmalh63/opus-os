@@ -72,3 +72,24 @@ infraRouter.get('/health', async (c) => {
     allUp,
   });
 });
+
+// POST /api/infrastructure/indiapost/book
+// Mock India Post DNK API integration: simulates session login, speed-post tariff lookups,
+// pincode validation, and booking a shipment. Returns a mock tracking code.
+infraRouter.post('/indiapost/book', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as any;
+  if (!body.pincode) {
+    return c.json({ error: 'Pincode is required' }, 400);
+  }
+  
+  // Simulate speed-post tariff lookup and pincode validation
+  const tariffPaise = 15000; // Rs 150.00
+  
+  return c.json({
+    success: true,
+    message: 'Shipment booked successfully via mock India Post DNK API',
+    trackingCode: 'EW' + Math.floor(100000000 + Math.random() * 900000000) + 'IN',
+    tariffPaise,
+    pincodeValid: true,
+  });
+});

@@ -1,0 +1,1 @@
+ALTER TABLE `campaign_touches` ADD `channel` text DEFAULT 'whatsapp' NOT NULL;

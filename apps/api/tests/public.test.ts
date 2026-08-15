@@ -8,9 +8,10 @@ describe('Public hero artifacts (Section 24.1.1)', () => {
   beforeAll(() => {
     mockD1 = new MockD1Database();
     mockD1.tables.job_postings.push(
-      { id: 'job-1', title: 'Staff Nurse', country: 'UAE', sector: 'healthcare', salary_text: '₹18-25 LPA', status: 'open', created_at: 1 },
-      { id: 'job-2', title: 'Site Engineer', country: 'Qatar', sector: 'construction', salary_text: '₹15-20 LPA', status: 'open', created_at: 1 },
-      { id: 'job-3', title: 'Filled Role', country: 'Saudi', sector: 'hospitality', salary_text: '₹10 LPA', status: 'filled', created_at: 1 }
+      { id: 'job-1', title: 'Staff Nurse', country: 'UAE', sector: 'healthcare', salary_text: '₹18-25 LPA', collar: 'white_collar', tier: 'public', status: 'open', created_at: 1 },
+      { id: 'job-2', title: 'Site Engineer', country: 'Qatar', sector: 'construction', salary_text: '₹15-20 LPA', collar: 'blue_collar', tier: 'public', status: 'open', created_at: 1 },
+      { id: 'job-3', title: 'Filled Role', country: 'Saudi', sector: 'hospitality', salary_text: '₹10 LPA', collar: 'white_collar', tier: 'public', status: 'filled', created_at: 1 },
+      { id: 'job-4', title: 'Secret Role', country: 'UAE', sector: 'finance', salary_text: '₹20 LPA', collar: 'white_collar', tier: 'secret', status: 'open', created_at: 1 }
     );
     mockD1.tables.attestation_chains.push({
       id: 'chain-1', country: 'UAE',
@@ -40,6 +41,7 @@ describe('Public hero artifacts (Section 24.1.1)', () => {
     const data = await res.json() as any;
     expect(data.jobs.length).toBe(2);
     expect(data.jobs.every((j: any) => j.title !== 'Filled Role')).toBe(true);
+    expect(data.jobs.every((j: any) => j.title !== 'Secret Role')).toBe(true);
     expect(data.jobs[0].salaryText).toBe('₹18-25 LPA');
   });
 

@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+﻿import { useEffect, type ReactNode } from 'react';
 import { useLocation } from 'wouter';
 import { useSession } from '../lib/session';
 

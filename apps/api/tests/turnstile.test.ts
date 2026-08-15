@@ -11,56 +11,59 @@ describe('Turnstile bot protection (public write surfaces)', () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
-  const leadBody = JSON.stringify({
-    name: 'Test Lead', phone: '+91 98765 43210', email: 'test@example.com',
-    highestQualification: 'undergrad', division: 'study-abroad',
+  const leadBody = () => JSON.stringify({
+    name: 'Test Lead', 
+    phone: `+91 98765 ${43000 + Math.floor(Math.random() * 9000)}`, 
+    email: `test${Math.floor(Math.random() * 99999)}@example.com`,
+    highestQualification: 'undergrad', 
+    division: 'study-abroad',
     consents: { coreProcessing: true, whatsappUpdates: true, marketingCampaigns: true },
     dynamicContext: { targetCountry: 'US', intakeSeason: 'Fall 2027' },
   });
 
   it('dev mock key (1x) allows public leads without a token', async () => {
     const res = await app.request('/api/public/leads', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: leadBody,
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: leadBody(),
     }, { DB: mockD1, TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA', ENVIRONMENT: 'development' });
     expect(res.status).toBe(200);
   });
 
   it('mock fail key (2x) blocks the request with 403', async () => {
     const res = await app.request('/api/public/leads', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: leadBody,
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: leadBody(),
     }, { DB: mockD1, TURNSTILE_SECRET_KEY: '2x00000000000000000000AB', ENVIRONMENT: 'development' });
     expect(res.status).toBe(403);
     const j = await res.json() as any;
     expect(j.error.code).toBe('BOT_BLOCKED');
   });
 
-  it('real secret without token â†’ 403', async () => {
+  it('real secret without token -> 403', async () => {
     const res = await app.request('/api/public/leads', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: leadBody,
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: leadBody(),
     }, { DB: mockD1, TURNSTILE_SECRET_KEY: '0x4AA0000000000000000000000000000', ENVIRONMENT: 'production' });
     expect(res.status).toBe(403);
   });
 
-  it('real secret + valid siteverify token â†’ passes (siteverify mocked)', async () => {
+  it('real secret + valid siteverify token -> passes (siteverify mocked)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: true }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     })));
     const res = await app.request('/api/public/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'cf-turnstile-response': 'tok-abc' },
-      body: leadBody,
+      body: leadBody(),
     }, { DB: mockD1, TURNSTILE_SECRET_KEY: '0x4AA0000000000000000000000000000', ENVIRONMENT: 'production' });
     expect(res.status).toBe(200);
   });
 
-  it('real secret + failed siteverify â†’ 403', async () => {
+  it('real secret + failed siteverify -> 403', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: false, 'error-codes': ['invalid-input-response'] }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     })));
     const res = await app.request('/api/public/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'cf-turnstile-response': 'tok-bad' },
-      body: leadBody,
+      body: leadBody(),
     }, { DB: mockD1, TURNSTILE_SECRET_KEY: '0x4AA0000000000000000000000000000', ENVIRONMENT: 'production' });
     expect(res.status).toBe(403);
   });

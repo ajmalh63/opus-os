@@ -7,8 +7,11 @@ import ComplianceTab from '../components/ComplianceTab';
 import FunnelTab from '../components/FunnelTab';
 import CampaignsTab from '../components/CampaignsTab';
 import PartnerAdminPanel from '../components/PartnerAdminPanel';
+import InfraHealth from '../components/InfraHealth';
+import MarketingTab from '../components/MarketingTab';
+import AlertsVisibility from '../components/AlertsVisibility';
 
-// Real session-driven auth Ã¢â‚¬â€ the live cookie, never a forged token.
+// Real session-driven auth — the live cookie, never a forged token.
 const AUTH = {
   get Cookie() {
     const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
@@ -45,7 +48,13 @@ const DIVISIONS = [
   { key: 'visa', label: 'Visa Processing' },
   { key: 'umrah', label: 'Umrah Packages' },
   { key: 'attestation', label: 'Document Attestation' },
-  { key: 'manpower', label: 'Manpower Recruitment' }
+  { key: 'manpower', label: 'Manpower Recruitment' },
+  { key: 'clients', label: 'Clients Directory' },
+  { key: 'kanban', label: 'Pipeline Board' },
+  { key: 'billing', label: 'Billing & GST' },
+  { key: 'taxes', label: 'Taxes & Compliance' },
+  { key: 'analytics', label: 'Flow Analytics' },
+  { key: 'audit', label: 'Security Logs' }
 ];
 
 const ROLES = [
@@ -60,8 +69,8 @@ export default function AdminConsole() {
   const queryClient = useQueryClient();
   const { me } = useSession();
   const isOwner = me?.role === 'super_admin';
-  const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as 'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | null;
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners'>(initialTab && ['directory','onboard','audit','roles','growth','funnel','compliance','campaigns','partners'].includes(initialTab) ? initialTab : 'directory');
+  const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as 'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | null;
+  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts'>(initialTab && ['directory','onboard','audit','roles','growth','funnel','compliance','campaigns','partners','infra','marketing','alerts'].includes(initialTab) ? initialTab : 'directory');
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
@@ -262,15 +271,15 @@ export default function AdminConsole() {
       case 'super_admin':
         return 'bg-purple-950/80 text-purple-300 border border-purple-800';
       case 'manager':
-        return 'bg-blue-950/80 text-blue-300 border border-blue-800';
+        return 'bg-blue-50 text-blue-700 border border-blue-200';
       case 'counselor':
-        return 'bg-emerald-950/80 text-emerald-300 border border-emerald-800';
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
       case 'receptionist':
-        return 'bg-amber-950/80 text-amber-300 border border-amber-800';
+        return 'bg-amber-50 text-amber-700 border border-amber-200';
       case 'coordinator':
-        return 'bg-cyan-950/80 text-cyan-300 border border-cyan-800';
+        return 'bg-cyan-50 text-cyan-700 border border-cyan-200';
       default:
-        return 'bg-slate-800 text-slate-300 border border-brand-navy/15';
+        return 'bg-slate-100 text-slate-700 border border-brand-navy/15';
     }
   };
 
@@ -289,28 +298,32 @@ export default function AdminConsole() {
   };
 
   return (
-    <div className="flex h-full min-h-full w-full flex-col overflow-hidden text-slate-100 font-sans">
+<div className="flex h-full min-h-full w-full flex-col overflow-hidden text-brand-navy font-sans">
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#F7F8FA]">
-        
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-transparent">
+
         {/* TOP STATUS BAR */}
-        <header className="h-20 border-b border-brand-navy/10 px-8 flex items-center justify-between shrink-0 bg-white/85 backdrop-blur-md z-10">
+        <header className="h-20 border-b border-brand-navy/10 px-8 flex items-center justify-between shrink-0 bg-white/85 backdrop-blur-xl z-10">
           <div>
-            <h2 className="font-display font-bold text-xl text-brand-navy tracking-wide">System Control Console</h2>
-            <p className="text-xs text-slate-400">Manage staff access controls, scope limits, and system-wide write logs</p>
+            <div className="flex items-center gap-2">
+              <span className="gold-dot" />
+              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-gold">Super Admin · Control</span>
+            </div>
+            <h2 className="mt-1 font-display font-extrabold text-xl text-brand-navy tracking-wide">System Control Console</h2>
+            <p className="text-[11px] text-brand-navy/50">Manage staff access controls, scope limits, and system-wide write logs</p>
           </div>
 
           <div className="flex gap-4">
             {/* Quick Stats Panel */}
-            <div className="flex items-center gap-6 bg-white border border-brand-navy/10 rounded-lg px-4 py-2 text-xs">
+            <div className="flex items-center gap-6 bg-white border border-brand-navy/10 rounded-lg px-4 py-2 text-xs shadow-[0_8px_24px_-14px_rgba(10,45,80,0.25)]">
               <div>
-                <span className="text-slate-400 block text-[9px] uppercase tracking-wider font-semibold">Staff Count</span>
+                <span className="text-brand-navy/40 block text-[9px] uppercase tracking-wider font-semibold">Staff Count</span>
                 <span className="text-brand-gold font-bold text-sm">{staffData?.staff?.length || 0}</span>
               </div>
               <div className="border-l border-brand-navy/10 h-6"></div>
               <div>
-                <span className="text-slate-400 block text-[9px] uppercase tracking-wider font-semibold">Audit Logs</span>
+                <span className="text-brand-navy/40 block text-[9px] uppercase tracking-wider font-semibold">Audit Logs</span>
                 <span className="text-brand-gold font-bold text-sm">{auditData?.logs?.length || 0}</span>
               </div>
             </div>
@@ -320,22 +333,22 @@ export default function AdminConsole() {
         {/* TOAST SYSTEM */}
         {toast.show && (
           <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 border text-xs font-semibold transition-all duration-300 ${
-            toast.type === 'success' ? 'bg-emerald-950 border-emerald-800 text-emerald-300' :
-            toast.type === 'error' ? 'bg-rose-950 border-rose-800 text-rose-300' :
-            'bg-amber-950 border-amber-800 text-amber-300'
+            toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+            toast.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-700' :
+            'bg-amber-50 border-amber-200 text-amber-700'
           }`}>
-            <span>{toast.type === 'success' ? 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢-ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“' : toast.type === 'error' ? 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢-ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢' : 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢-ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â'}</span>
+            <span>{toast.type === 'success' ? '✓ Done' : toast.type === 'error' ? '✕ Failed' : 'ℹ Notice'}</span>
             <span>{toast.msg}</span>
           </div>
         )}
 
         {/* SUBHEADER TABS */}
-        <div className="px-8 border-b border-brand-navy/10 bg-[#F7F8FA]/30 flex justify-between items-center shrink-0">
+        <div className="px-8 border-b border-brand-navy/10 bg-white/60 backdrop-blur flex justify-between items-center shrink-0">
           <div className="flex gap-4">
             <button
               onClick={() => setActiveTab('directory')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'directory' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                activeTab === 'directory' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
               }`}
             >
               Staff Directory & Scoping
@@ -343,7 +356,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('onboard')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'onboard' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                activeTab === 'onboard' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
               }`}
             >
               Onboard New Staff
@@ -351,7 +364,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('audit')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'audit' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                activeTab === 'audit' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
               }`}
             >
               System Audit Logs
@@ -359,7 +372,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('roles')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'roles' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                activeTab === 'roles' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
               }`}
             >
               Roles & Permissions
@@ -367,7 +380,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('growth')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'growth' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                activeTab === 'growth' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
               }`}
             >
               Growth & Incentives
@@ -375,7 +388,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('funnel')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'funnel' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                activeTab === 'funnel' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
               }`}
             >
               Sales Funnel
@@ -383,7 +396,7 @@ export default function AdminConsole() {
             <button
               onClick={() => setActiveTab('compliance')}
               className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'compliance' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                activeTab === 'compliance' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
               }`}
             >
               Compliance (GST)
@@ -392,7 +405,7 @@ export default function AdminConsole() {
               <button
                 onClick={() => setActiveTab('campaigns')}
                 className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'campaigns' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                  activeTab === 'campaigns' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
                 }`}
               >
                 Campaigns
@@ -402,17 +415,27 @@ export default function AdminConsole() {
               <button
                 onClick={() => setActiveTab('partners')}
                 className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'partners' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-slate-400 hover:text-brand-navy'
+                  activeTab === 'partners' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
                 }`}
               >
                 Partners
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={() => setActiveTab('alerts')}
+                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                  activeTab === 'alerts' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
+                }`}
+              >
+                Staff Alerts
               </button>
             )}
           </div>
         </div>
 
         {/* TAB WORKSPACE CONTENT */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-8 relative">
           
           {/* TAB 1: STAFF DIRECTORY & SCOPING */}
           {activeTab === 'directory' && (
@@ -420,11 +443,11 @@ export default function AdminConsole() {
               {loadingStaff ? (
                 <div className="p-12 text-center text-xs text-slate-400">Retrieving secure staff roster...</div>
               ) : staffError ? (
-                <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢-ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Failed to retrieve staff records. Please check that you have active super-admin credentials.
+                <div className="p-12 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200/50 rounded-lg">
+                  ⚠ Error – Failed to retrieve staff records. Please check that you have active super-admin credentials.
                 </div>
               ) : (
-                <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
+                <div className="bg-white border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
@@ -434,11 +457,11 @@ export default function AdminConsole() {
                         <th className="p-4 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-brand-navy/[0.08]">
                       {staffData?.staff?.map((user) => {
                         const userScopes = parseDivisions(user.userDivisions);
                         return (
-                          <tr key={user.id} className="hover:bg-slate-800/20 transition duration-150">
+                          <tr key={user.id} className="hover:bg-brand-navy/[0.04] transition duration-150">
                             <td className="p-4">
                               <div className="font-semibold text-brand-navy">{user.name}</div>
                               <div className="text-[10px] text-slate-400">{user.email}</div>
@@ -457,7 +480,7 @@ export default function AdminConsole() {
                                   {userScopes.map(scopeKey => {
                                     const match = DIVISIONS.find(d => d.key === scopeKey);
                                     return (
-                                      <span key={scopeKey} className="px-2 py-0.5 bg-white text-slate-300 border border-brand-navy/10 rounded text-[9px] font-medium">
+                                      <span key={scopeKey} className="px-2 py-0.5 bg-brand-navy/[0.06] text-brand-navy/70 border border-brand-navy/10 rounded text-[9px] font-medium">
                                         {match?.label || scopeKey}
                                       </span>
                                     );
@@ -468,7 +491,7 @@ export default function AdminConsole() {
                             <td className="p-4 text-right">
                               <button
                                 onClick={() => handleOpenEditScope(user)}
-                                className="px-3 py-1.5 bg-[#1C2541] hover:bg-slate-800 border border-brand-navy/15 text-brand-gold text-[10px] uppercase font-semibold tracking-wider rounded transition duration-150 cursor-pointer"
+                                className="px-3 py-1.5 bg-brand-navy/[0.05] hover:bg-brand-navy/[0.06] border border-brand-navy/15 text-brand-gold text-[10px] uppercase font-semibold tracking-wider rounded transition duration-150 cursor-pointer"
                               >
                                 Edit Scope
                               </button>
@@ -485,7 +508,7 @@ export default function AdminConsole() {
 
           {/* TAB 2: REGISTER NEW STAFF */}
           {activeTab === 'onboard' && (
-            <div className="max-w-2xl mx-auto bg-[#1C2541]/40 border border-brand-navy/10 p-8 rounded-xl shadow-2xl">
+            <div className="max-w-2xl mx-auto bg-white border border-brand-navy/10 p-8 rounded-xl shadow-2xl">
               <h3 className="font-display font-semibold text-brand-navy text-base mb-6 border-b border-brand-navy/10 pb-3 text-brand-gold">
                 System Staff Onboarding & Scoping
               </h3>
@@ -501,7 +524,7 @@ export default function AdminConsole() {
                       placeholder="e.g. Rahul Sharma"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="w-full bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-500 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                      className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
                       required
                     />
                   </div>
@@ -514,7 +537,7 @@ export default function AdminConsole() {
                       placeholder="name@opusoverseas.com"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
-                      className="w-full bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder-slate-500 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                      className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
                       required
                     />
                   </div>
@@ -527,10 +550,10 @@ export default function AdminConsole() {
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as any)}
-                    className="w-full bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-3 py-2 text-brand-navy focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
+                    className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
                   >
                     {ROLES.map(role => (
-                      <option key={role.key} value={role.key} className="bg-[#F7F8FA] text-brand-navy">
+                      <option key={role.key} value={role.key} className="bg-white text-brand-navy">
                         {role.label}
                       </option>
                     ))}
@@ -544,7 +567,7 @@ export default function AdminConsole() {
                   <label className="block text-[10px] uppercase text-slate-400 font-semibold mb-2 tracking-wider">
                     Permitted Division Scopes (Employee Scoping)
                   </label>
-                  <div className="bg-[#F7F8FA]/80 border border-brand-navy/10 rounded p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="bg-white border border-brand-navy/10 rounded p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {DIVISIONS.map(div => {
                       const isChecked = newScopes.includes(div.key);
                       return (
@@ -553,8 +576,8 @@ export default function AdminConsole() {
                           onClick={() => toggleScope(div.key, false)}
                           className={`flex items-center gap-3 p-2.5 rounded border cursor-pointer select-none transition-all duration-150 ${
                             isChecked
-                              ? 'bg-white border-brand-gold/60 text-brand-gold'
-                              : 'bg-transparent border-brand-navy/10 text-slate-300 hover:border-brand-navy/15'
+                              ? 'bg-brand-navy/[0.06] border-brand-gold/60 text-brand-gold'
+                              : 'bg-transparent border-brand-navy/10 text-brand-navy/70 hover:border-brand-navy/15'
                           }`}
                         >
                           <input
@@ -577,7 +600,7 @@ export default function AdminConsole() {
                   <button
                     type="submit"
                     disabled={registerMutation.isPending}
-                    className="px-6 py-2.5 bg-brand-gold hover:bg-brand-goldHover text-[#0B132B] uppercase text-xs font-bold tracking-wider rounded transition duration-200 disabled:opacity-50 cursor-pointer shadow-lg"
+                    className="px-6 py-2.5 bg-brand-gold hover:bg-brand-goldHover text-brand-navy uppercase text-xs font-bold tracking-wider rounded transition duration-200 disabled:opacity-50 cursor-pointer shadow-lg"
                   >
                     {registerMutation.isPending ? 'Registering Staff...' : 'Register and Scope Staff User'}
                   </button>
@@ -594,12 +617,15 @@ export default function AdminConsole() {
           {activeTab === 'compliance' && <ComplianceTab />}
           {activeTab === 'campaigns' && isOwner && <CampaignsTab />}
           {activeTab === 'partners' && isOwner && <PartnerAdminPanel />}
+          {activeTab === 'infra' && isOwner && <InfraHealth />}
+          {activeTab === 'marketing' && isOwner && <MarketingTab />}
+          {activeTab === 'alerts' && isOwner && <AlertsVisibility />}
 
           {activeTab === 'audit' && (
             <div className="space-y-6">
               
               {/* FILTERS & SEARCH ROW */}
-              <div className="bg-[#1C2541]/40 border border-brand-navy/10 p-4 rounded-xl flex flex-wrap gap-4 items-end text-xs">
+              <div className="bg-white border border-brand-navy/10 p-4 rounded-xl flex flex-wrap gap-4 items-end text-xs">
                 <div className="flex-1 min-w-[200px]">
                   <label className="block text-[9px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
                     Search logs
@@ -609,7 +635,7 @@ export default function AdminConsole() {
                     placeholder="Search Action, Entity, Actor ID..."
                     value={actorSearch}
                     onChange={(e) => setActorSearch(e.target.value)}
-                    className="w-full bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none focus:border-brand-gold"
+                    className="w-full bg-white border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none focus:border-brand-gold"
                   />
                 </div>
 
@@ -620,7 +646,7 @@ export default function AdminConsole() {
                   <select
                     value={actionFilter}
                     onChange={(e) => setActionFilter(e.target.value)}
-                    className="bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none"
+                    className="bg-white border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none"
                   >
                     <option value="all">All Actions</option>
                     {uniqueActions.map(action => (
@@ -636,7 +662,7 @@ export default function AdminConsole() {
                   <select
                     value={entityFilter}
                     onChange={(e) => setEntityFilter(e.target.value)}
-                    className="bg-[#F7F8FA]/80 border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none"
+                    className="bg-white border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none"
                   >
                     <option value="all">All Entities</option>
                     {uniqueEntities.map(ent => (
@@ -651,7 +677,7 @@ export default function AdminConsole() {
                     setEntityFilter('all');
                     setActorSearch('');
                   }}
-                  className="px-3 py-1.5 bg-[#F7F8FA] hover:bg-slate-800 text-slate-400 hover:text-brand-navy rounded border border-brand-navy/10 cursor-pointer font-medium"
+                  className="px-3 py-1.5 bg-brand-navy/[0.04] hover:bg-brand-navy/[0.06] text-slate-400 hover:text-brand-navy rounded border border-brand-navy/10 cursor-pointer font-medium"
                 >
                   Reset
                 </button>
@@ -661,11 +687,11 @@ export default function AdminConsole() {
               {loadingAudit ? (
                 <div className="p-12 text-center text-xs text-slate-400">Loading system write log pipeline...</div>
               ) : auditError ? (
-                <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-                  ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢-ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
+                <div className="p-12 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200/50 rounded-lg">
+                  ⚠ Error – Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
                 </div>
               ) : (
-                <div className="bg-[#1C2541]/40 border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
+                <div className="bg-white border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
@@ -677,7 +703,7 @@ export default function AdminConsole() {
                         <th className="p-4 text-right">Data Diff</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-brand-navy/[0.08]">
                       {getFilteredLogs().length === 0 ? (
                         <tr>
                           <td colSpan={6} className="p-8 text-center text-slate-500 italic">
@@ -686,12 +712,12 @@ export default function AdminConsole() {
                         </tr>
                       ) : (
                         getFilteredLogs().map((log) => (
-                          <tr key={log.id} className="hover:bg-slate-800/20 transition duration-150">
-                            <td className="p-4 text-slate-300 font-mono whitespace-nowrap">
+                          <tr key={log.id} className="hover:bg-brand-navy/[0.04] transition duration-150">
+                            <td className="p-4 text-brand-navy/70 font-mono whitespace-nowrap">
                               {formatTime(log.createdAt)}
                             </td>
                             <td className="p-4 font-mono font-bold text-brand-navy tracking-wider">
-                              <span className="px-1.5 py-0.5 rounded bg-white/80 text-brand-gold border border-brand-gold/10">
+                              <span className="px-1.5 py-0.5 rounded bg-white text-brand-gold border border-brand-gold/10">
                                 {log.action}
                               </span>
                             </td>
@@ -709,12 +735,12 @@ export default function AdminConsole() {
                               {(log.beforeState || log.afterState) ? (
                                 <button
                                   onClick={() => setSelectedLogDetail(log)}
-                                  className="px-2 py-1 bg-white hover:bg-slate-800 border border-brand-navy/10 hover:border-brand-navy/15 text-brand-gold text-[10px] font-semibold rounded cursor-pointer transition"
+                                  className="px-2 py-1 bg-brand-navy/[0.05] hover:bg-brand-navy/[0.06] border border-brand-navy/10 hover:border-brand-navy/15 text-brand-gold text-[10px] font-semibold rounded cursor-pointer transition"
                                 >
                                   Inspect State
                                 </button>
                               ) : (
-                                <span className="text-slate-600 text-[10px] italic">No State Changes</span>
+                                <span className="text-brand-navy/40 text-[10px] italic">No State Changes</span>
                               )}
                             </td>
                           </tr>
@@ -731,8 +757,8 @@ export default function AdminConsole() {
 
       {/* MODAL / DRAWER: EDIT STAFF SCOPE */}
       {editingStaff && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#1C2541] border border-brand-navy/10 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
+        <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-brand-navy/10 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
             <div>
               <h3 className="font-display font-bold text-brand-navy text-base">Modify Division Scopes</h3>
               <p className="text-xs text-slate-400 mt-1">
@@ -744,7 +770,7 @@ export default function AdminConsole() {
               <label className="block text-[10px] uppercase text-slate-400 font-bold tracking-wider">
                 Select Permitted Divisions
               </label>
-              <div className="space-y-2 bg-[#F7F8FA] p-4 border border-brand-navy/10 rounded-lg max-h-60 overflow-y-auto">
+              <div className="space-y-2 bg-brand-navy/[0.04] p-4 border border-brand-navy/10 rounded-lg max-h-60 overflow-y-auto">
                 {DIVISIONS.map(div => {
                   const isChecked = editScopes.includes(div.key);
                   return (
@@ -752,7 +778,7 @@ export default function AdminConsole() {
                       key={div.key}
                       onClick={() => toggleScope(div.key, true)}
                       className={`flex items-center gap-3 p-2 rounded cursor-pointer select-none transition ${
-                        isChecked ? 'bg-[#1C2541]/80 text-brand-gold' : 'text-slate-300 hover:bg-slate-800/40'
+                        isChecked ? 'bg-brand-navy/[0.06] text-brand-gold' : 'text-brand-navy/70 hover:bg-brand-navy/[0.04]'
                       }`}
                     >
                       <input
@@ -768,17 +794,17 @@ export default function AdminConsole() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 text-xs pt-4 border-t border-brand-navy/10/60">
+            <div className="flex justify-end gap-3 text-xs pt-4 border-t border-brand-navy/10">
               <button
                 onClick={() => setEditingStaff(null)}
-                className="px-4 py-2 border border-brand-navy/15 text-slate-300 hover:text-brand-navy rounded hover:bg-slate-800 cursor-pointer font-medium"
+                className="px-4 py-2 border border-brand-navy/15 text-brand-navy/70 hover:text-brand-navy rounded hover:bg-brand-navy/[0.06] cursor-pointer font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveScope}
                 disabled={updateScopeMutation.isPending}
-                className="px-4 py-2 bg-brand-gold hover:bg-brand-goldHover text-[#0B132B] rounded font-bold cursor-pointer transition disabled:opacity-50"
+                className="px-4 py-2 bg-brand-gold hover:bg-brand-goldHover text-brand-navy rounded font-bold cursor-pointer transition disabled:opacity-50"
               >
                 {updateScopeMutation.isPending ? 'Updating...' : 'Save Changes'}
               </button>
@@ -789,13 +815,13 @@ export default function AdminConsole() {
 
       {/* MODAL: STATE DIFF INSPECTOR */}
       {selectedLogDetail && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#1C2541] border border-brand-navy/10 rounded-xl shadow-2xl max-w-3xl w-full p-6 flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 bg-brand-navy/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-brand-navy/10 rounded-xl shadow-2xl max-w-3xl w-full p-6 flex flex-col max-h-[85vh]">
             
             {/* Header */}
             <div className="flex justify-between items-start border-b border-brand-navy/10 pb-4 shrink-0">
               <div>
-                <span className="text-[10px] uppercase font-bold text-brand-gold px-1.5 py-0.5 rounded bg-white border border-brand-gold/20">
+                <span className="text-[10px] uppercase font-bold text-brand-gold px-1.5 py-0.5 rounded bg-brand-navy/[0.05] border border-brand-gold/20">
                   {selectedLogDetail.action}
                 </span>
                 <h3 className="font-display font-bold text-brand-navy text-base mt-2">
@@ -809,7 +835,7 @@ export default function AdminConsole() {
                 onClick={() => setSelectedLogDetail(null)}
                 className="text-slate-400 hover:text-brand-navy text-xl p-1 font-bold cursor-pointer"
               >
-                ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢-ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢
+                ✕
               </button>
             </div>
 
@@ -824,7 +850,7 @@ export default function AdminConsole() {
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     - State Before Change
                   </div>
-                  <div className="bg-[#F7F8FA] border border-brand-navy/10 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-rose-300">
+                  <div className="bg-brand-navy/[0.04] border border-brand-navy/10 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-rose-700">
                     {selectedLogDetail.beforeState ? (
                       (() => {
                         try {
@@ -842,10 +868,10 @@ export default function AdminConsole() {
 
                 {/* After State */}
                 <div className="flex flex-col space-y-2">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-emerald-400">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-emerald-700">
                     + State After Change
                   </div>
-                  <div className="bg-[#F7F8FA] border border-brand-navy/10 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-emerald-300">
+                  <div className="bg-brand-navy/[0.04] border border-brand-navy/10 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-emerald-700">
                     {selectedLogDetail.afterState ? (
                       (() => {
                         try {
@@ -865,7 +891,7 @@ export default function AdminConsole() {
 
               {/* Structured Field changes if both exist */}
               {selectedLogDetail.beforeState && selectedLogDetail.afterState && (
-                <div className="bg-[#F7F8FA]/50 border border-brand-navy/10 rounded-lg p-4 text-xs space-y-3">
+                <div className="bg-brand-navy/[0.04] border border-brand-navy/10 rounded-lg p-4 text-xs space-y-3">
                   <h4 className="text-[10px] uppercase font-bold text-brand-gold tracking-wider">
                     Detected Value Modifications
                   </h4>
@@ -884,14 +910,14 @@ export default function AdminConsole() {
                           
                           if (valBefore !== valAfter) {
                             changedFields.push(
-                              <div key={key} className="border-b border-brand-navy/10/80 py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div key={key} className="border-b border-brand-navy/10 py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <span className="text-slate-300 font-semibold">{key}</span>
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.5 rounded bg-rose-950/40 text-rose-400 line-through max-w-[200px] truncate">
+                                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 line-through max-w-[200px] truncate">
                                     {valBefore === undefined ? 'undefined' : valBefore}
                                   </span>
-                                  <span className="text-slate-500">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢</span>
-                                  <span className="px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-400 max-w-[200px] truncate">
+                                  <span className="text-slate-500">→</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 max-w-[200px] truncate">
                                     {valAfter === undefined ? 'undefined' : valAfter}
                                   </span>
                                 </div>
@@ -901,7 +927,7 @@ export default function AdminConsole() {
                         });
                         
                         return changedFields.length > 0 ? (
-                          <div className="divide-y divide-slate-800/40">{changedFields}</div>
+                          <div className="divide-y divide-brand-navy/[0.08]">{changedFields}</div>
                         ) : (
                           <div className="text-slate-500 italic">No direct property differences found (nested object similarity).</div>
                         );
@@ -915,10 +941,10 @@ export default function AdminConsole() {
             </div>
 
             {/* Footer */}
-            <div className="pt-4 border-t border-brand-navy/10/60 flex justify-end shrink-0">
+            <div className="pt-4 border-t border-brand-navy/10 flex justify-end shrink-0">
               <button
                 onClick={() => setSelectedLogDetail(null)}
-                className="px-4 py-2 bg-white border border-brand-navy/10 hover:bg-slate-800 text-slate-300 rounded font-semibold text-xs cursor-pointer"
+                className="px-4 py-2 bg-brand-navy/[0.05] border border-brand-navy/10 hover:bg-brand-navy/[0.06] text-brand-navy/70 rounded font-semibold text-xs cursor-pointer"
               >
                 Close Inspector
               </button>

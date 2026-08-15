@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+﻿import { describe, it, expect, beforeAll, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -39,8 +39,8 @@ if (token === 'token-admin') {
 
 const leadPayload = (over: any = {}) => ({
   name: "Anita Desai",
-  phone: "+91 98480 12345",
-  email: "anita.desai@example.com",
+  phone: `+91 98480 1${Math.floor(1000 + Math.random() * 8999)}`, // unique per submission (dup-phone guard)
+  email: `anita${Math.floor(1000 + Math.random() * 8999)}.desai@example.com`,
   highestQualification: "undergrad",
   division: "study-abroad",
   leadSource: "website",
@@ -48,7 +48,7 @@ const leadPayload = (over: any = {}) => ({
   ...over
 });
 
-describe('Marketing automation interlock ” funnel + partner affiliate (Sections 26/39)', () => {
+describe('Marketing automation interlock  funnel + partner affiliate (Sections 26/39)', () => {
   let mockD1: MockD1Database;
 
   beforeAll(() => {
@@ -204,7 +204,7 @@ expect(res.status).toBe(200);
 
     const ledger = mockD1.tables.commission_ledger.find((l: any) => l.id === 'led-5');
     expect(ledger.status).toBe('matured');
-    expect(ledger.amount).toBe(5000); // 5% of ₹1000 (100000 paise)
+    expect(ledger.amount).toBe(5000); // 5% of â‚¹1000 (100000 paise)
 
     // Interlock: signed agreement creates a handover task for the ops team
     const handover = mockD1.tables.tasks.find((t: any) => (t.title || '').includes('Handover'));
@@ -306,7 +306,7 @@ expect(res.status).toBe(200);
 
   it('nurture plan creates a 4-stage WhatsApp sequence only when consent granted', async () => {
     let mock6 = new MockD1Database();
-    mock6.tables.clients.push({ id: 'C-N1', name: 'Nurture One', phone: '1', email: 'n1@b.c', createdAt: 1, updatedAt: 1 });
+    mock6.tables.clients.push({ id: 'C-N1', name: 'Nurture One', phone: '1', email: 'n1@b.c', createdAt: 1, updatedAt: 1, primaryDivision: 'study-abroad' });
     mock6.tables.consents.push({ id: 'c1', clientId: 'C-N1', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
 
     const res = await app.request('/api/marketing/nurture/plan', {
@@ -351,23 +351,17 @@ const data = await res.json() as any;
     expect(mock7.tables.nurture_touches.length).toBe(0);
   });
 
-  it('campaign create + activate: division campaign overrides default sequence for matching context', async () => {
+  it('active seeded campaign: division campaign overrides default sequence for matching context', async () => {
     let mock9 = new MockD1Database();
-    // super_admin creates an ACTIVE study-abroad campaign targetting US/UK context
-    const create = await app.request('/api/admin/campaigns', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-admin' },
-      body: JSON.stringify({
-        key: 'us-uk-deadline', name: 'US UK Deadline',
-        division: 'study-abroad', status: 'active',
-        eligibilityJson: { targetCountry: ['US', 'UK'] },
-        touches: [
-          { seq: 1, day: 0, stage: 'value', body: 'Hi {{name}}, US deadlines soon!' },
-          { seq: 2, day: 4, stage: 'offer', body: 'Free screening for {{targetCountry}}.' },
-        ],
-      })
-    }, { DB: mock9, BETTER_AUTH_SECRET: 'test-secret' });
-    expect(create.status).toBe(200);
+    // Tool-First: campaigns are defined in the tool (Mautic/Listmonk) — the OS
+    // catalog is seeded/informational. Seed an ACTIVE study-abroad campaign
+    // targeting US/UK context the same way the adapter feed would.
+    const now = Math.floor(Date.now() / 1000);
+    mock9.tables.campaigns.push({ id: 'c9-1', key: 'us-uk-deadline', name: 'US UK Deadline', description: null, division: 'study-abroad', eligibility_json: JSON.stringify({ targetCountry: ['US', 'UK'] }), status: 'active', created_at: now, updated_at: now });
+    mock9.tables.campaign_touches.push(
+      { id: 'ct9-1', campaign_id: 'c9-1', seq: 1, day: 0, stage: 'value', channel: 'whatsapp', body: 'Hi {{name}}, US deadlines soon!', created_at: now },
+      { id: 'ct9-2', campaign_id: 'c9-1', seq: 2, day: 4, stage: 'offer', channel: 'whatsapp', body: 'Free screening for {{targetCountry}}.', created_at: now },
+    );
 
     // lead with US context in the same division
     mock9.tables.clients.push({ id: 'C-C1', name: 'Camp Lead', phone: '3', email: 'c1@b.c', createdAt: 1, updatedAt: 1, intakeContext: JSON.stringify({ targetCountry: 'US' }) });
@@ -441,7 +435,29 @@ const data = await res.json() as any;
     expect(v2d.variant).toBe(v1d.variant);
     expect(v2d.sticky).toBe(true);
 
-    const inactive = await app.request('/api/public/portal/experiments/nope/variant?clientId=C-X1', {}, { DB: mock8, BETTER_AUTH_SECRET: 'test-secret' });
+const inactive = await app.request('/api/public/portal/experiments/nope/variant?clientId=C-X1', {}, { DB: mock8, BETTER_AUTH_SECRET: 'test-secret' });
     expect((await inactive.json() as any).variant).toBe('none');
   });
+
+  it('nurture plan SKIPS clients with unknown intent (no engagement, no declared, no context)', async () => {
+    // Gold standard (Wave 4): the system must NOT guess a division for
+    // marketing — cross-division spam burns list health. Counselor assigns
+    // the division first; then planning works.
+    let mock12 = new MockD1Database();
+    mock12.tables.clients.push({ id: 'C-UNK', name: 'Mystery Lead', phone: '1', email: 'unk@b.c', createdAt: 1, updatedAt: 1 });
+    mock12.tables.consents.push({ id: 'ck-unk', clientId: 'C-UNK', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
+
+    const plan = await app.request('/api/marketing/nurture/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
+      body: JSON.stringify({ clientId: 'C-UNK' })
+    }, { DB: mock12, BETTER_AUTH_SECRET: 'test-secret' });
+    const planData = await plan.json() as any;
+    expect(planData.skipped).toBe(true);
+    expect(String(planData.reason)).toContain('intent unknown');
+    expect(mock12.tables.nurture_touches.filter((t: any) => t.client_id === 'C-UNK').length).toBe(0);
+  });
 });
+
+
+

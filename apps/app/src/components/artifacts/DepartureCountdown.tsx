@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ArtifactShell from './ArtifactShell';
+import { EVENTS, track } from '../../lib/umami';
 
 interface Departure {
   id: string;
@@ -29,6 +30,8 @@ export default function DepartureCountdown() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Wave 1 taxonomy: a visitor SAW the umrah departures surface.
+    track(EVENTS.umrahView);
     let alive = true;
     (async () => {
       try {

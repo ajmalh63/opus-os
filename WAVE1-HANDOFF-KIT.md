@@ -1,10 +1,16 @@
 # Wave 1 — Handoff Kit (VPS + DNS tasks)
 
-**What's already done in code (this repo):** Telegram alert channel in the notification
-engine (`sendNotification` channel `telegram`, stub-safe) · Umami tracker + event taxonomy
-wired into every public surface (lead form, division inquiries, booking CTAs, chat widget,
-job ticker, eligibility checker, partner register, share-link copy; injection on app boot) ·
-monitor-cron architecture ready for Kuma push probes.
+**What's already done in code (this repo, VERIFIED 2026-08-10):**
+- Telegram alert channel in the notification engine (`sendNotification` channel `telegram`,
+  stub-safe until token set) — `TELEGRAM_BOT_TOKEN` + `OPS_TELEGRAM_CHAT_ID` env.
+- Umami tracker + event taxonomy wired into every public surface — **8/8 events fire**:
+  `lead_form_submit` (lead form + division inquiries) · `booking_cta_click` (home CTA) ·
+  `chat_open` (widget) · `eligibility_check` · `jobs_click` · `umrah_departure_view`
+  (departure countdown) · `partner_register` · `share_link_copied`; script injection on boot.
+- **Heartbeat cron LIVE in code:** Worker `scheduled` trigger (`0 */6 * * *`) pings the
+  Kuma push monitor with real D1 health (`status=up/down`) — so the "D1 backup heartbeat"
+  push monitor has a producer and can't false-alarm. Env `KUMA_PUSH_URL`, fail-open.
+- `/api/health` returns `{status:"healthy", timestamp}` — the keyword monitor target.
 
 **What needs YOU (browser/DNS, ~40 min):** the items below, in order. Each is paste-ready.
 
@@ -49,6 +55,13 @@ monitors you care about. Add maintenance windows (Settings → Maintenance) for 
 night patches. The `/api/health` + push-monitor combo detects silent failures (backup
 jobs that stop reporting).
 
+**Push monitor wiring (uses the new cron):** create the push monitor named `D1 backup
+heartbeat` → copy its **Push URL** (Kuma shows `/api/push/<token>`) → set it on the API:
+`wrangler secret put KUMA_PUSH_URL` (prod) or `apps/api/.dev.vars` (dev). The Worker
+cron pings it every 6 h with `status=up` (D1 reachable) or `status=down`. A full D1 → R2
+database export is **not** part of this heartbeat — that goes to a GitHub Action
+(`wrangler d1 export`) once you provide Cloudflare credentials (post-CF phase).
+
 ## 3. DNS records (sending domain, ≈10 min — only when you have the domain)
 
 At your DNS provider add **four records** (replace `mail.opusoverseas.com` with the actual
@@ -86,7 +99,7 @@ domain `opusoverseas.in` → copy the **Website ID** to:
 `apps/app/.env → VITE_UMAMI_WEBSITE_ID=<id>`
 
 The tracker is already injected by the app (`lib/umami.ts`, cookieless). The event
-taxonomy is already wired — verify in Umami → Events:
+taxonomy is already wired — **8/8 events verified firing** (incl. `umrah_departure_view`):
 `lead_form_submit · booking_cta_click · chat_open · eligibility_check · jobs_click ·
 umrah_departure_view · partner_register · share_link_copied`.
 

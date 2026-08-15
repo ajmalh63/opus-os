@@ -8,6 +8,7 @@ import VisaStatusWidget from './artifacts/VisaStatusWidget';
 import DepartureCountdown from './artifacts/DepartureCountdown';
 import AttestationChain from './artifacts/AttestationChain';
 import JobTicker from './artifacts/JobTicker';
+import LiveWallpaper from './LiveWallpaper';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -78,6 +79,7 @@ export default function HeroCarousel() {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <LiveWallpaper />
         <div className="hero-orb -left-16 top-1/4 h-96 w-96 bg-brand-blue/30 blur-3xl" />
         <div className="hero-orb -right-20 top-10 h-[28rem] w-[28rem] bg-brand-gold/20 blur-3xl" />
         <div className="hero-orb bottom-0 left-1/3 h-72 w-72 bg-brand-navy-800/40 blur-3xl" />

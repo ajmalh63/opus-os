@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+﻿import { describe, it, expect, beforeAll, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -39,7 +39,7 @@ describe('Rate limiting (Section 18.2.1 / 18.2.2)', () => {
       const res = await app.request('/api/public/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'cf-connecting-ip': '203.0.113.7' },
-        body: JSON.stringify(validLead)
+        body: JSON.stringify({ ...validLead, phone: `+91 99999 ${88000 + i}` })
       }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
       expect(res.status).toBe(200);
     }
@@ -59,7 +59,7 @@ describe('Rate limiting (Section 18.2.1 / 18.2.2)', () => {
     const res = await app.request('/api/public/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'cf-connecting-ip': '198.51.100.42' },
-      body: JSON.stringify(validLead)
+      body: JSON.stringify({ ...validLead, phone: '+91 99999 77001' })
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
     expect(res.status).toBe(200);
   });

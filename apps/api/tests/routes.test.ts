@@ -211,7 +211,8 @@ describe('API Route Shell Integration & Validation Tests', () => {
     expect(json2.success).toBe(true);
     expect(json2.wipLimitBreached).toBe(false);
 
-    // 3. Create a second client and engagement card, and try to move it to "processing". Should trigger WIP breach warning.
+    // 3. Create a second client and engagement card, and try to move it to "processing".
+    //    The stage has WIP limit 1 and is already occupied → F1 now ENFORCES the limit.
     const client2Token = "OP-2026-9999";
     mockD1.tables.clients.push({ id: client2Token, name: 'Test Client 2', phone: '+91 99999 99999', email: 'test2@example.com', created_at: 0, updated_at: 0 });
     const card2Id = "card-2-uuid";
@@ -225,26 +226,21 @@ describe('API Route Shell Integration & Validation Tests', () => {
 
     const res3 = await app.request('/api/kanban/board/move', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Cookie': 'better-auth.session_token=mock-session-token-123'
       },
       body: JSON.stringify(movePayload3)
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
 
-    expect(res3.status).toBe(200);
+    expect(res3.status).toBe(409); // enforced, not warned
     const json3 = await res3.json() as any;
-    expect(json3.success).toBe(true);
-    expect(json3.wipLimitBreached).toBe(true); // BREACHED!
-    expect(json3.currentCount).toBe(2);
+    expect(json3.code).toBe('wip_limit');
     expect(json3.limit).toBe(1);
+    expect(mockD1.tables.engagements.find((x: any) => x.id === card2Id).stage_key).toBe('qualified'); // unchanged — enforced
 
-    const card2 = mockD1.tables.engagements.find(e => e.id === card2Id);
-    expect(card2?.stage_key).toBe("processing");
-
-    // Check audit log
+    // Check audit log (no STAGE_CHANGE for the blocked move — nothing moved)
     const auditRecord = mockD1.tables.audit_log.find(a => a.entity_id === card2Id);
-    expect(auditRecord).toBeDefined();
-    expect(auditRecord.action).toBe("STAGE_CHANGE");
+    expect(auditRecord).toBeUndefined();
   });
 });

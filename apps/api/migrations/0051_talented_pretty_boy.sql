@@ -1,0 +1,1 @@
+ALTER TABLE `group_departures` ADD `end_date` integer;

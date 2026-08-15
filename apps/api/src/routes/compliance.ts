@@ -4,8 +4,9 @@ import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { clients, payments, engagements, purchaseInvoices, tdsRecords, tcsRecords, businessProfile, statutoryRegisters } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { auditEvent } from '../middleware/audit.js';
 
-export const complianceRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
+export const complianceRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string }; Variables: { user: any; session: any } }>();
 
 const ADMIN = ['super_admin', 'manager'];
 
@@ -454,7 +455,7 @@ complianceRouter.post('/tcs', zValidator('json', tcsSchema), async (c) => {
 });
 
 // ============================================================
-// 8. EMPLOYER COMPLIANCE REGISTERS (Â§14.5.4) â€” PT / LWF / PF / ESI
+// 8. EMPLOYER COMPLIANCE REGISTERS (§14.5.4) — PT / LWF / PF / ESI
 // ============================================================
 
 const statutorySchema = z.object({
@@ -470,7 +471,7 @@ const statutorySchema = z.object({
   notes: z.string().optional(),
 });
 
-// GET /api/compliance/statutory?month=YYYY-MM&type=pt â€” statutory register
+// GET /api/compliance/statutory?month=YYYY-MM&type=pt — statutory register
 complianceRouter.get('/statutory', async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -498,7 +499,7 @@ complianceRouter.get('/statutory', async (c) => {
   }
 });
 
-// POST /api/compliance/statutory â€” record an employee statutory entry
+// POST /api/compliance/statutory — record an employee statutory entry
 complianceRouter.post('/statutory', zValidator('json', z.object({ entries: z.array(statutorySchema).min(1).max(200) })), async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -529,7 +530,7 @@ complianceRouter.post('/statutory', zValidator('json', z.object({ entries: z.arr
   }
 });
 
-// PATCH /api/compliance/statutory/:id â€” mark paid/overdue, edit note
+// PATCH /api/compliance/statutory/:id — mark paid/overdue, edit note
 complianceRouter.patch('/statutory/:id', async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -548,5 +549,57 @@ complianceRouter.patch('/statutory/:id', async (c) => {
     return c.json({ success: true, message: "Statutory entry updated." });
   } catch (error: any) {
     return c.json({ error: "Statutory entry update failed", details: error.message }, 500);
+  }
+});
+
+// POST /api/compliance/clients/:id/anonymize — DPDP data deletion request (super_admin only)
+complianceRouter.post('/clients/:id/anonymize', async (c) => {
+  const id = c.req.param('id');
+  const user = c.get('user') as any;
+  if (!user || user.role !== 'super_admin') {
+    return c.json({ error: "Forbidden: Super admin privilege required" }, 403);
+  }
+
+  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+
+  try {
+    const client = await db.select().from(clients).where(eq(clients.id, id)).get();
+    if (!client) return c.json({ error: "Client not found" }, 404);
+
+    // Anonymize personal identifiers
+    await db.update(clients)
+      .set({
+        name: "Deleted Candidate",
+        email: "deleted@opusoverseas.com",
+        phone: "+91 00000 00000",
+        highestQualification: "Deleted",
+        state: "Deleted",
+        passportNumber: "******00",
+        updatedAt: now
+      })
+      .where(eq(clients.id, id));
+
+    // Withdraw consents
+    const { consents } = await import('../db/schema.js');
+    await db.update(consents)
+      .set({
+        status: 'withdrawn',
+        withdrawnAt: now,
+        sha256Hash: 'anonymized-' + crypto.randomUUID().slice(0, 8)
+      })
+      .where(eq(consents.clientId, id));
+
+    await auditEvent(c as any, {
+      action: 'LEAD_CREATED',
+      entityName: 'clients',
+      entityId: id,
+      afterState: { id, status: 'anonymized', performedBy: user.id }
+    }).catch(() => {});
+
+    return c.json({ success: true, message: "Client data anonymized under DPDP guidelines." });
+  } catch (error: any) {
+    return c.json({ error: "Anonymization failed", details: error.message }, 500);
   }
 });

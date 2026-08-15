@@ -119,7 +119,7 @@ rbacRouter.post('/roles', zValidator('json', createRoleSchema), async (c) => {
     const existing = await db.select().from(roles).where(eq(roles.code, data.code)).get();
     if (existing) return c.json({ error: "Role code already exists" }, 409);
 
-    // Security: ownerOnly permissions can never be granted via role-creation â€”
+    // Security: ownerOnly permissions can never be granted via role-creation —
     // they are reserved for the built-in super_admin role (ceiling invariant).
     const allowedCodes = new Set(PERMISSION_SEED.filter((p) => !p.ownerOnly).map((p) => p.code));
     const sanitized = data.permissions.filter((p) => allowedCodes.has(p));

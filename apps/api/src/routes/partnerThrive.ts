@@ -2,9 +2,10 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { partners, partnerLinks, partnerTiers, partnerPoints, referrals, commissionLedger, universities, groupDepartures, jobPostings, attestationChains, payoutRequests } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { partners, partnerLinks, partnerTiers, partnerPoints, referrals, commissionLedger, universities, groupDepartures, jobPostings, attestationChains, payoutRequests, visaProducts, umrahPackages } from '../db/schema.js';
+import { eq, inArray } from 'drizzle-orm';
 import { accruePartnerPoints } from '../services/partnerLoyalty.js';
+import { getAuth } from '../auth.js';
 
 // Zoho Thrive-style partner workspace (plan §39 extension):
 //  - unified public catalog (inventory) for partner sharing
@@ -21,10 +22,22 @@ function bearer(c: any): string {
   return h.startsWith('Bearer ') ? h.slice(7).trim() : '';
 }
 
-async function authedPartner(db: ReturnType<typeof getDb>, id: string, token: string): Promise<any | null> {
+// Session- OR token-bound (mirrors authPartner in routes/partner.ts): a Better
+// Auth session whose email matches the partner's account email authenticates
+// exactly like the legacy bearer apiToken.
+async function authedPartner(db: ReturnType<typeof getDb>, id: string, c: { env: { DB: D1Database; BETTER_AUTH_SECRET: string }; req: { header: (name: string) => string | undefined; raw: Request } }): Promise<any | null> {
   const p = await db.select().from(partners).where(eq(partners.id, id)).get();
   if (!p || p.status !== 'active') return null;
-  return p.apiToken && token === p.apiToken ? p : null;
+
+  const token = bearer(c);
+  if (token && p.apiToken && token === p.apiToken) return p;
+
+  if (p.email) {
+    const auth = getAuth(c.env);
+    const session = await auth.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
+    if (session?.user?.email && session.user.email.toLowerCase() === p.email.toLowerCase()) return p;
+  }
+  return null;
 }
 
 // ---------- PUBLIC CATALOG (the "inventory" partners share) ----------
@@ -39,9 +52,50 @@ publicThriveRouter.get('/catalog', async (c) => {
       const rows = await db.select().from(universities).all();
       items.push(...rows.map((r: any) => ({ type: 'university', id: r.id, title: r.name || r.universityName || 'University', pricePaise: 0, meta: { country: r.country || '' } })));
     }
-    if (!type || type === 'departure') {
+if (!type || type === 'departure') {
       const rows = await db.select().from(groupDepartures).all();
-      items.push(...rows.map((r: any) => ({ type: 'departure', id: r.id, title: r.title || `${r.destination || ''} departure`, pricePaise: Number(r.pricePaise || 0), meta: { date: r.departureDate || '' } })));
+      const pkgIds = [...new Set(rows.map((r: any) => r.packageId).filter(Boolean))];
+      const pkgs = pkgIds.length ? await db.select().from(umrahPackages).where(inArray(umrahPackages.id, pkgIds)).all() : [];
+      items.push(...rows.map((r: any) => {
+        const pkg = pkgs.find((p: any) => p.id === r.packageId);
+        return {
+          type: 'departure',
+          id: r.id,
+          title: `${pkg?.name || 'Umrah departure'} — ${new Date(r.departureDate * 1000).toLocaleDateString()}`,
+          pricePaise: Number(r.price || 0),
+          meta: {
+            date: r.departureDate,
+            tier: r.packageTier,
+            departureCity: r.departureCity || pkg?.departureCity || null,
+            capacity: r.capacity,
+            bookedSeats: r.bookedSeats,
+            available: Math.max(0, r.capacity - r.bookedSeats),
+            status: r.status,
+            advanceFeePaise: r.bookingFee,
+          },
+        };
+      }));
+    }
+    if (!type || type === 'umrah_package') {
+      const rows = await db.select().from(umrahPackages).where(eq(umrahPackages.status, 'open')).all();
+      items.push(...rows.map((r: any) => ({
+        type: 'umrah_package',
+        id: r.id,
+        title: r.name,
+        pricePaise: Number(r.retailPricePaise || 0),
+        meta: {
+          tier: r.tier,
+          totalDays: r.totalDays,
+          flightType: r.flightType,
+          departureCity: r.departureCity,
+          makkahDistanceMeters: r.makkahDistanceMeters,
+          madinahDistanceMeters: r.madinahDistanceMeters,
+          roomSharing: r.roomSharing,
+          mealsPlan: r.mealsPlan,
+          advanceFeePaise: r.advanceFeePaise,
+          featured: r.featured,
+        },
+      })));
     }
     if (!type || type === 'job') {
       const rows = await db.select().from(jobPostings).all();
@@ -51,6 +105,10 @@ publicThriveRouter.get('/catalog', async (c) => {
       const rows = await db.select().from(attestationChains).all();
       items.push(...rows.map((r: any) => ({ type: 'attestation', id: r.id, title: r.name || 'Attestation chain', pricePaise: 0, meta: { steps: Array.isArray(r.steps) ? r.steps.length : 0 } })));
     }
+    if (!type || type === 'visa') {
+      const rows = await db.select().from(visaProducts).where(eq(visaProducts.status, 'active')).all();
+      items.push(...rows.map((r: any) => ({ type: 'visa', id: r.id, title: `${r.visaType} — ${r.country}`, pricePaise: Number(r.feePaise || 0), meta: { country: r.country, entryType: r.entryType, processingTime: r.processingTime } })));
+    }
 
     return c.json({ items });
   } catch (e: any) {
@@ -59,7 +117,7 @@ publicThriveRouter.get('/catalog', async (c) => {
 });
 
 // ---------- PARTNER LINK CRUD (token-bound) ----------
-const linkSchema = z.object({ catalogType: z.enum(['university', 'departure', 'job', 'attestation']), catalogItemId: z.string().min(1), title: z.string().min(1), pricePaise: z.number().int().min(0).default(0) });
+const linkSchema = z.object({ catalogType: z.enum(['university', 'departure', 'job', 'attestation', 'visa', 'umrah_package']), catalogItemId: z.string().min(1), title: z.string().min(1), pricePaise: z.number().int().min(0).default(0) });
 
 // POST /api/public/partners/:id/links — create a share link for an inventory item
 publicThriveRouter.post('/:id/links', zValidator('json', linkSchema), async (c) => {
@@ -68,7 +126,7 @@ publicThriveRouter.post('/:id/links', zValidator('json', linkSchema), async (c) 
   const partnerId = c.req.param('id');
   const data = c.req.valid('json');
   try {
-    const authed = await authedPartner(db, partnerId, bearer(c));
+    const authed = await authedPartner(db, partnerId, c);
     if (!authed) return c.json({ error: 'Unauthorized' }, 401);
 
     const existing = await db.select().from(partnerLinks).all();
@@ -94,7 +152,7 @@ publicThriveRouter.get('/:id/links', async (c) => {
   const db = getDb(c.env.DB);
   const partnerId = c.req.param('id');
   try {
-    const authed = await authedPartner(db, partnerId, bearer(c));
+    const authed = await authedPartner(db, partnerId, c);
     if (!authed) return c.json({ error: 'Unauthorized' }, 401);
     const links = await db.select().from(partnerLinks).where(eq(partnerLinks.partnerId, partnerId)).all();
     return c.json({ links });
@@ -110,7 +168,7 @@ publicThriveRouter.get('/:id/thrive', async (c) => {
   const db = getDb(c.env.DB);
   const partnerId = c.req.param('id');
   try {
-    const authed = await authedPartner(db, partnerId, bearer(c));
+    const authed = await authedPartner(db, partnerId, c);
     if (!authed) return c.json({ error: 'Unauthorized' }, 401);
 
     const tiers = await db.select().from(partnerTiers).all();
@@ -146,7 +204,7 @@ publicThriveRouter.post('/:id/payouts', async (c) => {
   const db = getDb(c.env.DB);
   const partnerId = c.req.param('id');
   try {
-    const p = await authedPartner(db, partnerId, bearer(c));
+const p = await authedPartner(db, partnerId, c);
     if (!p) return c.json({ error: 'Unauthorized' }, 401);
 
     // matured balance = matured ledger entries for this partner (clamped)
@@ -177,7 +235,7 @@ publicThriveRouter.get('/:id/payouts', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const p = await authedPartner(db, c.req.param('id'), bearer(c));
+    const p = await authedPartner(db, c.req.param('id'), c);
     if (!p) return c.json({ error: 'Unauthorized' }, 401);
     const rows = await db.select().from(payoutRequests).where(eq(payoutRequests.partnerId, c.req.param('id'))).all();
     return c.json({ payouts: [...rows].sort((a: any, b: any) => b.requestedAt - a.requestedAt) });

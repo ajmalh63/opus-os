@@ -32,9 +32,21 @@ export const clients = sqliteTable('clients', {
   passportExpiry: text('passport_expiry'), // ISO date string: YYYY-MM-DD
   gstin: text('gstin'), // for B2B classification (GSTR-1)
   state: text('state'), // place of supply state code
-  // Funnel enrichment (Section 26) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â captured at intake for qualification
+  // Funnel enrichment (Section 26) Ò
   leadSource: text('lead_source'), // website, whatsapp, walk-in, partner, referral
   intakeContext: text('intake_context'), // JSON: targetCountry/intake/budget/visaCategory/etc from lead form
+  // Declared interest (Wave 4): division(s) the lead selected at intake  the
+  // PRIMARY interest signal for nurture targeting; engagement division is the
+  // operational truth once created, but intent survives even if it isn't.
+intentDivisions: text('intent_divisions'), // JSON array of division keys (multi-interest)
+  primaryDivision: text('primary_division'), // first/most-important division key
+  // Paid exclusive community (Manpower): membership grants access to secret jobs.
+  exclusiveMember: integer('exclusive_member', { mode: 'boolean' }).notNull().default(false),
+  exclusiveExpiresAt: integer('exclusive_expires_at'),
+  exclusivePlan: text('exclusive_plan'),
+  exclusiveSince: integer('exclusive_since'),
+  instagramHandle: text('instagram_handle'),
+  status: text('status', { enum: ['active', 'blocked'] }).notNull().default('active'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });
@@ -62,7 +74,7 @@ export const engagements = sqliteTable('engagements', {
   stageKey: text('stage_key').notNull().references(() => pipelineStages.key),
   counselorId: text('counselor_id').references(() => users.id),
   outstandingBalance: integer('outstanding_balance').notNull().default(0), // STRICT paise representation
-  status: text('status', { enum: ['active', 'closed', 'deferred'] }).notNull().default('active'),
+  status: text('status').notNull().default('active'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });
@@ -81,7 +93,11 @@ export const documents = sqliteTable('documents', {
   courierTrackingNumber: text('courier_tracking_number'),
   courierStatus: text('courier_status', { enum: ['not_applicable', 'dispatched', 'delivered'] }).notNull().default('not_applicable'),
   uploadedAt: integer('uploaded_at').notNull(),
-  verifiedAt: integer('verified_at')
+  verifiedAt: integer('verified_at'),
+  sizeBytes: integer('size_bytes'),
+  mimeType: text('mime_type'),
+  sha256: text('sha256'),
+  uploadedBy: text('uploaded_by')
 });
 
 // ==========================================
@@ -115,7 +131,7 @@ export const communications = sqliteTable('communications', {
 // ==========================================
 // 48. UNIFIED MESSAGING (PENDING-CONFIGS #1/#3)
 // Provider-agnostic conversations for WhatsApp (OpenWA or Meta Cloud API) and
-// web chat ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â the Chatwoot-replacement inbox. Webhook events land here; the
+// web chat Ò
 // staff inbox UI (workspace) reads these rows.
 // ==========================================
 export const conversations = sqliteTable('conversations', {
@@ -235,7 +251,7 @@ export const payments = sqliteTable('payments', {
   amount: integer('amount').notNull(),
   type: text('type', { enum: ['invoice', 'receipt', 'charge', 'refund'] }).notNull(),
   milestoneName: text('milestone_name').notNull(),
-  method: text('method', { enum: ['upi', 'bank_transfer', 'cash'] }),
+  method: text('method', { enum: ['upi', 'bank_transfer', 'cash', 'online'] }),
   referenceNumber: text('reference_number'),
   taxableAmount: integer('taxable_amount'),
   cgst: integer('cgst'),
@@ -246,6 +262,10 @@ export const payments = sqliteTable('payments', {
   dueDate: integer('due_date'),
   gstRate: integer('gst_rate').notNull().default(18),
   customerGstin: text('customer_gstin'),
+  razorpayLinkId: text('razorpay_link_id'),
+  razorpayShortUrl: text('razorpay_short_url'),
+  linkStatus: text('link_status', { enum: ['none', 'created', 'paid', 'cancelled', 'expired'] }).notNull().default('none'),
+  razorpayPaymentId: text('razorpay_payment_id'),
   status: text('status', { enum: ['draft', 'confirmed', 'synced', 'paid', 'void'] }).notNull().default('draft'),
   enteredBy: text('entered_by'),
   confirmedBy: text('confirmed_by'),
@@ -270,16 +290,102 @@ export const milestones = sqliteTable('milestones', {
 });
 
 // ==========================================
-// 14. UMRAH GROUP DEPARTURES
+// 14a. UMRAH PACKAGES (Phase 3 inventory) — rich catalog answering 98% of
+// client doubts: flight route/stops, hotel proximity (the #1 value driver),
+// meals, visa, transport, pricing (wholesale vs retail), terms.
+// All money is integer paise. Status gates visibility:
+//   staff inventory = all; client portal = open; partner catalog = open.
+// `umrah_inventory_enabled` (app_settings) master-switches the client/partner
+// surfaces (Coming Soon) until the owner flips it.
+// ==========================================
+export const umrahPackages = sqliteTable('umrah_packages', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(), // e.g. "Economy 7-Night Umrah — Hyderabad"
+  tier: text('tier', { enum: ['economy', 'standard', 'premium', 'luxury'] }).notNull().default('standard'),
+  // ---- Duration ----
+  totalDays: integer('total_days').notNull().default(7),
+  makkahNights: integer('makkah_nights').notNull().default(0),
+  madinahNights: integer('madinah_nights').notNull().default(0),
+  // ---- Flight (per package) ----
+  flightType: text('flight_type', { enum: ['direct', 'one_stop', 'two_stop', 'varies'] }).notNull().default('varies'),
+  airline: text('airline'), // e.g. "Saudia / IndiGo"
+  departureCity: text('departure_city'), // default for departures of this package
+  arrivalAirport: text('arrival_airport'), // e.g. "Jeddah (JED)"
+  baggageAllowance: text('baggage_allowance'), // e.g. "30 kg check-in + 7 kg hand carry"
+  flightClass: text('flight_class', { enum: ['economy', 'business'] }).notNull().default('economy'),
+  zamzamIncluded: integer('zamzam_included', { mode: 'boolean' }).notNull().default(true),
+  // ---- Makkah hotel ----
+  makkahHotel: text('makkah_hotel'),
+  makkahHotelStars: integer('makkah_hotel_stars'), // 3/4/5
+  makkahDistanceMeters: integer('makkah_distance_meters'),
+  makkahWalkMinutes: integer('makkah_walk_minutes'),
+  makkahHaramView: text('makkah_haram_view', { enum: ['none', 'partial', 'full'] }).notNull().default('none'),
+  // ---- Madinah hotel ----
+  madinahHotel: text('madinah_hotel'),
+  madinahHotelStars: integer('madinah_hotel_stars'),
+  madinahDistanceMeters: integer('madinah_distance_meters'),
+  madinahWalkMinutes: integer('madinah_walk_minutes'),
+  madinahHaramView: text('madinah_haram_view', { enum: ['none', 'partial', 'full'] }).notNull().default('none'),
+  // ---- Room & meals ----
+  roomSharing: text('room_sharing', { enum: ['quad', 'triple', 'double', 'single'] }).notNull().default('quad'),
+  // Solo travel: client travels alone (private room) — single-occupancy supplement.
+  soloAvailable: integer('solo_available', { mode: 'boolean' }).notNull().default(false),
+  soloSupplementPaise: integer('solo_supplement_paise').notNull().default(0), // added to retail for solo occupancy
+  mealsPlan: text('meals_plan', { enum: ['none', 'breakfast', 'half_board', 'full_board'] }).notNull().default('breakfast'),
+  shuttleService: integer('shuttle_service', { mode: 'boolean' }).notNull().default(false),
+  // ---- Transport & tours ----
+  airportTransfer: integer('airport_transfer', { mode: 'boolean' }).notNull().default(true),
+  intercityTransport: text('intercity_transport', { enum: ['group_bus', 'private_car', 'luxury_car', 'none'] }).notNull().default('group_bus'),
+  ziyaratTours: integer('ziyarat_tours', { mode: 'boolean' }).notNull().default(true),
+  groupLeader: integer('group_leader', { mode: 'boolean' }).notNull().default(false),
+  guideLanguage: text('guide_language'), // e.g. "Telugu / Urdu / Hindi / English"
+  // ---- Visa ----
+  visaIncluded: integer('visa_included', { mode: 'boolean' }).notNull().default(true),
+  ksaInsurance: integer('ksa_insurance', { mode: 'boolean' }).notNull().default(true),
+  visaLeadDays: integer('visa_lead_days').notNull().default(21),
+  // ---- Pricing (integer paise) ----
+  wholesalePricePaise: integer('wholesale_price_paise').notNull().default(0), // supplier cost (owner-only view)
+  retailPricePaise: integer('retail_price_paise').notNull().default(0), // per person (adult)
+  advanceFeePaise: integer('advance_fee_paise').notNull().default(50000), // ₹500 non-refundable advance to reserve
+  reserveHoldHours: integer('reserve_hold_hours').notNull().default(72), // slot held for 3 days after advance paid
+  balanceDueDaysBefore: integer('balance_due_days_before').notNull().default(30),
+  installmentAvailable: integer('installment_available', { mode: 'boolean' }).notNull().default(false),
+  groupDiscountPct: integer('group_discount_pct'), // e.g. 5 (20+ pax)
+  groupDiscountMinPax: integer('group_discount_min_pax'),
+  // ---- Family / child pricing (per person, paise; NULL = fall back to adult retail) ----
+  childWithBedPricePaise: integer('child_with_bed_price_paise'), // child 2–11 with own bed
+  childNoBedPricePaise: integer('child_no_bed_price_paise'), // child 2–4 sharing without bed
+  infantPricePaise: integer('infant_price_paise'), // infant 0–2 (airfare-only component)
+  // ---- Content & trust ----
+  description: text('description'),
+  inclusionsJson: text('inclusions_json').notNull().default('[]'),
+  exclusionsJson: text('exclusions_json').notNull().default('[]'),
+  documentsJson: text('documents_json').notNull().default('[]'), // required docs checklist
+  itineraryJson: text('itinerary_json').notNull().default('[]'), // day-by-day plan
+  termsJson: text('terms_json').notNull().default('[]'), // cancellation/refund T&C
+  specialNeeds: text('special_needs'), // wheelchair, elderly-friendly, family rooms
+  supplierRef: text('supplier_ref'), // wholesale supplier reference
+  coverImageKey: text('cover_image_key'), // R2 key
+  featured: integer('featured', { mode: 'boolean' }).notNull().default(false),
+  status: text('status', { enum: ['draft', 'open', 'paused', 'closed', 'archived'] }).notNull().default('draft'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 14. GROUP DEPARTURES — announced dates, capacity 30 per group.
 // ==========================================
 export const groupDepartures = sqliteTable('group_departures', {
   id: text('id').primaryKey(),
-  packageTier: text('package_tier', { enum: ['economy', 'standard', 'premium'] }).notNull().default('standard'),
-  departureDate: integer('departure_date').notNull(), // UNIX timestamp
+  packageId: text('package_id').references(() => umrahPackages.id), // inventory package this departure belongs to
+  packageTier: text('package_tier', { enum: ['economy', 'standard', 'premium', 'luxury'] }).notNull().default('standard'),
+  departureDate: integer('departure_date').notNull(), // UNIX timestamp — trip start
+  endDate: integer('end_date'), // UNIX timestamp — trip end (null = single-day departure)
+  departureCity: text('departure_city'), // e.g. Hyderabad — per-departure override
   capacity: integer('capacity').notNull().default(30),
   bookedSeats: integer('booked_seats').notNull().default(0),
-  price: integer('price').notNull(), // In paise
-  bookingFee: integer('booking_fee').notNull(), // In paise
+  price: integer('price').notNull(), // In paise — seasonal override; falls back to package retail when packageId set
+  bookingFee: integer('booking_fee').notNull(), // In paise — advance fee (₹500 default); falls back to package advanceFeePaise
   status: text('status', { enum: ['draft', 'open', 'confirmed', 'cancelled'] }).notNull().default('open'),
   createdAt: integer('created_at').notNull()
 });
@@ -291,12 +397,41 @@ export const seatBookings = sqliteTable('seat_bookings', {
   id: text('id').primaryKey(),
   departureId: text('departure_id').notNull().references(() => groupDepartures.id),
   clientId: text('client_id').notNull().references(() => clients.id),
-  status: text('status', { enum: ['held', 'confirmed', 'waitlist'] }).notNull().default('held'),
+  status: text('status', { enum: ['held', 'reserved', 'confirmed', 'waitlist', 'cancelled'] }).notNull().default('held'),
+  // Phase 3 advance model: ₹500 non-refundable advance → reserved for 3 days.
+  advancePaid: integer('advance_paid', { mode: 'boolean' }).notNull().default(false),
+  reservedUntil: integer('reserved_until'), // UNIX ts — slot held until (now + reserveHoldHours)
+  balancePaid: integer('balance_paid', { mode: 'boolean' }).notNull().default(false), // full balance settled (online or office)
+  occupancy: text('occupancy', { enum: ['shared', 'solo'] }).notNull().default('shared'), // solo = private room (+ supplement)
+  // Party booking: one booking = one party (N passengers). Capacity & advance scale by pax.
+  paxCount: integer('pax_count').notNull().default(1),
+  roomConfig: text('room_config', { enum: ['single', 'double', 'triple', 'quad'] }), // preferred rooming (advisory, full party)
+  advancePaymentId: text('advance_payment_id'), // Razorpay payment id for the advance
+  balancePaymentId: text('balance_payment_id'), // Razorpay payment id for the balance
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 15.1 BOOKING PASSENGERS — one row per traveller in a party booking.
+// Passenger categories (industry gold standard, IKHLAS / BookMyUmrahTrip):
+// adult (18+), child_with_bed (2–11), child_no_bed (2–4), infant (0–2).
+// At least one adult per party. Passport stored plaintext in D1 but ALWAYS
+// masked at the API boundary (see lib/umrahParty.ts maskPassport).
+// ==========================================
+export const bookingPassengers = sqliteTable('booking_passengers', {
+  id: text('id').primaryKey(),
+  bookingId: text('booking_id').notNull().references(() => seatBookings.id),
+  name: text('name').notNull(),
+  dob: text('dob'), // YYYY-MM-DD (used for category verification)
+  passportNumber: text('passport_number'),
+  category: text('category', { enum: ['adult', 'child_with_bed', 'child_no_bed', 'infant'] }).notNull().default('adult'),
+  specialNeeds: text('special_needs'), // wheelchair, elderly, dietary…
   createdAt: integer('created_at').notNull()
 });
 
 // ==========================================
-// 24.1.1 PUBLIC ARTIFACTS ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â homepage hero live widgets data (Section 24)
+// 24.1.1 PUBLIC ARTIFACTS Ò
 // Real, D1-backed data for the hero carousel artifacts: job ticker (Manpower),
 // attestation chain builder, and university match (eligibility checker).
 // ==========================================
@@ -306,7 +441,26 @@ export const jobPostings = sqliteTable('job_postings', {
   country: text('country').notNull(),
   sector: text('sector').notNull(),
   salaryText: text('salary_text').notNull(),
-  status: text('status', { enum: ['open', 'filled'] }).notNull().default('open'),
+  collar: text('collar', { enum: ['blue_collar', 'white_collar'] }).notNull().default('blue_collar'),
+  tier: text('tier', { enum: ['public', 'secret'] }).notNull().default('public'),
+  status: text('status', { enum: ['draft', 'open', 'paused', 'filled', 'closed', 'archived'] }).notNull().default('open'),
+  description: text('description'),
+  employer: text('employer'),
+  employerReference: text('employer_reference'),
+  salaryMinPaise: integer('salary_min_paise'),
+  salaryMaxPaise: integer('salary_max_paise'),
+  currency: text('currency').notNull().default('AED'),
+  vacancies: integer('vacancies').notNull().default(1),
+  benefitsJson: text('benefits_json').notNull().default('[]'),
+  requirementsJson: text('requirements_json').notNull().default('[]'),
+  experienceYearsMin: integer('experience_years_min').notNull().default(0),
+  ageMin: integer('age_min'),
+  ageMax: integer('age_max'),
+  tradeCategory: text('trade_category'),
+  visaProvided: integer('visa_provided', { mode: 'boolean' }).notNull().default(true),
+  medicalRequired: integer('medical_required', { mode: 'boolean' }).notNull().default(true),
+  deadline: integer('deadline'),
+  featured: integer('featured', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at').notNull()
 });
 
@@ -330,7 +484,7 @@ export const universities = sqliteTable('universities', {
 
 // ==========================================
 // 49. ERPNEXT SYNC LOG (back-office books integration)
-// One-way queue: OpusOS front office ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ERPNext official books. Each syncable
+// One-way queue: OpusOS front office Ò
 // business event (payments/invoices) gets a row; a worker/endpoint pushes rows
 // with status='pending' and records Frappe's response + any retry attempts.
 // ==========================================
@@ -369,6 +523,7 @@ export const transitShipments = sqliteTable('transit_shipments', {
 export const partners = sqliteTable('partners', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  email: text('email').unique(), // Non-null for partners who registered with an account (portal login)
   panNumber: text('pan_number').notNull(),
   bankAccount: text('bank_account').notNull(),
   ifscCode: text('ifsc_code').notNull(),
@@ -413,10 +568,70 @@ export const tasks = sqliteTable('tasks', {
   priority: text('priority', { enum: ['low', 'medium', 'high', 'urgent'] }).notNull().default('medium'),
   status: text('status', { enum: ['open', 'in_progress', 'done', 'cancelled'] }).notNull().default('open'),
   dueDate: integer('due_date'), // epoch seconds; null = no deadline
-  recurrence: text('recurrence', { enum: ['none', 'daily', 'weekly', 'monthly'] }).notNull().default('none'),
+recurrence: text('recurrence', { enum: ['none', 'daily', 'weekly', 'monthly'] }).notNull().default('none'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+    completedAt: integer('completed_at'),
+    // Kanban system (migration 0030, gold-standard flow): class of service,
+    // blocker flag, and TRUE cycle time (first move into in_progress).
+    cos: text('cos', { enum: ['standard', 'expedite', 'fixed_date'] }).notNull().default('standard'),
+    blockedReason: text('blocked_reason'),
+    inProgressAt: integer('in_progress_at')
+  });
+
+  // Board system settings (WIP limits, policies)  one row per key.
+  export const boardPrefs = sqliteTable('board_prefs', {
+    key: text('key').primaryKey(),
+    value: text('value').notNull(), // JSON
+updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 2b. PAID EXCLUSIVE COMMUNITY — ADMIN-MANAGED MEMBERSHIP PLANS (Manpower)
+// Superadmin controls prices, durations, tiers, perks, and active state.
+// Client-facing paywall reads only `active` plans, ordered by sortOrder.
+// ==========================================
+export const membershipPlans = sqliteTable('membership_plans', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(), // e.g. exclusive-30
+  name: text('name').notNull(),
+  description: text('description'),
+  pricePaise: integer('price_paise').notNull(),
+  durationDays: integer('duration_days').notNull(),
+  tier: text('tier').notNull().default('basic'), // basic | pro | premium
+  perksJson: text('perks_json').notNull().default('[]'),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
   createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull(),
-  completedAt: integer('completed_at')
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 2c. APP SETTINGS (key-value) — owner-controlled feature switches
+// e.g. exclusive_community_enabled = 'true' | 'false'
+// ==========================================
+export const appSettings = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 2d. STAFF ALERTS — live feed of client sales/inquiries for the desk
+// Every product purchase / application / inquiry across divisions creates one
+// row; staff dashboards poll and pop them up. Superadmin controls per-role
+// visibility via app_settings key `staff_alert_visibility` (JSON role->types).
+// ==========================================
+export const staffAlerts = sqliteTable('staff_alerts', {
+  id: text('id').primaryKey(),
+  division: text('division').notNull(), // study-abroad | visa | umrah | attestation | manpower
+  type: text('type').notNull(), // visa_inquiry | visa_application | visa_sale | manpower_application | membership_sale | document_upload | resume_upload
+  title: text('title').notNull(),
+  body: text('body'),
+  payloadJson: text('payload_json'),
+  clientId: text('client_id'),
+  status: text('status', { enum: ['new', 'seen'] }).notNull().default('new'),
+  createdAt: integer('created_at').notNull()
 });
 
 // ==========================================
@@ -636,7 +851,7 @@ export const campaigns = sqliteTable('campaigns', {
   description: text('description'),
   division: text('division', { enum: ['study-abroad', 'visa', 'umrah', 'attestation', 'manpower'] }).notNull(),
   // Eligibility: JSON predicate on the lead's dynamicContext, e.g.
-  // {"targetCountry": {"$in": ["USA", "UK"]}} ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â null/{} = applies to whole division.
+  // {"targetCountry": {"$in": ["USA", "UK"]}} Ò
   eligibilityJson: text('eligibility_json').notNull().default('{}'),
   status: text('status', { enum: ['draft', 'active', 'paused'] }).notNull().default('draft'),
   createdAt: integer('created_at').notNull(),
@@ -649,12 +864,15 @@ export const campaignTouches = sqliteTable('campaign_touches', {
   seq: integer('seq').notNull(), // 1..N within campaign
   day: integer('day').notNull(), // day offset from plan start
   stage: text('stage', { enum: ['value', 'case_study', 'offer', 'final'] }).notNull(),
+  // Channel per journey node (Zoho MA pattern): email / whatsapp. The nurture
+  // lane (send) respects it; consent + suppression gates apply per channel.
+  channel: text('channel', { enum: ['whatsapp', 'email'] }).notNull().default('whatsapp'),
   body: text('body').notNull(), // {{name}}/{{division}} personalization at send time
   createdAt: integer('created_at').notNull()
 });
 
 // ==========================================
-// 30. A/B EXPERIMENTS (Section 26.5 ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ab-test-setup skill gates)
+// 30. A/B EXPERIMENTS (Section 26.5 Ò
 // The hypothesis + primary metric + baseline + MDE are REQUIRED fields, forcing
 // the "commit before launch" discipline before an experiment can go active.
 // ==========================================
@@ -687,7 +905,7 @@ export const experimentAssignments = sqliteTable('experiment_assignments', {
 
 
 // ==========================================
-// 49. NOTIFICATIONS LOG (ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§7.6) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â end-to-end tracking of every outbound
+// 49. NOTIFICATIONS LOG (Ò
 // message across channels (whatsapp/email/sms). Written by infra/notify.ts.
 export const notifications = sqliteTable('notifications', {
   id: text('id').primaryKey(),
@@ -699,12 +917,39 @@ export const notifications = sqliteTable('notifications', {
   provider: text('provider'),
   remoteId: text('remote_id'),
   error: text('error'),
-  clientId: text('client_id').references(() => clients.id),
+clientId: text('client_id').references(() => clients.id),
   createdAt: integer('created_at').notNull(),
   sentAt: integer('sent_at')
 });
+
 // ==========================================
-// 50. EMPLOYER COMPLIANCE REGISTERS (ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§6/ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§14.5.4) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â PT, LWF, PF, ESI per month.
+// 50.5 WEBHOOK DELIVERY LOG (A-3: every gateway event is durable + reconcilable)
+// ==========================================
+export const webhookEvents = sqliteTable('webhook_events', {
+  id: text('id').primaryKey(),          // Razorpay event id (evt_&)  dedupe/replay key
+  event: text('event').notNull(),       // payment_link.paid / refund.processed / &
+  entityId: text('entity_id'),          // payment_link | payment | refund | order entity id
+  signature: text('signature'),
+  receivedAt: integer('received_at').notNull(),
+  processed: integer('processed', { mode: 'boolean' }).notNull().default(false),
+  detail: text('detail')                // outcome or error  reconciliation reads this
+});
+
+// ==========================================
+// 50.6 LISTMONK SUPPRESSIONS (DPDP-aligned email hygiene, Wave 3)
+// One row per subscriber email. `suppressed=true` stops nurture/email sends;
+// soft bounces accumulate to 3 before suppressing; subscribe/re-confirm clears.
+// ==========================================
+export const listmonkSuppressions = sqliteTable('listmonk_suppressions', {
+  email: text('email').primaryKey(),          // normalized lowercase
+  suppressed: integer('suppressed', { mode: 'boolean' }).notNull().default(false),
+  reason: text('reason'),                     // hard_bounce | soft_bounce_3x | unsubscribed | complaint
+  softCount: integer('soft_count').notNull().default(0),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+// ==========================================
+// 50. EMPLOYER COMPLIANCE REGISTERS (Ò
 export const statutoryRegisters = sqliteTable('statutory_registers', {
   id: text('id').primaryKey(),
   month: text('month').notNull(), // YYYY-MM
@@ -722,7 +967,7 @@ export const statutoryRegisters = sqliteTable('statutory_registers', {
   updatedAt: integer('updated_at').notNull()
 });
 // ==========================================
-// 51. MANPOWER CANDIDATE PROFILES (ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§4) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â persisted AI-resume-parser results.
+// 51. MANPOWER CANDIDATE PROFILES (Ò
 // DPDP-gated: only written when manpower-retain consent was granted; the raw
 // resume stays in R2 (resumes/), the profile is the searchable skill snapshot.
 export const candidateProfiles = sqliteTable('candidate_profiles', {
@@ -740,7 +985,7 @@ export const candidateProfiles = sqliteTable('candidate_profiles', {
   updatedAt: integer('updated_at').notNull()
 });
 // ==========================================
-// 52. PARTNER TIERS + AFFILIATE LINKS (ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§39 / Zoho Thrive-style VIP program)
+// 52. PARTNER TIERS + AFFILIATE LINKS (Ò
 // Tiers: loyalty points = lifetime matured+paid commissions (paise). Base
 // tier (0 points) + progressive tiers with commission boost + perks.
 export const partnerTiers = sqliteTable('partner_tiers', {
@@ -755,13 +1000,13 @@ export const partnerTiers = sqliteTable('partner_tiers', {
   createdAt: integer('created_at').notNull()
 });
 
-// Partner share-links: one row per (partner, catalog item) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â deep links that
+// Partner share-links: one row per (partner, catalog item) Ò
 // redirect through /go/:ref/:type/:id and count clicks (Thrive tracking-link
 // pattern).
 export const partnerLinks = sqliteTable('partner_links', {
   id: text('id').primaryKey(),
   partnerId: text('partner_id').notNull().references(() => partners.id),
-  catalogType: text('catalog_type', { enum: ['university', 'departure', 'job', 'attestation'] }).notNull(),
+  catalogType: text('catalog_type', { enum: ['university', 'departure', 'job', 'attestation', 'visa', 'umrah_package'] }).notNull(),
   catalogItemId: text('catalog_item_id').notNull(),
   title: text('title').notNull(),            // snapshot for the partner UI
   pricePaise: integer('price_paise').notNull().default(0),
@@ -786,7 +1031,7 @@ export const partnerPoints = sqliteTable('partner_points', {
 export const commissionPlans = sqliteTable('commission_plans', {
   id: text('id').primaryKey(),
   partnerId: text('partner_id').references(() => partners.id),   // null = global default
-  catalogType: text('catalog_type', { enum: ['university', 'departure', 'job', 'attestation', '*'] }).notNull().default('*'),
+  catalogType: text('catalog_type', { enum: ['university', 'departure', 'job', 'attestation', 'visa', 'umrah_package', '*'] }).notNull().default('*'),
   catalogItemId: text('catalog_item_id'),                        // null = type-wide
   ratePct: integer('rate_pct').notNull(),                        // 0-100
   updatedBy: text('updated_by'),
@@ -795,7 +1040,7 @@ export const commissionPlans = sqliteTable('commission_plans', {
 });
 // ==========================================
 // 54. PARTNER PAYOUT REQUESTS (self-service payout, Thrive pattern)
-// Partner requests payment of their matured balance; owner approves ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ status
+// Partner requests payment of their matured balance; owner approves Ò
 // flips to paid. Linked rows keep the audit trail.
 export const payoutRequests = sqliteTable('payout_requests', {
   id: text('id').primaryKey(),
@@ -806,4 +1051,126 @@ export const payoutRequests = sqliteTable('payout_requests', {
   requestedAt: integer('requested_at').notNull(),
   resolvedAt: integer('resolved_at'),
   updatedBy: text('updated_by')
+});
+
+// ==========================================
+// 55. STUDY ABROAD SHORTLISTS (Internal Counseling Workflow)
+// ==========================================
+export const studyAbroadShortlists = sqliteTable('study_abroad_shortlists', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  universityId: text('university_id').notNull().references(() => universities.id),
+  status: text('status', { enum: ['shortlisted', 'docs_uploaded', 'submitted', 'offer_letter', 'enrolled', 'rejected', 'cancelled'] }).notNull().default('shortlisted'),
+  notes: text('notes'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 56. VISA APPLICATIONS (Internal Counselor Workflow)
+// ==========================================
+export const visaApplications = sqliteTable('visa_applications', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  country: text('country').notNull(),
+  visaType: text('visa_type').notNull(),
+  appointmentDate: integer('appointment_date'),
+  appointmentLocation: text('appointment_location'),
+  status: text('status', { enum: ['draft', 'submitted', 'document_prep', 'slot_booked', 'granted', 'rejected', 'delivered', 'cancelled'] }).notNull().default('document_prep'),
+  notes: text('notes'),
+  email: text('email'),
+  agencyName: text('agency_name'),
+  registeredMobile: text('registered_mobile'),
+  agreedToTerms: integer('agreed_to_terms', { mode: 'boolean' }).notNull().default(false),
+  formJson: text('form_json'),
+  submittedAt: integer('submitted_at'),
+  decisionAt: integer('decision_at'),
+  rejectionReason: text('rejection_reason'),
+  deliveredAt: integer('delivered_at'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 57. VISA MOCK INTERVIEWS (Counseling Preparation Loop)
+// ==========================================
+export const visaMockInterviews = sqliteTable('visa_mock_interviews', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  interviewerId: text('interviewer_id').references(() => users.id),
+  scheduledAt: integer('scheduled_at').notNull(),
+  status: text('status', { enum: ['scheduled', 'completed', 'cancelled'] }).notNull().default('scheduled'),
+  score: integer('score'),
+  feedback: text('feedback'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 58. UMRAH CHECKLISTS (Document Verification Register)
+// ==========================================
+export const umrahChecklists = sqliteTable('umrah_checklists', {
+  id: text('id').primaryKey(),
+  bookingId: text('booking_id').notNull().references(() => seatBookings.id),
+  passportScanned: integer('passport_scanned', { mode: 'boolean' }).notNull().default(false),
+  visaIssued: integer('visa_issued', { mode: 'boolean' }).notNull().default(false),
+  vaccineCertificate: integer('vaccine_certificate', { mode: 'boolean' }).notNull().default(false),
+  ticketIssued: integer('ticket_issued', { mode: 'boolean' }).notNull().default(false),
+  notes: text('notes'),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 59. ATTESTATION APPLICATIONS (Embassy & MEA Workflows)
+// ==========================================
+export const attestationApplications = sqliteTable('attestation_applications', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  documentType: text('document_type', { enum: ['degree', 'diploma', 'birth_certificate', 'marriage_certificate', 'pcc'] }).notNull(),
+  destinationCountry: text('destination_country').notNull(),
+  currentStep: text('current_step', { enum: ['hrd', 'mea', 'embassy', 'apostille'] }).notNull().default('hrd'),
+  status: text('status', { enum: ['pending', 'in_transit', 'in_progress', 'completed', 'rejected'] }).notNull().default('pending'),
+  notes: text('notes'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 60. MANPOWER DEPLOYMENTS (Recruitment & Sourcing Workflow)
+// ==========================================
+export const manpowerDeployments = sqliteTable('manpower_deployments', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  jobId: text('job_id').notNull().references(() => jobPostings.id),
+  selectionStatus: text('selection_status', { enum: ['applied', 'shortlisted', 'selected', 'rejected'] }).notNull().default('applied'),
+  medicalStatus: text('medical_status', { enum: ['pending', 'fit', 'unfit', 'restricted'] }).notNull().default('pending'),
+  visaStatus: text('visa_status', { enum: ['pending', 'submitted', 'stamped', 'rejected'] }).notNull().default('pending'),
+  flightStatus: text('flight_status', { enum: ['pending', 'booked', 'deployed'] }).notNull().default('pending'),
+  formJson: text('form_json'),
+  resumeKey: text('resume_key'),
+  appliedAt: integer('applied_at'),
+  rejectionReason: text('rejection_reason'),
+  notes: text('notes'),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 61. VISA PRODUCTS INVENTORY
+// ==========================================
+export const visaProducts = sqliteTable('visa_products', {
+  id: text('id').primaryKey(),
+  country: text('country').notNull(),
+  visaType: text('visa_type').notNull(),
+  entryType: text('entry_type').notNull(),
+  processingTime: text('processing_time').notNull(),
+  feePaise: integer('fee_paise').notNull(),
+  requiredDocsJson: text('required_docs_json').notNull().default('[]'),
+  category: text('category').notNull().default('Tourist'),
+  tier: text('tier').notNull().default('Standard'),
+  validityDays: integer('validity_days'),
+  maxStayDays: integer('max_stay_days'),
+  insuranceIncluded: integer('insurance_included', { mode: 'boolean' }).notNull().default(false),
+  status: text('status').notNull().default('active'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
 });

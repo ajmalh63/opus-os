@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from "./db/schema.js";
 import { getDb } from "./db/client.js";
+import { sendNotification } from "./infra/notify.js";
 
 // Centralized auth gateway (gold-standard 2026):
 //   - primary: email + password (familiar B2B fallback; NIST baseline)
@@ -43,8 +44,10 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
       minPasswordLength: 8,
       maxPasswordLength: 128,
       sendResetPassword: async ({ user, url, token }) => {
-        // Dev bootstrap: log the reset link (production: route through Queue/email provider)
-        console.log(`[auth] password reset for ${user.email}: ${url}`);
+        // Transactional email via the notify engine (Listmonk /api/tx when
+        // configured; Cloudflare Email binding; dev = log). OTP/reset mail is
+        // time-critical — it goes out immediately, never through a campaign queue.
+        await sendPasswordResetEmail(env as any, db as any, user, url);
       }
     },
     emailVerification: {
@@ -54,7 +57,7 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
         // With disableOriginCheck, absolute callbacks flow cleanly; the final
         // redirect goes to the frontend where the session lands. Keep as absolute.
         const safe = url.replace(/callbackURL=[^&]*/, `callbackURL=${encodeURIComponent(baseURL)}`);
-        console.log(`[auth] verification for ${user.email}: ${safe}`);
+        await sendVerificationEmailSafe(env as any, db as any, user, safe);
       }
     },
     twoFactor: {
@@ -68,7 +71,7 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
       },
       issuer: "Opus Overseas",
       sendOTP: async ({ user, otp }: { user: { id: string; email: string; role?: string }; otp: string }) => {
-        console.log(`[auth] 2FA OTP for ${user.email}: ${otp}`); // dev channel
+        await sendOtpEmail(env as any, db as any, user, otp);
       }
     },
     session: {
@@ -96,3 +99,40 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
     }
   });
 }
+
+// ═══ Transactional email helpers (auth → notify → Listmonk/CF/stub) ═══
+// Each is an exported, testable seam. Delivery is immediate (transactional
+// lane, never the campaign queue) and failure never blocks the auth request.
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function sendPasswordResetEmail(env: any, db: any, user: { email: string }, url: string): Promise<void> {
+  await sendNotification(env, db, {
+    channel: 'email',
+    to: user.email,
+    subject: 'Reset your Opus Overseas password',
+    body: `Reset your password (valid for 10 minutes): ${url}`,
+  }).catch(() => { });
+  console.log(`[auth] password reset for ${user.email}: ${url}`); // dev fallback visibility
+}
+
+async function sendVerificationEmailSafe(env: any, db: any, user: { email: string }, url: string): Promise<void> {
+  await sendNotification(env, db, {
+    channel: 'email',
+    to: user.email,
+    subject: 'Verify your Opus Overseas email',
+    body: `Confirm your email to finish signing up: ${url}`,
+  }).catch(() => { });
+  console.log(`[auth] verification for ${user.email}: ${url}`);
+}
+
+async function sendOtpEmail(env: any, db: any, user: { email: string }, otp: string): Promise<void> {
+  await sendNotification(env, db, {
+    channel: 'email',
+    to: user.email,
+    subject: `Your Opus Overseas OTP: ${otp}`,
+    body: `Your one-time code is ${otp}. It expires in 10 minutes — never share it.`,
+  }).catch(() => { });
+  console.log(`[auth] 2FA OTP for ${user.email}: ${otp}`); // dev channel
+}
+
+export { sendPasswordResetEmail, sendVerificationEmailSafe, sendOtpEmail };

@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+﻿import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { leadIntakeSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
@@ -30,6 +30,14 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
   const token = `OP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
   try {
+    // F3 (Workflow Audit 2026-08-12): identity integrity — a second lead on
+    // the same phone number is rejected, never duplicated (best-effort guard;
+    // intake races are bounded by the turnstile + rate limit).
+    const dup = await db.select().from(clients).where(eq(clients.phone, data.phone)).get().catch(() => undefined);
+    if (dup) {
+      return c.json({ error: 'A client with this phone number already exists', code: 'duplicate_phone', existingClientId: dup.id }, 409);
+    }
+
     // Insert client (persist lead source + intake context for funnel scoring/qualification)
     await db.insert(clients).values({
       id: token,
@@ -39,6 +47,10 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
       highestQualification: data.highestQualification,
       leadSource: data.leadSource || 'website',
       intakeContext: data.dynamicContext ? JSON.stringify(data.dynamicContext) : null,
+      // Declared interest: the lead form's division select is the primary
+      // marketing-intent signal (nurture targeting, Wave 4).
+      intentDivisions: data.division ? JSON.stringify([data.division]) : null,
+      primaryDivision: data.division || null,
       createdAt: Math.floor(Date.now() / 1000),
       updatedAt: Math.floor(Date.now() / 1000)
     });
@@ -140,7 +152,7 @@ leadsRouter.post('/', zValidator('json', leadIntakeSchema), async (c) => {
           clientId: token,
           engagementId,
           assigneeId,
-          title: `⏱ Reach out to ${data.name} (${data.division.toUpperCase()}) within 15 min`,
+title: `Reach out to ${data.name} (${data.division.toUpperCase()}) within 15 min`,
           description: `New lead ${token} — contact via phone/WhatsApp immediately. Context: division ${data.division}, qualification ${data.highestQualification}.`,
           priority: 'high',
           dueInSeconds: 15 * 60,
@@ -284,4 +296,5 @@ leadsRouter.get('/status', async (c) => {
     return c.json({ error: "Failed to fetch status", details: error.message }, 500);
   }
 });
+
 

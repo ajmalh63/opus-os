@@ -11,6 +11,8 @@ const VALID: Record<string, string> = {
   departure: '/umrah-travel',
   job: '/recruitment',
   attestation: '/attestation',
+  visa: '/visa-services',
+  umrah_package: '/umrah-travel',
 };
 
 export const goRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();

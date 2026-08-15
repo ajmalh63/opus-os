@@ -35,3 +35,17 @@ INSERT OR REPLACE INTO engagements (id, client_id, division, title, stage_key, c
 -- Group Departures (Umrah)
 INSERT OR REPLACE INTO group_departures (id, package_tier, departure_date, capacity, booked_seats, price, booking_fee, status, created_at) VALUES
 ('dep-nov-2026', 'standard', 1795000000, 30, 5, 15000000, 1000000, 'open', 1717171717);
+
+-- Universities
+INSERT OR REPLACE INTO universities (id, name, country, intake, min_gpa, ielts_min, budget_lpa_min, created_at) VALUES
+('uni-oxford', 'University of Oxford', 'UK', 'Fall 2026', 8.5, 7.5, 35, 1717171717),
+('uni-cambridge', 'University of Cambridge', 'UK', 'Fall 2026', 8.5, 7.5, 38, 1717171717),
+('uni-harvard', 'Harvard University', 'USA', 'Fall 2026', 9.0, 7.5, 45, 1717171717),
+('uni-toronto', 'University of Toronto', 'Canada', 'Fall 2026', 8.0, 7.0, 28, 1717171717),
+('uni-leeds', 'University of Leeds', 'UK', 'Fall 2026', 7.5, 6.5, 22, 1717171717);
+
+-- Study Abroad Shortlists
+INSERT OR REPLACE INTO study_abroad_shortlists (id, client_id, university_id, status, notes, created_at, updated_at) VALUES
+('sl-ramesh-oxford', 'OP-2026-1001', 'uni-oxford', 'shortlisted', 'High priority target', 1717171717, 1717171717),
+('sl-ramesh-harvard', 'OP-2026-1001', 'uni-harvard', 'submitted', 'Awaiting interview call', 1717171717, 1717171717),
+('sl-priya-cambridge', 'OP-2026-1002', 'uni-cambridge', 'docs_uploaded', 'Submitted transcripts', 1717171717, 1717171717);

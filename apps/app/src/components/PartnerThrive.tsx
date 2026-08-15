@@ -21,7 +21,9 @@ interface ThriveSummary {
 interface PayoutRow { id: string; partnerId: string; amountPaise: number; status: 'requested' | 'approved' | 'paid' | 'rejected'; note: string | null; requestedAt: number; resolvedAt: number | null; }
 
 const rs = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-const TYPES: Record<string, string> = { university: 'Universities', departure: 'Umrah Departures', job: 'Job Openings', attestation: 'Attestation' };
+const TYPES: Record<string, string> = { university: 'Universities', departure: 'Umrah Departures', umrah_package: 'Umrah Packages', job: 'Job Openings', attestation: 'Attestation', visa: 'Visa' };
+
+interface VisaProductRow { id: string; country: string; visaType: string; entryType: string; processingTime: string; feePaise: number; status: string; }
 
 export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNotice }: { partnerId: string; token: string; maturedPaise?: number; onNotice?: (msg: string, ok?: boolean) => void }) {
   const queryClient = useQueryClient();
@@ -35,6 +37,24 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
     queryKey: ['partnerCatalog'],
     queryFn: async () => { const r = await fetch('/api/public/catalog', { headers: AUTH }); if (!r.ok) throw new Error('catalog'); return r.json(); },
   });
+
+  // Visa inventory is a separate products table (phase-1 partner surfacing)
+  const { data: visaProducts } = useQuery<{ products: VisaProductRow[] }>({
+    queryKey: ['partnerVisaProducts'],
+    queryFn: async () => { const r = await fetch('/api/visa/products'); if (!r.ok) throw new Error('visa products'); return r.json(); },
+    enabled: activeType === 'visa',
+    staleTime: 60_000,
+  });
+
+  const visaItems: CatalogItem[] = (visaProducts?.products || [])
+    .filter((p) => p.status === 'active')
+    .map((p) => ({
+      type: 'visa',
+      id: p.id,
+      title: p.visaType,
+      pricePaise: p.feePaise,
+      meta: { country: `${p.country} · ${p.entryType} · ${p.processingTime}` },
+    }));
 
   const { data: thrive } = useQuery<ThriveSummary>({
     queryKey: ['partnerThrive', partnerId],
@@ -79,7 +99,7 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
     setCopiedId(id); setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const items = (catalog?.items || []).filter((i) => i.type === activeType);
+  const items = activeType === 'visa' ? visaItems : (catalog?.items || []).filter((i) => i.type === activeType);
   const myLinks = links?.links || [];
   const tier = thrive?.tier;
   const next = thrive?.nextTier;

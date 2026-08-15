@@ -75,10 +75,10 @@ export default function FunnelTab() {
     return () => ctx.revert();
   }, [data]);
 
-  if (isLoading) return <div className="p-12 text-center text-xs text-slate-500">Crunching funnel metrics...</div>;
+  if (isLoading) return <div className="p-12 text-center text-xs text-brand-navy/40">Crunching funnel metrics...</div>;
   if (isError || !data) {
     return (
-      <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
+      <div className="p-12 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200/50 rounded-lg">
         Failed to load funnel analytics. Check super-admin credentials.
       </div>
     );
@@ -92,11 +92,14 @@ export default function FunnelTab() {
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>
-          <h2 className="font-display text-xl font-bold text-brand-navy">Sales Funnel</h2>
-          <p className="text-xs text-slate-500 mt-1">Lead to Customer conversion across all divisions. Generated {new Date((data as any).generatedAt * 1000).toLocaleString()}</p>
+          <div className="flex items-center gap-2.5">
+            <span className="gold-dot" />
+            <h2 className="font-display text-xl font-bold text-brand-navy">Sales Funnel</h2>
+          </div>
+          <p className="text-xs text-brand-navy/40 mt-1">Lead to Customer conversion across all divisions. Generated {new Date((data as any).generatedAt * 1000).toLocaleString()}</p>
         </div>
         {data.staleCount > 0 && (
-          <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-rose-950/40 border border-rose-800/60 text-rose-300">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200/60 text-rose-700">
             {data.staleCount} stale lead{data.staleCount > 1 ? 's' : ''} need attention
           </span>
         )}
@@ -110,8 +113,8 @@ export default function FunnelTab() {
           { label: 'Signed Customers', value: data.customers, suffix: '' },
           { label: 'Lead -> Customer', value: data.leadToCustomer, suffix: '%' },
         ].map((kpi) => (
-          <div key={kpi.label} className="panel-entrance bg-[#1C2541]/50 border border-brand-navy/10 rounded-xl p-5 shadow-xl">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">{kpi.label}</p>
+          <div key={kpi.label} className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">{kpi.label}</p>
             <p className="kpi-num font-display font-bold text-2xl md:text-3xl text-brand-gold mt-2">
               0{kpi.suffix}
             </p>
@@ -121,20 +124,20 @@ export default function FunnelTab() {
 
       {/* Stage bars + velocity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="panel-entrance lg:col-span-2 bg-[#1C2541]/50 border border-brand-navy/10 rounded-xl p-6 shadow-xl">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-5">Pipeline Stages</h3>
+        <div className="panel-entrance lg:col-span-2 rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold mb-5">Pipeline Stages</h3>
           <div className="space-y-4">
             {data.funnel.map((s) => {
               const rate = Math.min(100, Math.max(0, s.conversionRate));
               return (
                 <div key={s.stage}>
                   <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-slate-700 font-semibold">{STAGE_LABELS[s.stage] || s.stage}</span>
-                    <span className="text-slate-500">
-                      {s.count} active Â· <span className="text-brand-gold">{s.conversionRate}%</span> of leads
+                    <span className="text-brand-navy/70 font-semibold">{STAGE_LABELS[s.stage] || s.stage}</span>
+                    <span className="text-brand-navy/40">
+                      {s.count} active · <span className="text-brand-gold">{s.conversionRate}%</span> of leads
                     </span>
                   </div>
-                  <div className="h-2.5 rounded-full bg-[#0B132B] overflow-hidden">
+                  <div className="h-2.5 rounded-full bg-white overflow-hidden">
                     <div className="funnel-bar h-full rounded-full bg-gradient-to-r from-brand-gold to-brand-gold-hover" style={{ width: `${rate}%` }} />
                   </div>
                 </div>
@@ -143,12 +146,12 @@ export default function FunnelTab() {
           </div>
         </div>
 
-        <div className="panel-entrance bg-[#1C2541]/50 border border-brand-navy/10 rounded-xl p-6 shadow-xl">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-5">Avg Days in Stage</h3>
+        <div className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold mb-5">Avg Days in Stage</h3>
           <div className="space-y-3">
             {data.funnel.map((s) => (
               <div key={s.stage} className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">{STAGE_LABELS[s.stage] || s.stage}</span>
+                <span className="text-xs text-brand-navy/40">{STAGE_LABELS[s.stage] || s.stage}</span>
                 <span className="text-sm font-display font-bold text-brand-navy">{data.velocity?.[s.stage] ?? 0}d</span>
               </div>
             ))}
@@ -157,18 +160,18 @@ export default function FunnelTab() {
       </div>
 
       {/* Stale recovery queue */}
-      <div className="panel-entrance bg-[#1C2541]/50 border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
-        <div className="px-6 py-4 border-b border-brand-navy/10 flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Stale Lead Recovery Queue</h3>
-          <span className="text-[10px] text-slate-600">Untouched &gt; 7 days</span>
+      <div className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white overflow-hidden shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
+        <div className="px-6 py-4 border-b border-brand-navy/[0.08] flex items-center justify-between">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Stale Lead Recovery Queue</h3>
+          <span className="text-[10px] text-brand-navy/40">Untouched &gt; 7 days</span>
         </div>
         {data.stale.length === 0 ? (
-          <p className="p-8 text-center text-xs text-slate-500">No stale leads — follow-up discipline is on point.</p>
+          <p className="p-8 text-center text-xs text-brand-navy/40">No stale leads — follow-up discipline is on point.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
                   <th className="p-4">Client</th>
                   <th className="p-4">Division</th>
                   <th className="p-4">Stage</th>
@@ -179,15 +182,15 @@ export default function FunnelTab() {
               </thead>
               <tbody>
                 {data.stale.map((s) => (
-                  <tr key={s.clientId} className="border-b border-brand-navy/10/60 last:border-0 hover:bg-[#0B132B]/50">
+                  <tr key={s.clientId} className="border-b border-brand-navy/[0.08] last:border-0 hover:bg-brand-navy/[0.04]">
                     <td className="p-4">
-                      <p className="text-slate-700 font-semibold">{s.name}</p>
-                      <p className="text-[10px] text-slate-600">{s.phone} Â· {s.clientId}</p>
+                      <p className="text-brand-navy font-semibold">{s.name}</p>
+                      <p className="text-[10px] text-brand-navy/40">{s.phone} · {s.clientId}</p>
                     </td>
-                    <td className="p-4 text-slate-500 capitalize">{s.division.replace('-', ' ')}</td>
-                    <td className="p-4"><span className="text-[10px] uppercase font-bold px-2 py-1 rounded-full bg-white text-slate-700">{s.stageKey}</span></td>
-                    <td className={`p-4 font-bold ${s.ageDays > 14 ? 'text-rose-400' : 'text-amber-400'}`}>{s.ageDays}d</td>
-                    <td className="p-4 text-slate-700">{inr(s.outstandingBalance)}</td>
+                    <td className="p-4 text-brand-navy/40 capitalize">{s.division.replace('-', ' ')}</td>
+                    <td className="p-4"><span className="text-[10px] uppercase font-bold px-2 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/10 text-brand-navy/70">{s.stageKey}</span></td>
+                    <td className={`p-4 font-bold ${s.ageDays > 14 ? 'text-rose-600' : 'text-amber-700'}`}>{s.ageDays}d</td>
+                    <td className="p-4 text-brand-navy">{inr(s.outstandingBalance)}</td>
                     <td className="p-4">
                       <button
                         onClick={() => reactivate.mutate(s.clientId)}
@@ -206,18 +209,18 @@ export default function FunnelTab() {
       </div>
 
       {/* Affiliate leaderboard */}
-      <div className="panel-entrance bg-[#1C2541]/50 border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
-        <div className="px-6 py-4 border-b border-brand-navy/10 flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Partner Affiliate Leaderboard</h3>
-          <span className="text-[10px] text-slate-600">Section 39 Â· commission</span>
+      <div className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white overflow-hidden shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
+        <div className="px-6 py-4 border-b border-brand-navy/[0.08] flex items-center justify-between">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Partner Affiliate Leaderboard</h3>
+          <span className="text-[10px] text-brand-navy/40">Section 39 · commission</span>
         </div>
         {partners.length === 0 ? (
-          <p className="p-8 text-center text-xs text-slate-500">No partners registered yet — share your affiliate link to start.</p>
+          <p className="p-8 text-center text-xs text-brand-navy/40">No partners registered yet — share your affiliate link to start.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
                   <th className="p-4">Partner</th>
                   <th className="p-4">Code</th>
                   <th className="p-4">Referrals</th>
@@ -228,12 +231,12 @@ export default function FunnelTab() {
               </thead>
               <tbody>
                 {partners.map((p) => (
-                  <tr key={p.partnerId} className="border-b border-brand-navy/10/60 last:border-0 hover:bg-[#0B132B]/50">
-                    <td className="p-4 text-slate-700 font-semibold">{p.name}</td>
+                  <tr key={p.partnerId} className="border-b border-brand-navy/[0.08] last:border-0 hover:bg-brand-navy/[0.04]">
+                    <td className="p-4 text-brand-navy font-semibold">{p.name}</td>
                     <td className="p-4"><span className="text-[10px] font-bold px-2 py-1 rounded-full bg-brand-gold/10 border border-brand-gold/40 text-brand-gold">{p.referralCode || '—'}</span></td>
-                    <td className="p-4 text-slate-700">{p.referrals}</td>
-                    <td className="p-4 text-slate-700">{p.converted}</td>
-                    <td className="p-4 text-slate-700">{p.conversionRate}%</td>
+                    <td className="p-4 text-brand-navy">{p.referrals}</td>
+                    <td className="p-4 text-brand-navy">{p.converted}</td>
+                    <td className="p-4 text-brand-navy">{p.conversionRate}%</td>
                     <td className="p-4 text-brand-gold font-bold">{inr(p.commissionPaise)}</td>
                   </tr>
                 ))}
@@ -244,18 +247,18 @@ export default function FunnelTab() {
       </div>
 
       {/* A/B experiments (Funnel#5) */}
-      <div className="panel-entrance bg-[#1C2541]/50 border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
-        <div className="px-6 py-4 border-b border-brand-navy/10 flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">A/B Experiments</h3>
-          <span className="text-[10px] text-slate-600">locked hypothesis Â· no peeking</span>
+      <div className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white overflow-hidden shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
+        <div className="px-6 py-4 border-b border-brand-navy/[0.08] flex items-center justify-between">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">A/B Experiments</h3>
+          <span className="text-[10px] text-brand-navy/40">locked hypothesis · no peeking</span>
         </div>
         {!expData || !expData.experiments || expData.experiments.length === 0 ? (
-          <p className="p-8 text-center text-xs text-slate-500">No experiments yet. Create one with a locked hypothesis + baseline + MDE.</p>
+          <p className="p-8 text-center text-xs text-brand-navy/40">No experiments yet. Create one with a locked hypothesis + baseline + MDE.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
                   <th className="p-4">Experiment</th>
                   <th className="p-4">Status</th>
                   <th className="p-4">Variant A</th>
@@ -265,25 +268,25 @@ export default function FunnelTab() {
               </thead>
               <tbody>
                 {expData.experiments.map((e) => (
-                  <tr key={e.key} className="border-b border-brand-navy/10/60 last:border-0 hover:bg-[#0B132B]/50">
+                  <tr key={e.key} className="border-b border-brand-navy/[0.08] last:border-0 hover:bg-brand-navy/[0.04]">
                     <td className="p-4">
-                      <p className="text-slate-700 font-semibold">{e.name}</p>
-                      <p className="text-[10px] text-slate-600 max-w-md">{e.hypothesis}</p>
+                      <p className="text-brand-navy font-semibold">{e.name}</p>
+                      <p className="text-[10px] text-brand-navy/40 max-w-md">{e.hypothesis}</p>
                     </td>
                     <td className="p-4">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${e.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-white text-slate-700'}`}>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${e.status === 'active' ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30' : 'bg-brand-navy/[0.06] text-brand-navy/70'}`}>
                         {e.status}
                       </span>
                     </td>
                     <td className="p-4">
-                      <p className="text-slate-700">{e.variantA}</p>
-                      <p className="text-[10px] text-brand-gold">{e.variants.A.assigned} assigned Â· {e.variants.A.rate}% {e.primaryMetric}</p>
+                      <p className="text-brand-navy">{e.variantA}</p>
+                      <p className="text-[10px] text-brand-gold">{e.variants.A.assigned} assigned · {e.variants.A.rate}% {e.primaryMetric}</p>
                     </td>
                     <td className="p-4">
-                      <p className="text-slate-700">{e.variantB}</p>
-                      <p className="text-[10px] text-brand-gold">{e.variants.B.assigned} assigned Â· {e.variants.B.rate}% {e.primaryMetric}</p>
+                      <p className="text-brand-navy">{e.variantB}</p>
+                      <p className="text-[10px] text-brand-gold">{e.variants.B.assigned} assigned · {e.variants.B.rate}% {e.primaryMetric}</p>
                     </td>
-                    <td className="p-4 text-slate-500">{e.primaryMetric}</td>
+                    <td className="p-4 text-brand-navy/40">{e.primaryMetric}</td>
                   </tr>
                 ))}
               </tbody>

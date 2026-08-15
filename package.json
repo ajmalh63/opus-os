@@ -5,7 +5,14 @@
   "scripts": {
     "dev": "pnpm --filter api run dev",
     "test": "pnpm --filter api run test",
+    "smoke": "node scripts/smoke-interactions.mjs",
+    "e2e": "env SMOKE_CHANNEL=bare node scripts/e2e-personas.mjs",
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1",
+    "playwright-core": "^1.62.1",
+    "wrangler": "^4.122.0"
   }
 }

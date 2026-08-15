@@ -1,4 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
+import { useStaffAlerts } from '../lib/useStaffAlerts';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useSession, type Me } from '../lib/session';
@@ -46,44 +47,43 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Overview',
     items: [
-      { key: 'dashboard', label: 'Dashboard', to: '/workspaces', icon: I.dash, roles: ALL, match: '/workspaces' },
-{ key: 'pipeline', label: 'Clients & Pipeline', to: '/kanban', icon: I.kanban, roles: ['super_admin', 'manager', 'counselor', 'coordinator'], match: '/kanban|/clients' },
+      { key: 'dashboard', label: 'Dashboard', to: '/dashboard', icon: I.dash, roles: ALL, match: '/dashboard' },
+      { key: 'inbox', label: 'Inbox', to: '/inbox', icon: I.inbox, roles: ALL, match: '/inbox' },
+      { key: 'clients', label: 'Clients', to: '/clients', icon: I.partner, roles: ['super_admin', 'manager', 'counselor', 'coordinator'], match: '/clients' },
+      { key: 'kanban', label: 'Pipeline', to: '/kanban', icon: I.kanban, roles: ['super_admin', 'manager', 'counselor', 'coordinator'], match: '/kanban' },
+      { key: 'divisions', label: 'Divisions', to: '/divisions', icon: I.dash, roles: ALL, match: '/divisions' },
     ],
   },
   {
     title: 'Operations',
     items: [
-      { key: 'inbox', label: 'Unified Inbox', to: '/inbox', icon: I.inbox, roles: ALL, match: '/inbox' },
-      { key: 'transactions', label: 'Transactions', to: '/workspaces/transactions', icon: I.billing, roles: ALL, match: '/workspaces/transactions' },
-      { key: 'teamhub', label: 'Team Hub', to: '/workspaces/teamhub', icon: I.team, roles: ALL, match: '/workspaces/teamhub' },
-      { key: 'flow', label: 'Flow Analytics', to: '/workspaces/flow', icon: I.audit, roles: ['super_admin', 'manager'], match: '/workspaces/flow' },
-      { key: 'admindesk', label: 'Admin Control Desk', to: '/admin', icon: I.admindesk, roles: ['super_admin'], match: '/admin' },
-    ],
-  },
-  {
-    title: 'Growth & Marketing',
-    items: [
-      { key: 'funnel', label: 'Sales Funnel', to: '/workspaces/funnel', icon: I.funnel, roles: ['super_admin', 'manager'], match: '/workspaces/funnel' },
-      { key: 'campaigns', label: 'Campaigns', to: '/workspaces/campaigns', icon: I.campaigns, roles: ['super_admin'], match: '/workspaces/campaigns' },
-      { key: 'growth', label: 'Growth & Incentives', to: '/workspaces/growth', icon: I.growth, roles: ['super_admin', 'manager'], match: '/workspaces/growth' },
-    ],
-  },
-{
-    title: 'Systems & Compliance',
-    items: [
-      { key: 'compliance', label: 'Compliance (GST)', to: '/workspaces/compliance', icon: I.compliance, roles: ['super_admin', 'manager'], match: '/workspaces/compliance' },
-      { key: 'partners', label: 'Partners', to: '/admin?tab=partners', icon: I.partner, roles: ['super_admin'], match: '/admin?tab=partners' },
-      { key: 'roles', label: 'Roles & Permissions', to: '/workspaces/roles', icon: I.roles, roles: ['super_admin'], match: '/workspaces/roles' },
-      { key: 'infra', label: 'Infrastructure', to: '/workspaces/infra', icon: I.infra, roles: ['super_admin'], match: '/workspaces/infra' },
-      { key: 'audit', label: 'Audit Trail', to: '/workspaces/audit', icon: I.audit, roles: ['super_admin'], match: '/workspaces/audit' },
+      { key: 'billing', label: 'Billing & GST', to: '/billing', icon: I.billing, roles: ALL, match: '/billing' },
+      { key: 'taxes', label: 'Taxes & Compliance', to: '/taxes', icon: I.compliance, roles: ['super_admin', 'manager'], match: '/taxes' },
+      { key: 'analytics', label: 'Flow Analytics', to: '/analytics', icon: I.growth, roles: ['super_admin', 'manager'], match: '/analytics' },
+      { key: 'control', label: 'Admin Desk', to: '/control', icon: I.admindesk, roles: ['super_admin'], match: '/control' },
+      { key: 'audit', label: 'Security Logs', to: '/audit', icon: I.audit, roles: ['super_admin'], match: '/audit' },
     ],
   },
 ];
 
 export function allowedNavFor(me: Me | null): NavSection[] {
-  const role = me?.role;
+  if (!me) return [];
+  const role = me.role;
+  if (role === 'super_admin') return NAV_SECTIONS;
+
   return NAV_SECTIONS
-    .map((s) => ({ ...s, items: s.items.filter((i) => i.roles.includes(role || '')) }))
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((i) => {
+        if (!i.roles.includes(role)) return false;
+        // Verify custom divisions/modules assigned to standard staff
+        const checkKeys = ['clients', 'kanban', 'billing', 'taxes', 'analytics', 'audit', 'divisions', 'study-abroad', 'visa', 'umrah', 'attestation', 'manpower'];
+        if (checkKeys.includes(i.key)) {
+          return me.userDivisions.includes(i.key);
+        }
+        return true;
+      })
+    }))
     .filter((s) => s.items.length > 0);
 }
 
@@ -92,6 +92,8 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const { alerts, newCount, markAllSeen } = useStaffAlerts();
 
   // My Work badge: open tasks assigned to this staff member (live)
   const { data: myTasks } = useQuery<{ openCount: number }>({
@@ -129,8 +131,8 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#0A1128] text-white">
-      <aside className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-white/[0.06] bg-[#0B132B]/95 transition-[width] duration-300 ${collapsed ? 'w-[72px]' : 'w-[248px]'}`}>
+    <div className="flex min-h-screen bg-[#FAF8F4] text-white">
+      <aside className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-white/10 bg-brand-navy/95 transition-[width] duration-300 ${collapsed ? 'w-[72px]' : 'w-[248px]'}`}>
         <div className="flex h-14 items-center gap-2 px-4">
           {collapsed ? <WorkspaceLogo compact /> : <WorkspaceLogo />}
           {!collapsed ? (
@@ -150,7 +152,7 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           {sections.map((section) => (
             <div key={section.title} className="mb-5">
               {!collapsed && (
-                <div className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{section.title}</div>
+                <div className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/50">{section.title}</div>
               )}
               {collapsed && <div className="mx-2 mb-2 border-t border-white/10" />}
               <ul className="space-y-0.5">
@@ -209,7 +211,8 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-<header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.06] bg-[#0A1128]/85 px-6 backdrop-blur">
+        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-brand-navy/85 px-6 backdrop-blur">
+
           <div className="text-sm font-semibold text-white">
             {sections.flatMap((s) => s.items).find((i) => isActive(i.match || i.to))?.label || 'Workspace'}
           </div>
@@ -224,6 +227,42 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
                 My Work · {openTasks}
               </button>
             )}
+            <div className="relative">
+              <button
+                onClick={() => setAlertsOpen(!alertsOpen)}
+                className="relative cursor-pointer rounded-md border border-white/10 px-2.5 py-1 text-slate-400 transition-colors hover:border-brand-gold/40 hover:text-white"
+                title="Live activity"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                {newCount > 0 && (
+                  <span className="absolute -top-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-rose-500 text-[9px] font-bold text-white">{newCount > 9 ? '9+' : newCount}</span>
+                )}
+              </button>
+              {alertsOpen && (
+                <div className="absolute right-0 top-9 z-50 w-80 rounded-xl border border-white/10 bg-[#0D1830] shadow-2xl overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">Live Activity</span>
+                    {newCount > 0 && <button onClick={markAllSeen} className="text-[9px] font-bold uppercase text-white/50 hover:text-white cursor-pointer">Mark all seen</button>}
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {alerts.length === 0 && <p className="px-3 py-6 text-center text-[10px] text-white/40">No activity yet.</p>}
+                    {alerts.slice(0, 10).map((a) => (
+                      <div key={a.id} className={`px-3 py-2.5 border-b border-white/5 ${a.status === 'new' ? 'bg-brand-gold/[0.06]' : ''}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-bold text-white truncate">{a.title}</span>
+                          {a.status === 'new' && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-brand-gold" />}
+                        </div>
+                        {a.body && <p className="text-[10px] text-white/50 mt-0.5 truncate">{a.body}</p>}
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-[9px] text-white/35 uppercase tracking-wider">{a.division} · {a.type}</span>
+                          <span className="text-[9px] text-white/35">{new Date(a.createdAt * 1000).toLocaleTimeString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <button
               onClick={() => setPaletteOpen(true)}
               className="hidden cursor-pointer items-center gap-2 rounded-md border border-white/10 px-2.5 py-1 text-[11px] text-slate-400 transition-colors hover:border-brand-gold/40 hover:text-white sm:flex"
@@ -241,8 +280,15 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           </div>
         </header>
 
-<main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#FAF8F4]">
-          <div className="min-h-full w-full flex-1 px-6 py-6 md:px-8 md:py-7">
+        <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#FAF8F4]">
+          {/* Off-white brand canvas: soft navy/gold orbs + film grain */}
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <div className="hero-orb -left-24 top-16 h-96 w-96 bg-brand-blue/[0.07] blur-[110px]" />
+            <div className="hero-orb -right-20 top-1/3 h-[30rem] w-[30rem] bg-brand-gold/[0.06] blur-[130px]" />
+            <div className="hero-orb bottom-0 left-1/3 h-80 w-80 bg-brand-blue/[0.05] blur-[110px]" />
+          </div>
+          <div className="film-grain" aria-hidden="true" />
+          <div className="relative min-h-full w-full flex-1 px-6 py-6 text-brand-navy md:px-8 md:py-7">
             {children}
           </div>
         </main>

@@ -14,11 +14,15 @@ import { umrahRouter } from './routes/umrah.js';
 import { transitRouter } from './routes/transit.js';
 import { manpowerRouter } from './routes/manpower.js';
 import { portalRouter } from './routes/portal.js';
+import { portalVisaRouter } from './routes/portalVisa.js';
+import { portalManpowerRouter } from './routes/portalManpower.js';
+import { portalUmrahRouter } from './routes/portalUmrah.js';
 import { partnerRouter } from './routes/partner.js';
 import { publicThriveRouter } from './routes/partnerThrive.js';
 import { goRouter } from './routes/goRedirect.js';
 import { seedPartnerTiers } from './services/partnerLoyalty.js';
 import { tasksRouter } from './routes/tasks.js';
+import { boardRouter } from './routes/board.js';
 import { rbacRouter } from './routes/rbac.js';
 import { razorpayRouter, razorpayWebhookRouter } from './routes/razorpay.js';
 import { marketingRouter } from './routes/marketing.js';
@@ -29,6 +33,7 @@ import { partnerAdminRouter } from './routes/partnerAdmin.js';
 import { importRouter } from './routes/import.js';
 import { automationRouter } from './routes/automation.js';
 import { incentivesRouter, staffIncentivesRouter } from './routes/incentives.js';
+import { staffAlertsRouter } from './routes/staffAlerts.js';
 import { complianceRouter } from './routes/compliance.js';
 import { complianceExtrasRouter } from './routes/complianceExtras.js';
 import { infraRouter } from './routes/infra.js';
@@ -37,9 +42,13 @@ import { publicResumeRouter } from './routes/publicResume.js';
 import { OpusEnv } from './types.js';
 import { adminRouter } from './routes/admin.js';
 import { waWebhookRouter, chatwootWebhookRouter } from './routes/messagingWebhooks.js';
+import { listmonkWebhookRouter } from './routes/listmonkWebhooks.js';
 import { inboxRouter } from './routes/inbox.js';
 import { teamHubRouter } from './routes/teamHub.js';
 import { erpnextRouter } from './routes/erpnext.js';
+import { studyAbroadRouter } from './routes/studyAbroad.js';
+import { visaRouter } from './routes/visa.js';
+import { attestationRouter } from './routes/attestation.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
@@ -82,10 +91,19 @@ app.use('/api/public/manpower', turnstileVerify);
 app.route('/api/public/leads', leadsRouter);
 // Client journey lookup /api/public/portal/lookup (Section 25) — public, token-based
 app.route('/api/public/portal', portalRouter);
+// Client-portal Visa services (Phase 1): products, applications, draft wizard, submit
+app.route('/api/public/portal/visa', portalVisaRouter);
+// Client-portal Manpower services (Phase 2): public jobs, apply, application tracker
+app.route('/api/public/portal/manpower', portalManpowerRouter);
+// Client-portal Umrah services (Phase 3): package inventory, calendar, ₹500 advance booking
+app.use('/api/public/portal/umrah/departures/*/book', turnstileVerify);
+app.route('/api/public/portal/umrah', portalUmrahRouter);
 // Hero live artifacts (Section 24.1.1): jobs ticker, umrah departures, attestation chains, eligibility
 app.route('/api/public', publicRouter);
-// Public resume intake → R2 vault (Manpower division, §14.6)
+// Public resume intake â†’ R2 vault (Manpower division, §14.6)
 app.route('/api/public/manpower/resume', publicResumeRouter);
+// Partner KYC registration + partnerId-scoped referrals/commissions (Section 39) — public signup form
+app.route('/api/public/partners', partnerRouter);
 // Zoho Thrive-style partner workspace (catalog, links, tiers, /go redirects)
 app.route('/api/public/partners', publicThriveRouter);
 app.route('/api/public', publicThriveRouter); // /api/public/catalog (public inventory browse)
@@ -94,8 +112,8 @@ app.route('/go', goRouter);
 // Unified messaging webhooks (PENDING-CONFIGS #1) — WhatsApp + Chatwoot inbound
 app.route('/api/webhooks/wa', waWebhookRouter);
 app.route('/api/webhooks/chatwoot', chatwootWebhookRouter);
-// Partner KYC registration + partnerId-scoped referrals/commissions (Section 39) — public signup form
-app.route('/api/public/partners', partnerRouter);
+// Listmonk webhooks (Wave 3 email hygiene) — bounce/unsubscribe/subscribe
+app.route('/api/webhooks/listmonk', listmonkWebhookRouter);
 // Razorpay webhook (Section 44) - gateway POSTs here with HMAC; no session auth
 app.route('/api/public/payments/razorpay/webhook', razorpayWebhookRouter);
 
@@ -140,6 +158,8 @@ app.use('/api/infrastructure/*', rbacMiddleware(['super_admin'], true));
 // Staff self-view of their own incentive accrual (Section 29.2#8 transparency)
 app.use('/api/staff/incentives', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
 app.use('/api/staff/incentives/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
+app.use('/api/staff/alerts', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
+app.use('/api/staff/alerts/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'], true));
 
 app.use('/api/admin', rbacMiddleware(['super_admin'], true));
 app.use('/api/admin/*', rbacMiddleware(['super_admin'], true));
@@ -173,11 +193,26 @@ app.route('/api/transactions', transactionsRouter);
 app.route('/api/umrah', umrahRouter);
 app.route('/api/transit', transitRouter);
 app.route('/api/manpower', manpowerRouter);
+
+app.use('/api/study-abroad', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.use('/api/study-abroad/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.route('/api/study-abroad', studyAbroadRouter);
+
+app.use('/api/visa', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.use('/api/visa/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.route('/api/visa', visaRouter);
+
+app.use('/api/attestation', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.use('/api/attestation/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.route('/api/attestation', attestationRouter);
+
 app.route('/api/tasks', tasksRouter);
+app.route('/api/tasks', boardRouter);
 app.route('/api/marketing', marketingRouter);
 app.route('/api/marketing/nurture', nurtureRouter);
 app.route('/api/incentives', incentivesRouter);
 app.route('/api/staff/incentives', staffIncentivesRouter);
+app.route('/api/staff/alerts', staffAlertsRouter);
 app.route('/api/compliance', complianceRouter);
 app.route('/api/compliance', complianceExtrasRouter);
 app.route('/api/infrastructure', infraRouter);
@@ -210,6 +245,34 @@ app.get('/api/health', async (c) => {
 
 export default app;
 export type AppType = typeof app;
-// Durable Object for Team Hub chat rooms (§5.5) — must be exported for wrangler
+// Durable Object for Team Hub chat rooms (A5.5) — must be exported for wrangler
 // to route DO traffic to the class.
 export { TeamHubRoom } from './routes/teamHub.js';
+
+// Wave 1 — Uptime Kuma push heartbeat producer (cron trigger, see wrangler.toml).
+// Attached to the Hono app so the default export keeps `app.request` working for
+// tests while wrangler sees both fetch and scheduled on the same object.
+import { runHeartbeat } from './cron/heartbeat.js';
+import { performanceRouter } from './routes/performance.js';
+import { integrationsRouter } from './routes/integrations.js';
+
+// Staff performance & team operations scorecard (manager+; balanced metric set)
+app.use('/api/performance', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/performance/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.route('/api/performance', performanceRouter);
+
+// Tool-First adapters (manager+): unified status + live feed for Listmonk /
+// Mautic / Chatwoot / OpenWA — the OS campaigns dashboard is INFORMATIONAL.
+app.use('/api/integrations', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/integrations/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.route('/api/integrations', integrationsRouter);
+
+(app as any).scheduled = async (_controller: unknown, env: HeartbeatEnvLike, _ctx: unknown) => {
+  try {
+    await runHeartbeat(env);
+  } catch {
+    /* fail-open: heartbeat must never crash the scheduled run */
+  }
+};
+type HeartbeatEnvLike = Parameters<typeof runHeartbeat>[0];
+

@@ -1,0 +1,66 @@
+CREATE TABLE `umrah_packages` (
+	`id` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`tier` text DEFAULT 'standard' NOT NULL,
+	`total_days` integer DEFAULT 7 NOT NULL,
+	`makkah_nights` integer DEFAULT 0 NOT NULL,
+	`madinah_nights` integer DEFAULT 0 NOT NULL,
+	`flight_type` text DEFAULT 'varies' NOT NULL,
+	`airline` text,
+	`departure_city` text,
+	`arrival_airport` text,
+	`baggage_allowance` text,
+	`flight_class` text DEFAULT 'economy' NOT NULL,
+	`zamzam_included` integer DEFAULT true NOT NULL,
+	`makkah_hotel` text,
+	`makkah_hotel_stars` integer,
+	`makkah_distance_meters` integer,
+	`makkah_walk_minutes` integer,
+	`makkah_haram_view` text DEFAULT 'none' NOT NULL,
+	`madinah_hotel` text,
+	`madinah_hotel_stars` integer,
+	`madinah_distance_meters` integer,
+	`madinah_walk_minutes` integer,
+	`madinah_haram_view` text DEFAULT 'none' NOT NULL,
+	`room_sharing` text DEFAULT 'quad' NOT NULL,
+	`meals_plan` text DEFAULT 'breakfast' NOT NULL,
+	`shuttle_service` integer DEFAULT false NOT NULL,
+	`airport_transfer` integer DEFAULT true NOT NULL,
+	`intercity_transport` text DEFAULT 'group_bus' NOT NULL,
+	`ziyarat_tours` integer DEFAULT true NOT NULL,
+	`group_leader` integer DEFAULT false NOT NULL,
+	`guide_language` text,
+	`visa_included` integer DEFAULT true NOT NULL,
+	`ksa_insurance` integer DEFAULT true NOT NULL,
+	`visa_lead_days` integer DEFAULT 21 NOT NULL,
+	`wholesale_price_paise` integer DEFAULT 0 NOT NULL,
+	`retail_price_paise` integer DEFAULT 0 NOT NULL,
+	`advance_fee_paise` integer DEFAULT 50000 NOT NULL,
+	`reserve_hold_hours` integer DEFAULT 72 NOT NULL,
+	`balance_due_days_before` integer DEFAULT 30 NOT NULL,
+	`installment_available` integer DEFAULT false NOT NULL,
+	`group_discount_pct` integer,
+	`group_discount_min_pax` integer,
+	`description` text,
+	`inclusions_json` text DEFAULT '[]' NOT NULL,
+	`exclusions_json` text DEFAULT '[]' NOT NULL,
+	`documents_json` text DEFAULT '[]' NOT NULL,
+	`itinerary_json` text DEFAULT '[]' NOT NULL,
+	`terms_json` text DEFAULT '[]' NOT NULL,
+	`special_needs` text,
+	`supplier_ref` text,
+	`cover_image_key` text,
+	`featured` integer DEFAULT false NOT NULL,
+	`status` text DEFAULT 'draft' NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE `group_departures` ADD `package_id` text REFERENCES umrah_packages(id);--> statement-breakpoint
+ALTER TABLE `group_departures` ADD `departure_city` text;--> statement-breakpoint
+ALTER TABLE `seat_bookings` ADD `advance_paid` integer DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE `seat_bookings` ADD `reserved_until` integer;--> statement-breakpoint
+ALTER TABLE `seat_bookings` ADD `balance_paid` integer DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE `seat_bookings` ADD `advance_payment_id` text;--> statement-breakpoint
+ALTER TABLE `seat_bookings` ADD `balance_payment_id` text;--> statement-breakpoint
+ALTER TABLE `seat_bookings` ADD `updated_at` integer NOT NULL;

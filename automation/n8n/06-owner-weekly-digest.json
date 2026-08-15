@@ -1,0 +1,57 @@
+{
+  "name": "06-owner-weekly-digest",
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [ { "field": "cronExpression", "expression": "0 0 9 * * 1" } ], "triggerAtHour": 9, "triggerAtMinute": 0 } },
+      "id": "sched-06",
+      "name": "Monday 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [ -260, 220 ]
+    },
+    {
+      "parameters": {
+        "url": "http://100.69.139.47:8787/api/automation/digest/weekly?days=7",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "credentialId": "OpusOS Automation",
+        "options": { "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2 }
+      },
+      "id": "http-06",
+      "name": "Weekly digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ -40, 220 ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json.summary || {}; const links = d.links || {}; const erp = d.erp || {}; const flags = []; if (links.stale > 0) flags.push('stale links: ' + links.stale); if (erp.failed > 0) flags.push('ERP failures: ' + erp.failed); if ((d.receivables || {}).negativeCount > 0) flags.push('negative balances'); return [{ markdown: $json.markdown, flags: flags.join(' · ') || 'none' }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "code-06",
+      "name": "Extract digest",
+      "position": [ 180, 220 ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.OPS_TELEGRAM_CHAT_ID }}",
+        "text": "{{ $json.markdown }}",
+        "additionalFields": {}
+      },
+      "id": "tg-06",
+      "name": "Owner digest → Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [ 400, 220 ],
+      "credentials": { "telegramApi": { "id": "Ops Telegram", "name": "Ops Telegram" } }
+    }
+  ],
+  "connections": {
+    "Monday 09:00": { "main": [ [ { "node": "Weekly digest", "type": "main", "index": 0 } ] ] },
+    "Weekly digest": { "main": [ [ { "node": "Extract digest", "type": "main", "index": 0 } ] ] },
+    "Extract digest": { "main": [ [ { "node": "Owner digest → Telegram", "type": "main", "index": 0 } ] ] }
+  }
+}

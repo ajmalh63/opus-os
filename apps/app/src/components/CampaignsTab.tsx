@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useRevealRoot } from '../lib/reveal';
 
-// SUPER_ADMIN ONLY surface (server also enforces the /api/admin ceiling).
-// Campaigns = division+context targeted nurture plans; touches are dispatched
-// by the automation lane through the WhatsApp provider (Wave 2 brainstorm).
+// Campaigns — INFORMATIONAL dashboard (Tool-First strategy, Wave 3).
+// Operations live in best-of-breed tools (Listmonk email, Mautic journeys,
+// Chatwoot conversations, OpenWA WhatsApp). The OS is the FACE: unified
+// status cards + near-real-time event feed + legacy OS-defined catalog.
+// No create/edit here — definitions happen in the tools.
 
 const AUTH = {
   get Cookie() {
@@ -12,229 +14,138 @@ const AUTH = {
   }
 } as Record<string, string>;
 
-type Touch = { id: string; campaignId: string; seq: number; day: number; stage: 'value' | 'case_study' | 'offer' | 'final'; body: string };
-interface Campaign {
-  id: string; key: string; name: string; description: string | null;
-  division: string; eligibilityJson: string; status: 'draft' | 'active' | 'paused';
-  createdAt: number; updatedAt: number; touches: Touch[];
+interface ToolStatus { state: 'ok' | 'unconfigured' | 'error'; label: string; summary: string }
+interface ToolSnapshot {
+  tool: string; label: string; status: ToolStatus; fetchedAt: number;
+  metrics: Record<string, number | string | null>;
+  items: { tool: string; kind: string; id: string; title: string; detail: string | null; at: number }[];
+}
+interface LiveData {
+  tools: ToolSnapshot[];
+  feed: { tool: string; kind: string; id: string; title: string; detail: string | null; at: number }[];
 }
 
-const DIVISIONS = [
-  { key: 'study-abroad', label: 'Study Abroad' },
-  { key: 'visa', label: 'Visa Processing' },
-  { key: 'umrah', label: 'Umrah Packages' },
-  { key: 'attestation', label: 'Document Attestation' },
-  { key: 'manpower', label: 'Manpower Recruitment' },
-];
-
-const STAGES: Record<string, string> = { value: 'Value', case_study: 'Case Study', offer: 'Offer', final: 'Final' };
-const STATUS_STYLE: Record<string, string> = {
-  active: 'bg-emerald-950/60 text-emerald-300 border-emerald-700/50',
-  paused: 'bg-amber-950/60 text-amber-300 border-amber-700/50',
-  draft: 'bg-white/60 text-slate-700 border-slate-600/50',
+const STATE_STYLE: Record<string, string> = {
+  ok: 'bg-emerald-500/15 text-emerald-700',
+  unconfigured: 'bg-brand-navy/[0.06] text-brand-navy/50',
+  error: 'bg-rose-500/15 text-rose-700',
 };
+const KIND_STYLE: Record<string, string> = {
+  campaign: 'bg-brand-gold/15 text-brand-gold',
+  journey: 'bg-violet-900/60 text-violet-200',
+  conversation: 'bg-emerald-900/60 text-emerald-700',
+  event: 'bg-slate-500/15 text-brand-navy/50',
+};
+const STATE_LABEL: Record<string, string> = { ok: 'Connected', unconfigured: 'Not configured', error: 'Error' };
 
-type FormTouch = { seq: number; day: number; stage: 'value' | 'case_study' | 'offer' | 'final'; body: string };
-
-const EMPTY_TOUCH = (): FormTouch => ({ seq: 1, day: 0, stage: 'value', body: '' });
+function relTime(at: number) {
+  const s = Math.floor(Date.now() / 1000) - at;
+  if (s < 90) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
 
 export default function CampaignsTab() {
-  const queryClient = useQueryClient();
-  const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' }>({ show: false, msg: '', type: 'success' });
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    key: '', name: '', description: '', division: 'study-abroad',
-    status: 'draft' as 'draft' | 'active' | 'paused', eligibilityJson: '',
-    touches: [EMPTY_TOUCH()],
+  const rootRef = useRevealRoot<HTMLDivElement>();
+  const { data: live, isLoading, isError } = useQuery<LiveData>({
+    queryKey: ['integrationsLive'],
+    queryFn: async () => {
+      const r = await fetch('/api/integrations/live', { headers: AUTH });
+      if (!r.ok) throw new Error('integrations');
+      return r.json();
+    },
   });
-
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ show: true, msg, type });
-    setTimeout(() => setToast({ show: false, msg: '', type: 'success' }), 4000);
-  };
-
-  const { data, isLoading, isError } = useQuery<{ campaigns: Campaign[] }>({
-    queryKey: ['adminCampaigns'],
+  const { data: catalog } = useQuery<{ campaigns: any[] }>({
+    queryKey: ['adminCampaignsRead'],
     queryFn: async () => {
       const r = await fetch('/api/admin/campaigns', { headers: AUTH });
-      if (!r.ok) throw new Error('load failed');
+      if (!r.ok) throw new Error('catalog');
       return r.json();
     },
   });
 
-  const createCampaign = useMutation({
-    mutationFn: async () => {
-      let eligibilityJson: Record<string, unknown> = {};
-      if (form.eligibilityJson.trim()) {
-        try { eligibilityJson = JSON.parse(form.eligibilityJson); }
-        catch { throw new Error('Eligibility JSON must be valid JSON, e.g. {"targetCountry":["US","UK"]}'); }
-      }
-      const r = await fetch('/api/admin/campaigns', {
-        method: 'POST', headers: { ...AUTH, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          key: form.key.trim(),
-          name: form.name.trim(),
-          description: form.description.trim() || undefined,
-          division: form.division,
-          status: form.status,
-          eligibilityJson,
-          touches: form.touches.map((t, i) => ({ seq: i + 1, day: Number(t.day), stage: t.stage, body: t.body.trim() }))
-            .filter(t => t.body.length > 0),
-        }),
-      });
-      if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Create failed'); }
-      return r.json();
-    },
-    onSuccess: (d) => {
-      queryClient.invalidateQueries({ queryKey: ['adminCampaigns'] });
-      setShowForm(false);
-      showToast(`Campaign "${d.key}" created with ${d.touchCount} touch(es).`);
-    },
-    onError: (e: any) => showToast((e as Error).message, 'error'),
-  });
-
-  const setStatus = useMutation({
-    mutationFn: async ({ key, status }: { key: string; status: string }) => {
-      const r = await fetch(`/api/admin/campaigns/${key}/status`, {
-        method: 'PATCH', headers: { ...AUTH, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Status change failed'); }
-      return r.json();
-    },
-    onSuccess: (d) => {
-      queryClient.invalidateQueries({ queryKey: ['adminCampaigns'] });
-      showToast(`Campaign ${d.key} -> ${d.status}`);
-    },
-    onError: (e: any) => showToast((e as Error).message, 'error'),
-  });
-
-  const setFormTouch = (i: number, patch: Partial<Touch>) => {
-    setForm(f => ({ ...f, touches: f.touches.map((t, idx) => (idx === i ? { ...t, ...patch } : t)) }));
-  };
-
-  if (isLoading) return <div className="p-12 text-center text-xs text-slate-500">Loading campaign catalog...</div>;
-  if (isError || !data) {
-    return (
-      <div className="p-12 text-center text-xs text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg">
-        Failed to load campaigns. Super-admin session required.
-      </div>
-    );
+  if (isLoading) return <div className="p-12 text-center text-xs text-brand-navy/40">Loading tool feeds…</div>;
+  if (isError || !live) {
+    return <div className="p-12 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200/50 rounded-lg">Failed to load integrations. Manager+ session required.</div>;
   }
 
-  const campaigns = data.campaigns || [];
-
   return (
-    <div className="p-6 space-y-6">
-      {toast.show && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded text-xs font-bold shadow ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>
-          {toast.msg}
+    <div ref={rootRef} className="space-y-6 p-6">
+      <div>
+        <div className="flex items-center gap-2.5">
+          <span className="gold-dot" />
+          <h2 className="font-display text-base font-extrabold text-brand-navy">Campaigns — tool-first control board</h2>
         </div>
-      )}
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-bold text-brand-navy uppercase tracking-wide">Nurture Campaigns</h2>
-          <p className="text-[11px] text-slate-500 mt-1">
-            Division + context targeted WhatsApp sequences (super-admin surface). Eligible leads are matched at nurture-plan time.
-          </p>
-        </div>
-        <button
-          onClick={() => setShowForm(v => !v)}
-          className="px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider bg-brand-gold text-brand-navy hover:bg-brand-goldHover transition"
-        >
-          {showForm ? 'Close' : '+ New Campaign'}
-        </button>
+        <p className="text-[11px] text-brand-navy/40">Operations run in the connected tools (Listmonk · Mautic · Chatwoot · OpenWA). This board is informational: live status, metrics and a near-real-time event feed.</p>
       </div>
 
-      {showForm && (
-        <div className="border border-brand-navy/15/60 bg-brand-navy/5 rounded-lg p-4 space-y-3 panel-entrance">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <input value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} placeholder="key (slug)" className="bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white" />
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Campaign name" className="bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white" />
-            <select value={form.division} onChange={(e) => setForm({ ...form, division: e.target.value })} className="bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white">
-              {DIVISIONS.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
-            </select>
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as any })} className="bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white">
-              <option value="draft">Draft</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-            </select>
-          </div>
-          <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="w-full bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white" />
-          <input value={form.eligibilityJson} onChange={(e) => setForm({ ...form, eligibilityJson: e.target.value })} placeholder={'Eligibility JSON — e.g. ' + '{"targetCountry":["US","UK"]} (empty = whole division)'} className="w-full bg-white border border-brand-navy/15 rounded px-2 py-1.5 text-xs text-white font-mono" />
-
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Touch plan (day offset, stage, body — {'{{name}}'} / {'{{targetCountry}}'} tokens supported)</p>
-            {form.touches.map((t, i) => (
-              <div key={i} className="grid grid-cols-[40px_60px_100px_1fr] gap-2 items-center">
-                <span className="text-[10px] text-slate-600">#{i + 1}</span>
-                <input type="number" min={0} value={t.day} onChange={(e) => setFormTouch(i, { day: Number(e.target.value) })} className="bg-white border border-brand-navy/15 rounded px-2 py-1 text-xs text-white" />
-                <select value={t.stage} onChange={(e) => setFormTouch(i, { stage: e.target.value as any })} className="bg-white border border-brand-navy/15 rounded px-2 py-1 text-xs text-white">
-                  {Object.entries(STAGES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-                </select>
-                <input value={t.body} onChange={(e) => setFormTouch(i, { body: e.target.value })} placeholder="Message body" className="bg-white border border-brand-navy/15 rounded px-2 py-1 text-xs text-white" />
-              </div>
-            ))}
-            <button onClick={() => setForm({ ...form, touches: [...form.touches, EMPTY_TOUCH()] })} className="text-[11px] text-brand-gold hover:underline">+ Add touch</button>
-          </div>
-
-          <button
-            onClick={() => createCampaign.mutate()}
-            disabled={createCampaign.isPending || !form.key.trim() || !form.name.trim()}
-            className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 transition"
-          >
-            {createCampaign.isPending ? 'Creating...' : 'Create Campaign'}
-          </button>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {campaigns.length === 0 && (
-          <div className="p-10 text-center text-xs text-slate-600 border border-dashed border-brand-navy/15 rounded-lg">
-            No campaigns yet — create one to start targeting leads by division + context.
-          </div>
-        )}
-        {campaigns.map((c) => (
-          <div key={c.id} className="border border-brand-navy/15/60 bg-brand-navy/5 rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-brand-navy/10">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${STATUS_STYLE[c.status] || STATUS_STYLE.draft}`}>{c.status}</span>
-                  <span className="text-xs font-bold text-brand-navy">{c.name}</span>
-                  <code className="text-[10px] text-slate-600">{c.key}</code>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-0.5">
-                  {DIVISIONS.find(d => d.key === c.division)?.label || c.division} Â· {c.touches.length} touch(es) Â· {c.description || 'No description'}
-                  {c.eligibilityJson !== '{}' && c.eligibilityJson ? ` Â· eligibility: ${c.eligibilityJson}` : ''}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {(['active', 'paused', 'draft'] as const).map((s) => (
-                  s !== c.status && (
-                    <button
-                      key={s}
-                      onClick={() => setStatus.mutate({ key: c.key, status: s })}
-                      disabled={setStatus.isPending}
-                      className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-600 text-slate-700 hover:border-brand-gold hover:text-brand-gold transition disabled:opacity-40"
-                    >
-                      {s}
-                    </button>
-                  )
-                ))}
-              </div>
+      {/* Tool status cards */}
+      <section className="reveal grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {live.tools.map((t) => (
+          <div key={t.tool} className={`rounded-2xl border p-4 shadow-[0_16px_30px_-18px_rgba(10,45,80,0.10)] transition-all duration-300 ${t.status.state === 'ok' ? 'border-emerald-500/30 bg-white hover:border-emerald-400/50' : t.status.state === 'error' ? 'border-rose-500/30 bg-white hover:border-rose-400/50' : 'border-brand-navy/10 bg-white hover:border-brand-gold/40'}`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-display text-sm font-extrabold text-brand-navy">{t.label}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${STATE_STYLE[t.status.state] || STATE_STYLE.unconfigured}`}>
+                {STATE_LABEL[t.status.state] || t.status.state}
+              </span>
             </div>
-            <div className="px-4 py-3 space-y-1.5">
-              {c.touches.map((t) => (
-                <div key={t.seq} className="flex items-start gap-3 text-[11px]">
-                  <span className="text-slate-600 shrink-0 w-6">D+{t.day}</span>
-                  <span className="text-brand-gold shrink-0 uppercase w-20">{STAGES[t.stage] || t.stage}</span>
-                  <span className="text-slate-700">{t.body}</span>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-brand-navy/40">{t.status.summary}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {Object.entries(t.metrics).map(([k, v]) => (
+                <span key={k} className="rounded bg-brand-navy/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-brand-navy/40">{k}: {v ?? '—'}</span>
+              ))}
+            </div>
+            <div className="mt-2.5 space-y-1">
+              {t.items.slice(0, 3).map((i) => (
+                <div key={`${i.kind}-${i.id}`} className="flex items-center gap-1.5 text-[10px]">
+                  <span className={`rounded px-1 py-0.5 font-bold uppercase ${KIND_STYLE[i.kind] || KIND_STYLE.event}`}>{i.kind}</span>
+                  <span className="truncate text-brand-navy/40">{i.title}</span>
                 </div>
               ))}
+              {t.items.length === 0 && <div className="text-[10px] text-brand-navy/50">No items reported.</div>}
             </div>
           </div>
         ))}
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {/* Live feed */}
+        <section className="reveal xl:col-span-2 rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-[0_20px_40px_-15px_rgba(10,45,80,0.10)]">
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Live event feed · {live.feed.length} items</div>
+          <div className="mt-3 max-h-[26rem] space-y-1 overflow-y-auto pr-1">
+            {live.feed.map((f) => (
+              <div key={`${f.tool}-${f.kind}-${f.id}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] hover:bg-brand-gold/5">
+                <span className={`w-16 shrink-0 rounded px-1 py-0.5 text-center font-bold uppercase ${STATE_STYLE.ok}`}>{f.tool}</span>
+                <span className={`shrink-0 rounded px-1 py-0.5 font-bold uppercase ${KIND_STYLE[f.kind] || KIND_STYLE.event}`}>{f.kind}</span>
+                <span className="min-w-0 flex-1 truncate text-brand-navy/70">{f.title}</span>
+                {f.detail && <span className="hidden truncate text-[10px] text-brand-navy/50 md:block md:max-w-[16rem]">{f.detail}</span>}
+                <span className="shrink-0 text-[10px] text-brand-navy/50">{relTime(f.at)}</span>
+              </div>
+            ))}
+            {live.feed.length === 0 && <div className="py-8 text-center text-[11px] text-brand-navy/50">No tool events yet — connect a tool and deliveries will appear here.</div>}
+          </div>
+        </section>
+
+        {/* Legacy OS-defined catalog (read-only) */}
+        <section className="reveal rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-[0_20px_40px_-15px_rgba(10,45,80,0.10)]">
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">OS-defined journeys · {catalog?.campaigns?.length || 0}</div>
+          <div className="mt-3 space-y-2">
+            {(catalog?.campaigns || []).map((c: any) => (
+              <div key={c.id} className="rounded-lg border border-brand-navy/10 px-2.5 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[11px] font-semibold text-brand-navy">{c.name || c.key}</span>
+                  <span className={`rounded px-1 py-0.5 text-[9px] font-bold uppercase ${STATE_STYLE[c.status === 'active' ? 'ok' : 'unconfigured']}`}>{c.status}</span>
+                </div>
+                <div className="mt-0.5 text-[10px] text-brand-navy/40">{c.division} · {c.touches?.length || 0} nodes</div>
+              </div>
+            ))}
+            {(!catalog?.campaigns || catalog.campaigns.length === 0) && (
+              <div className="py-6 text-center text-[11px] text-brand-navy/50">Catalog empty — journeys are defined in Mautic/Listmonk.</div>
+            )}
+          </div>
+          <p className="mt-3 text-[10px] leading-relaxed text-brand-navy/50">Read-only legacy surface. New journeys: create in Mautic (automation) / Listmonk (email) — they surface here automatically via adapters.</p>
+        </section>
       </div>
     </div>
   );

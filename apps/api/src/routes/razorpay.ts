@@ -2,11 +2,13 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { payments, engagements, milestones, clients, referrals } from '../db/schema.js';
+import { payments, engagements, milestones, clients, referrals, webhookEvents } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { sendNotification } from '../infra/notify.js';
 import { accrueIncentives } from '../services/incentiveAccrual.js';
 import { accruePartnerPoints } from '../services/partnerLoyalty.js';
+import { auditEvent } from '../middleware/audit.js';
+import { recomputeBalance } from './transactions.js';
 
 export const razorpayRouter = new Hono<{
   Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }
@@ -54,7 +56,7 @@ razorpayRouter.post('/order', zValidator('json', orderSchema), async (c) => {
 
   try {
     if (!c.env.RAZORPAY_KEY_ID || !c.env.RAZORPAY_KEY_SECRET) {
-      return c.json({ error: "Razorpay not configured â€” set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
+      return c.json({ error: "Razorpay not configured — set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
     }
     // 1. Verify engagement exists and amount matches known ledger balance owed
     const eng = await db.select().from(engagements).where(eq(engagements.id, data.engagementId)).get();
@@ -127,7 +129,7 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
   const db = getDb(c.env.DB);
   // Fail-closed (A-1): no public fallback secret
   const secret = c.env.RAZORPAY_KEY_SECRET;
-  if (!secret || !c.env.RAZORPAY_KEY_ID) return c.json({ error: "Razorpay not configured â€” set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
+  if (!secret || !c.env.RAZORPAY_KEY_ID) return c.json({ error: "Razorpay not configured — set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
 
   try {
     const ok = await verifySignature(data.razorpay_order_id, data.razorpay_payment_id, data.razorpay_signature, secret);
@@ -178,8 +180,8 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       .set({ outstandingBalance: eng.outstandingBalance - invoiceAmount, updatedAt: now })
       .where(eq(engagements.id, data.engagementId));
 
-    // Interlock: incentive accrual on milestone_paid (plan Â§29.4). Idempotent
-    // per (rule, payment). Fail-open â€” never blocks a verified payment.
+    // Interlock: incentive accrual on milestone_paid (plan §29.4). Idempotent
+    // per (rule, payment). Fail-open — never blocks a verified payment.
     try {
       const result = await accrueIncentives({
         env: c.env as any,
@@ -204,7 +206,7 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       console.error('partner points accrual failed', ppErr?.message);
     }
 
-    // Â§7.6 Transactional email â€” payment receipt to the client (never throws;
+    // §7.6 Transactional email — payment receipt to the client (never throws;
     // dev uses the stub channel; prod uses the CF Email binding).
     try {
       const client = await db.select().from(clients).where(eq(clients.id, data.clientId)).get();
@@ -212,8 +214,8 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
         await sendNotification(c.env as any, db as any, {
           channel: 'email',
           to: client.email,
-          subject: `Opus Overseas â€” payment receipt ${data.razorpay_payment_id}`,
-          body: `Hi ${client.name}, we have received your payment of â‚¹${(invoiceAmount / 100).toLocaleString('en-IN')} (${data.milestoneName?.trim() || 'Online payment'}). Reference: ${data.razorpay_payment_id}. Thank you â€” Opus Overseas.`,
+          subject: `Opus Overseas — payment receipt ${data.razorpay_payment_id}`,
+          body: `Hi ${client.name}, we have received your payment of â‚¹${(invoiceAmount / 100).toLocaleString('en-IN')} (${data.milestoneName?.trim() || 'Online payment'}). Reference: ${data.razorpay_payment_id}. Thank you — Opus Overseas.`,
           clientId: client.id,
         });
       }
@@ -234,7 +236,7 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
 });
 
 export const razorpayWebhookRouter = new Hono<{
-  Bindings: { DB: D1Database; RAZORPAY_WEBHOOK_SECRET?: string }
+  Bindings: { DB: D1Database; RAZORPAY_WEBHOOK_SECRET?: string; BETTER_AUTH_SECRET?: string }
 }>();
 
 // POST /api/public/payments/razorpay/webhook  (HMAC X-Razorpay-Signature verified; event payment.captured)
@@ -247,7 +249,7 @@ razorpayWebhookRouter.post('/', async (c) => {
 
   if (!c.env.DB) return c.json({ error: "DB not available" }, 500);
   const secret = c.env.RAZORPAY_WEBHOOK_SECRET;
-  if (!secret) return c.json({ error: "Razorpay webhook not configured â€” set RAZORPAY_WEBHOOK_SECRET" }, 503);
+  if (!secret) return c.json({ error: "Razorpay webhook not configured — set RAZORPAY_WEBHOOK_SECRET" }, 503);
   const db = getDb(c.env.DB);
 
   // HMAC over raw body, timing-safe compare (A-2)
@@ -261,6 +263,91 @@ razorpayWebhookRouter.post('/', async (c) => {
   }
 
   const event = JSON.parse(rawBody);
+
+  // ── A-3 durable delivery log ──────────────────────────────────────────────
+  // Every event is persisted BEFORE processing (id, event, entity, signature,
+  // received_at). Already-processed replays are acknowledged without re-run;
+  // failures keep processed=false + detail so reconciliation can find them.
+  const nowS = Math.floor(Date.now() / 1000);
+  const eventEntityId = event.payload?.payment_link?.entity?.id || event.payload?.payment?.entity?.id || event.payload?.refund?.entity?.id || event.payload?.order?.entity?.id || '';
+  const eventId = event.id || `${event.event}:${eventEntityId}:${nowS}`;
+  const existingEvent = await db.select().from(webhookEvents).where(eq(webhookEvents.id, eventId)).get();
+  if (existingEvent && existingEvent.processed) {
+    return c.json({ ok: true, detail: 'replay' });
+  }
+  if (!existingEvent) {
+    await db.insert(webhookEvents).values({ id: eventId, event: event.event, entityId: eventEntityId, signature, receivedAt: nowS, processed: false, detail: null }).catch(() => {});
+  }
+  const markDone = (detail: string) => db.update(webhookEvents).set({ processed: true, detail }).where(eq(webhookEvents.id, eventId)).catch(() => {});
+  const markError = (detail: string) => db.update(webhookEvents).set({ detail }).where(eq(webhookEvents.id, eventId)).catch(() => {});
+
+  // Payment Link lifecycle — created via the Transactions module (any staff).
+  if (event.event === 'payment_link.paid' && event.payload?.payment_link?.entity?.id) {
+    const link = event.payload.payment_link.entity;
+    const paymentEntity = event.payload.payment?.entity || {};
+    const notes = link.notes || {};
+    const entryId = notes.entryId;
+    try {
+      const { finalizePaymentLinkPayment } = await import('./transactions.js');
+      const { getDb } = await import('../db/client.js');
+      const db = getDb(c.env.DB);
+      if (entryId) {
+        const res = await finalizePaymentLinkPayment(c.env, db, entryId, paymentEntity.id || link.id, paymentEntity.amount || link.amount || 0, notes.milestone || `Payment link ${link.id}`, paymentEntity.method);
+        await markDone(res.reason || 'finalized');
+        return c.json({ ok: res.ok, detail: res.reason || 'finalized' });
+      }
+      // entry not found via notes → link still paid; log for manual reconciliation
+      await markDone('no entryId in notes — manual reconciliation');
+      return c.json({ ok: true, detail: 'no entryId in notes' });
+    } catch (err: any) {
+      await markError(err?.message || 'finalize failed');
+      return c.json({ ok: false, detail: err?.message || 'finalize failed' }, 500);
+    }
+  }
+
+  // Payment Link status updates (non-paid)
+  if ((event.event === 'payment_link.cancelled' || event.event === 'payment_link.expired') && event.payload?.payment_link?.entity?.id) {
+    const link = event.payload.payment_link.entity;
+    try {
+      const { getDb } = await import('../db/client.js');
+      const db = getDb(c.env.DB);
+      const rows = await db.select().from(payments).where(eq(payments.razorpayLinkId, link.id)).all();
+      if (rows[0]) {
+        await db.update(payments).set({ linkStatus: event.event === 'payment_link.cancelled' ? 'cancelled' : 'expired' }).where(eq(payments.id, rows[0].id));
+      }
+      await markDone('link status synced');
+      return c.json({ ok: true });
+    } catch (err: any) {
+      await markError(err?.message || 'link status sync failed');
+      return c.json({ ok: false, detail: err?.message }, 500);
+    }
+  }
+
+  // Refund reversal — refund.processed (order checkout) / payment_link.refunded.
+  // Counter-entry (type 'refund', reference=refund id) bumps the balance back;
+  // dedupe by refund id so replayed deliveries never double-credit.
+  if ((event.event === 'refund.processed' || event.event === 'payment_link.refunded') && event.payload?.refund?.entity?.id) {
+    const refund = event.payload.refund.entity;
+    const receipt = refund.payment_id
+      ? await db.select().from(payments).where(eq(payments.referenceNumber, refund.payment_id)).get()
+      : undefined;
+    if (!receipt) { await markDone('refund: no matching receipt'); return c.json({ ok: true, detail: 'no matching receipt' }); }
+    const dup = await db.select().from(payments).where(eq(payments.referenceNumber, refund.id)).get();
+    if (dup) { await markDone('refund: already recorded'); return c.json({ ok: true, detail: 'refund already recorded' }); }
+
+    await db.insert(payments).values({
+      id: crypto.randomUUID(), clientId: receipt.clientId, engagementId: receipt.engagementId,
+      amount: refund.amount || receipt.amount, type: 'refund', milestoneName: `Refund (${refund.id})`,
+      referenceNumber: refund.id, status: 'synced', enteredBy: 'system', createdAt: nowS,
+    });
+    const bal = await recomputeBalance(db, receipt.engagementId);
+    await db.update(engagements).set({ outstandingBalance: bal }).where(eq(engagements.id, receipt.engagementId));
+    await auditEvent(c, { action: 'PAYMENT_REFUNDED', entityName: 'payments', entityId: receipt.id, afterState: { refundId: refund.id, amount: refund.amount || receipt.amount } });
+    await markDone('refund recorded');
+    return c.json({ ok: true, detail: 'refund recorded' });
+  }
+
+  // payment.captured from order checkout (existing path)
   if (event.event === 'payment.captured' && event.payload?.payment?.entity?.id) {
     const entity = event.payload.payment.entity;
     const notes = entity.notes || {};
@@ -270,12 +357,12 @@ razorpayWebhookRouter.post('/', async (c) => {
     // Idempotency: dedupe by the razorpay payment id (A-2 replay protection)
     const existing = await db.select().from(payments).where(eq(payments.referenceNumber, entity.id)).get();
     if (existing) {
+      await markDone('duplicate');
       return c.json({ ok: true, message: 'duplicate' });
     }
 
     if (engagementId) {
       const amount = entity.amount || 0;
-      const now = Math.floor(Date.now() / 1000);
       await db.insert(payments).values({
         id: crypto.randomUUID(),
         clientId: clientId || '',
@@ -285,15 +372,17 @@ razorpayWebhookRouter.post('/', async (c) => {
         milestoneName: 'Razorpay webhook capture',
         method: 'upi',
         referenceNumber: entity.id,
-        createdAt: now,
+        status: 'synced', // in-balance gate: recomputeBalance counts synced only
+        createdAt: nowS,
       });
       const eng = await db.select().from(engagements).where(eq(engagements.id, engagementId)).get();
       if (eng) {
-        await db.update(engagements).set({ outstandingBalance: eng.outstandingBalance - amount, updatedAt: now }).where(eq(engagements.id, engagementId));
+        await db.update(engagements).set({ outstandingBalance: eng.outstandingBalance - amount, updatedAt: nowS }).where(eq(engagements.id, engagementId));
       }
     }
+    await markDone('receipt recorded');
   }
 
-  // Always 200 on consume (at-least-once, idempotent via payment id)
+  // Always 200 on consume (at-least-once, idempotent via payment id / event id)
   return c.json({ ok: true });
 });

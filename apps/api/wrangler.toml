@@ -1,8 +1,17 @@
-name = "opusos-api"
+﻿name = "opusos-api"
 main = "src/index.ts"
 compatibility_date = "2026-08-06"
 compatibility_flags = [ "nodejs_compat" ]
 workers_dev = true
+
+# ============================================================
+# Wave 1 â€” Uptime Kuma push heartbeat producer (cron).
+# Every 6h the scheduled handler pings KUMA_PUSH_URL with status
+# up/down (D1 reachability). Set the URL after creating the push
+# monitor: prod â†’ `wrangler secret put KUMA_PUSH_URL`.
+# ============================================================
+[triggers]
+crons = [ "0 */6 * * *" ]
 
 [vars]
 ENVIRONMENT = "development"
@@ -11,27 +20,37 @@ TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA" # Local Turnstile m
 # Production MUST set MANPOWER_AI = "real" and implement the Workers AI path.
 MANPOWER_AI = "mock"
 
-# n8n automation lane (Wave 2) — service token, fail-closed. DEV ONLY value;
+# n8n automation lane (Wave 2) â€” service token, fail-closed. DEV ONLY value;
 # production MUST use `wrangler secret put AUTOMATION_TOKEN` (never in [vars]).
 AUTOMATION_TOKEN = "dev-automation-token-change-me"
+
+# Wave 1 â€” Uptime Kuma push monitor URL (heartbeat cron). DEV placeholder;
+# production MUST use `wrangler secret put KUMA_PUSH_URL` (never in [vars]).
+KUMA_PUSH_URL = ""
 
 # First-run owner bootstrap (auth gateway). Dev defaults; production uses secrets.
 ADMIN_EMAIL = "owner@opusoverseas.com"
 ADMIN_PASSWORD = "OwnerPass2026!"
 
+# NOTE — BETTER_AUTH_SECRET is intentionally NOT in [vars] (it is a secret):
+#   local dev  → put it in `.dev.vars` (gitignored)
+#   production → `wrangler secret put BETTER_AUTH_SECRET` (encrypted, hidden)
+# It signs better-auth session cookies and presigned upload URLs. Missing it
+# makes auth + document uploads fail-closed with a clear error.
+
 # ============================================================
-# Unified messaging — TAILSCALE TEST PHASE (PENDING-CONFIGS #1)
+# Unified messaging â€” TAILSCALE TEST PHASE (PENDING-CONFIGS #1)
 # VPS services reachable only on the tailnet (100.87.71.38); ports
 # are closed from the public internet (DOCKER-USER firewall).
 # Replace with tunnel hostnames when moving to Cloudflare infra.
 # ============================================================
 WA_PROVIDER = "openwa"
 OPENWA_BASE_URL = "http://100.87.71.38:2785"
-OPENWA_API_KEY = "owa_k1_6c127c65d850fa156f794cd554c3eb55f" # DEV ONLY — VPS dashboard key
+OPENWA_API_KEY = "owa_k1_6c127c65d850fa156f794cd554c3eb55f" # DEV ONLY â€” VPS dashboard key
 OPENWA_SESSION_ID = "main"
 WA_WEBHOOK_SECRET = "dev-webhook-secret-change-me"
 
-# ERPNext back-office integration (Frappe REST) — owner-only sync endpoints
+# ERPNext back-office integration (Frappe REST) â€” owner-only sync endpoints
 ERPNEXT_BASE_URL = "http://100.87.71.38:8080"
 
 [[d1_databases]]
@@ -74,11 +93,10 @@ index_id = "local-vectorize-index-id"
 # (Section 12.2). Free tier 10k neurons/day. Binding only works
 # with a real Cloudflare account; local dev passes env mock.
 # ============================================================
-[[ai]]
-binding = "AI"
+ai = { binding = "AI" }
 
 # ============================================================
-# Durable Objects - Team Hub chat rooms (§5.5). Free tier 100k req/day.
+# Durable Objects - Team Hub chat rooms (Â§5.5). Free tier 100k req/day.
 # Local dev: DOs run in workerd via `wrangler dev --local`.
 # ============================================================
 [[durable_objects.bindings]]
@@ -88,3 +106,4 @@ class_name = "TeamHubRoom"
 [[migrations]]
 tag = "v1"
 new_classes = ["TeamHubRoom"]
+

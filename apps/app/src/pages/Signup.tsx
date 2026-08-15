@@ -1,4 +1,6 @@
-import { useState } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import LiveWallpaper from '../components/LiveWallpaper';
 import { useLocation } from 'wouter';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
@@ -16,6 +18,14 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    gsap.fromTo(cardRef.current,
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 1.0, ease: 'power3.out' }
+    );
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +58,7 @@ export default function Signup() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-brand-navy font-sans">
+      <LiveWallpaper />
       <div className="film-grain" aria-hidden="true" />
       <Nav />
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -57,7 +68,7 @@ export default function Signup() {
 
       <main className="relative z-10 flex min-h-[100dvh] items-center justify-center px-5 pb-20 pt-32">
         <div className="w-full max-w-md">
-          <div className="glass-light rounded-[2rem] p-8 shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+          <div ref={cardRef} className="glass-light rounded-[2rem] p-8 shadow-[0_30px_80px_rgba(0,0,0,0.35)] border border-white/5 hover:border-brand-gold/30 transition-all duration-500">
             <div className="mb-7 flex flex-col items-center gap-3 text-center">
               <Logo className="h-10 w-auto" />
               <h1 className="font-display text-2xl font-bold text-brand-navy">Create Account</h1>

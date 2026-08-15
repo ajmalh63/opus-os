@@ -12,16 +12,16 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "@opusos/shared": "workspace:*",
     "@hono/zod-validator": "^0.4.1",
+    "@opusos/shared": "workspace:*",
     "better-auth": "^1.1.18",
-    "drizzle-orm": "^0.39.1",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.6.20",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
-    "drizzle-kit": "^0.30.4",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5",
     "wrangler": "^3.109.2"

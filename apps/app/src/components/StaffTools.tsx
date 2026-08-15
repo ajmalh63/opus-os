@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
+import { useRevealRoot } from '../lib/reveal';
 
 // Staff Tools — moved out of a floating public button into the workspace, and
 // upgraded: live overdue tasks (real /api/tasks/overdue), quick WhatsApp copy,
@@ -79,21 +80,23 @@ export default function StaffTools() {
     ['expiry', 'Expiries', '⏳'],
   ] as const;
 
-  const inputCls = 'w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-brand-gold focus:outline-none';
+  const inputCls = 'w-full rounded-xl border border-brand-navy/10 bg-white/5 px-3.5 py-2.5 text-sm text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none';
+
+  const rootRef = useRevealRoot<HTMLDivElement>();
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-display text-lg font-bold text-white">Staff Tools</h2>
+    <section ref={rootRef} className="rounded-2xl border border-brand-navy/10 bg-white p-6 backdrop-blur">
+      <div className="reveal mb-5 flex items-center justify-between">
+        <h2 className="font-display text-lg font-bold text-brand-navy">Staff Tools</h2>
         <span className="rounded-full bg-brand-gold/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-gold">Workspace only</span>
       </div>
 
-      <div className="mb-5 flex flex-wrap gap-1 rounded-xl bg-white/5 p-1 text-xs font-bold">
+      <div className="reveal mb-5 flex flex-wrap gap-1 rounded-xl bg-white/5 p-1 text-xs font-bold">
         {tabs.map(([key, label, icon]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all ${tab === key ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'}`}
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all ${tab === key ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/60 hover:text-brand-navy'}`}
           >
             {icon} {label}
             {key === 'overdue' && overdue.length > 0 && (
@@ -104,18 +107,18 @@ export default function StaffTools() {
       </div>
 
       {tab === 'overdue' && (
-        <div className="space-y-2.5">
+        <div className="reveal space-y-2.5">
           {overdue.length === 0 ? (
-            <p className="rounded-xl bg-emerald-500/10 px-4 py-3 text-xs text-emerald-300">No overdue SLA tasks — you're on track.</p>
+            <p className="rounded-xl bg-emerald-500/10 px-4 py-3 text-xs text-emerald-700">No overdue SLA tasks — you're on track.</p>
           ) : overdue.map((t) => (
             <div key={t.id} className="flex items-center justify-between gap-3 rounded-xl border border-rose-400/20 bg-rose-500/10 px-4 py-3">
               <div className="min-w-0">
-                <p className="truncate text-xs font-bold text-white">{t.title}</p>
-                <p className="text-[10px] text-white/50">{t.clientId} · priority {t.priority || 'normal'}</p>
+                <p className="truncate text-xs font-bold text-brand-navy">{t.title}</p>
+                <p className="text-[10px] text-brand-navy/50">{t.clientId} · priority {t.priority || 'normal'}</p>
               </div>
               <button
                 onClick={() => copyText(`Hi, this is a reminder from Opus Overseas about your ${t.title}. Please reply here.`)}
-                className="shrink-0 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-[10px] font-bold text-emerald-300 hover:bg-emerald-500 hover:text-white"
+                className="shrink-0 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-500 hover:text-white"
               >
                 Copy WA
               </button>
@@ -128,10 +131,10 @@ export default function StaffTools() {
         <div className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1">
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-white/50">Invoice amount (₹)</label>
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-navy/50">Invoice amount (₹)</label>
               <input type="number" value={inr} onChange={(e) => setInr(e.target.value)} placeholder="e.g. 15000" className={inputCls} />
             </div>
-            <label className="flex items-center gap-2 pb-1 text-xs text-white/60">
+            <label className="flex items-center gap-2 pb-1 text-xs text-brand-navy/60">
               <input type="checkbox" checked={inter} onChange={(e) => setInter(e.target.checked)} className="accent-brand-gold" />
               Interstate (IGST)
             </label>
@@ -145,37 +148,37 @@ export default function StaffTools() {
       )}
 
       {tab === 'attestation' && (
-        <div className="space-y-4">
+        <div className="reveal space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-white/50">Doc type</label>
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-navy/50">Doc type</label>
               <select value={docType} onChange={(e) => setDocType(e.target.value)} className={inputCls}>
-                <option>Degree</option><option>Birth</option>
+                <option className="bg-white">Degree</option><option className="bg-white">Birth</option>
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-white/50">Embassy</label>
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-navy/50">Embassy</label>
               <select value={dest} onChange={(e) => setDest(e.target.value)} className={inputCls}>
-                <option>Saudi Arabia</option><option>UAE</option><option>Kuwait</option>
+                <option className="bg-white">Saudi Arabia</option><option className="bg-white">UAE</option><option className="bg-white">Kuwait</option>
               </select>
             </div>
           </div>
           <div className="rounded-xl bg-white/5 p-4 text-xs">
             <p className="text-brand-gold">{att.chain}</p>
-            <div className="mt-2 flex justify-between"><span className="text-white/50">Cost</span><span className="font-mono text-white">₹{(att.price / 100).toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-white/50">Turnaround</span><span className="text-white">{att.days} business days</span></div>
+            <div className="mt-2 flex justify-between"><span className="text-brand-navy/50">Cost</span><span className="font-mono text-brand-navy">₹{(att.price / 100).toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-brand-navy/50">Turnaround</span><span className="text-brand-navy">{att.days} business days</span></div>
           </div>
         </div>
       )}
 
       {tab === 'visa' && (
-        <div className="space-y-4">
+        <div className="reveal space-y-4">
           <select value={visaCountry} onChange={(e) => setVisaCountry(e.target.value)} className={inputCls}>
-            <option>Germany</option><option>UK</option><option>US</option>
+            <option className="bg-white">Germany</option><option className="bg-white">UK</option><option className="bg-white">US</option>
           </select>
           <ul className="space-y-2">
             {(visa[visaCountry] || []).map((item, i) => (
-              <li key={i} className="flex gap-2 rounded-xl bg-white/5 px-3.5 py-2.5 text-xs text-white/80">
+              <li key={i} className="flex gap-2 rounded-xl bg-white/5 px-3.5 py-2.5 text-xs text-brand-navy/80">
                 <span className="text-brand-gold">✔</span>{item}
               </li>
             ))}
@@ -188,19 +191,19 @@ export default function StaffTools() {
           {expiries.map((e, i) => (
             <div key={i} className="rounded-xl border border-rose-400/20 bg-rose-500/10 p-4 text-xs">
               <div className="flex justify-between">
-                <span className="font-semibold text-white">{e.name}</span>
-                <span className="rounded bg-rose-900/50 px-2 py-0.5 font-mono text-rose-300">Expires {e.daysLeft}d</span>
+                <span className="font-semibold text-brand-navy">{e.name}</span>
+                <span className="rounded bg-rose-900/50 px-2 py-0.5 font-mono text-rose-700">Expires {e.daysLeft}d</span>
               </div>
-              <p className="mt-1 text-white/50">{e.item} · {e.token}</p>
+              <p className="mt-1 text-brand-navy/50">{e.item} · {e.token}</p>
               <button
                 onClick={() => copyText(`Hi ${e.name}, your ${e.item} renewal window is open. Please upload your document to OpusOS vault.`)}
-                className="mt-2 w-full rounded-lg bg-emerald-500/20 py-1.5 text-[10px] font-bold text-emerald-300 hover:bg-emerald-500 hover:text-white"
+                className="mt-2 w-full rounded-lg bg-emerald-500/20 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-500 hover:text-white"
               >
                 Copy WhatsApp reminder
               </button>
             </div>
           ))}
-          {me && <p className="text-[10px] text-white/30">Signed in as {me.name}</p>}
+          {me && <p className="text-[10px] text-brand-navy/30">Signed in as {me.name}</p>}
         </div>
       )}
     </section>
@@ -210,8 +213,8 @@ export default function StaffTools() {
 function Stat({ label, value, gold }: { label: string; value: string; gold?: boolean }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wider text-white/40">{label}</p>
-      <p className={`mt-0.5 font-mono text-sm ${gold ? 'text-brand-gold' : 'text-white'}`}>{value}</p>
+      <p className="text-[10px] uppercase tracking-wider text-brand-navy/40">{label}</p>
+      <p className={`mt-0.5 font-mono text-sm ${gold ? 'text-brand-gold' : 'text-brand-navy'}`}>{value}</p>
     </div>
   );
 }

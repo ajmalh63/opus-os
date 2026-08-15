@@ -268,10 +268,10 @@ Ranked by business impact (Owner + Manager), scenario namespace:
 - 🚫 **OpenWA pairing deferred** (no dedicated number; owner confirmed skip — production
   falls back to Meta Cloud API lane when domain is live).
 
-**Wave 1 — Observability + email foundation (3–5 days)**
-- [ ] Uptime Kuma: HTTP monitors for every VPC app + `/api/infrastructure/health`; push monitors for cron jobs; **Telegram bot alerts** (owner approved); maintenance windows.
-- [ ] Listmonk: admin wizard, SPF/DKIM/DMARC, warm-up plan, double opt-in lists, first transactional template.
-- [ ] Umami: site + script on public pages; event taxonomy v1.
+**Wave 1 — Observability + email foundation (3–5 days)** 🚧 2026-08-10: code 100% (umami 8/8 events, Kuma import JSON, heartbeat cron, Telegram channel) — user clicks/DNS pending
+- [ ] Uptime Kuma: import `WAVE1-HANDOFF-KIT.md` §2 monitor JSON + Telegram bot alerts (bot token/chats pending) + `wrangler secret put KUMA_PUSH_URL` (push monitor ready in JSON; Worker cron pings it i6h — test `wave1_heartbeat`).
+- [ ] Listmonk: admin wizard, SPF/DKIM/DMARC, warm-up plan, double opt-in lists, first transactional template (wizard + DNS pending; full steps in kit §3–4).
+- [ ] Umami: website id → `apps/app/.env VITE_UMAMI_BASE_URL` + `VITE_UMAMI_WEBSITE_ID` (script + events already in code; nothing to build).
 
 **Wave 2 — Glue + automation (1 week)** 🚧 2026-08-09: OS automation lane shipped; n8n import pending
 - ✅ **OS automation lane** (`/api/automation`, service-token, fail-closed): health,
@@ -281,20 +281,28 @@ Ranked by business impact (Owner + Manager), scenario namespace:
 - ⏳ WhatsApp first-contact pilot (10 consented leads) — **blocked: no dedicated number**.
 - ⏳ Umami funnels + first manager dashboards — waits on Wave 1 Umami setup.
 
-**Wave 3 — Scale (2 weeks)**
-- Listmonk 21-day nurture campaigns driven by `nurture_touches`; A/B subjects; bounce hygiene.
-- ERPNext India Compliance (e-invoice IRN, e-way bill) after GST 2.0 rules; GSTR automation doc.
-- Chatwoot CSAT (WhatsApp template) + weekly reports; capacity policies.
+**Wave 3 — Scale (2 weeks)** 🚧 2026-08-10: email lane + hygiene shipped in code; Listmonk UI/DNS still pending (PENDING-CONFIGS A4–A7)
+- ✅ Email nurture lane: `nurture/:id/send` dispatches email touches via Listmonk `/api/tx` (personalized, consent `marketing-campaigns` re-check, suppression at send) — 4 tests.
+- ✅ Bounce hygiene: `/api/webhooks/listmonk` consumer + `listmonk_suppressions` (hard/3× soft/unsub/complaint; DPDP) — nurture `due` excludes suppressed — 7 tests.
+- ✅ Intent engine: `lib/intent.ts` (declared → context inference → NO blind guesses) — clients carry intent (migration 0028); planner skips unknown-intent leads — 10 tests.
+- ✅ Journey editor (Zoho MA-mapped, see `CAMPAIGN-STRATEGY.md`): full CRUD incl. `PATCH` (meta/eligibility/touch replace) + channel-per-node (migration 0029) + intent override route/UI — 4 tests.
+- ⏳ Listmonk campaigns/A-B (UI) · ⏳ e-invoice IRN/e-way bill (ERP app) · ⏳ Chatwoot CSAT/capacity (UI).
 
-**Wave 4 — Growth & decision support (ongoing)**
-- Experiments ↔ Umami funnels ↔ Listmonk variants; attribution into `scoring_events`.
-- Owner weekly digest (funnel + CSAT + GST + uptime) via n8n.
-- Meta Cloud API lane (`WA_PROVIDER=meta`) when prod domain exists; OpenWA stays dev lane.
+**Wave 4 — Growth & decision support (ongoing)** 🚧 2026-08-10: digest lane shipped
+- ✅ `/api/automation/digest/weekly` (7 KPIs, ⚠️ exceptions) + `06-owner-weekly-digest.json` n8n artifact (Mon 09:00 → Telegram) — 3 tests.
+- ✅ **Staff Performance module** (balanced scorecard — output × on-time quality × workload): `/api/performance` (BAN headlines, per-staff roster, 7/30/90d throughput, median cycle, SLA %, workload, approval queue) + PerformanceTab — 4 tests.
+- ✅ **Task Boards — Kanban SYSTEM** (2026-08-11, gold-standard six practices):
+  WIP caps **enforced server-side** (409 + UI drop-block; expedite bypasses per
+  class-of-service), Expedite lane (limit 1), blocked flags + strip, TRUE cycle
+  time (`in_progress_at`), policies (DoD) in `board_prefs`, flow strip
+  (throughput/cycle p50/p85/WIP/blocked), aging, My-tasks, staff picker; flow
+  metrics flow into performance + weekly digest (cycle p85, blocked count).
+  Migration **0030** at deploy — 6 board-system tests.
+- ⏳ Experiments↔Umami funnels (needs A3 site) · ⏳ Meta Cloud API lane (prod domain).
 
-**Wave 5 — Hardening & autonomy**
-- DR runbook tested end-to-end; backups monitored via push monitors.
-- n8n credentials/secret hygiene; error workflows on missing secrets.
-- Twenty CRM decision gate (keep shelved / bridge / decommission).
+**Wave 5 — Hardening & autonomy** 🚧 2026-08-10: scripts shipped; testing = VPS cron + restore drill
+- ✅ `ops/backup-d1.sh` (wrangler d1 export → gzip → R2 → Kuma push; retention 7) · `ops/erp-db-dump.sh` (VPS mysqldump, same contract) · `ops/restore-d1.sh` (official `wrangler d1 execute --file` restore + verify + heartbeat).
+- ⏳ Restore drill end-to-end · n8n secret hygiene · Twenty decision gate.
 
 ---
 

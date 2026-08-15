@@ -1,4 +1,4 @@
-﻿export class MockD1Database {
+export class MockD1Database {
   public tables = {
     users: [] as any[],
     clients: [] as any[],
@@ -58,7 +58,21 @@
     attestation_chains: [] as any[],
     universities: [] as any[],
     conversations: [] as any[],
-    erpnext_sync_log: [] as any[]
+    erpnext_sync_log: [] as any[],
+    webhook_events: [] as any[],
+    listmonk_suppressions: [] as any[],
+    board_prefs: [] as any[],
+    study_abroad_shortlists: [] as any[],
+    visa_applications: [] as any[],
+    visa_products: [] as any[],
+    visa_mock_interviews: [] as any[],
+    umrah_checklists: [] as any[],
+    umrah_packages: [] as any[],
+    booking_passengers: [] as any[],
+    app_settings: [] as any[],
+    attestation_applications: [] as any[],
+    manpower_deployments: [] as any[],
+    membership_plans: [] as any[],
   };
 
   private getTableName(sql: string): string {
@@ -110,6 +124,22 @@
   }
 
   private async execute(sql: string, tableName: string, params: any[]) {
+    // 0. DELETE FROM — WHERE <col> = ? (drizzle .delete().where(eq()))
+    if (sql.toUpperCase().startsWith('DELETE')) {
+      const whereMatch = sql.match(/where\s+([\w_]+)\s*=\s*\?/i);
+      if (whereMatch) {
+        const col = whereMatch[1];
+        const camel = col.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+        const value = params[0];
+        (this.tables as any)[tableName] = (this.tables as any)[tableName].filter(
+          (r: any) => String(r[col] ?? r[camel]) !== String(value)
+        );
+      } else {
+        (this.tables as any)[tableName] = [];
+      }
+      return { success: true, results: [] };
+    }
+
     // 1a. INSERT ... ON CONFLICT (Drizzle upsert) — increment count atomically for rate_limit
     if (sql.toUpperCase().startsWith('INSERT') && sql.toLowerCase().includes('on conflict')) {
       const parts = sql.split(/values/i);
@@ -129,6 +159,19 @@
             );
             if (existing) {
               if (doNothing) return { success: true, results: [] };
+              // Generic `do update set col = ?, ...` — apply trailing params to the existing row.
+              const setClause = (sql.match(/do update\s+set\s+(.+?)(?:returning|$)/i) || [])[1] || '';
+              const setAssigns = [...setClause.matchAll(/([\w_]+)\s*=\s*\?/g)];
+              if (setAssigns.length > 0) {
+                setAssigns.forEach((m, i) => {
+                  const col = m[1];
+                  const val = params[columns.length + i];
+                  existing[col] = val;
+                  const camelKey = col.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+                  existing[camelKey] = val;
+                });
+                return { success: true, results: [existing] };
+              }
               if (incrementCol) {
                 const camelKey = incrementCol.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
                 const cur = Number(existing[incrementCol] ?? existing[camelKey]) || 0;
@@ -308,3 +351,4 @@
     return { success: true };
   }
 }
+

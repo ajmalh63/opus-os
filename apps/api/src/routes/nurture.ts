@@ -1,9 +1,10 @@
-import { Hono } from 'hono';
+﻿import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
 import { nurtureTouches, consents, engagements, clients, campaigns, campaignTouches } from '../db/schema.js';
 import { eq, and, lte } from 'drizzle-orm';
+import { resolvePrimaryDivision } from '../lib/intent.js';
 
 // WhatsApp re-nurture sequence engine (FunnelTODO #4).
 // Provider-agnostic: rows are staged outbound touches due at day offsets; a
@@ -99,7 +100,14 @@ async function planSequence(db: D1, clientId: string, engagementId: string | nul
   if (existing.length > 0) return { status: 'already_planned', campaignKey: existing[0].campaignId ?? null, count: existing.length };
 
   const engagement = await db.select().from(engagements).where(eq(engagements.clientId, clientId)).all();
-  const div = engagement.find((e: any) => e.status === 'active')?.division || 'study-abroad';
+  const activeEng = engagement.find((e: any) => e.status === 'active');
+  // PRIMARY INTEREST (Wave 4): engagement division â†’ declared intent on the
+  // client â†’ context heuristics. Never a blind 'study-abroad' guess.
+  const resolved = resolvePrimaryDivision(client as any, activeEng?.division);
+  if (!resolved) {
+    return { skipped: true, reason: 'intent unknown — counselor assigns division first' };
+  }
+  const div = resolved;
   const context = safeParse(client.intakeContext);
 
   // CAMPAIGN-AWARE: division+context match wins over the default sequence.
@@ -110,7 +118,7 @@ async function planSequence(db: D1, clientId: string, engagementId: string | nul
         id: crypto.randomUUID(),
         clientId,
         engagementId,
-        channel: 'whatsapp',
+        channel: (touch as any).channel || 'whatsapp',
         stage: touch.stage,
         body: touch.body,
         campaignId: matched.campaign.id,
@@ -199,3 +207,5 @@ nurtureRouter.post('/:id/send', async (c) => {
     return c.json({ error: "Mark-sent failed", details: error.message }, 500);
   }
 });
+
+

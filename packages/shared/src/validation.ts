@@ -29,7 +29,7 @@ export const leadIntakeSchema = z.object({
     intakeSeason: z.string().optional(),
     visaCategory: z.string().optional(),
     packageTier: z.string().optional(),
-    budget: z.string().optional(), // e.g. "15-25L" â€” drives budget_given scoring
+    budget: z.string().optional(), // e.g. "15-25L" — drives budget_given scoring
     expectedDeparture: z.string().optional(),
     documentCategory: z.string().optional(),
     requiredAuthentication: z.string().optional(),
@@ -88,21 +88,152 @@ export type CreateAgreementInput = z.infer<typeof createAgreementSchema>;
 export type SignAgreementInput = z.infer<typeof signAgreementSchema>;
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 
-// 7. Umrah Group Departure Schema
+// 7. Umrah Group Departure Schema (staff announces a date; capacity 30 default)
 export const createDepartureSchema = z.object({
-  packageTier: z.enum(['economy', 'standard', 'premium']),
-  departureDate: z.number().int(),
+  packageTier: z.enum(['economy', 'standard', 'premium', 'luxury']),
+  departureDate: z.number().int(), // trip start
+  endDate: z.number().int().optional(), // trip end (null/absent = single-day)
   price: z.number().int(),
-  bookingFee: z.number().int()
+  bookingFee: z.number().int(),
+  packageId: z.string().optional(),
+  departureCity: z.string().optional(),
+  capacity: z.number().int().min(1).max(200).optional()
 });
 
-// 8. Book Seat Schema
+// 7b. Umrah Package Inventory Schema (Phase 3) — rich catalog answering 98%
+// of client doubts. All money integer paise. JSON lists are stringified.
+export const createUmrahPackageSchema = z.object({
+  name: z.string().min(2, 'Package name is required'),
+  tier: z.enum(['economy', 'standard', 'premium', 'luxury']).default('standard'),
+  // Duration
+  totalDays: z.number().int().min(1).default(7),
+  makkahNights: z.number().int().min(0).default(0),
+  madinahNights: z.number().int().min(0).default(0),
+  // Flight
+  flightType: z.enum(['direct', 'one_stop', 'two_stop', 'varies']).default('varies'),
+  airline: z.string().optional(),
+  departureCity: z.string().optional(),
+  arrivalAirport: z.string().optional(),
+  baggageAllowance: z.string().optional(),
+  flightClass: z.enum(['economy', 'business']).default('economy'),
+  zamzamIncluded: z.boolean().default(true),
+  // Makkah hotel
+  makkahHotel: z.string().optional(),
+  makkahHotelStars: z.number().int().min(1).max(7).optional(),
+  makkahDistanceMeters: z.number().int().min(0).optional(),
+  makkahWalkMinutes: z.number().int().min(0).optional(),
+  makkahHaramView: z.enum(['none', 'partial', 'full']).default('none'),
+  // Madinah hotel
+  madinahHotel: z.string().optional(),
+  madinahHotelStars: z.number().int().min(1).max(7).optional(),
+  madinahDistanceMeters: z.number().int().min(0).optional(),
+  madinahWalkMinutes: z.number().int().min(0).optional(),
+  madinahHaramView: z.enum(['none', 'partial', 'full']).default('none'),
+  // Room & meals
+  roomSharing: z.enum(['quad', 'triple', 'double', 'single']).default('quad'),
+  soloAvailable: z.boolean().default(false),
+  soloSupplementPaise: z.number().int().min(0).default(0),
+  mealsPlan: z.enum(['none', 'breakfast', 'half_board', 'full_board']).default('breakfast'),
+  shuttleService: z.boolean().default(false),
+  // Transport & tours
+  airportTransfer: z.boolean().default(true),
+  intercityTransport: z.enum(['group_bus', 'private_car', 'luxury_car', 'none']).default('group_bus'),
+  ziyaratTours: z.boolean().default(true),
+  groupLeader: z.boolean().default(false),
+  guideLanguage: z.string().optional(),
+  // Visa
+  visaIncluded: z.boolean().default(true),
+  ksaInsurance: z.boolean().default(true),
+  visaLeadDays: z.number().int().min(0).default(21),
+  // Pricing (paise)
+  wholesalePricePaise: z.number().int().min(0).default(0),
+  retailPricePaise: z.number().int().min(0).default(0),
+  advanceFeePaise: z.number().int().min(0).default(50000), // ₹500 non-refundable
+  reserveHoldHours: z.number().int().min(1).default(72), // 3-day hold
+  balanceDueDaysBefore: z.number().int().min(0).default(30),
+  installmentAvailable: z.boolean().default(false),
+  groupDiscountPct: z.number().int().min(0).max(50).optional(),
+  groupDiscountMinPax: z.number().int().min(2).optional(),
+  // Family / child pricing (per person paise; null = fall back to adult retail)
+  childWithBedPricePaise: z.number().int().min(0).nullable().optional(),
+  childNoBedPricePaise: z.number().int().min(0).nullable().optional(),
+  infantPricePaise: z.number().int().min(0).nullable().optional(),
+  // Content
+  description: z.string().optional(),
+  inclusionsJson: z.string().default('[]'),
+  exclusionsJson: z.string().default('[]'),
+  documentsJson: z.string().default('[]'),
+  itineraryJson: z.string().default('[]'),
+  termsJson: z.string().default('[]'),
+  specialNeeds: z.string().optional(),
+  supplierRef: z.string().optional(),
+  coverImageKey: z.string().optional(),
+  featured: z.boolean().default(false),
+  status: z.enum(['draft', 'open', 'paused', 'closed', 'archived']).default('draft')
+});
+
+// 7c. Partial update — every field optional, same shapes as create.
+export const updateUmrahPackageSchema = createUmrahPackageSchema.partial();
+
+// 7d. Client books a slot on an announced departure (token-auth identifies client).
+// Party booking: one booking = N passengers (family / group). Gold-standard
+// passenger categories: adult (18+), child_with_bed (2–11), child_no_bed (2–4),
+// infant (0–2). At least one adult per party; max 30 (capacity ceiling).
+export const umrahPassengerSchema = z.object({
+  name: z.string().min(2, 'Passenger name must be at least 2 characters'),
+  dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'dob must be YYYY-MM-DD').optional(),
+  passportNumber: z.string().min(4, 'Passport number too short').max(20).optional(),
+  category: z.enum(['adult', 'child_with_bed', 'child_no_bed', 'infant']).default('adult'),
+  specialNeeds: z.string().max(200).optional()
+});
+
+export const bookUmrahSlotSchema = z.object({
+  departureId: z.string().min(1, 'departureId is required'),
+  occupancy: z.enum(['shared', 'solo']).default('shared'),
+  roomConfig: z.enum(['single', 'double', 'triple', 'quad']).optional(),
+  // Default: the token client themselves as a single adult (backwards compatible).
+  passengers: z.array(umrahPassengerSchema).min(1, 'At least one passenger is required').max(30, 'Maximum 30 passengers per party')
+    .refine((list) => list.some((p) => p.category === 'adult'), { message: 'Every party needs at least one adult (18+)' })
+    .optional()
+});
+
+// 7e. Advance payment verification (₹500 non-refundable → 3-day hold).
+export const verifyUmrahAdvanceSchema = z.object({
+  bookingId: z.string().min(1),
+  razorpay_order_id: z.string().min(1),
+  razorpay_payment_id: z.string().min(1),
+  razorpay_signature: z.string().min(1)
+});
+
+// 7f. Balance payment (rest of retail price — online or office).
+export const payUmrahBalanceSchema = z.object({
+  bookingId: z.string().min(1),
+  razorpay_order_id: z.string().min(1),
+  razorpay_payment_id: z.string().min(1),
+  razorpay_signature: z.string().min(1)
+});
+
+// 7g. Staff marks balance settled at office (offline payment).
+export const confirmUmrahOfficeSchema = z.object({
+  bookingId: z.string().min(1),
+  amountPaise: z.number().int().min(0),
+  method: z.enum(['cash', 'bank_transfer', 'upi']).default('cash'),
+  referenceNumber: z.string().optional()
+});
+
+// 8. Book Seat Schema (legacy staff-path book)
 export const bookSeatSchema = z.object({
   clientId: z.string().min(1, { message: "Client ID is required" })
 });
 
 export type CreateDepartureInput = z.infer<typeof createDepartureSchema>;
 export type BookSeatInput = z.infer<typeof bookSeatSchema>;
+export type CreateUmrahPackageInput = z.infer<typeof createUmrahPackageSchema>;
+export type UpdateUmrahPackageInput = z.infer<typeof updateUmrahPackageSchema>;
+export type BookUmrahSlotInput = z.infer<typeof bookUmrahSlotSchema>;
+export type VerifyUmrahAdvanceInput = z.infer<typeof verifyUmrahAdvanceSchema>;
+export type PayUmrahBalanceInput = z.infer<typeof payUmrahBalanceSchema>;
+export type ConfirmUmrahOfficeInput = z.infer<typeof confirmUmrahOfficeSchema>;
 
 // 9. Create Transit Shipment Schema
 export const createShipmentSchema = z.object({

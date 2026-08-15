@@ -8,7 +8,7 @@ export default function ArtifactShell({ title, caption, children, accent = 'bran
   accent?: string;
 }) {
   return (
-    <div className="glass-light rounded-3xl p-6 shadow-[0_20px_50px_rgba(10,45,80,0.25)]">
+    <div className="glass-light rounded-3xl p-6 shadow-[0_20px_50px_rgba(10,45,80,0.25)] border border-transparent hover:border-brand-gold/30 hover:shadow-[0_20px_50px_rgba(215,160,25,0.15)] hover:scale-[1.02] transition-all duration-300">
       <div className="mb-4 flex items-center justify-between gap-2">
         <div>
           <p className={`font-display text-sm font-bold text-brand-navy`} style={{ color: 'var(--color-brand-navy)' }}>{title}</p>
