@@ -268,6 +268,25 @@ const [rec, setRec] = useState<any>(null);
             <h3 className="font-display font-bold text-sm text-brand-navy">Statutory Calendar</h3>
           </div>
           <p className="text-[10px] text-brand-navy/40">Next 3 months of GST / TDS / PF / ESI / LWF deadlines vs live books.</p>
+          {(() => {
+            const overdue = calItems.filter((i: any) => i.status === 'overdue');
+            const dueSoon = calItems.filter((i: any) => i.status === 'due');
+            if (overdue.length === 0 && dueSoon.length === 0) return null;
+            return (
+              <div className="space-y-1.5">
+                {overdue.length > 0 && (
+                  <div className="rounded-lg border border-rose-200 bg-rose-50/70 p-2.5 text-[10px] text-rose-700">
+                    <b>🔴 {overdue.length} overdue:</b> {overdue.map((i: any) => i.label).join(' · ')}
+                  </div>
+                )}
+                {dueSoon.length > 0 && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-[10px] text-amber-700">
+                    <b>🟡 {dueSoon.length} due soon:</b> {dueSoon.map((i: any) => `${i.label} (${i.date})`).join(' · ')}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {calItems.map((item: any) => {
               const badge = item.status === 'clear'

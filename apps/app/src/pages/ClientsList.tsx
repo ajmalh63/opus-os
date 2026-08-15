@@ -185,6 +185,34 @@ export default function ClientsList() {
     return acc;
   }, {} as Record<string, number>);
 
+  // Profile completeness (mirror of the study-abroad desk)
+  const completenessOf = (c: any): number => {
+    if (!c.intakeContext) return 0;
+    try {
+      const ctx = JSON.parse(c.intakeContext);
+      const checks = [
+        !!(ctx.pct10th && ctx.pct12th) || !!ctx.degreeName,
+        ctx.cgpa !== undefined && ctx.cgpa !== null && ctx.cgpa !== '',
+        (ctx.englishScore !== undefined && ctx.englishScore !== null && ctx.englishScore !== '') || ctx.testPlanned === true,
+        !!ctx.targetCountry, !!ctx.targetIntake, !!ctx.preferredCourse,
+        ctx.tuitionBudget !== undefined && ctx.tuitionBudget !== null && ctx.tuitionBudget !== '',
+        ctx.universitySharingConsent === true,
+      ];
+      return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    } catch { return 0; }
+  };
+
+  const exportCsv = () => {
+    const rows = filtered.map(c => [c.id, c.name, c.phone, c.email, c.primaryDivision || '', c.status || '', `${completenessOf(c)}%`]);
+    const head = ['ID', 'Name', 'Phone', 'Email', 'Division', 'Status', 'Profile %'];
+    const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `clients-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filtered = list.filter(c => {
     const matchesSearch = (c.name || '').toLowerCase().includes(search.toLowerCase()) ||
       (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -313,6 +341,14 @@ export default function ClientsList() {
           <option value="active">Active</option>
           <option value="blocked">Blocked</option>
         </select>
+
+        <button
+          onClick={exportCsv}
+          disabled={filtered.length === 0}
+          className="ml-auto rounded-lg border border-brand-navy/15 bg-brand-navy/[0.04] px-3.5 py-2 text-xs font-bold text-brand-navy hover:border-brand-gold/50 transition-all cursor-pointer disabled:opacity-40"
+        >
+          📤 Export CSV ({filtered.length})
+        </button>
       </div>
 
       {/* Spreadsheet directory table */}
@@ -347,6 +383,12 @@ export default function ClientsList() {
                     {c.name === 'Deleted Candidate' && (
                       <span className="ml-1.5 inline-block text-[8px] bg-rose-50 text-rose-600 px-1 py-0.5 rounded font-bold uppercase">DPDP Anonymized</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-14 h-1 rounded bg-brand-navy/[0.08] overflow-hidden"><div className={`h-full ${completenessOf(c) === 100 ? 'bg-emerald-500' : completenessOf(c) >= 50 ? 'bg-brand-gold' : 'bg-amber-400'}`} style={{ width: `${completenessOf(c)}%` }} /></div>
+                      <span className={`text-[8px] font-bold ${completenessOf(c) === 100 ? 'text-emerald-700' : completenessOf(c) >= 50 ? 'text-brand-gold' : 'text-amber-600'}`}>{completenessOf(c)}%</span>
+                    </div>
                   </td>
                   <td className="px-4 py-3">{c.phone}</td>
                   <td className="px-4 py-3">{c.email}</td>

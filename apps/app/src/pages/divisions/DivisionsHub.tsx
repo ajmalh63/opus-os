@@ -1,6 +1,7 @@
 import { useLocation } from 'wouter';
 import { useSession } from '../../lib/session';
 import { useRevealRoot } from '../../lib/reveal';
+import { useQuery } from '@tanstack/react-query';
 
 export default function DivisionsHub() {
   const rootRef = useRevealRoot<HTMLDivElement>();
@@ -18,6 +19,18 @@ export default function DivisionsHub() {
   const visible = me?.role === 'super_admin' 
     ? divisions 
     : divisions.filter(d => me?.userDivisions?.includes(d.key));
+
+  // Live stats per division
+  const { data: statsData } = useQuery<any>({
+    queryKey: ['divisionsStats'],
+    queryFn: async () => {
+      const r = await fetch('/api/infrastructure/divisions-stats');
+      if (!r.ok) throw new Error('stats');
+      return r.json();
+    },
+    refetchInterval: 30000
+  });
+  const stats = statsData?.stats || {};
 
   return (
     <div ref={rootRef} className="space-y-6">
@@ -40,6 +53,21 @@ export default function DivisionsHub() {
               <div>
                 <h3 className="font-display font-bold text-brand-navy group-hover:text-brand-gold text-base transition-colors">{d.label}</h3>
                 <p className="text-xs text-brand-navy/50 mt-1 line-clamp-2">{d.desc}</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(() => {
+                  const st = stats[d.key];
+                  if (!st) return null;
+                  const items: [string, number][] = [];
+                  if (st.applications !== undefined) items.push(['📄 Apps', st.applications]);
+                  if (st.bookings !== undefined) items.push(['🕋 Bookings', st.bookings]);
+                  if (st.deployments !== undefined) items.push(['👷 Deployments', st.deployments]);
+                  if (st.quoteRequests !== undefined) items.push(['📨 Quotes', st.quoteRequests]);
+                  if (st.inProgress !== undefined) items.push(['🔄 Active', st.inProgress]);
+                  return items.map(([label, n]) => (
+                    <span key={label} className="bg-brand-navy/[0.05] text-brand-navy/60 rounded px-1.5 py-0.5 text-[9px] font-bold border border-brand-navy/10">{label} {n}</span>
+                  ));
+                })()}
               </div>
             </div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/50 group-hover:text-brand-gold flex items-center gap-1 mt-4">

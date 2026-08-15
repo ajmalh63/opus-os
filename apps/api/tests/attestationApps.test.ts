@@ -466,3 +466,31 @@ describe('Attestation — notification actions (dismiss / clear done)', () => {
     expect(mockD1.tables.staff_alerts.find((a: any) => a.id === 'al-3')).toBeTruthy(); // new survives
   });
 });
+
+describe('Divisions hub — live stats', () => {
+  let mockD1: MockD1Database;
+  const now = Math.floor(Date.now() / 1000);
+  const staffHeaders = { cookie: 'better-auth.session_token=token-counselor' };
+
+  beforeAll(() => {
+    mockD1 = new MockD1Database();
+    mockD1.tables.clients.push({ id: 'OP-2026-9921', name: 'Stats Client', phone: '+91 99999 33331', email: 'st@test.com', created_at: now, updated_at: now });
+    mockD1.tables.attestation_applications.push({
+      id: 'app-stats-1', client_id: 'OP-2026-9921', document_json: '{}', category: 'educational', route: 'embassy',
+      destination_country: 'UAE', chain_json: '[]', stage: 'quote_requested', pickup_status: 'awaiting_docs',
+      status: 'pending', document_type: 'degree', current_step: 'hrd', created_at: now, updated_at: now
+    });
+  });
+
+  it('GET /api/infrastructure/divisions-stats returns per-division counters', async () => {
+    const res = await app.request('/api/infrastructure/divisions-stats', { headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.stats.attestation.applications).toBe(1);
+    expect(data.stats.attestation.quoteRequests).toBe(1);
+    expect(data.stats['study-abroad']).toBeTruthy();
+    expect(data.stats.umrah).toBeTruthy();
+    expect(data.stats.visa).toBeTruthy();
+    expect(data.stats.manpower).toBeTruthy();
+  });
+});

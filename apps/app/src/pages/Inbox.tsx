@@ -24,6 +24,7 @@ export default function Inbox() {
   const [selected, setSelected] = useState<string | null>(null);
   const [reply, setReply] = useState('');
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery<{ conversations: Conversation[]; unreadTotal: number }>({
     queryKey: ['inbox'],
@@ -81,12 +82,22 @@ return (
           {/* Conversation list */}
           <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-3">
             <div className="mb-3 px-2 text-[10px] font-bold uppercase tracking-wider text-brand-gold">Conversations</div>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="🔍 Search conversations…"
+              className="w-full rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-xs text-brand-navy outline-none focus:border-brand-gold mb-2"
+            />
             {isLoading && <p className="p-6 text-center text-xs text-brand-navy/40">Loading…</p>}
             {!isLoading && (!data?.conversations || data.conversations.length === 0) && (
               <p className="p-6 text-center text-xs text-brand-navy/40">No conversations yet. WhatsApp/web messages will appear here.</p>
             )}
             <div className="space-y-2">
-              {(data?.conversations || []).map((c) => (
+              {(data?.conversations || []).filter((c: any) => {
+                if (!search.trim()) return true;
+                const q = search.toLowerCase();
+                return (c.clientName || '').toLowerCase().includes(q) || (c.phone || '').includes(q) || (c.lastMessage || '').toLowerCase().includes(q);
+              }).map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelected(c.id)}

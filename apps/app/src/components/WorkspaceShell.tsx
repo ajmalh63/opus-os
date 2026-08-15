@@ -119,6 +119,18 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   }, []);
 
   const sections = allowedNavFor(me);
+
+  // Unread inbox badge (polls like the inbox page)
+  const { data: inboxData } = useQuery<{ unreadTotal?: number }>({
+    queryKey: ['navInboxUnread'],
+    queryFn: async () => {
+      const r = await fetch('/api/inbox');
+      if (!r.ok) return { unreadTotal: 0 };
+      return r.json();
+    },
+    refetchInterval: 20000
+  });
+  const unread = inboxData?.unreadTotal || 0;
   const isActive = (match: string) => {
     const patterns = match.split('|');
     return patterns.some((p) => (p === '/workspaces' ? location === '/workspaces' || location === '/' : location.startsWith(p) || location.startsWith(p.split('?')[0])));
@@ -171,7 +183,10 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
                           <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
                         </svg>
                         {!collapsed && <span className="truncate">{item.label}</span>}
-                        {active && !collapsed && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-gold" />}
+                        {item.key === 'inbox' && unread > 0 && (
+                          <span className="ml-auto rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white">{unread}</span>
+                        )}
+                        {active && !collapsed && item.key !== 'inbox' && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-gold" />}
                       </button>
                     </li>
                   );

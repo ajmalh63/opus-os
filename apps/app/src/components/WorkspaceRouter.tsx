@@ -1,4 +1,5 @@
 import { useRoute } from 'wouter';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
@@ -46,18 +47,60 @@ function AuditView() {
   const { data } = useQuery<{ logs?: any[] }>({
     queryKey: ['auditTrail'],
     queryFn: async () => {
-      const r = await fetch('/api/admin/audit-logs?limit=100', { headers: AUTH });
+      const r = await fetch('/api/admin/audit-logs?limit=500', { headers: AUTH });
       if (!r.ok) throw new Error('audit');
       return r.json();
     },
   });
   const logs = data?.logs || [];
   const rootRef = useRevealRoot<HTMLDivElement>();
+  const [fAction, setFAction] = useState('');
+  const [fEntity, setFEntity] = useState('');
+  const [fActor, setFActor] = useState('');
+
+  const actions = [...new Set(logs.map((l: any) => l.action).filter(Boolean))].sort();
+  const entities = [...new Set(logs.map((l: any) => l.entityName).filter(Boolean))].sort();
+  const actors = [...new Set(logs.map((l: any) => l.actorName || l.actorId).filter(Boolean))].sort();
+
+  const filtered = logs.filter((l: any) => {
+    if (fAction && l.action !== fAction) return false;
+    if (fEntity && l.entityName !== fEntity) return false;
+    if (fActor && (l.actorName || l.actorId) !== fActor) return false;
+    return true;
+  });
+
+  const exportCsv = () => {
+    const rows = filtered.map((l: any) => [new Date((l.createdAt || 0) * 1000).toISOString(), l.actorName || l.actorId || '', l.action || '', l.entityName || '', l.entityId || '', l.ipAddress || '']);
+    const head = ['Time', 'Actor', 'Action', 'Entity', 'ID', 'IP'];
+    const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `audit-log-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div ref={rootRef} className="min-h-full p-6 md:p-8">
       <div className="reveal mb-6">
         <h2 className="font-display text-lg font-bold text-brand-navy">Audit trail</h2>
         <p className="mt-1 text-xs text-brand-navy/40">Immutable record of every critical mutation: money, agreements, consents, RBAC, kanban moves, inbox replies.</p>
+      </div>
+      <div className="reveal mb-4 flex flex-wrap items-center gap-2">
+        <select value={fAction} onChange={(e) => setFAction(e.target.value)} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+          <option value="">All actions</option>
+          {actions.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <select value={fEntity} onChange={(e) => setFEntity(e.target.value)} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+          <option value="">All entities</option>
+          {entities.map(e => <option key={e} value={e}>{e}</option>)}
+        </select>
+        <select value={fActor} onChange={(e) => setFActor(e.target.value)} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+          <option value="">All actors</option>
+          {actors.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <span className="text-[10px] text-brand-navy/40 font-bold">{filtered.length} events</span>
+        <button onClick={exportCsv} disabled={filtered.length === 0} className="ml-auto rounded-lg border border-brand-navy/15 bg-brand-navy/[0.04] px-3 py-1.5 text-[10px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all cursor-pointer disabled:opacity-40">📤 Export CSV</button>
       </div>
       <div className="reveal overflow-x-auto rounded-2xl border border-brand-navy/10 bg-white shadow-[0_20px_40px_-15px_rgba(10,45,80,0.10)]">
         <table className="w-full text-left text-xs">
@@ -72,10 +115,10 @@ function AuditView() {
             </tr>
           </thead>
           <tbody>
-            {logs.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-brand-navy/50">No audit events yet.</td></tr>
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-brand-navy/50">No audit events match.</td></tr>
             )}
-            {logs.map((l: any) => (
+            {filtered.map((l: any) => (
               <tr key={l.id} className="border-b border-brand-navy/[0.08] text-brand-navy/70 hover:bg-brand-navy/[0.04]">
                 <td className="whitespace-nowrap px-4 py-2.5">{new Date((l.createdAt || 0) * 1000).toLocaleString()}</td>
                 <td className="px-4 py-2.5">{l.actorId ? (l.actorName || 'staff') : 'system'}</td>
