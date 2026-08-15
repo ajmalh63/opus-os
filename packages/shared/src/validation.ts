@@ -34,7 +34,11 @@ export const leadIntakeSchema = z.object({
     documentCategory: z.string().optional(),
     requiredAuthentication: z.string().optional(),
     jobSector: z.string().optional(),
-    resumeFileKey: z.string().optional()
+    resumeFileKey: z.string().optional(),
+    // Study Abroad pre-qualification (lands in intakeContext → match engine + completeness)
+    cgpa: z.string().optional(),
+    englishScore: z.string().optional(),
+    tuitionBudget: z.string().optional()
   }).optional()
 });
 

@@ -108,6 +108,8 @@ export default function StudyAbroadPortal() {
   // Phase 4: application modal + pipeline filters
   const [showAppModal, setShowAppModal] = useState(false);
   const [showIntakeWizard, setShowIntakeWizard] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [noteChannel, setNoteChannel] = useState<'whatsapp' | 'email' | 'note'>('note');
   const [appFilter, setAppFilter] = useState<{ country: string; intake: string; tier: string }>({ country: '', intake: '', tier: '' });
 
   // Kanban Card quick modal
@@ -212,6 +214,23 @@ export default function StudyAbroadPortal() {
       queryClient.invalidateQueries({ queryKey: ['clientDetails'] });
       setIsEditingAcademic(false);
     }
+  });
+
+  const logNoteMutation = useMutation({
+    mutationFn: async ({ channel, body }: { channel: string; body: string }) => {
+      const r = await fetch(`/api/clients/${selectedStudent?.id}/communications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel, direction: 'internal', body })
+      });
+      if (!r.ok) throw new Error('Failed to log note');
+      return r.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientDetails', selectedStudent?.id] });
+      setNoteText('');
+    },
+    onError: (e: any) => alert(e.message)
   });
 
   // Client details (document list & profile timeline)
@@ -619,7 +638,7 @@ export default function StudyAbroadPortal() {
                     { key: 'overview', label: 'Overview' },
                     { key: 'shortlist', label: 'Applications' },
                     { key: 'docs', label: 'Documents' },
-                    { key: 'apps', label: 'Applications' }
+                    { key: 'apps', label: 'Portal Tracking' }
                   ].map(tab => (
                     <button
                       key={tab.key}
@@ -669,6 +688,39 @@ export default function StudyAbroadPortal() {
                           })()}
                         </div>
                       </div>
+                    {/* Communication timeline — anyone can pick up the case */}
+                    <div className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm mb-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">💬 Communication Log</h4>
+                        <div className="flex gap-1.5">
+                          <select value={noteChannel} onChange={(e) => setNoteChannel(e.target.value as any)} className="border border-brand-navy/10 bg-white rounded px-1.5 py-1 text-[9px] text-brand-navy outline-none cursor-pointer font-bold [&>option]:bg-white">
+                            <option value="note">Note</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="email">Email</option>
+                          </select>
+                          <input
+                            value={noteText}
+                            onChange={(e) => setNoteText(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && noteText.trim()) logNoteMutation.mutate({ channel: noteChannel, body: noteText.trim() }); }}
+                            placeholder="Log a call / note… (Enter to save)"
+                            className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-56"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                        {(clientDetails?.timeline || []).slice(0, 8).map((c: any) => (
+                          <div key={c.id} className="flex items-start gap-2 text-[10px]">
+                            <span className={`shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${c.channel === 'whatsapp' ? 'bg-emerald-500/15 text-emerald-700' : c.channel === 'email' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{c.channel}</span>
+                            <span className="text-brand-navy/70 flex-1">{c.body}</span>
+                            <span className="text-brand-navy/30 shrink-0">{c.senderName || 'client'} · {new Date(c.createdAt * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+                          </div>
+                        ))}
+                        {(clientDetails?.timeline || []).length === 0 && (
+                          <p className="text-[10px] text-brand-navy/40 italic">No communication logged yet. Log your first call above.</p>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-5">
                         <div className="flex justify-between items-center border-b border-brand-navy/[0.08] pb-2">
