@@ -259,6 +259,7 @@ export { TeamHubRoom } from './routes/teamHub.js';
 import { runHeartbeat } from './cron/heartbeat.js';
 import { performanceRouter } from './routes/performance.js';
 import { analyticsRouter } from './routes/analytics.js';
+import { visibilityRouter, publicSeoRouter } from './routes/visibility.js';
 import { integrationsRouter } from './routes/integrations.js';
 
 // Staff performance & team operations scorecard (manager+; balanced metric set)
@@ -268,6 +269,15 @@ app.route('/api/performance', performanceRouter);
 app.use('/api/analytics', rbacMiddleware(['super_admin', 'manager'], true));
 app.use('/api/analytics/*', rbacMiddleware(['super_admin', 'manager'], true));
 app.route('/api/analytics', analyticsRouter);
+
+// Public SEO endpoints (no auth): sitemap.xml + robots.txt + public meta
+// MUST be mounted before the visibility RBAC middleware so /api/visibility/public/meta stays open.
+app.route('/', publicSeoRouter);
+
+// Visibility Hub (manager+): SEO / AEO-GEO / GA4 / GBP / Search Console / Reviews / Attribution / Reports
+app.use('/api/visibility', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/visibility/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.route('/api/visibility', visibilityRouter);
 
 // Tool-First adapters (manager+): unified status + live feed for Listmonk /
 // Mautic / Chatwoot / OpenWA — the OS campaigns dashboard is INFORMATIONAL.

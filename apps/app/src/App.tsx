@@ -20,6 +20,7 @@ import AdminConsole from './pages/AdminConsole.js';
 import WorkspaceShell from './components/WorkspaceShell.js';
 import ErrorBoundary from './components/ErrorBoundary.js';
 import { WorkspaceRouter, WorkspaceModule } from './components/WorkspaceRouter.js';
+import VisibilityHub from './components/VisibilityHub.js';
 import PublicHome from './pages/PublicHome.js';
 import PublicService from './pages/PublicService.js';
 import Login from './pages/Login.js';
@@ -107,6 +108,9 @@ export default function App() {
         </Route>
         <Route path="/analytics">
           {() => <AuthGuard><WorkspaceRoute><WorkspaceModule name="flow" /></WorkspaceRoute></AuthGuard>}
+        </Route>
+        <Route path="/visibility">
+          {() => <AuthGuard><WorkspaceRoute><VisibilityHub /></WorkspaceRoute></AuthGuard>}
         </Route>
         <Route path="/audit">
           {() => <AuthGuard><WorkspaceRoute><WorkspaceModule name="audit" /></WorkspaceRoute></AuthGuard>}

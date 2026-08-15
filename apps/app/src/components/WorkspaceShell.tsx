@@ -60,6 +60,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { key: 'billing', label: 'Billing & GST', to: '/billing', icon: I.billing, roles: ALL, match: '/billing' },
       { key: 'taxes', label: 'Taxes & Compliance', to: '/taxes', icon: I.compliance, roles: ['super_admin', 'manager'], match: '/taxes' },
       { key: 'analytics', label: 'Flow Analytics', to: '/analytics', icon: I.growth, roles: ['super_admin', 'manager'], match: '/analytics' },
+      { key: 'visibility', label: 'Visibility Hub', to: '/visibility', icon: I.growth, roles: ['super_admin', 'manager'], match: '/visibility' },
       { key: 'control', label: 'Admin Desk', to: '/control', icon: I.admindesk, roles: ['super_admin'], match: '/control' },
       { key: 'audit', label: 'Security Logs', to: '/audit', icon: I.audit, roles: ['super_admin'], match: '/audit' },
     ],
@@ -77,7 +78,7 @@ export function allowedNavFor(me: Me | null): NavSection[] {
       items: s.items.filter((i) => {
         if (!i.roles.includes(role)) return false;
         // Verify custom divisions/modules assigned to standard staff
-        const checkKeys = ['clients', 'kanban', 'billing', 'taxes', 'analytics', 'audit', 'divisions', 'study-abroad', 'visa', 'umrah', 'attestation', 'manpower'];
+        const checkKeys = ['clients', 'kanban', 'billing', 'taxes', 'analytics', 'audit', 'divisions', 'study-abroad', 'visa', 'umrah', 'attestation', 'manpower', 'visibility'];
         if (checkKeys.includes(i.key)) {
           return me.userDivisions.includes(i.key);
         }

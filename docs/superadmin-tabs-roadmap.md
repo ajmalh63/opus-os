@@ -92,6 +92,47 @@ The Admin Console (`/control`) already covers most "hidden" modules. Decisions:
 | T1.6 | **Payroll & Staff Finance** | Monthly payroll from `statutoryRegisters` (PT/PF/ESI), salary TDS, payslips, payout statements | `payroll_runs`, `payslips` (new) | super_admin | payslips visible to staff in Team Hub; TDS feeds Taxes tab |
 | T1.7 | **Knowledge Base & SOPs** | Country guides, embassy requirements, SOPs, counsellor guide (already a doc) | `kb_articles` (new) | all (read), super_admin/manager (write) | KB searchable from every division portal |
 
+### Tier 1.5 — VISIBILITY HUB ✅ BUILT (one module roof: SEO + AEO/GEO + GA4 + GBP + Search Console + Reviews + Attribution + Reports)
+
+**Name rationale:** every sub-module is a "visibility" surface — search visibility (SEO), AI visibility (AEO/GEO),
+local visibility (Google Business Profile), reputation visibility (reviews) — and GA4 + attribution measure how
+that visibility converts into leads. One roof, seven sub-tabs, one nav entry.
+
+**Critical finding:** the public site (`/`, `/study-abroad`, `/visa-services`, `/umrah-travel`, `/attestation`, `/recruitment`)
+is a client-side SPA with **zero SEO infrastructure** — no meta/OG tags, no sitemap, no robots.txt, no JSON-LD,
+no GA. It is currently invisible to Google, Bing and AI crawlers. 2026 research (Google Search Central June 2026,
+OpenLens/SISTRIX, Conductor AEO benchmarks): Google says AEO/GEO is "still SEO" — llms.txt and AI-only schema do
+NOT help Google; what matters is (1) complete Google Business Profile, (2) clean crawlability + semantic HTML,
+(3) schema-marked services, (4) reviews + citations, (5) answer-first quotable content, (6) Search Console
+AI-performance reports. Modules below operationalize exactly that.
+
+| # | Module | What it does | New tables / infra | Roles | Sync note |
+|---|---|---|---|---|---|
+| V1 | **SEO Hub** ✅ | Auto `sitemap.xml` + `robots.txt` (AI crawlers allowed: Google-Extended, OAI-SearchBot, PerplexityBot, ClaudeBot); per-page meta/OG/JSON-LD manager (LocalBusiness, Service, FAQPage, BreadcrumbList); page audit (title/meta/schema validity); keyword tracker | `seo_pages`, `seo_keywords` (new); API-served sitemap/robots | super_admin, manager | sitemap regenerates on route change; audit alerts |
+| V2 | **Google Analytics (GA4)** ✅ | GA4 Measurement ID config; event tracking (lead form, payment, portal); traffic dashboard (sessions, users, channels, top pages, conversions) | `app_settings` (GA id); `webhookEvents` reuse | super_admin, manager | events flow from public site + portal |
+| V3 | **Google Business Profile Manager** ✅ | Profile completeness score (the #1 AI Overviews signal); review monitoring → staff alerts; GBP posts scheduler; insights (calls/directions/views) | `gbp_profile`, `gbp_reviews`, `gbp_posts` (new) | super_admin, manager | new review → staff alert + Inbox thread |
+| V4 | **AEO / Answer Engine Monitor** ✅ | Prompt-based citation checks across ChatGPT, Perplexity, Google AI Overviews, Gemini, Claude, Grok (BYOK Gemini runs the checks); brand mention score per engine; answer-first content library (200–400 word quotable passages, named stats); content gap suggestions | `aeo_checks`, `aeo_mentions`, `aeo_passages` (new) | super_admin, manager | weekly scheduled checks → alerts on drops |
+| V5 | **Search Console** ✅ | Queries/impressions/CTR/position; indexing issues; AI Overviews + AI Mode performance (June 2026 reports) | OAuth + `seo_keywords` reuse | super_admin | keyword data feeds SEO Hub |
+| V6 | **Reviews & Reputation** ✅ | Google + Trustpilot + directory review intake; sentiment; response-draft workflow; NPS tie-in (T2.3) | `reviews` (new) | super_admin, manager, receptionist | review → staff alert; response → client comms |
+| V7 | **Lead Attribution** ✅ | UTM capture on public site → `leadSource` mapping (field exists!); channel ROI (cost per lead per channel); source → client conversion | reuse `clients.leadSource`; `utm_events` (new) | super_admin, manager | attribution visible on every client record |
+
+**2026 evidence notes:** AI Overviews fire on ~22% of US queries (SISTRIX 2026); complete GBP is the single
+highest-leverage local AI signal; Google explicitly disavows llms.txt / AI-only schema / chunking / AI-voice
+rewrites (June 2026 Search Central) — so V1+V3+V5 are the real levers, V4 measures the outcome.
+
+### Tier 3 — 2026 ERP & Automation research additions (Odoo 2026, ERP Research 13-module framework, WhatsApp 2026 guides)
+
+| # | Module | What it does | Why (2026 evidence) |
+|---|---|---|---|
+| E1 | **WhatsApp AI Agent** | Auto-replies, lead qualification, booking/quote flows, order-status answers, human escalation triggers (sentiment/value/confidence) on the official WhatsApp Business API | 200M+ companies on WA API; 98% open rate vs ~5% email; up to 70% support-cost reduction; 44% of SMBs saw sales lift in 3 months — THE channel for Indian B2C |
+| E2 | **Bank Reconciliation** | Upload bank statement → AI-assisted match vs payments (Razorpay + manual), flags anomalies | AI-assisted reconciliation is a 2026 ERP baseline; catches missed payments |
+| E3 | **Expense Management** | Reimbursements, petty cash, travel expenses, approval flow | feeds P&L; 2026 ERP standard (was T2.4 — promoted) |
+| E4 | **Inventory & Occupancy** | Umrah seats/hotel allotments, occupancy heatmap (Makkah/Madinah pressure), document stock | UmrahCore's occupancy heatmap "paid for itself in one season" |
+| E5 | **Attendance & Leave** | Staff check-in/out, leave requests, approval, feeds payroll | HR module baseline; payroll (T1.6) needs it |
+| E6 | **AI Copilot** | Natural-language queries ("show me sales by division this quarter"), auto-summaries, draft emails, anomaly detection on transactions | Odoo 2026 "Ask AI" pattern; 30% faster decisions, up to 40% cost savings |
+| E7 | **Scheduled Reports** ✅ | Report distribution on schedule (PDF/CSV to email), report subscriptions | "Scheduled report distribution" is a 2026 ERP reporting feature |
+| E8 | **Mobile pass** ✅ | Core workflows usable on phones (staff + owner) | mobile access is baseline, not premium, in 2026 |
+
 ### Tier 2 — Advanced (later phases)
 
 | # | Tab | What it does | Notes |
@@ -125,8 +166,11 @@ OpusOS already has the right primitives — every new tab must follow the same c
 |---|---|---|
 | **Phase 0 (done)** | Console audit: added Marketing / Infra / Performance / Boards / Growth Metrics buttons; dropped Team Hub + Agreements/Transit/Integrations tabs | ✅ committed |
 | **Phase 1** | T1.1 Reports Center (reuse analytics + pdf.ts) · T1.2 Universities & Programs · T1.3 Embassy & Slot Tracker | ~1 week |
+| **Phase 1.5** | V1 SEO Hub (foundation — site is currently invisible) · V7 Lead Attribution (reuses leadSource) · V4 AEO Monitor (BYOK Gemini) | ~1 week |
+| **Phase 2** | V2 GA4 · V3 GBP Manager · V5 Search Console · V6 Reviews & Reputation | ~1 week |
 | **Phase 2** | T1.4 Vendor & Supplier Desk · T1.5 WhatsApp Messaging Center · T1.6 Payroll & Staff Finance | ~1 week |
-| **Phase 3** | T1.7 Knowledge Base · T2.1 AI Copilot · T2.2–T2.6 (branch, NPS, expenses, calendar, assets) | ongoing |
+| **Phase 3** | T1.7 Knowledge Base · E1 WhatsApp AI Agent · E6 AI Copilot · E2 Bank Reconciliation | ~2 weeks |
+| **Phase 4** | E3 Expenses · E4 Inventory & Occupancy · E5 Attendance & Leave · E7 Scheduled Reports · E8 Mobile pass · T2.x (branch, NPS, calendar, assets) | ongoing |
 
 **Recommended immediate action:** Phase 0 (promote hidden tabs) — it's free value; the modules are already built and tested.
 Then T1.1 Reports Center, since the analytics backend (revenue/funnels/stale-clients) and PDF export (`lib/pdf.ts`) already exist.

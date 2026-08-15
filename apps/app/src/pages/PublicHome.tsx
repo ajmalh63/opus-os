@@ -1,3 +1,4 @@
+import { useVisibilityTracking } from '../lib/visibilityTracking';
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import gsap from 'gsap';
@@ -48,6 +49,7 @@ const STEPS = [
 ] as const;
 
 export default function PublicHome() {
+  useVisibilityTracking('/');
   const [, setLocation] = useLocation();
   // Partner attribution forwarder: ?ref= must survive to the lead form.
   const homeRef = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('ref') || '' : '';

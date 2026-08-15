@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useRef, useState } from 'react';
+import { useVisibilityTracking } from '../lib/visibilityTracking';
 import { useLocation } from 'wouter';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { track, EVENTS } from '../lib/umami';
@@ -43,6 +44,7 @@ const DIVISION_SLUG_TO_ENUM: Record<string, string> = {
 };
 
 export default function PublicService({ params }: { params: { division: string } }) {
+  useVisibilityTracking(`/${params.division}`);
   const [, setLocation] = useLocation();
   const heroRef = useRef<HTMLElement>(null);
   const [submitted, setSubmitted] = useState<string | null>(null);

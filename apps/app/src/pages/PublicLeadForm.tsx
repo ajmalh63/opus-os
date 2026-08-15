@@ -1,3 +1,4 @@
+import { useVisibilityTracking } from '../lib/visibilityTracking';
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Nav from '../components/Nav';
@@ -26,6 +27,7 @@ interface LeadPayload {
 }
 
 export default function PublicLeadForm() {
+  useVisibilityTracking('/lead-form');
   // Toast State
   const [toast, setToast] = useState<{ show: boolean; msg: string }>({ show: false, msg: '' });
   const showToast = (msg: string) => {

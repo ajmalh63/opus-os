@@ -1275,3 +1275,109 @@ export const visaProducts = sqliteTable('visa_products', {
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });
+
+// ==========================================
+// 62. VISIBILITY HUB — SEO / AEO / GBP / GA / Attribution
+// ==========================================
+export const seoPages = sqliteTable('seo_pages', {
+  route: text('route').primaryKey(), // e.g. /study-abroad
+  title: text('title'),
+  metaDescription: text('meta_description'),
+  ogTitle: text('og_title'),
+  ogImage: text('og_image'),
+  schemaJson: text('schema_json'), // JSON-LD (LocalBusiness/Service/FAQPage)
+  updatedAt: integer('updated_at').notNull()
+});
+
+export const seoKeywords = sqliteTable('seo_keywords', {
+  id: text('id').primaryKey(),
+  keyword: text('keyword').notNull(),
+  targetUrl: text('target_url'),
+  volume: integer('volume'), // manual estimate
+  position: integer('position'), // manual/latest known
+  impressions: integer('impressions'),
+  clicks: integer('clicks'),
+  updatedAt: integer('updated_at').notNull()
+});
+
+export const gbpProfile = sqliteTable('gbp_profile', {
+  id: text('id').primaryKey().default('main'),
+  name: text('name'),
+  category: text('category'),
+  address: text('address'),
+  phone: text('phone'),
+  website: text('website'),
+  hoursJson: text('hours_json'),
+  attributesJson: text('attributes_json'),
+  updatedAt: integer('updated_at').notNull()
+});
+
+export const gbpReviews = sqliteTable('gbp_reviews', {
+  id: text('id').primaryKey(),
+  source: text('source', { enum: ['google', 'trustpilot', 'justdial', 'other'] }).notNull().default('google'),
+  rating: integer('rating').notNull(),
+  author: text('author'),
+  text: text('text'),
+  sentiment: text('sentiment', { enum: ['positive', 'neutral', 'negative'] }),
+  responded: integer('responded', { mode: 'boolean' }).notNull().default(false),
+  responseDraft: text('response_draft'),
+  createdAt: integer('created_at').notNull()
+});
+
+export const gbpPosts = sqliteTable('gbp_posts', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  scheduledAt: integer('scheduled_at'),
+  status: text('status', { enum: ['draft', 'scheduled', 'published'] }).notNull().default('draft'),
+  publishedAt: integer('published_at'),
+  createdAt: integer('created_at').notNull()
+});
+
+export const aeoChecks = sqliteTable('aeo_checks', {
+  id: text('id').primaryKey(),
+  engine: text('engine').notNull(), // chatgpt / perplexity / ai_overviews / gemini / claude / grok
+  query: text('query').notNull(),
+  mentioned: integer('mentioned', { mode: 'boolean' }).notNull().default(false),
+  snippet: text('snippet'),
+  checkedAt: integer('checked_at').notNull()
+});
+
+export const aeoPassages = sqliteTable('aeo_passages', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  targetQuery: text('target_query').notNull(),
+  passage: text('passage').notNull(), // 200-400 word quotable block
+  stats: text('stats'), // named statistics included
+  updatedAt: integer('updated_at').notNull()
+});
+
+export const utmEvents = sqliteTable('utm_events', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id'),
+  source: text('source'),
+  medium: text('medium'),
+  campaign: text('campaign'),
+  landedAt: integer('landed_at').notNull(),
+  convertedAt: integer('converted_at')
+});
+
+export const gaEvents = sqliteTable('ga_events', {
+  id: text('id').primaryKey(),
+  eventName: text('event_name').notNull(),
+  page: text('page'),
+  source: text('source'),
+  medium: text('medium'),
+  createdAt: integer('created_at').notNull()
+});
+
+export const reportSchedules = sqliteTable('report_schedules', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  reportType: text('report_type', { enum: ['revenue', 'growth', 'funnels', 'compliance', 'visibility'] }).notNull(),
+  period: text('period').notNull().default('monthly'),
+  recipients: text('recipients'), // comma-separated emails
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  lastRunAt: integer('last_run_at'),
+  createdAt: integer('created_at').notNull()
+});
