@@ -10,6 +10,9 @@ import PartnerAdminPanel from '../components/PartnerAdminPanel';
 import InfraHealth from '../components/InfraHealth';
 import MarketingTab from '../components/MarketingTab';
 import AlertsVisibility from '../components/AlertsVisibility';
+import GrowthMetricsTab from '../components/GrowthMetricsTab';
+import PerformanceTab from '../components/PerformanceTab';
+import BoardsTab from '../components/BoardsTab';
 
 // Real session-driven auth — the live cookie, never a forged token.
 const AUTH = {
@@ -69,8 +72,8 @@ export default function AdminConsole() {
   const queryClient = useQueryClient();
   const { me } = useSession();
   const isOwner = me?.role === 'super_admin';
-  const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as 'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | null;
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts'>(initialTab && ['directory','onboard','audit','roles','growth','funnel','compliance','campaigns','partners','infra','marketing','alerts'].includes(initialTab) ? initialTab : 'directory');
+  const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as 'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | 'performance' | 'boards' | 'growthmetrics' | null;
+  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | 'performance' | 'boards' | 'growthmetrics'>(initialTab && ['directory','onboard','audit','roles','growth','funnel','compliance','campaigns','partners','infra','marketing','alerts','performance','boards','growthmetrics'].includes(initialTab) ? initialTab : 'directory');
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
@@ -431,6 +434,56 @@ export default function AdminConsole() {
                 Staff Alerts
               </button>
             )}
+            {isOwner && (
+              <button
+                onClick={() => setActiveTab('growthmetrics')}
+                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                  activeTab === 'growthmetrics' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
+                }`}
+              >
+                Growth Metrics
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={() => setActiveTab('marketing')}
+                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                  activeTab === 'marketing' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
+                }`}
+              >
+                Marketing
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={() => setActiveTab('infra')}
+                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                  activeTab === 'infra' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
+                }`}
+              >
+                Infra Health
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={() => setActiveTab('performance')}
+                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                  activeTab === 'performance' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
+                }`}
+              >
+                Performance
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={() => setActiveTab('boards')}
+                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                  activeTab === 'boards' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
+                }`}
+              >
+                Boards
+              </button>
+            )}
           </div>
         </div>
 
@@ -617,9 +670,12 @@ export default function AdminConsole() {
           {activeTab === 'compliance' && <ComplianceTab />}
           {activeTab === 'campaigns' && isOwner && <CampaignsTab />}
           {activeTab === 'partners' && isOwner && <PartnerAdminPanel />}
-          {activeTab === 'infra' && isOwner && <InfraHealth />}
-          {activeTab === 'marketing' && isOwner && <MarketingTab />}
           {activeTab === 'alerts' && isOwner && <AlertsVisibility />}
+          {activeTab === 'growthmetrics' && isOwner && <GrowthMetricsTab />}
+          {activeTab === 'marketing' && isOwner && <MarketingTab />}
+          {activeTab === 'infra' && isOwner && <InfraHealth />}
+          {activeTab === 'performance' && isOwner && <PerformanceTab />}
+          {activeTab === 'boards' && isOwner && <BoardsTab />}
 
           {activeTab === 'audit' && (
             <div className="space-y-6">

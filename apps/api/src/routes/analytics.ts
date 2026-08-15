@@ -173,3 +173,94 @@ analyticsRouter.get('/stale-clients', async (c) => {
     return c.json({ error: 'Stale clients failed', details: e?.message }, 500);
   }
 });
+// GET /api/analytics/growth — business growth metrics (MoM revenue, new clients,
+// conversion, division growth, ARPU, referrals, retention, repeat business).
+analyticsRouter.get('/growth', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime() / 1000;
+  const prevStart = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getTime() / 1000;
+  try {
+    const [allPayments, allClients, allEngs, allComms] = await Promise.all([
+      db.select().from(payments).all(),
+      db.select().from(clients).all(),
+      db.select().from(engagements).all(),
+      db.select().from(communications).all(),
+    ]);
+
+    const collectedIn = (start: number, end: number) =>
+      allPayments.filter(p => p.status === 'paid' && p.createdAt >= start && p.createdAt < end)
+        .reduce((s, p) => s + (p.type === 'refund' ? -p.amount : p.amount), 0);
+
+    const thisMonth = collectedIn(monthStart, now);
+    const lastMonth = collectedIn(prevStart, monthStart);
+    const momGrowthPct = lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : (thisMonth > 0 ? 100 : 0);
+
+    // New clients this month vs last
+    const newThis = allClients.filter(cl => cl.createdAt >= monthStart).length;
+    const newLast = allClients.filter(cl => cl.createdAt >= prevStart && cl.createdAt < monthStart).length;
+
+    // Lead → client conversion: clients that came from a lead source vs total
+    const sourced = allClients.filter(cl => cl.leadSource && cl.leadSource !== 'walk-in');
+    const conversionPct = allClients.length > 0 ? Math.round((sourced.length / allClients.length) * 100) : 0;
+
+    // Division-wise revenue this month + MoM growth
+    const engMap = new Map(allEngs.map(e => [e.id, e]));
+    const divRevenue: Record<string, { thisMonth: number; lastMonth: number; growthPct: number }> = {};
+    for (const p of allPayments) {
+      if (p.status !== 'paid') continue;
+      const eng = engMap.get(p.engagementId);
+      const div = eng?.division || 'other';
+      if (!divRevenue[div]) divRevenue[div] = { thisMonth: 0, lastMonth: 0, growthPct: 0 };
+      const amt = p.type === 'refund' ? -p.amount : p.amount;
+      if (p.createdAt >= monthStart) divRevenue[div].thisMonth += amt;
+      else if (p.createdAt >= prevStart) divRevenue[div].lastMonth += amt;
+    }
+    for (const div of Object.keys(divRevenue)) {
+      const d = divRevenue[div];
+      d.growthPct = d.lastMonth > 0 ? Math.round(((d.thisMonth - d.lastMonth) / d.lastMonth) * 100) : (d.thisMonth > 0 ? 100 : 0);
+    }
+
+    // ARPU: lifetime collected / clients
+    const lifetime = allPayments.filter(p => p.status === 'paid').reduce((s, p) => s + (p.type === 'refund' ? -p.amount : p.amount), 0);
+    const arpu = allClients.length > 0 ? Math.round(lifetime / allClients.length) : 0;
+
+    // Referral share: clients whose lead source is referral/partner
+    const referralClients = allClients.filter(cl => ['referral', 'partner'].includes(cl.leadSource || ''));
+    const referralPct = allClients.length > 0 ? Math.round((referralClients.length / allClients.length) * 100) : 0;
+
+    // Retention: clients with any communication or payment this month
+    const activeIds = new Set<string>();
+    allComms.filter(cm => cm.createdAt >= monthStart).forEach(cm => cm.clientId && activeIds.add(cm.clientId));
+    allPayments.filter(p => p.createdAt >= monthStart).forEach(p => activeIds.add(p.clientId));
+    const retentionPct = allClients.length > 0 ? Math.round((activeIds.size / allClients.length) * 100) : 0;
+
+    // Repeat business: clients with 2+ engagements
+    const engCounts: Record<string, number> = {};
+    allEngs.forEach(e => { engCounts[e.clientId] = (engCounts[e.clientId] || 0) + 1; });
+    const repeatClients = Object.values(engCounts).filter(n => n >= 2).length;
+    const repeatPct = allClients.length > 0 ? Math.round((repeatClients / allClients.length) * 100) : 0;
+
+    // Pipeline value + growth vs last month
+    const activeEngs = allEngs.filter(e => e.status === 'active');
+    const pipelineNow = activeEngs.reduce((s, e) => s + (e.outstandingBalance || 0), 0);
+    const pipelineLast = allEngs.filter(e => e.status === 'active' && e.createdAt < monthStart).reduce((s, e) => s + (e.outstandingBalance || 0), 0);
+    const pipelineGrowthPct = pipelineLast > 0 ? Math.round(((pipelineNow - pipelineLast) / pipelineLast) * 100) : 0;
+
+    return c.json({
+      success: true,
+      revenue: { thisMonth, lastMonth, momGrowthPct },
+      clients: { total: allClients.length, newThis, newLast, newGrowthPct: newLast > 0 ? Math.round(((newThis - newLast) / newLast) * 100) : (newThis > 0 ? 100 : 0) },
+      conversion: { sourced, conversionPct },
+      divisions: divRevenue,
+      arpu,
+      referrals: { count: referralClients.length, referralPct },
+      retention: { active: activeIds.size, retentionPct },
+      repeat: { count: repeatClients, repeatPct },
+      pipeline: { value: pipelineNow, growthPct: pipelineGrowthPct },
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Growth analytics failed', details: e?.message }, 500);
+  }
+});
