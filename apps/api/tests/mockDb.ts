@@ -71,6 +71,8 @@ export class MockD1Database {
     umrah_packages: [] as any[],
     booking_passengers: [] as any[],
     app_settings: [] as any[],
+    candidate_profiles: [] as any[],
+    payout_requests: [] as any[],
     staff_alerts: [] as any[],
     attestation_applications: [] as any[],
     manpower_deployments: [] as any[],
