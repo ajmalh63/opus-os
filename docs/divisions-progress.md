@@ -99,7 +99,13 @@ OpusOS stores **application snapshots** (form modal) per student; Match/Reach/Sa
   (deadline countdown 🔥/⏳, missing-docs bar, match tier, program+intake, offer decision chip),
   **Pipeline Health strip** (total / stuck / decisions pending / deadlines this week),
   filters (country / intake / tier), no-jump status selects.
-- **Tests**: `studyAbroadApplications.test.ts` (10) + `studyAbroadMatch.test.ts` (9) — **398 total green**.
+- **Student portal 🎓 tab (Wave 2)**: 4-step profile wizard (academic/tests/preferences/
+  consent — DPDP university-sharing consent with SHA-256 hash), applications tracker with
+  offer accept/decline, per-application document uploads (R2) that **auto-sync the staff
+  checklist to 'received'** — both sides see changes instantly (single source of truth).
+  Staff desk: completeness % bars + agent-assisted intake wizard for walk-ins.
+- **Tests**: `studyAbroadApplications.test.ts` (10) + `studyAbroadMatch.test.ts` (9) +
+  `studyAbroadPortalProfile.test.ts` (6) — **404 total green**.
 
 ### Notes
 - Legacy `universities` + `study_abroad_shortlists` tables untouched (drop in later cleanup).

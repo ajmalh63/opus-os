@@ -53,6 +53,41 @@ export function profileFromIntakeContext(raw?: string | null): StudentProfile {
   }
 }
 
+// ─── Profile completeness (drives the intake wizard + agent chase list) ───
+// Required for a "workable" profile: academic history, English (score or
+// planned), preferences. Optional extras add depth but don't block.
+export interface Completeness {
+  pct: number; // 0–100
+  missing: string[]; // human-readable gaps
+  done: string[];
+}
+
+const REQUIRED_CHECKS: { key: string; label: string; test: (ctx: any) => boolean }[] = [
+  { key: 'academic', label: 'Academic history (10th/12th or degree)', test: (c) => (c.pct10th && c.pct12th) || c.degreeName },
+  { key: 'cgpa', label: 'CGPA', test: (c) => c.cgpa !== undefined && c.cgpa !== null && c.cgpa !== '' },
+  { key: 'english', label: 'English score or planned test', test: (c) => (c.englishScore !== undefined && c.englishScore !== null && c.englishScore !== '') || c.testPlanned === true },
+  { key: 'country', label: 'Target country', test: (c) => !!c.targetCountry },
+  { key: 'intake', label: 'Target intake', test: (c) => !!c.targetIntake },
+  { key: 'course', label: 'Preferred course', test: (c) => !!c.preferredCourse },
+  { key: 'budget', label: 'Tuition budget', test: (c) => c.tuitionBudget !== undefined && c.tuitionBudget !== null && c.tuitionBudget !== '' },
+  { key: 'consent', label: 'University-sharing consent (DPDP)', test: (c) => c.universitySharingConsent === true },
+];
+
+export function computeProfileCompleteness(raw?: string | null): Completeness {
+  let ctx: any = {};
+  if (raw) {
+    try { ctx = JSON.parse(raw); } catch { /* tolerate */ }
+  }
+  const done: string[] = [];
+  const missing: string[] = [];
+  for (const check of REQUIRED_CHECKS) {
+    if (check.test(ctx)) done.push(check.label);
+    else missing.push(check.label);
+  }
+  const pct = Math.round((done.length / REQUIRED_CHECKS.length) * 100);
+  return { pct, missing, done };
+}
+
 /** Normalize a TOEFL/PTE score to an approximate IELTS band for comparison. */
 export function normalizeEnglish(score: number | null | undefined, test?: string | null): number | null {
   if (score === null || score === undefined || Number.isNaN(score)) return null;

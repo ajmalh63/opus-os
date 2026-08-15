@@ -1,15 +1,17 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { clients, engagements, studyAbroadApplications, tasks } from '../db/schema.js';
+import { clients, engagements, studyAbroadApplications, tasks, documents, consents } from '../db/schema.js';
 import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 import {
   createStudyAbroadApplicationSchema, updateStudyAbroadApplicationSchema,
-  updateApplicationStatusSchema, updateApplicationOfferSchema, updateApplicationDocsSchema
+  updateApplicationStatusSchema, updateApplicationOfferSchema, updateApplicationDocsSchema,
+  studentProfileSchema
 } from '@opusos/shared';
-import { matchApplication, profileFromIntakeContext, normalizeEnglish, type UniRequirements } from '../lib/studyAbroadMatch.js';
+import { matchApplication, profileFromIntakeContext, normalizeEnglish, computeProfileCompleteness, type UniRequirements } from '../lib/studyAbroadMatch.js';
 
 // Study Abroad applications — snapshot model (Phase 4).
 // No university catalog: each application stores the modal snapshot
@@ -338,7 +340,232 @@ studyAbroadAppsRouter.patch('/:id/docs', zValidator('json', updateApplicationDoc
 });
 
 // ─── Client portal (token-auth) ───
-export const portalStudyAbroadRouter = new Hono<{ Bindings: { DB: D1Database } }>();
+export const portalStudyAbroadRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET?: string; BUCKET?: any } }>();
+
+// Sign upload URLs (mirrors portal.ts — HMAC over clientId:filename:expires[:appId:docKey])
+async function signUploadPath(secret: string, clientId: string, filename: string, expires: number, appId?: string, docKey?: string): Promise<string> {
+  if (!secret) throw new Error('BETTER_AUTH_SECRET not configured — cannot sign upload URL');
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const data = `${clientId}:${filename}:${expires}${appId ? `:${appId}:${docKey}` : ''}`;
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+  return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+  return diff === 0;
+}
+
+// GET /api/public/portal/study-abroad/profile?token= — profile + completeness + consent
+portalStudyAbroadRouter.get('/profile', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token is required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    if (!client) return c.json({ error: 'Client not found for token' }, 404);
+    let ctx: any = {};
+    if (client.intakeContext) { try { ctx = JSON.parse(client.intakeContext); } catch { /* tolerate */ } }
+    const consent = await db.select().from(consents).where(and(eq(consents.clientId, token), eq(consents.consentType, 'university-sharing'))).get();
+    return c.json({
+      success: true,
+      profile: ctx,
+      completeness: computeProfileCompleteness(client.intakeContext),
+      universitySharingConsent: consent?.status === 'granted',
+      highestQualification: client.highestQualification,
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Profile fetch failed', details: e?.message }, 500);
+  }
+});
+
+// PUT /api/public/portal/study-abroad/profile?token= — student writes their own data
+portalStudyAbroadRouter.put('/profile', zValidator('json', studentProfileSchema), async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token is required' }, 400);
+  const body = c.req.valid('json');
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    if (!client) return c.json({ error: 'Client not found for token' }, 404);
+
+    let ctx: any = {};
+    if (client.intakeContext) { try { ctx = JSON.parse(client.intakeContext); } catch { /* tolerate */ } }
+    const beforePct = computeProfileCompleteness(client.intakeContext).pct;
+    const merged = { ...ctx, ...body };
+    await db.update(clients).set({ intakeContext: JSON.stringify(merged), updatedAt: now }).where(eq(clients.id, token));
+
+    // DPDP: university-sharing consent recorded with notice hash + IP
+    if (body.universitySharingConsent === true) {
+      const existing = await db.select().from(consents).where(and(eq(consents.clientId, token), eq(consents.consentType, 'university-sharing'))).get();
+      if (!existing) {
+        const notice = 'OpusOS Consent Notice v1.0: University sharing — your academic profile and documents may be shared with universities you apply to, under DPDP-2023 guidelines.';
+        const hash = await sha256Hex(new TextEncoder().encode(notice));
+        await db.insert(consents).values({
+          id: crypto.randomUUID(),
+          clientId: token,
+          consentType: 'university-sharing',
+          status: 'granted',
+          ipAddress: c.req.header('x-real-ip') || c.req.header('cf-connecting-ip') || '127.0.0.1',
+          sha256Hash: hash,
+          grantedAt: now
+        });
+      }
+    }
+
+    const afterPct = computeProfileCompleteness(JSON.stringify(merged)).pct;
+    if (afterPct === 100 && beforePct < 100) {
+      await createStaffAlert(c.env as any, { division: 'study-abroad', type: 'profile_complete', title: 'Student profile complete', body: `${client.name} completed their profile (100%) — ready for counselling & shortlisting.`, clientId: token, payload: { pct: 100 } });
+    }
+    await auditEvent(c as any, { action: 'PROFILE_UPDATED', entityName: 'clients', entityId: token, afterState: { pct: afterPct, fields: Object.keys(body) } }).catch(() => {});
+
+    return c.json({ success: true, profile: merged, completeness: computeProfileCompleteness(JSON.stringify(merged)), message: afterPct === 100 ? 'Profile complete! Our counsellor will reach out with your university shortlist.' : `Profile ${afterPct}% complete.` });
+  } catch (e: any) {
+    return c.json({ error: 'Profile update failed', details: e?.message }, 500);
+  }
+});
+
+// GET /api/public/portal/study-abroad/documents?token= — vault + per-application checklist
+portalStudyAbroadRouter.get('/documents', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token is required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const docs = await db.select().from(documents).where(eq(documents.clientId, token)).all();
+    const apps = await db.select().from(studyAbroadApplications).where(eq(studyAbroadApplications.clientId, token)).all();
+    return c.json({
+      success: true,
+      documents: docs.map(d => ({ id: d.id, fileName: d.fileName, version: d.version, status: d.status, uploadedAt: d.uploadedAt, sizeBytes: d.sizeBytes, mimeType: d.mimeType })),
+      applications: apps.map(a => ({ id: a.id, university: parseSnapshot(a).name, docsChecklist: parseDocs(a) })),
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Documents fetch failed', details: e?.message }, 500);
+  }
+});
+
+// POST /api/public/portal/study-abroad/applications/:id/docs/:key/presigned?token=
+// Filename convention: {key}-{appId}-{original} → upload endpoint syncs the checklist.
+portalStudyAbroadRouter.post('/applications/:id/docs/:key/presigned', async (c) => {
+  const token = c.req.query('token');
+  const appId = c.req.param('id');
+  const key = c.req.param('key');
+  const original = c.req.query('filename');
+  if (!token || !original) return c.json({ error: 'token and filename are required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    if (!client) return c.json({ error: 'Client not found for token' }, 404);
+    const app = await db.select().from(studyAbroadApplications).where(eq(studyAbroadApplications.id, appId)).get();
+    if (!app || app.clientId !== token) return c.json({ error: 'Application not found' }, 404);
+
+    const filename = `${key}-${appId.slice(0, 8)}-${original.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const expires = Math.floor(Date.now() / 1000) + 900;
+    const secret = c.env.BETTER_AUTH_SECRET;
+    if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
+    const signature = await signUploadPath(secret, token, filename, expires, appId, key);
+    const url = `/api/public/portal/study-abroad/documents/upload?token=${token}&filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}&appId=${encodeURIComponent(appId)}&docKey=${encodeURIComponent(key)}`;
+    return c.json({ success: true, url, expires, filename });
+  } catch (e: any) {
+    return c.json({ error: 'Presigned URL generation failed', details: e?.message }, 500);
+  }
+});
+
+// PUT /api/public/portal/study-abroad/documents/upload — hardened upload + checklist sync
+portalStudyAbroadRouter.put('/documents/upload', async (c) => {
+  const token = c.req.query('token');
+  const filename = c.req.query('filename');
+  const expiresStr = c.req.query('expires');
+  const signature = c.req.query('signature');
+  const appId = c.req.query('appId');
+  const docKey = c.req.query('docKey');
+  if (!token || !filename || !expiresStr || !signature) return c.json({ error: 'Missing upload parameters' }, 400);
+  const expires = Number(expiresStr);
+  if (Math.floor(Date.now() / 1000) > expires) return c.json({ error: 'Upload URL has expired' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const secret = c.env.BETTER_AUTH_SECRET;
+  if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
+
+  const expectedSig = await signUploadPath(secret, token, filename, expires, appId || undefined, docKey || undefined);
+  if (!timingSafeEqual(signature, expectedSig)) return c.json({ error: 'Invalid upload signature' }, 400);
+
+  const db = getDb(c.env.DB);
+  const fileBody = await c.req.arrayBuffer();
+  const bytes = new Uint8Array(fileBody);
+  const guard = guardUpload('document', filename, bytes.byteLength, bytes);
+  if (!guard.ok) return c.json({ error: guard.error }, (guard.status || 400) as any);
+  const safeName = guard.safeName!;
+  const mimeType = guard.mimeType!;
+  const digest = await sha256Hex(bytes);
+  const now = Math.floor(Date.now() / 1000);
+
+  try {
+    const r2Key = `${crypto.randomUUID()}-${safeName}`;
+    const bucket = (c.env as any).BUCKET;
+    if (bucket) await bucket.put(r2Key, fileBody, { httpMetadata: { contentType: mimeType } });
+
+    const existingDocs = await db.select().from(documents).where(and(eq(documents.clientId, token), eq(documents.fileName, safeName))).all();
+    let version = 'v1.0';
+    if (existingDocs.length > 0) {
+      const versions = existingDocs.map(d => { const m = d.version.match(/v(\d+)\.(\d+)/); return m ? parseFloat(`${m[1]}.${m[2]}`) : 1.0; });
+      version = `v${(Math.max(...versions) + 1.0).toFixed(1)}`;
+    }
+    await db.insert(documents).values({
+      id: crypto.randomUUID(),
+      clientId: token,
+      fileName: safeName,
+      r2Key,
+      version,
+      status: 'pending',
+      uploadedAt: now,
+      sizeBytes: bytes.byteLength,
+      mimeType,
+      sha256: digest,
+      uploadedBy: 'client'
+    });
+
+    // ── Instant sync: mark the application checklist key 'received' ──
+    // appId + docKey are signed query params (no filename parsing needed).
+    if (appId && docKey) {
+      const app = await db.select().from(studyAbroadApplications).where(eq(studyAbroadApplications.id, appId)).get();
+      if (app && app.clientId === token) {
+        const checklist = parseDocs(app);
+        checklist[docKey] = 'received';
+        await db.update(studyAbroadApplications).set({ docsChecklistJson: JSON.stringify(checklist), updatedAt: now }).where(eq(studyAbroadApplications.id, app.id));
+        await createStaffAlert(c.env as any, { division: 'study-abroad', type: 'doc_uploaded', title: `Document uploaded: ${docKey}`, body: `${safeName} — awaiting verification.`, clientId: token, payload: { applicationId: app.id, docKey } });
+      }
+    }
+
+    // Verification task (mirrors portal.ts)
+    const engs = await db.select().from(engagements).where(eq(engagements.clientId, token)).all();
+    if (engs[0]) {
+      await db.insert(tasks).values({
+        id: crypto.randomUUID(),
+        clientId: token,
+        engagementId: engs[0].id,
+        assigneeId: null,
+        title: `Verify uploaded document: ${safeName}`,
+        description: `Client ${token} uploaded ${safeName} (${version}) via portal. Please review.`,
+        priority: 'medium',
+        status: 'open',
+        cos: 'standard',
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+
+    return c.json({ success: true, fileName: safeName, version, status: 'pending', message: 'Document uploaded. Our team will verify it shortly.' });
+  } catch (e: any) {
+    return c.json({ error: 'Upload failed', details: e?.message }, 500);
+  }
+});
 
 // GET /api/public/portal/study-abroad/applications?token= — student tracker
 portalStudyAbroadRouter.get('/applications', async (c) => {

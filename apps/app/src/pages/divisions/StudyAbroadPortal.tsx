@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StudyAbroadApplicationModal, { ApplicationSnapshot, MatchResult, StudentProfile } from '../../components/StudyAbroadApplicationModal';
+import StudentProfileWizard, { profileCompleteness } from '../../components/StudentProfileWizard';
 
 interface Student {
   id: string;
@@ -106,6 +107,7 @@ export default function StudyAbroadPortal() {
 
   // Phase 4: application modal + pipeline filters
   const [showAppModal, setShowAppModal] = useState(false);
+  const [showIntakeWizard, setShowIntakeWizard] = useState(false);
   const [appFilter, setAppFilter] = useState<{ country: string; intake: string; tier: string }>({ country: '', intake: '', tier: '' });
 
   // Kanban Card quick modal
@@ -386,6 +388,8 @@ export default function StudyAbroadPortal() {
     withdrawn: [],
   };
 
+  const studentCompleteness = (s: Student | undefined) => profileCompleteness(studentProfile(s));
+
   const studentProfile = (s: Student | undefined): StudentProfile => {
     if (!s?.intakeContext) return {};
     try {
@@ -527,6 +531,10 @@ export default function StudyAbroadPortal() {
                     <span>GPA: {getStudentGPA(s)}</span>
                     <span className="text-brand-gold uppercase">{getStudentCountry(s)}</span>
                   </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex-1 h-1 rounded bg-brand-navy/[0.08] overflow-hidden"><div className="h-full bg-brand-gold" style={{ width: `${studentCompleteness(s).pct}%` }} /></div>
+                    <span className={`text-[8px] font-bold ${studentCompleteness(s).pct === 100 ? 'text-emerald-700' : 'text-amber-700'}`}>{studentCompleteness(s).pct}%</span>
+                  </div>
                 </button>
               ))}
               {filteredStudents.length === 0 && (
@@ -562,6 +570,13 @@ export default function StudyAbroadPortal() {
 
                   {/* Top Bar Quick Action Icons */}
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowIntakeWizard(true)}
+                      title="Intake wizard (agent-assisted profile)"
+                      className="p-2 border border-brand-navy/10 rounded-xl hover:border-brand-gold hover:bg-brand-navy/[0.06] transition-all cursor-pointer"
+                    >
+                      📝
+                    </button>
                     <button
                       onClick={() => setActiveTab('courses')}
                       title="Eligibility calculator"
@@ -1277,6 +1292,29 @@ export default function StudyAbroadPortal() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Agent-assisted intake wizard */}
+      {showIntakeWizard && selectedStudent && (
+        <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl my-8">
+            <StudentProfileWizard
+              initial={studentProfile(selectedStudent)}
+              highestQualification={selectedStudent.highestQualification}
+              title={`📝 Intake Wizard — ${selectedStudent.name}`}
+              onClose={() => setShowIntakeWizard(false)}
+              onSave={(profile) => {
+                const existing = selectedStudent.intakeContext ? JSON.parse(selectedStudent.intakeContext) : {};
+                updateStudentMutation.mutate({
+                  id: selectedStudent.id,
+                  payload: { intakeContext: JSON.stringify({ ...existing, ...profile }) }
+                });
+                setShowIntakeWizard(false);
+              }}
+              saving={updateStudentMutation.isPending}
+            />
           </div>
         </div>
       )}

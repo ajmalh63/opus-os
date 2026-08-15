@@ -4,6 +4,7 @@ import { Link } from 'wouter';
 import Logo from '../components/Logo';
 import LiveWallpaper from '../components/LiveWallpaper';
 import UmrahClientSection from '../components/UmrahClientSection';
+import StudyAbroadClientSection from '../components/StudyAbroadClientSection';
 
 interface Engagement {
   id: string;
@@ -263,7 +264,7 @@ export default function ClientPortal() {
 
 // Portal section nav — 'Visa Services' is the primary entry path (Visa Phase-1).
   // 'Journey' keeps the existing token lookup dashboard / My Journey flow intact.
-  const [portalTab, setPortalTab] = useState<'visa' | 'jobs' | 'umrah' | 'journey'>('visa');
+  const [portalTab, setPortalTab] = useState<'visa' | 'jobs' | 'umrah' | 'study' | 'journey'>('visa');
 
   const stages = [
     { key: 'lead', label: 'Consultation', seq: 1, desc: 'Initial counseling and profile assembly.' },
@@ -459,6 +460,15 @@ export default function ClientPortal() {
             </button>
             <button
               type="button"
+              onClick={() => setPortalTab('study')}
+              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+                portalTab === 'study' ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              🎓 Study Abroad
+            </button>
+            <button
+              type="button"
               onClick={() => setPortalTab('journey')}
               className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
                 portalTab === 'journey' ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
@@ -479,6 +489,10 @@ export default function ClientPortal() {
 
         {activeToken && portalTab === 'umrah' && (
                     <UmrahClientSection token={activeToken} />
+        )}
+
+        {activeToken && portalTab === 'study' && (
+          <StudyAbroadClientSection token={activeToken} />
         )}
 
         {/* LOADING & INITIAL STATES */}

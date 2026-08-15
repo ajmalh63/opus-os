@@ -297,6 +297,41 @@ export type UpdateApplicationStatusInput = z.infer<typeof updateApplicationStatu
 export type UpdateApplicationOfferInput = z.infer<typeof updateApplicationOfferSchema>;
 export type UpdateApplicationDocsInput = z.infer<typeof updateApplicationDocsSchema>;
 
+// 8b. Student profile (portal wizard — student-owned data, canonical intakeContext keys).
+// The match engine reads these keys; the wizard writes them. Passport masked at API.
+export const studentProfileSchema = z.object({
+  // Academic history
+  cgpa: z.number().min(0).max(10).optional(),
+  degreeName: z.string().max(120).optional(),
+  graduationYear: z.number().int().min(1990).max(2100).optional(),
+  pct10th: z.number().min(0).max(100).optional(),
+  pct12th: z.number().min(0).max(100).optional(),
+  backlogs: z.number().int().min(0).max(50).optional(),
+  gapYears: z.number().min(0).max(20).optional(),
+  workExperienceYears: z.number().min(0).max(40).optional(),
+  // Test scores (actual or planned)
+  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE']).optional(),
+  englishScore: z.number().min(0).max(9).optional(),
+  greScore: z.number().min(260).max(340).optional(),
+  gmatScore: z.number().min(200).max(800).optional(),
+  testPlanned: z.boolean().default(false),
+  testDate: z.number().int().optional(),
+  // Preferences
+  targetCountry: z.string().max(60).optional(),
+  targetIntake: z.string().max(30).optional(),
+  preferredCourse: z.string().max(120).optional(),
+  tuitionBudget: z.number().min(0).max(100).optional(),
+  scholarshipNeeded: z.boolean().default(false),
+  // Personal / family (Indian market: parents are decision-makers)
+  passportNumber: z.string().min(4).max(20).optional(),
+  parentName: z.string().max(120).optional(),
+  parentPhone: z.string().max(20).optional(),
+  // DPDP: explicit consent to share profile with universities
+  universitySharingConsent: z.boolean().optional()
+});
+
+export type StudentProfileInput = z.infer<typeof studentProfileSchema>;
+
 // 9. Create Transit Shipment Schema
 export const createShipmentSchema = z.object({
   clientId: z.string().min(1, { message: "Client ID is required" }),

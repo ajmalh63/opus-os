@@ -101,6 +101,23 @@ Pure function `matchApplication(profile, uniReq)` → `{ tier: 'match'|'reach'|'
 (AGENTS.md, divisions-progress.md, this file).
 
 ## 9. Shipped (2026-08-15)
+
+### Wave 2 — Student Portal & Intake (2026-08-15)
+- **Student Profile Wizard** (`StudentProfileWizard.tsx`): 4 steps (Academic → Tests →
+  Preferences → Review & Consent), progress bar (starts at 20%), planned-test capture,
+  parent/guardian fields, **DPDP university-sharing consent** (SHA-256 notice hash + IP).
+  Reused in client portal (self-serve) AND staff desk (agent-assisted walk-in).
+- **Portal routes**: GET/PUT `/profile` (zod, completeness %, staff alert on 100%),
+  GET `/documents` (vault + per-app checklist), POST `applications/:id/docs/:key/presigned`
+  + PUT `/documents/upload` (HMAC-signed, OWASP-guarded, R2) — **upload auto-syncs the
+  application checklist to 'received'** (staff sees it instantly; staff 'verified' shows
+  to student instantly — single source of truth).
+- **Client portal 🎓 tab** (`StudyAbroadClientSection.tsx`): My Profile / Applications
+  (tracker + offer accept/decline) / Documents (per-app checklist uploads); 30s refetch
+  for cross-tab sync.
+- **Staff desk**: profile completeness % bar on registry cards + 📝 agent-assisted
+  intake wizard modal.
+- **Tests**: `studyAbroadPortalProfile.test.ts` (6) — **404 total green**.
 - **Schema**: `study_abroad_applications` (migration 0054) — snapshot model, no catalog.
 - **Match lib** `lib/studyAbroadMatch.ts` — reach/match/safe tiers + 0–100 score + TOEFL/PTE→IELTS normalization (9 unit tests).
 - **Backend** `routes/studyAbroadApps.ts` — staff CRUD + no-jump status machine + auto-tasks (14-day decision follow-up, acceptance task, deposit reminder, visa prep) + offer/docs endpoints + pipeline aggregate (stuck >7d, decisions pending, deadlines ≤7d); portal tracker + accept-offer (10 tests).
