@@ -25,6 +25,8 @@ export default function ClientsList() {
   // Search & filter states
   const [search, setSearch] = useState('');
   const [divisionFilter, setDivisionFilter] = useState('all');
+  const [savedViews, setSavedViews] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('clientSavedViews') || '[]'); } catch { return []; } });
+  const [viewName, setViewName] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Modal control states
@@ -202,6 +204,30 @@ export default function ClientsList() {
     } catch { return 0; }
   };
 
+  const saveView = () => {
+    if (!viewName.trim()) return;
+    const view = { name: viewName.trim(), search, divisionFilter, statusFilter };
+    const views = [...savedViews.filter(v => v !== viewName.trim()), viewName.trim()];
+    localStorage.setItem('clientSavedViews', JSON.stringify(views));
+    localStorage.setItem(`clientView_${viewName.trim()}`, JSON.stringify(view));
+    setSavedViews(views);
+    setViewName('');
+  };
+  const loadView = (name: string) => {
+    try {
+      const v = JSON.parse(localStorage.getItem(`clientView_${name}`) || '{}');
+      if (v.search !== undefined) setSearch(v.search);
+      if (v.divisionFilter) setDivisionFilter(v.divisionFilter);
+      if (v.statusFilter) setStatusFilter(v.statusFilter);
+    } catch { /* ignore */ }
+  };
+  const deleteView = (name: string) => {
+    localStorage.removeItem(`clientView_${name}`);
+    const views = savedViews.filter(v => v !== name);
+    localStorage.setItem('clientSavedViews', JSON.stringify(views));
+    setSavedViews(views);
+  };
+
   const exportCsv = () => {
     const rows = filtered.map(c => [c.id, c.name, c.phone, c.email, c.primaryDivision || '', c.status || '', `${completenessOf(c)}%`]);
     const head = ['ID', 'Name', 'Phone', 'Email', 'Division', 'Status', 'Profile %'];
@@ -341,6 +367,21 @@ export default function ClientsList() {
           <option value="active">Active</option>
           <option value="blocked">Blocked</option>
         </select>
+
+        <div className="flex items-center gap-1.5">
+          <input value={viewName} onChange={(e) => setViewName(e.target.value)} placeholder="Save this view as…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-36" />
+          <button onClick={saveView} disabled={!viewName.trim()} className="rounded-lg border border-brand-navy/15 bg-brand-navy/[0.04] px-2.5 py-2 text-[10px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all cursor-pointer disabled:opacity-40">💾 Save</button>
+        </div>
+        {savedViews.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {savedViews.map(v => (
+              <span key={v} className="flex items-center gap-1 rounded-lg bg-brand-gold/10 border border-brand-gold/30 px-2 py-1 text-[10px] font-bold text-brand-navy">
+                <button onClick={() => loadView(v)} className="cursor-pointer">{v}</button>
+                <button onClick={() => deleteView(v)} className="text-brand-navy/40 hover:text-rose-500 cursor-pointer">✕</button>
+              </span>
+            ))}
+          </div>
+        )}
 
         <button
           onClick={exportCsv}

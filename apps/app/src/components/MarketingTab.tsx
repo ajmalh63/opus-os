@@ -257,6 +257,15 @@ const TABS = [
 ] as const;
 
 export default function MarketingTab() {
+  const { data: emailTrack } = useQuery<any>({
+    queryKey: ['emailTracking'],
+    queryFn: async () => {
+      const r = await fetch('/api/marketing/email-tracking', { headers: AUTH });
+      if (!r.ok) throw new Error('email tracking');
+      return r.json();
+    },
+    refetchInterval: 60000
+  });
   const [tab, setTab] = useState<string>('overview');
   const { data: live, isLoading, isError, refetch } = useQuery<LiveData>({
     queryKey: ['integrationsLive'],
@@ -266,6 +275,46 @@ export default function MarketingTab() {
 
   return (
     <div ref={rootRef} className="space-y-6 p-6">
+      {/* Email engagement tracking (Listmonk opens/clicks) */}
+      {emailTrack && (
+        <div className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-bold text-brand-navy text-sm">📧 Email Engagement</h3>
+            <span className="text-[10px] text-brand-navy/40">from Listmonk webhook events</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+            <div className="rounded-lg bg-brand-navy/[0.04] p-2.5"><div className="text-[9px] font-bold uppercase text-brand-navy/40">Events</div><div className="font-extrabold text-brand-navy">{emailTrack.totals.sent}</div></div>
+            <div className="rounded-lg bg-blue-50 p-2.5"><div className="text-[9px] font-bold uppercase text-blue-600">Opens</div><div className="font-extrabold text-blue-700">{emailTrack.totals.opens}</div></div>
+            <div className="rounded-lg bg-emerald-50 p-2.5"><div className="text-[9px] font-bold uppercase text-emerald-600">Clicks</div><div className="font-extrabold text-emerald-700">{emailTrack.totals.clicks}</div></div>
+            <div className="rounded-lg bg-amber-50 p-2.5"><div className="text-[9px] font-bold uppercase text-amber-600">Bounces</div><div className="font-extrabold text-amber-700">{emailTrack.totals.bounces}</div></div>
+            <div className="rounded-lg bg-rose-50 p-2.5"><div className="text-[9px] font-bold uppercase text-rose-600">Unsubs</div><div className="font-extrabold text-rose-700">{emailTrack.totals.unsubs}</div></div>
+          </div>
+          {emailTrack.byEmail.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-brand-navy/[0.08] text-[10px] uppercase font-bold tracking-wider text-brand-gold">
+                  <tr><th className="px-3 py-2">Email</th><th className="px-3 py-2">Opens</th><th className="px-3 py-2">Clicks</th><th className="px-3 py-2">Bounces</th><th className="px-3 py-2">Unsubs</th><th className="px-3 py-2">Last event</th></tr>
+                </thead>
+                <tbody className="divide-y divide-brand-navy/[0.06]">
+                  {emailTrack.byEmail.map((r: any) => (
+                    <tr key={r.email} className="hover:bg-brand-navy/[0.03]">
+                      <td className="px-3 py-2 font-semibold text-brand-navy">{r.email}</td>
+                      <td className="px-3 py-2">{r.opens}</td>
+                      <td className="px-3 py-2">{r.clicks}</td>
+                      <td className="px-3 py-2">{r.bounces}</td>
+                      <td className="px-3 py-2">{r.unsubs}</td>
+                      <td className="px-3 py-2 text-brand-navy/40">{new Date(r.last * 1000).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {emailTrack.byEmail.length === 0 && <p className="text-[10px] text-brand-navy/40 italic">No email events yet — they appear once Listmonk is live and campaigns send.</p>}
+        </div>
+      )}
+
       <div className="reveal">
         <div className="flex items-center gap-2.5">
           <span className="gold-dot" />

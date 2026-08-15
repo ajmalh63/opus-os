@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
+import { webhookEvents } from '../db/schema.js';
 import { clients, engagements, agreements, interactionPoints, scoringEvents, segments, partners, referrals, commissionLedger, experiments, experimentAssignments } from '../db/schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';

@@ -28,8 +28,17 @@ const COLORS = ['#0a2d50', '#d7a019', '#0f766e', '#7c3aed', '#b91c1c'];
 
 export default function FlowAnalytics() {
   const [days, setDays] = useState(30);
-  const [activeSubTab, setActiveSubTab] = useState<'flow' | 'funnel' | 'performance'>('flow');
+  const [activeSubTab, setActiveSubTab] = useState<'flow' | 'funnel' | 'performance' | 'divisions'>('flow');
   const rootRef = useRevealRoot<HTMLDivElement>();
+
+  const { data: funnelsData } = useQuery<any>({
+    queryKey: ['divisionFunnels'],
+    queryFn: async () => {
+      const r = await fetch('/api/analytics/funnels', { headers: AUTH });
+      if (!r.ok) throw new Error('funnels');
+      return r.json();
+    },
+  });
 
   const { data, isLoading, isError } = useQuery<{ analytics: FlowAnalytics }>({
     queryKey: ['flowAnalytics', days],
@@ -64,6 +73,12 @@ export default function FlowAnalytics() {
             Sales Funnel
           </button>
           <button
+            onClick={() => setActiveSubTab('divisions')}
+            className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${activeSubTab === 'divisions' ? 'bg-brand-gold text-brand-navy shadow-xs font-extrabold' : 'text-brand-navy/50 hover:text-brand-navy'}`}
+          >
+            Division Funnels
+          </button>
+          <button
             onClick={() => setActiveSubTab('performance')}
             className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${activeSubTab === 'performance' ? 'bg-brand-gold text-brand-navy shadow-xs font-extrabold' : 'text-brand-navy/50 hover:text-brand-navy'}`}
           >
@@ -72,6 +87,41 @@ export default function FlowAnalytics() {
         </div>
       </header>
 
+      {activeSubTab === 'divisions' && (
+        <div className="space-y-6">
+          {funnelsData?.funnels && Object.entries(funnelsData.funnels).map(([division, f]: [string, any]) => (
+            <div key={division} className="reveal rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display font-bold text-brand-navy text-sm capitalize">{division.replace('-', ' ')}</h3>
+                <span className="text-[10px] text-brand-navy/40 font-bold">Avg {f.avgDays} days to advance</span>
+              </div>
+              <div className="space-y-2">
+                {f.counts.map((c: any) => {
+                  const pct = f.counts[0].count > 0 ? Math.round((c.count / f.counts[0].count) * 100) : 0;
+                  return (
+                    <div key={c.stage} className="flex items-center gap-2">
+                      <span className="w-32 shrink-0 text-[10px] font-bold text-brand-navy/60 capitalize truncate">{c.stage.replace(/_/g, ' ')}</span>
+                      <div className="flex-1 h-5 rounded bg-brand-navy/[0.04] overflow-hidden">
+                        <div className="h-full bg-brand-gold/70 flex items-center justify-end px-1.5" style={{ width: `${Math.max(4, pct)}%` }}>
+                          <span className="text-[8px] font-bold text-brand-navy">{c.count}</span>
+                        </div>
+                      </div>
+                      <span className="w-10 shrink-0 text-right text-[9px] text-brand-navy/40 font-bold">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {f.conversions.map((cv: any, i: number) => (
+                  <span key={i} className="bg-brand-navy/[0.05] text-brand-navy/60 rounded px-1.5 py-0.5 text-[9px] font-bold border border-brand-navy/10">
+                    {cv.from.replace(/_/g, ' ')} → {cv.to.replace(/_/g, ' ')}: <b className="text-brand-gold">{cv.pct}%</b>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {activeSubTab === 'funnel' && <FunnelTab />}
       {activeSubTab === 'performance' && <PerformanceTab />}
 

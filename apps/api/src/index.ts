@@ -258,12 +258,16 @@ export { TeamHubRoom } from './routes/teamHub.js';
 // tests while wrangler sees both fetch and scheduled on the same object.
 import { runHeartbeat } from './cron/heartbeat.js';
 import { performanceRouter } from './routes/performance.js';
+import { analyticsRouter } from './routes/analytics.js';
 import { integrationsRouter } from './routes/integrations.js';
 
 // Staff performance & team operations scorecard (manager+; balanced metric set)
 app.use('/api/performance', rbacMiddleware(['super_admin', 'manager'], true));
 app.use('/api/performance/*', rbacMiddleware(['super_admin', 'manager'], true));
 app.route('/api/performance', performanceRouter);
+app.use('/api/analytics', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/analytics/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.route('/api/analytics', analyticsRouter);
 
 // Tool-First adapters (manager+): unified status + live feed for Listmonk /
 // Mautic / Chatwoot / OpenWA — the OS campaigns dashboard is INFORMATIONAL.

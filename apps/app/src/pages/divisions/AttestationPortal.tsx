@@ -275,6 +275,31 @@ export default function AttestationPortal() {
 
   // ── Applications & Stamping console ──
   const [appFilter, setAppFilter] = useState<{ stage: string; country: string; category: string }>({ stage: '', country: '', category: '' });
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
+
+  // Deal health (rule-based): stuck >7d, missing docs, unpaid
+  const dealHealth = (app: any): { label: string; cls: string }[] => {
+    const issues: { label: string; cls: string }[] = [];
+    if (app.stage && !['delivered', 'rejected'].includes(app.stage) && app.updatedAt && app.updatedAt < Math.floor(Date.now() / 1000) - 7 * 86400) {
+      issues.push({ label: '🪨 Stuck', cls: 'bg-rose-500/15 text-rose-600' });
+    }
+    if (app.documentStatus === 'missing' && ['docs_awaiting', 'in_process'].includes(app.stage)) {
+      issues.push({ label: '📄 No docs', cls: 'bg-amber-500/15 text-amber-700' });
+    }
+    if (app.paymentStatus && app.paymentStatus !== 'paid' && !['quote_requested', 'rejected'].includes(app.stage)) {
+      issues.push({ label: '💰 Unpaid', cls: 'bg-rose-500/15 text-rose-600' });
+    }
+    return issues;
+  };
+
+  const toggleBulk = (id: string) => {
+    setBulkSelected(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  };
+  const bulkConfirmQuotes = () => {
+    if (!confirm(`Confirm ${bulkSelected.size} quote request(s)?`)) return;
+    bulkSelected.forEach(id => updateStageMutation.mutate({ id, stage: 'quote_confirmed' }));
+    setBulkSelected(new Set());
+  };
   const [editingApp, setEditingApp] = useState<any>(null);
   const [showAppEdit, setShowAppEdit] = useState(false);
   const [appEditForm, setAppEditForm] = useState<any>({});
@@ -648,6 +673,15 @@ export default function AttestationPortal() {
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">📤 Export</div><button onClick={exportAppsCsv} className="mt-1 bg-emerald-600 text-white text-[9px] font-bold px-2.5 py-1.5 rounded hover:bg-emerald-700 transition-all cursor-pointer">CSV</button></div>
           </div>
 
+          {/* Bulk actions */}
+          {bulkSelected.size > 0 && (
+            <div className="rounded-xl border border-brand-gold/40 bg-brand-gold/[0.06] p-2.5 flex items-center gap-3">
+              <span className="text-[10px] font-bold text-brand-navy">{bulkSelected.size} selected</span>
+              <button onClick={bulkConfirmQuotes} className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded hover:bg-brand-gold/90 transition-all cursor-pointer">✓ Confirm Quotes</button>
+              <button onClick={() => setBulkSelected(new Set())} className="text-[10px] font-bold text-brand-navy/50 hover:text-brand-navy cursor-pointer">Clear</button>
+            </div>
+          )}
+
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
             <select value={appFilter.stage} onChange={e => setAppFilter(f => ({ ...f, stage: e.target.value }))} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
@@ -706,9 +740,15 @@ export default function AttestationPortal() {
                       return (
                       <div key={app.id} className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-3">
                         <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="font-bold text-brand-navy">{doc.documentName || app.documentType}</div>
-                            <div className="text-[10px] text-brand-navy/40 mt-0.5">{doc.holderName} · {doc.issuingState} → {app.destinationCountry} · {app.route === 'apostille' ? 'Apostille' : 'Embassy'}{app.translationNeeded ? ' · 🈶 Arabic translation' : ''}</div>
+                          <div className="flex items-start gap-2">
+                            <input type="checkbox" checked={bulkSelected.has(app.id)} onChange={() => toggleBulk(app.id)} className="h-4 w-4 accent-brand-gold mt-0.5 cursor-pointer" title="Select for bulk action" />
+                            <div>
+                              <div className="font-bold text-brand-navy">{doc.documentName || app.documentType}</div>
+                              <div className="text-[10px] text-brand-navy/40 mt-0.5">{doc.holderName} · {doc.issuingState} → {app.destinationCountry} · {app.route === 'apostille' ? 'Apostille' : 'Embassy'}{app.translationNeeded ? ' · 🈶 Arabic translation' : ''}</div>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {dealHealth(app).map(h => <span key={h.label} className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${h.cls}`}>{h.label}</span>)}
+                              </div>
+                            </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <span className="text-[10px] text-brand-navy/50 font-mono">#{app.id.slice(0, 8)}</span>

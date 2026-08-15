@@ -44,11 +44,13 @@ export function WorkspaceHeader({
 export function Panel({
   className = '',
   children,
+  onClick,
 }: {
   className?: string;
   children?: ReactNode;
+  onClick?: () => void;
 }) {
-  return <div className={`${WS_CARD} ${className}`}>{children}</div>;
+  return <div className={`${WS_CARD} ${className}`} onClick={onClick}>{children}</div>;
 }
 
 export function PanelHead({
@@ -88,6 +90,7 @@ export function KpiTile({
   valueClass = 'text-brand-navy',
   accent = false,
   countKey,
+  onClick,
 }: {
   label: string;
   caption?: string;
@@ -95,9 +98,10 @@ export function KpiTile({
   valueClass?: string;
   accent?: boolean;
   countKey?: string;
+  onClick?: () => void;
 }) {
   return (
-    <Panel className="reveal-widget relative overflow-hidden p-6">
+    <Panel className={`reveal-widget relative overflow-hidden p-6 ${onClick ? 'cursor-pointer hover:border-brand-gold/50 transition-all' : ''}`} onClick={onClick}>
       {accent && (
         <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-brand-gold/15 blur-2xl" />
       )}

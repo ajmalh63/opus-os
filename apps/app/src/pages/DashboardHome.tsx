@@ -119,6 +119,28 @@ export default function DashboardHome() {
   });
 
   const { toast: taskToast, dismissToast: dismissTaskToast } = useTaskNotifications(20000);
+
+  // Revenue intelligence (manager+)
+  const { data: staleData } = useQuery<any>({
+    queryKey: ['staleClients'],
+    queryFn: async () => {
+      const r = await fetch('/api/analytics/stale-clients');
+      if (!r.ok) return null;
+      return r.json();
+    },
+    refetchInterval: 60000
+  });
+
+  const { data: revenueData } = useQuery<any>({
+    queryKey: ['revenueSummary'],
+    queryFn: async () => {
+      const r = await fetch('/api/analytics/revenue');
+      if (!r.ok) return null;
+      return r.json();
+    },
+    refetchInterval: 60000
+  });
+  const INR = (p: number) => '₹' + (p / 100).toLocaleString('en-IN');
   const [, navigate] = useLocation();
 
   // Where each division's notifications should take you
@@ -298,6 +320,38 @@ export default function DashboardHome() {
         </Panel>
       )}
 
+      {/* Executive revenue summary strip */}
+      {revenueData && (
+        <section className="reveal grid grid-cols-2 md:grid-cols-5 gap-3">
+          <KpiTile label="Collected (month)" caption={`${revenueData.month.pctOfTarget !== null ? `${revenueData.month.pctOfTarget}% of target` : 'no target set'}`} value={INR(revenueData.month.collectedPaise)} valueClass="text-emerald-700" onClick={() => navigate('/billing')} />
+          <KpiTile label="Pipeline value" caption="active engagements" value={INR(revenueData.month.pipelineValue)} onClick={() => navigate('/kanban')} />
+          <KpiTile label="30-day forecast" caption="weighted pipeline" value={INR(revenueData.forecast.d30)} valueClass="text-brand-gold" onClick={() => navigate('/analytics')} />
+          <KpiTile label="AR overdue" caption={`${INR(revenueData.arAging.d90 + revenueData.arAging.overdue)} beyond 90d`} value={INR(revenueData.arAging.d30 + revenueData.arAging.d60 + revenueData.arAging.d90 + revenueData.arAging.overdue)} valueClass="text-rose-600" onClick={() => navigate('/billing')} />
+          <KpiTile label="Cash flow (6mo)" caption="collected vs pending" value={INR(revenueData.cashFlow.reduce((s: number, m: any) => s + m.collected, 0))} onClick={() => navigate('/analytics')} />
+        </section>
+      )}
+
+      {/* Stale clients — follow-up automation */}
+      {staleData && staleData.stale.length > 0 && (
+        <section className="reveal rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-display font-bold text-brand-navy text-sm">🕰️ Clients needing follow-up ({staleData.stale.length})</h3>
+            <span className="text-[10px] text-brand-navy/40">no contact in 3+ days</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {staleData.stale.slice(0, 8).map((c: any) => (
+              <button
+                key={c.engagementId}
+                onClick={() => navigate(`/clients/${c.clientId}`)}
+                className="rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-brand-navy hover:border-brand-gold/60 transition-all cursor-pointer"
+              >
+                {c.clientName} · {c.division.replace('-', ' ')} · <span className="text-amber-700">{c.daysSinceContact}d</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* New-task notification toast */}
       {taskToast && (
         <div className={`fixed top-4 right-4 z-[100] max-w-sm rounded-xl border p-4 shadow-lg animate-in slide-in-from-top-2 duration-300 ${taskToast.urgent ? 'border-rose-300 bg-rose-50' : 'border-brand-gold/40 bg-white'}`}>
@@ -366,14 +420,14 @@ export default function DashboardHome() {
             case 'leads':
               return (
                 <div key={w.key} className={`${spanClass} reveal-widget`}>
-                  <KpiTile accent label="Total Leads" caption="All intake registrations" value={leads} valueClass="text-brand-navy" countKey="kpi-leads" />
+                  <KpiTile accent label="Total Leads" caption="All intake registrations" value={leads} valueClass="text-brand-navy" countKey="kpi-leads" onClick={() => navigate('/clients')} />
                 </div>
               );
 
             case 'customers':
               return (
                 <div key={w.key} className={`${spanClass} reveal-widget`}>
-                  <KpiTile label="Customers" caption="Signed engagements" value={customers} countKey="kpi-customers" />
+                  <KpiTile label="Customers" caption="Signed engagements" value={customers} countKey="kpi-customers" onClick={() => navigate('/clients')} />
                 </div>
               );
 

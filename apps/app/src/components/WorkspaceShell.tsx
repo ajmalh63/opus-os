@@ -91,6 +91,15 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   const { me, refresh } = useSession();
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+
+  // Mobile pass: auto-collapse the sidebar on narrow screens
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    if (mq.matches) setCollapsed(true);
+    const handler = (e: any) => setCollapsed(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const { alerts, newCount, markAllSeen } = useStaffAlerts();

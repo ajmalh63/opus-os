@@ -52,6 +52,18 @@ export default function TransactionsTab() {
   const [linkFilter, setLinkFilter] = useState('');
   const [toast, setToast] = useState('');
 
+  // AR aging strip (manager+)
+  const { data: revenueData } = useQuery<any>({
+    queryKey: ['revenueSummary'],
+    queryFn: async () => {
+      const r = await fetch('/api/analytics/revenue');
+      if (!r.ok) return null;
+      return r.json();
+    },
+    refetchInterval: 60000
+  });
+  const INR = (p: number) => '₹' + (p / 100).toLocaleString('en-IN');
+
   // entry form
   const [clientId, setClientId] = useState('');
   const [engagementId, setEngagementId] = useState('');
@@ -238,6 +250,17 @@ export default function TransactionsTab() {
   return (
     <div ref={rootRef} className="min-h-full space-y-6 text-brand-navy">
       {toast && <div className="fixed right-4 top-4 z-50 rounded-lg border border-brand-navy/10 bg-white px-4 py-2 text-xs font-bold text-brand-navy shadow-xl backdrop-blur-sm">{toast}</div>}
+
+      {revenueData && (
+        <div className="reveal grid grid-cols-2 md:grid-cols-6 gap-3">
+          <div className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">Collected (month)</div><div className="font-display font-extrabold text-emerald-700 text-lg mt-0.5">{INR(revenueData.month.collectedPaise)}</div></div>
+          <div className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">Current AR</div><div className="font-display font-extrabold text-brand-navy text-lg mt-0.5">{INR(revenueData.arAging.current)}</div></div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-amber-700">30–60d</div><div className="font-display font-extrabold text-amber-700 text-lg mt-0.5">{INR(revenueData.arAging.d30 + revenueData.arAging.d60)}</div></div>
+          <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-rose-600">60–90d</div><div className="font-display font-extrabold text-rose-600 text-lg mt-0.5">{INR(revenueData.arAging.d90)}</div></div>
+          <div className="rounded-xl border border-rose-300 bg-rose-100/60 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-rose-700">Overdue &gt;90d</div><div className="font-display font-extrabold text-rose-700 text-lg mt-0.5">{INR(revenueData.arAging.overdue)}</div></div>
+          <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-brand-gold">30-day forecast</div><div className="font-display font-extrabold text-brand-gold text-lg mt-0.5">{INR(revenueData.forecast.d30)}</div></div>
+        </div>
+      )}
 
       <div className="reveal flex flex-wrap items-end justify-between gap-3">
         <div>
