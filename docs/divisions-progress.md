@@ -106,6 +106,11 @@ OpusOS stores **application snapshots** (form modal) per student; Match/Reach/Sa
   Staff desk: completeness % bars + agent-assisted intake wizard for walk-ins.
 - **Tests**: `studyAbroadApplications.test.ts` (10) + `studyAbroadMatch.test.ts` (9) +
   `studyAbroadPortalProfile.test.ts` (6) — **404 total green**.
+- **Wave 3 (2026-08-15)**: per-student mini-pipeline strip in the Applications tab (global
+  kanban tab kept as the operational cockpit — both views, one data source); **Course Search
+  tab removed** (depended on the unmaintained catalog); **multi-country everywhere** —
+  35+ destination countries (Adventus.io benchmark) + free-text datalists in the profile
+  wizard, add-student nationality, and the public lead form (was limited to 4 countries).
 
 ### Notes
 - Legacy `universities` + `study_abroad_shortlists` tables untouched (drop in later cleanup).

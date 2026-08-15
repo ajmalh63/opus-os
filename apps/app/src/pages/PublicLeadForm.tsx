@@ -336,6 +336,23 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                       <option value="uk">United Kingdom (UK)</option>
                       <option value="ca">Canada</option>
                       <option value="au">Australia</option>
+                      <option value="nz">New Zealand</option>
+                      <option value="ie">Ireland</option>
+                      <option value="de">Germany</option>
+                      <option value="fr">France</option>
+                      <option value="nl">Netherlands</option>
+                      <option value="se">Sweden</option>
+                      <option value="ch">Switzerland</option>
+                      <option value="es">Spain</option>
+                      <option value="it">Italy</option>
+                      <option value="sg">Singapore</option>
+                      <option value="my">Malaysia</option>
+                      <option value="ae">Dubai (UAE)</option>
+                      <option value="cn">China</option>
+                      <option value="jp">Japan</option>
+                      <option value="kr">South Korea</option>
+                      <option value="sa">Saudi Arabia</option>
+                      <option value="other">Other / Not sure</option>
                     </select>
                   </div>
                   <div>

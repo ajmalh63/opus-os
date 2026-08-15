@@ -80,7 +80,7 @@ export default function StudyAbroadPortal() {
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<'profiles' | 'kanban'>('profiles');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'shortlist' | 'docs' | 'apps'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'shortlist' | 'docs' | 'apps'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals state
@@ -234,17 +234,6 @@ export default function StudyAbroadPortal() {
       if (!r.ok) throw new Error('Failed to fetch master universities');
       return r.json();
     }
-  });
-
-  const { data: matchingUnisData } = useQuery<{ matches: University[] }>({
-    queryKey: ['uniMatches', selectedStudent?.id],
-    queryFn: async () => {
-      if (!selectedStudent) return { matches: [] };
-      const r = await fetch(`/api/study-abroad/universities/match?clientId=${selectedStudent.id}`);
-      if (!r.ok) throw new Error('Uni matches failed');
-      return r.json();
-    },
-    enabled: !!selectedStudent
   });
 
   const shortlistMutation = useMutation({
@@ -578,13 +567,6 @@ export default function StudyAbroadPortal() {
                       📝
                     </button>
                     <button
-                      onClick={() => setActiveTab('courses')}
-                      title="Eligibility calculator"
-                      className="p-2 border border-brand-navy/10 rounded-xl hover:border-brand-gold hover:bg-brand-navy/[0.06] transition-all cursor-pointer"
-                    >
-                      🎓
-                    </button>
-                    <button
                       onClick={() => {
                         const rows = [
                           ['Field', 'Value'],
@@ -635,7 +617,6 @@ export default function StudyAbroadPortal() {
                 <div className="flex border-b border-brand-navy/[0.08] text-xs font-semibold gap-6 pb-2.5">
                   {[
                     { key: 'overview', label: 'Overview' },
-                    { key: 'courses', label: 'Course Search' },
                     { key: 'shortlist', label: 'Applications' },
                     { key: 'docs', label: 'Documents' },
                     { key: 'apps', label: 'Applications' }
@@ -843,32 +824,6 @@ export default function StudyAbroadPortal() {
                   </>
                   )}
 
-                  {activeTab === 'courses' && (
-                    <div className="space-y-4">
-                      <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Eligible Course Matches</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {matchingUnisData?.matches?.map((uni) => (
-                          <div key={uni.id} className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm flex justify-between items-start hover:border-brand-gold/60 transition-all">
-                            <div className="space-y-1">
-                              <div className="font-bold text-brand-navy">{uni.name}</div>
-                              <div className="text-[10px] text-brand-navy/50">{uni.country} • Intake: {uni.intake}</div>
-                              <div className="text-[10px] font-semibold text-brand-navy/40">Min GPA: {uni.minGpa} • IELTS: {uni.ieltsMin}</div>
-                            </div>
-                            <button
-                              onClick={() => shortlistMutation.mutate({ universityId: uni.id })}
-                              className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
-                            >
-                              Shortlist
-                            </button>
-                          </div>
-                        ))}
-                        {matchingUnisData?.matches?.length === 0 && (
-                          <p className="text-brand-navy/50 italic py-6">No matching universities found for this profile criteria.</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   {activeTab === 'shortlist' && (
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
@@ -879,6 +834,22 @@ export default function StudyAbroadPortal() {
                         >
                           + New Application
                         </button>
+                      </div>
+
+                      {/* Per-student mini-pipeline: this student's applications across the lifecycle */}
+                      <div className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm">
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-2">🎯 {selectedStudent?.name.split(' ')[0]}'s Pipeline</div>
+                        <div className="grid grid-cols-4 md:grid-cols-8 gap-1.5">
+                          {APP_COLUMNS.map(col => {
+                            const count = (appsData?.applications || []).filter(a => a.status === col.key).length;
+                            return (
+                              <div key={col.key} className={`rounded-lg border p-2 text-center ${count > 0 ? 'border-brand-gold/50 bg-brand-gold/[0.06]' : 'border-brand-navy/[0.06] bg-brand-navy/[0.02]'}`}>
+                                <div className={`text-[8px] font-bold uppercase tracking-wider ${count > 0 ? 'text-brand-navy' : 'text-brand-navy/30'}`}>{col.title}</div>
+                                <div className={`font-display font-extrabold text-sm mt-0.5 ${count > 0 ? 'text-brand-gold' : 'text-brand-navy/30'}`}>{count}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {appsData?.applications?.length === 0 && (
@@ -1383,16 +1354,16 @@ export default function StudyAbroadPortal() {
               </div>
               <div className="space-y-1">
                 <label className="font-semibold text-brand-navy/40">Nationality / Region</label>
-                <select
+                <input
+                  list="nationalities"
                   value={newStudentNation}
                   onChange={(e) => setNewStudentNation(e.target.value)}
-                  className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold cursor-pointer [&>option]:bg-white"
-                >
-                  <option value="India 🇮🇳">India 🇮🇳</option>
-                  <option value="UAE 🇦🇪">UAE 🇦🇪</option>
-                  <option value="Oman 🇴🇲">Oman 🇴🇲</option>
-                  <option value="Qatar 🇶🇦">Qatar 🇶🇦</option>
-                </select>
+                  placeholder="Type or pick — India, UAE, Nigeria…"
+                  className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold"
+                />
+                <datalist id="nationalities">
+                  {['India 🇮🇳', 'UAE 🇦🇪', 'Oman 🇴🇲', 'Qatar 🇶🇦', 'Saudi Arabia 🇸🇦', 'Kuwait 🇰🇼', 'Bahrain 🇧🇭', 'Nepal 🇳🇵', 'Bangladesh 🇧🇩', 'Sri Lanka 🇱🇰', 'Pakistan 🇵🇰', 'Nigeria 🇳🇬', 'Kenya 🇰🇪', 'Ethiopia 🇪🇹', 'Egypt 🇪🇬', 'South Africa 🇿🇦', 'Philippines 🇵🇭', 'Indonesia 🇮🇩', 'Vietnam 🇻🇳', 'Malaysia 🇲🇾', 'Singapore 🇸🇬', 'China 🇨🇳', 'Brazil 🇧🇷', 'Mexico 🇲🇽', 'Other 🌍'].map(n => <option key={n} value={n} />)}
+                </datalist>
               </div>
             </div>
 

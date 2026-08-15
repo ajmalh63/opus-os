@@ -32,7 +32,15 @@ export interface StudentProfile {
 
 const STEPS = ['Academic', 'Tests', 'Preferences', 'Review & Consent'];
 const INTAKES = ['Fall 2027', 'Spring 2027', 'Summer 2027', 'Fall 2028', 'Spring 2028'];
-const COUNTRIES = ['Canada', 'USA', 'UK', 'Australia', 'Ireland', 'Germany', 'New Zealand', 'Dubai (UAE)', 'Other'];
+// 35+ destination countries (Adventus.io benchmark: 35+ destinations, 1,500+ institutions).
+// Free-text allowed — this list is suggestions only, never a limit.
+const COUNTRIES = [
+  'USA', 'UK', 'Canada', 'Australia', 'New Zealand', 'Ireland',
+  'Germany', 'France', 'Netherlands', 'Sweden', 'Denmark', 'Finland', 'Norway', 'Switzerland', 'Austria', 'Belgium', 'Spain', 'Italy', 'Portugal', 'Poland', 'Czech Republic', 'Hungary', 'Greece',
+  'Singapore', 'Malaysia', 'Dubai (UAE)', 'China', 'Japan', 'South Korea', 'Hong Kong', 'Taiwan', 'Thailand', 'Vietnam', 'Philippines', 'Indonesia',
+  'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Turkey', 'Russia', 'Ukraine',
+  'South Africa', 'Egypt', 'Morocco', 'Brazil', 'Mexico', 'Argentina', 'Chile', 'Colombia', 'Other'
+];
 
 // Mirror of lib/studyAbroadMatch.ts computeProfileCompleteness (client-side).
 export function profileCompleteness(p: StudentProfile): { pct: number; missing: string[]; done: string[] } {
@@ -155,11 +163,11 @@ export default function StudentProfileWizard({ initial, highestQualification, on
             <p className="text-[10px] text-brand-navy/50">Where and what would you like to study? This drives your university shortlist.</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Target country</label>
-                <select className={inputCls} value={form.targetCountry || ''} onChange={e => set('targetCountry', e.target.value)}>
-                  <option value="">-- Select --</option>
-                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <label className={labelCls}>Target country (any destination)</label>
+                <input list="study-countries" className={inputCls} value={form.targetCountry ?? ''} onChange={e => set('targetCountry', e.target.value)} placeholder="Type or pick — e.g. Canada, Germany, Japan…" />
+                <datalist id="study-countries">
+                  {COUNTRIES.map(c => <option key={c} value={c} />)}
+                </datalist>
               </div>
               <div>
                 <label className={labelCls}>Target intake</label>
