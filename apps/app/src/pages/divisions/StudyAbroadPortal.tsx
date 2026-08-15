@@ -76,6 +76,14 @@ const DOC_LABEL: Record<string, string> = { transcript: 'Transcripts', cv: 'CV/R
 const TIER_STYLE: Record<string, string> = { match: 'bg-emerald-500/15 text-emerald-700', reach: 'bg-amber-500/15 text-amber-700', safe: 'bg-blue-500/15 text-blue-700' };
 const TIER_LABEL: Record<string, string> = { match: '✓ Match', reach: '⚠ Reach', safe: '★ Safe' };
 const INR = (p: number) => '₹' + (p / 100).toLocaleString('en-IN');
+// All destination countries we serve (35+ — Adventus.io benchmark). Free-text via Other.
+const DESTINATION_COUNTRIES = [
+  'USA', 'UK', 'Canada', 'Australia', 'New Zealand', 'Ireland',
+  'Germany', 'France', 'Netherlands', 'Sweden', 'Denmark', 'Finland', 'Norway', 'Switzerland', 'Austria', 'Belgium', 'Spain', 'Italy', 'Portugal', 'Poland', 'Czech Republic', 'Hungary', 'Greece',
+  'Singapore', 'Malaysia', 'Dubai (UAE)', 'China', 'Japan', 'South Korea', 'Hong Kong', 'Taiwan', 'Thailand', 'Vietnam', 'Philippines', 'Indonesia',
+  'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Turkey', 'Russia', 'Ukraine',
+  'South Africa', 'Egypt', 'Morocco', 'Brazil', 'Mexico', 'Argentina', 'Chile', 'Colombia'
+];
 
 export default function StudyAbroadPortal() {
   const queryClient = useQueryClient();
@@ -111,6 +119,7 @@ export default function StudyAbroadPortal() {
   const [showIntakeWizard, setShowIntakeWizard] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [studentNotes, setStudentNotes] = useState('');
+  const [targetCountryOther, setTargetCountryOther] = useState('');
   const [notesDirty, setNotesDirty] = useState(false);
   const [noteChannel, setNoteChannel] = useState<'whatsapp' | 'email' | 'note'>('note');
   const [appFilter, setAppFilter] = useState<{ country: string; intake: string; tier: string }>({ country: '', intake: '', tier: '' });
@@ -893,16 +902,24 @@ export default function StudyAbroadPortal() {
                           <div className="flex justify-between items-center">
                             <span className="font-semibold text-brand-navy/40">Primary Country Interest:</span>
                             {isEditingAcademic ? (
-                              <select
-                                value={targetCountry}
-                                onChange={(e) => setTargetCountry(e.target.value)}
-                                className="border border-brand-navy/10 rounded px-2.5 py-1 bg-white text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
-                              >
-                                <option value="UK">United Kingdom</option>
-                                <option value="US">United States</option>
-                                <option value="Canada">Canada</option>
-                                <option value="Germany">Germany</option>
-                              </select>
+                              <div className="flex items-center gap-1.5">
+                                <select
+                                  value={DESTINATION_COUNTRIES.includes(targetCountry) ? targetCountry : 'Other'}
+                                  onChange={(e) => { setTargetCountry(e.target.value === 'Other' ? (targetCountryOther || 'Other') : e.target.value); }}
+                                  className="border border-brand-navy/10 rounded px-2.5 py-1 bg-white text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
+                                >
+                                  {DESTINATION_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                  <option value="Other">Other…</option>
+                                </select>
+                                {!DESTINATION_COUNTRIES.includes(targetCountry) && (
+                                  <input
+                                    value={targetCountryOther || (targetCountry !== 'Other' ? targetCountry : '')}
+                                    onChange={(e) => { setTargetCountryOther(e.target.value); setTargetCountry(e.target.value || 'Other'); }}
+                                    placeholder="Type country…"
+                                    className="border border-brand-navy/10 rounded px-2 py-1 w-32 bg-white text-brand-navy outline-none focus:border-brand-gold"
+                                  />
+                                )}
+                              </div>
                             ) : (
                               <span className="font-bold text-brand-navy">{targetCountry}</span>
                             )}
