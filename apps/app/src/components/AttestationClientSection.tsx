@@ -38,11 +38,11 @@ export default function AttestationClientSection({ token }: { token: string }) {
   const [issuingState, setIssuingState] = useState('');
   const [translation, setTranslation] = useState(false);
 
-  const { data: matrixData } = useQuery<{ success: boolean; countries: string[]; matrix: { country: string; category: string; route: string; pricePaise: number; timelineDays: number; steps: string[] }[]; disclaimer: string }>({
-    queryKey: ['attestationMatrix', token],
+  const { data: bandsData } = useQuery<{ success: boolean; bands: any; disclaimer: string }>({
+    queryKey: ['attestationBands', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/attestation/rate-matrix?token=${token}`);
-      if (!r.ok) throw new Error('Matrix failed');
+      const r = await fetch(`/api/public/portal/attestation/price-bands?token=${token}`);
+      if (!r.ok) throw new Error('Price bands failed');
       return r.json();
     }
   });
@@ -108,7 +108,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
     onError: (e: any) => alert(e.message)
   });
 
-  const selectedRate = matrixData?.matrix.find(r => r.country === country && r.category === category);
+  const band = bandsData?.bands?.['embassy']?.[category] || bandsData?.bands?.['apostille']?.[category] || null;
   const featuredProducts = (rateData?.rateCards || []).filter(rc => rc.featured || rc.title);
   const inputCls = 'w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2.5 text-xs text-brand-navy outline-none focus:border-brand-gold min-h-[44px]';
   const labelCls = 'font-semibold text-brand-navy/40 text-[10px] mb-1 block';
@@ -130,7 +130,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
       {tab === 'browse' && (
         <div className="space-y-4">
           <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3 text-[10px] text-brand-navy/70">
-            {matrixData?.disclaimer || rateData?.disclaimer || 'Prices shown are indicative ranges and are not guaranteed — final cost may vary based on government fees, document type and processing. Subject to change without notice.'}
+            {bandsData?.disclaimer || rateData?.disclaimer || 'Prices shown are indicative ranges and are not guaranteed — final cost may vary based on government fees, document type and processing. Subject to change without notice.'}
           </div>
 
           {featuredProducts.length > 0 && (
@@ -158,7 +158,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
                 <label className={labelCls}>Destination country</label>
                 <select className={inputCls} value={country} onChange={e => setCountry(e.target.value)}>
                   <option value="">-- Select --</option>
-                  {(matrixData?.countries || rateData?.countries || []).map(c => <option key={c} value={c}>{c}</option>)}
+                  {(rateData?.countries || []).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
@@ -173,12 +173,10 @@ export default function AttestationClientSection({ token }: { token: string }) {
               <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-brand-navy/70 cursor-pointer"><input type="checkbox" checked={translation} onChange={e => setTranslation(e.target.checked)} className="h-4 w-4 accent-brand-gold" /> Arabic certified translation needed</label></div>
             </div>
 
-            {selectedRate && (
+            {band && (
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3 space-y-1.5">
-                <div className="flex justify-between text-[10px] text-brand-navy/70"><span>Indicative price ({ROUTE_LABEL[selectedRate.route]})</span><b>{INR(selectedRate.pricePaise)}</b></div>
-                {translation && <div className="flex justify-between text-[10px] text-brand-navy/70"><span>Arabic translation (est.)</span><b>{INR(Math.round(selectedRate.pricePaise * 0.15))}</b></div>}
-                <div className="flex justify-between text-[10px] text-brand-navy/70"><span>Estimated timeline</span><b>{selectedRate.timelineDays} working days</b></div>
-                <div className="text-[9px] text-brand-navy/40 mt-1">Chain: {selectedRate.steps.join(' → ')}</div>
+                <div className="flex justify-between text-[10px] text-brand-navy/70"><span>Expected range ({ROUTE_LABEL['embassy']})</span><b>{INR(band.min * 100)} – {INR(band.max * 100)}</b></div>
+                <div className="text-[9px] text-brand-navy/40">Indicative only — the exact price is confirmed after we check with our processing partners.</div>
               </div>
             )}
 

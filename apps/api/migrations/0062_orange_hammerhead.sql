@@ -1,0 +1,1 @@
+DROP TABLE `attestation_rate_matrix`;

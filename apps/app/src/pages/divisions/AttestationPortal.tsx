@@ -375,69 +375,41 @@ export default function AttestationPortal() {
     URL.revokeObjectURL(url);
   };
 
-  // ── Rate matrix (source of truth) ──
-  const [ratesView, setRatesView] = useState<'matrix' | 'products'>('matrix');
-  const [matrixData, setMatrixData] = useState<any[]>([]);
-  const [matrixDirty, setMatrixDirty] = useState(false);
+  // ── Price bands (the only pricing the owner maintains) ──
+  const [ratesView, setRatesView] = useState<'bands' | 'products'>('bands');
+  const [bands, setBands] = useState<any>(null);
+  const [bandsDirty, setBandsDirty] = useState(false);
 
-  const { data: matrixQuery } = useQuery<{ success: boolean; matrix: any[] }>({
-    queryKey: ['attestationRateMatrix'],
+  const { data: bandsQuery } = useQuery<{ success: boolean; bands: any }>({
+    queryKey: ['attestationPriceBands'],
     queryFn: async () => {
-      const r = await fetch('/api/attestation/rate-matrix');
-      if (!r.ok) throw new Error('Matrix failed');
+      const r = await fetch('/api/attestation/price-bands');
+      if (!r.ok) throw new Error('Price bands failed');
       return r.json();
     }
   });
 
-  const saveMatrixMutation = useMutation({
-    mutationFn: async (rows: any[]) => {
-      const r = await fetch('/api/attestation/rate-matrix', {
+  const saveBandsMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const r = await fetch('/api/attestation/price-bands', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows })
+        body: JSON.stringify({ bands: payload })
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'Save failed');
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['attestationRateMatrix'] });
-      setMatrixDirty(false);
-      alert(data.message || 'Matrix saved.');
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attestationPriceBands'] });
+      setBandsDirty(false);
+      alert('Price bands saved.');
     },
     onError: (e: any) => alert(e.message)
   });
 
-  const bandMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      const r = await fetch('/api/attestation/rate-matrix/bands', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Band failed');
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['attestationRateMatrix'] });
-      alert(data.message || 'Band applied.');
-    },
-    onError: (e: any) => alert(e.message)
-  });
-
-  const setMatrixCell = (id: string, field: string, value: any) => {
-    setMatrixData(rows => rows.map(r => r.id === id ? { ...r, [field]: value } : r));
-    setMatrixDirty(true);
-  };
-
-  const exportMatrixCsv = () => {
-    const rows = matrixData.map(r => [r.country, r.category, r.route, (r.pricePaise / 100).toFixed(0), r.timelineDays, r.active ? 'yes' : 'no']);
-    const head = ['Country', 'Category', 'Route', 'Price (₹)', 'Timeline (days)', 'Active'];
-    const csv = [head, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `attestation-rate-matrix.csv`; a.click();
-    URL.revokeObjectURL(url);
+  const setBand = (route: string, category: string, field: 'min' | 'max', value: number) => {
+    setBands((b: any) => ({ ...b, [route]: { ...b[route], [category]: { ...b[route][category], [field]: value } } }));
+    setBandsDirty(true);
   };
 
   const STAGE_TRANSITIONS: Record<string, string[]> = {
@@ -570,11 +542,11 @@ export default function AttestationPortal() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-display font-bold text-brand-navy text-sm">Attestation Services</h3>
-              <p className="text-[10px] text-brand-navy/40">Rate matrix powers every quote · Featured products showcase on the client portal.</p>
+              <p className="text-[10px] text-brand-navy/40">Price bands = the indicative ranges clients see · Featured products = optional showcase.</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex gap-1 bg-brand-navy/[0.05] p-1 rounded-xl text-[10px] font-bold text-brand-navy/60">
-                <button onClick={() => setRatesView('matrix')} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${ratesView === 'matrix' ? 'bg-brand-gold text-brand-navy' : 'hover:text-brand-navy'}`}>📊 Rate Matrix</button>
+                <button onClick={() => setRatesView('bands')} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${ratesView === 'bands' ? 'bg-brand-gold text-brand-navy' : 'hover:text-brand-navy'}`}>💰 Price Bands</button>
                 <button onClick={() => setRatesView('products')} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${ratesView === 'products' ? 'bg-brand-gold text-brand-navy' : 'hover:text-brand-navy'}`}>★ Featured Products</button>
               </div>
               {ratesView === 'products' && (
@@ -583,79 +555,38 @@ export default function AttestationPortal() {
             </div>
           </div>
 
-          {ratesView === 'matrix' && (
+          {ratesView === 'bands' && (
             <div className="space-y-3">
-              {/* Price band quick-fill */}
-              <div className="rounded-xl border border-brand-navy/10 bg-white p-3 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold text-brand-navy/50">⚡ Price band quick-fill:</span>
-                <select id="band-route" className="rounded-lg border border-brand-navy/10 bg-white px-2 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
-                  <option value="embassy">Embassy route</option>
-                  <option value="apostille">Apostille route</option>
-                </select>
-                <select id="band-cat" className="rounded-lg border border-brand-navy/10 bg-white px-2 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
-                  <option value="">All categories</option>
-                  <option value="educational">Educational</option>
-                  <option value="personal">Personal</option>
-                  <option value="commercial">Commercial</option>
-                </select>
-                <input id="band-price" type="number" min={0} placeholder="Price ₹" className="rounded-lg border border-brand-navy/10 bg-white px-2 py-1.5 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-24" />
-                <button
-                  onClick={() => {
-                    const route = (document.getElementById('band-route') as HTMLSelectElement).value;
-                    const category = (document.getElementById('band-cat') as HTMLSelectElement).value;
-                    const price = Number((document.getElementById('band-price') as HTMLInputElement).value);
-                    if (!price) { alert('Enter a price first.'); return; }
-                    bandMutation.mutate({ route, category: category || undefined, pricePaise: Math.round(price * 100) });
-                  }}
-                  className="bg-brand-navy text-white text-[9px] font-bold px-3 py-1.5 rounded hover:bg-brand-navy/90 transition-all cursor-pointer"
-                >
-                  Apply to all matching
-                </button>
-                <button onClick={exportMatrixCsv} className="border border-brand-navy/15 text-brand-navy text-[9px] font-bold px-3 py-1.5 rounded hover:border-brand-gold/50 transition-all cursor-pointer ml-auto">Export CSV</button>
+              <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3 text-[10px] text-brand-navy/70">
+                These are the <b>indicative ranges</b> clients see before requesting a quote. The exact price is confirmed after you check with the processing partner — so this is just a reference, set it once and forget it.
               </div>
-
-              {/* Matrix table */}
-              <div className="overflow-x-auto rounded-xl border border-brand-navy/10 bg-white">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-b border-brand-navy/[0.08] bg-brand-navy/[0.04] text-[10px] uppercase font-bold tracking-wider text-brand-gold">
-                    <tr>
-                      <th className="px-3 py-2.5">Country</th>
-                      <th className="px-3 py-2.5">Category</th>
-                      <th className="px-3 py-2.5">Route</th>
-                      <th className="px-3 py-2.5">Price (₹)</th>
-                      <th className="px-3 py-2.5">Days</th>
-                      <th className="px-3 py-2.5">Live</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-brand-navy/[0.06] text-brand-navy/70">
-                    {(matrixData.length ? matrixData : (matrixQuery?.matrix || [])).map(r => (
-                      <tr key={r.id} className="hover:bg-brand-navy/[0.03]">
-                        <td className="px-3 py-2 font-semibold text-brand-navy">{r.country}</td>
-                        <td className="px-3 py-2 capitalize">{r.category}</td>
-                        <td className="px-3 py-2">{r.route === 'apostille' ? 'Apostille' : 'Embassy'}</td>
-                        <td className="px-3 py-2">
-                          <input type="number" min={0} value={r.pricePaise / 100} onChange={(e: any) => setMatrixCell(r.id, 'pricePaise', Math.round(Number(e.target.value) * 100))} className="w-20 rounded border border-brand-navy/10 bg-white px-2 py-1 text-[11px] text-brand-navy outline-none focus:border-brand-gold" />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input type="number" min={1} value={r.timelineDays} onChange={(e: any) => setMatrixCell(r.id, 'timelineDays', Number(e.target.value))} className="w-14 rounded border border-brand-navy/10 bg-white px-2 py-1 text-[11px] text-brand-navy outline-none focus:border-brand-gold" />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input type="checkbox" checked={!!r.active} onChange={(e: any) => setMatrixCell(r.id, 'active', e.target.checked)} className="h-4 w-4 accent-brand-gold cursor-pointer" />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {(matrixQuery?.matrix || []).length === 0 && <p className="text-[10px] text-brand-navy/40 italic p-6 text-center">Matrix empty — run the seed or add rows.</p>}
-              </div>
-              <div className="flex justify-end">
-                <button
-                  onClick={() => saveMatrixMutation.mutate(matrixData.length ? matrixData : (matrixQuery?.matrix || []))}
-                  disabled={!matrixDirty || saveMatrixMutation.isPending}
-                  className={`text-[10px] font-bold px-4 py-2 rounded-lg transition-all cursor-pointer ${matrixDirty ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90' : 'bg-brand-navy/[0.04] text-brand-navy/30 cursor-not-allowed'}`}
-                >
-                  {saveMatrixMutation.isPending ? 'Saving…' : matrixDirty ? 'Save All Changes ✓' : 'Saved'}
-                </button>
+              <div className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-4">
+                {(['embassy', 'apostille'] as const).map(route => (
+                  <div key={route}>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">{route === 'embassy' ? '🏛️ Embassy route (GCC, Malaysia, China…)' : '🕊️ Apostille route (Hague countries)'}</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {(['educational', 'personal', 'commercial'] as const).map(cat => (
+                        <div key={cat} className="rounded-lg border border-brand-navy/10 p-3 space-y-2">
+                          <div className="text-[10px] font-bold text-brand-navy capitalize">{cat}</div>
+                          <div className="flex items-center gap-2">
+                            <input type="number" min={0} value={((bands || bandsQuery?.bands)?.[route]?.[cat]?.min ?? 0)} onChange={(e: any) => setBand(route, cat, 'min', Number(e.target.value))} placeholder="Min ₹" className="w-full rounded border border-brand-navy/10 bg-white px-2 py-1.5 text-[11px] text-brand-navy outline-none focus:border-brand-gold" />
+                            <span className="text-brand-navy/30">–</span>
+                            <input type="number" min={0} value={((bands || bandsQuery?.bands)?.[route]?.[cat]?.max ?? 0)} onChange={(e: any) => setBand(route, cat, 'max', Number(e.target.value))} placeholder="Max ₹" className="w-full rounded border border-brand-navy/10 bg-white px-2 py-1.5 text-[11px] text-brand-navy outline-none focus:border-brand-gold" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => saveBandsMutation.mutate(bands || bandsQuery?.bands)}
+                    disabled={!bandsDirty || saveBandsMutation.isPending}
+                    className={`text-[10px] font-bold px-4 py-2 rounded-lg transition-all cursor-pointer ${bandsDirty ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90' : 'bg-brand-navy/[0.04] text-brand-navy/30 cursor-not-allowed'}`}
+                  >
+                    {saveBandsMutation.isPending ? 'Saving…' : bandsDirty ? 'Save Price Bands ✓' : 'Saved'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
