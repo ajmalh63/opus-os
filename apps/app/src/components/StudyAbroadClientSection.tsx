@@ -56,6 +56,7 @@ const INR = (p: number) => '₹' + (p / 100).toLocaleString('en-IN');
 export default function StudyAbroadClientSection({ token }: { token: string }) {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'profile' | 'applications' | 'documents'>('profile');
+  const [otherLabels, setOtherLabels] = useState<Record<string, string>>({});
 
   const { data: profileData } = useQuery<{ success: boolean; profile: StudentProfile; completeness: { pct: number; missing: string[] }; universitySharingConsent: boolean; highestQualification: string | null }>({
     queryKey: ['studyProfile', token],
@@ -122,9 +123,9 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
     onError: (e: any) => alert(e.message)
   });
 
-  const uploadDoc = async (appId: string, key: string, file: File) => {
+  const uploadDoc = async (appId: string, key: string, file: File, label?: string) => {
     try {
-      const presignedRes = await fetch(`/api/public/portal/study-abroad/applications/${appId}/docs/${key}/presigned?token=${token}&filename=${encodeURIComponent(file.name)}`, { method: 'POST' });
+      const presignedRes = await fetch(`/api/public/portal/study-abroad/applications/${appId}/docs/${key}/presigned?token=${token}&filename=${encodeURIComponent(file.name)}${label ? `&label=${encodeURIComponent(label)}` : ''}`, { method: 'POST' });
       const presigned = await presignedRes.json();
       if (!presignedRes.ok || !presigned.url) throw new Error(presigned.error || 'Presign failed');
 
@@ -288,6 +289,32 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Other documents — student labels what it is; multiple allowed */}
+              <div className="rounded-lg border border-dashed border-brand-navy/15 p-3 space-y-2">
+                <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">📎 Other documents (anything else — label it)</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={otherLabels[app.id] || ''}
+                    onChange={(e) => setOtherLabels(l => ({ ...l, [app.id]: e.target.value }))}
+                    placeholder="What is this document? e.g. Gap year certificate, Work experience letter…"
+                    className="flex-1 rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[10px] text-brand-navy outline-none focus:border-brand-gold"
+                  />
+                  <label className="cursor-pointer shrink-0">
+                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" className="hidden" onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      const label = (otherLabels[app.id] || '').trim();
+                      if (f) {
+                        if (!label) { alert('Please enter what this document is first.'); return; }
+                        uploadDoc(app.id, 'other', f, label);
+                        setOtherLabels(l => ({ ...l, [app.id]: '' }));
+                      }
+                    }} />
+                    <span className="bg-brand-navy text-white text-[9px] font-bold px-3 py-2 rounded hover:bg-brand-navy/90 transition-all">Upload</span>
+                  </label>
+                </div>
+                <div className="text-[9px] text-brand-navy/40">You can upload multiple — each one is tied to your profile and visible to your counsellor.</div>
               </div>
             </div>
           ))}

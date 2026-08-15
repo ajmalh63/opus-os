@@ -401,6 +401,34 @@ clientsRouter.patch('/:id/documents/:docId/status', async (c) => {
   }
 });
 
+// GET /api/clients/:id/documents/:docId/download — staff fetches a client's file
+// (scoped to the clientId in the path — ownership enforced server-side).
+clientsRouter.get('/:id/documents/:docId/download', async (c) => {
+  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
+  const paramResult = clientIdParamSchema.safeParse(c.req.param());
+  if (!paramResult.success) return c.json({ error: "Invalid Client ID format" }, 400);
+  const db = getDb(c.env.DB);
+  try {
+    const doc = await db.select().from(documents).where(eq(documents.id, c.req.param('docId'))).get();
+    if (!doc) return c.json({ error: "Document not found" }, 404);
+    if (doc.clientId !== paramResult.data.id) return c.json({ error: "Document does not belong to this client" }, 403);
+    const bucket = (c.env as any).BUCKET;
+    if (!bucket) return c.json({ error: "Storage not configured" }, 500);
+    const obj = await bucket.get(doc.r2Key);
+    if (!obj) return c.json({ error: "File missing in storage" }, 404);
+    return new Response(obj.body, {
+      headers: {
+        'Content-Type': doc.mimeType || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${doc.fileName.replace(/"/g, '')}"`,
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'private, no-store'
+      }
+    });
+  } catch (error: any) {
+    return c.json({ error: "Download failed", details: error.message }, 500);
+  }
+});
+
 clientsRouter.get('/', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);

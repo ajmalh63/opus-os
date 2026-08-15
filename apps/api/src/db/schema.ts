@@ -98,7 +98,13 @@ export const documents = sqliteTable('documents', {
   sizeBytes: integer('size_bytes'),
   mimeType: text('mime_type'),
   sha256: text('sha256'),
-  uploadedBy: text('uploaded_by')
+  uploadedBy: text('uploaded_by'),
+  // Custom "Other" documents: student-provided label (e.g. "Gap year certificate")
+  docLabel: text('doc_label'),
+  // Prompt-injection / content scan (gold standard: documents are UNTRUSTED data —
+  // AI features must never ingest flagged content; see lib/docScan.ts)
+  scanStatus: text('scan_status', { enum: ['pending', 'clean', 'flagged'] }).notNull().default('pending'),
+  scanNote: text('scan_note')
 });
 
 // ==========================================

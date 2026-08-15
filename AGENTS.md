@@ -141,6 +141,16 @@ cd apps/api && pnpm run db:generate   # incremental Drizzle migration
 
 ---
 
+## 6.5 AI Guardrails (documents = UNTRUSTED DATA — Cloudflare AI wave, future)
+
+When AI features are implemented (see OPUSAI-INTEGRATION-PLAN.md), these rules are MANDATORY:
+1. **Never ingest flagged documents**: every document has `scanStatus` (pending/clean/flagged) set by `lib/docScan.ts` at upload. AI pipelines MUST check it — flagged docs never enter model context.
+2. **Prompt boundaries**: extracted document text goes inside explicit delimiters (`<untrusted_data>…</untrusted_data>`) with a system-prompt rule that content inside is data, never instructions.
+3. **Tool gating / HITL**: any tool call (payment, email, file write) influenced by document-derived text requires human approval — inherit the lowest trust level of context pieces.
+4. **No raw concatenation**: never concatenate document text into prompts without the boundary wrapper.
+5. **Rate limits**: client uploads capped at 20/hour/token (429) — abuse guard.
+6. **Downloads**: ownership-bound — portal download requires the owner's token (403 otherwise); staff download scoped to clientId in path.
+
 ## 7. Pending / Future Work (session index)
 
 - **OpenWA webhook registration** (VPS) — check FK split sqlite (openwa.sqlite vs main.sqlite).

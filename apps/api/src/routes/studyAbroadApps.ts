@@ -7,6 +7,7 @@ import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
 import { sendNotification } from '../infra/notify.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
+import { scanDocumentBytes } from '../lib/docScan.js';
 import {
   createStudyAbroadApplicationSchema, updateStudyAbroadApplicationSchema,
   updateApplicationStatusSchema, updateApplicationOfferSchema, updateApplicationDocsSchema,
@@ -353,11 +354,11 @@ studyAbroadAppsRouter.patch('/:id/docs', zValidator('json', updateApplicationDoc
 export const portalStudyAbroadRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET?: string; BUCKET?: any } }>();
 
 // Sign upload URLs (mirrors portal.ts — HMAC over clientId:filename:expires[:appId:docKey])
-async function signUploadPath(secret: string, clientId: string, filename: string, expires: number, appId?: string, docKey?: string): Promise<string> {
+async function signUploadPath(secret: string, clientId: string, filename: string, expires: number, appId?: string, docKey?: string, label?: string): Promise<string> {
   if (!secret) throw new Error('BETTER_AUTH_SECRET not configured — cannot sign upload URL');
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const data = `${clientId}:${filename}:${expires}${appId ? `:${appId}:${docKey}` : ''}`;
+  const data = `${clientId}:${filename}:${expires}${appId ? `:${appId}:${docKey}` : ''}${label ? `:${label}` : ''}`;
   const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
   return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -459,11 +460,38 @@ portalStudyAbroadRouter.get('/documents', async (c) => {
     const apps = await db.select().from(studyAbroadApplications).where(eq(studyAbroadApplications.clientId, token)).all();
     return c.json({
       success: true,
-      documents: docs.map(d => ({ id: d.id, fileName: d.fileName, version: d.version, status: d.status, uploadedAt: d.uploadedAt, sizeBytes: d.sizeBytes, mimeType: d.mimeType })),
+      documents: docs.map(d => ({ id: d.id, fileName: d.fileName, version: d.version, status: d.status, uploadedAt: d.uploadedAt, sizeBytes: d.sizeBytes, mimeType: d.mimeType, docLabel: d.docLabel, scanStatus: d.scanStatus })),
       applications: apps.map(a => ({ id: a.id, university: parseSnapshot(a).name, docsChecklist: parseDocs(a) })),
     });
   } catch (e: any) {
     return c.json({ error: 'Documents fetch failed', details: e?.message }, 500);
+  }
+});
+
+// GET /api/public/portal/study-abroad/documents/:docId/download?token= — owner-only
+portalStudyAbroadRouter.get('/documents/:docId/download', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token is required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const doc = await db.select().from(documents).where(eq(documents.id, c.req.param('docId'))).get();
+    if (!doc) return c.json({ error: 'Document not found' }, 404);
+    if (doc.clientId !== token) return c.json({ error: 'Not your document' }, 403); // ownership bound
+    const bucket = (c.env as any).BUCKET;
+    if (!bucket) return c.json({ error: 'Storage not configured' }, 500);
+    const obj = await bucket.get(doc.r2Key);
+    if (!obj) return c.json({ error: 'File missing in storage' }, 404);
+    return new Response(obj.body, {
+      headers: {
+        'Content-Type': doc.mimeType || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${doc.fileName.replace(/"/g, '')}"`,
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'private, no-store'
+      }
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Download failed', details: e?.message }, 500);
   }
 });
 
@@ -474,6 +502,7 @@ portalStudyAbroadRouter.post('/applications/:id/docs/:key/presigned', async (c) 
   const appId = c.req.param('id');
   const key = c.req.param('key');
   const original = c.req.query('filename');
+  const label = c.req.query('label'); // custom "Other" document label (optional)
   if (!token || !original) return c.json({ error: 'token and filename are required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -487,8 +516,8 @@ portalStudyAbroadRouter.post('/applications/:id/docs/:key/presigned', async (c) 
     const expires = Math.floor(Date.now() / 1000) + 900;
     const secret = c.env.BETTER_AUTH_SECRET;
     if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
-    const signature = await signUploadPath(secret, token, filename, expires, appId, key);
-    const url = `/api/public/portal/study-abroad/documents/upload?token=${token}&filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}&appId=${encodeURIComponent(appId)}&docKey=${encodeURIComponent(key)}`;
+    const signature = await signUploadPath(secret, token, filename, expires, appId, key, label || undefined);
+    const url = `/api/public/portal/study-abroad/documents/upload?token=${token}&filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}&appId=${encodeURIComponent(appId)}&docKey=${encodeURIComponent(key)}${label ? `&label=${encodeURIComponent(label)}` : ''}`;
     return c.json({ success: true, url, expires, filename });
   } catch (e: any) {
     return c.json({ error: 'Presigned URL generation failed', details: e?.message }, 500);
@@ -503,6 +532,7 @@ portalStudyAbroadRouter.put('/documents/upload', async (c) => {
   const signature = c.req.query('signature');
   const appId = c.req.query('appId');
   const docKey = c.req.query('docKey');
+  const label = c.req.query('label');
   if (!token || !filename || !expiresStr || !signature) return c.json({ error: 'Missing upload parameters' }, 400);
   const expires = Number(expiresStr);
   if (Math.floor(Date.now() / 1000) > expires) return c.json({ error: 'Upload URL has expired' }, 400);
@@ -510,7 +540,7 @@ portalStudyAbroadRouter.put('/documents/upload', async (c) => {
   const secret = c.env.BETTER_AUTH_SECRET;
   if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
 
-  const expectedSig = await signUploadPath(secret, token, filename, expires, appId || undefined, docKey || undefined);
+  const expectedSig = await signUploadPath(secret, token, filename, expires, appId || undefined, docKey || undefined, label || undefined);
   if (!timingSafeEqual(signature, expectedSig)) return c.json({ error: 'Invalid upload signature' }, 400);
 
   const db = getDb(c.env.DB);
@@ -523,6 +553,10 @@ portalStudyAbroadRouter.put('/documents/upload', async (c) => {
   const digest = await sha256Hex(bytes);
   const now = Math.floor(Date.now() / 1000);
 
+  // Rate limit: max 20 client uploads per token per hour (abuse guard).
+  const recentUploads = await db.select().from(documents).where(and(eq(documents.clientId, token), eq(documents.uploadedBy, 'client'), gte(documents.uploadedAt, now - 3600))).all();
+  if (recentUploads.length >= 20) return c.json({ error: 'Upload limit reached — try again later' }, 429);
+
   try {
     const r2Key = `${crypto.randomUUID()}-${safeName}`;
     const bucket = (c.env as any).BUCKET;
@@ -534,6 +568,9 @@ portalStudyAbroadRouter.put('/documents/upload', async (c) => {
       const versions = existingDocs.map(d => { const m = d.version.match(/v(\d+)\.(\d+)/); return m ? parseFloat(`${m[1]}.${m[2]}`) : 1.0; });
       version = `v${(Math.max(...versions) + 1.0).toFixed(1)}`;
     }
+    // Prompt-injection / malicious-content scan (untrusted data principle).
+    const scan = scanDocumentBytes(bytes, mimeType, safeName);
+
     await db.insert(documents).values({
       id: crypto.randomUUID(),
       clientId: token,
@@ -545,8 +582,15 @@ portalStudyAbroadRouter.put('/documents/upload', async (c) => {
       sizeBytes: bytes.byteLength,
       mimeType,
       sha256: digest,
-      uploadedBy: 'client'
+      uploadedBy: 'client',
+      docLabel: label || null,
+      scanStatus: scan.status,
+      scanNote: scan.note
     });
+
+    if (scan.status === 'flagged') {
+      await createStaffAlert(c.env as any, { division: 'study-abroad', type: 'doc_flagged', title: '⚠️ Flagged document uploaded', body: `${safeName}: ${scan.note}`, clientId: token, payload: { scanNote: scan.note } });
+    }
 
     // ── Instant sync: mark the application checklist key 'received' ──
     // appId + docKey are signed query params (no filename parsing needed).
@@ -578,7 +622,7 @@ portalStudyAbroadRouter.put('/documents/upload', async (c) => {
       });
     }
 
-    return c.json({ success: true, fileName: safeName, version, status: 'pending', message: 'Document uploaded. Our team will verify it shortly.' });
+    return c.json({ success: true, fileName: safeName, version, status: 'pending', scanStatus: scan.status, message: scan.status === 'flagged' ? 'Document uploaded. Our team will review it before verification.' : 'Document uploaded. Our team will verify it shortly.' });
   } catch (e: any) {
     return c.json({ error: 'Upload failed', details: e?.message }, 500);
   }

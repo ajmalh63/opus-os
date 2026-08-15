@@ -1154,6 +1154,14 @@ export default function StudyAbroadPortal() {
                               <div className="flex items-center gap-3">
                                 {docObj ? (
                                   <>
+                                    {docObj.scanStatus === 'flagged' && (
+                                      <span title={docObj.scanNote || 'Suspicious content'} className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                                        ⚠️ Flagged — review before use
+                                      </span>
+                                    )}
+                                    {docObj.docLabel && (
+                                      <span className="text-[9px] font-bold text-brand-navy/60 bg-brand-navy/[0.04] px-2 py-0.5 rounded">{docObj.docLabel}</span>
+                                    )}
                                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                                       Uploaded ✓
                                     </span>
