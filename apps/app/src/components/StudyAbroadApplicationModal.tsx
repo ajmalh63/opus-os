@@ -53,12 +53,21 @@ const TIER_STYLE: Record<string, string> = {
 const TIER_LABEL: Record<string, string> = { match: '✓ Match', reach: '⚠ Reach', safe: '★ Safe' };
 
 /** Client-side mirror of lib/studyAbroadMatch.ts (pure, same rules). */
+function normalizeEnglish(score: number | null | undefined, test?: string | null): number | null {
+  if (score === null || score === undefined || Number.isNaN(score)) return null;
+  if (test === 'TOEFL') return Math.round(((score - 31) / 10) * 2) / 2; // TOEFL 100 ≈ IELTS 7.0
+  if (test === 'PTE') return Math.round(((score - 50) / 17 + 6) * 2) / 2; // PTE 50≈6.0 · 65≈7.0 · 84≈8.0
+  return Number(score);
+}
+
 export function computeMatch(profile: StudentProfile, uni: Partial<ApplicationSnapshot>): MatchResult {
   const reasons: string[] = [];
   const misses: string[] = [];
   const cgpa = profile.cgpa ?? null;
   const english = profile.englishScore ?? null;
   const budget = profile.tuitionBudget ?? null;
+  // Normalize the university's requirement to the student's test scale (mirror of the backend).
+  const minEnglish = normalizeEnglish(uni.minEnglishScore, uni.englishTest);
 
   let cgpaOk = true;
   if (uni.minGpa != null && cgpa != null) {
@@ -67,9 +76,9 @@ export function computeMatch(profile: StudentProfile, uni: Partial<ApplicationSn
     if (!cgpaOk) misses.push('CGPA');
   }
   let englishOk = true;
-  if (uni.minEnglishScore != null && english != null) {
-    englishOk = english >= uni.minEnglishScore;
-    reasons.push(englishOk ? `English ${english} ≥ ${uni.minEnglishScore}` : `English ${english} < required ${uni.minEnglishScore}`);
+  if (minEnglish != null && english != null) {
+    englishOk = english >= minEnglish;
+    reasons.push(englishOk ? `English ${english} ≥ ${minEnglish} (${uni.englishTest || 'IELTS'})` : `English ${english} < required ${minEnglish} (${uni.englishTest || 'IELTS'})`);
     if (!englishOk) misses.push('English');
   }
   let budgetOk = true;
@@ -91,10 +100,10 @@ export function computeMatch(profile: StudentProfile, uni: Partial<ApplicationSn
     const h = Math.min(1, Math.max(0, (cgpa - uni.minGpa) / Math.max(0.5, uni.minGpa)));
     score += 40 * (0.5 + 0.5 * h);
   } else if (uni.minGpa != null) score += 20; else score += 40;
-  if (uni.minEnglishScore != null && english != null) {
-    const h = Math.min(1, Math.max(0, (english - uni.minEnglishScore) / Math.max(0.5, uni.minEnglishScore)));
+  if (minEnglish != null && english != null) {
+    const h = Math.min(1, Math.max(0, (english - minEnglish) / Math.max(0.5, minEnglish)));
     score += 30 * (0.5 + 0.5 * h);
-  } else if (uni.minEnglishScore != null) score += 15; else score += 30;
+  } else if (minEnglish != null) score += 15; else score += 30;
   if (budgetNeed != null && budget != null) {
     const h = Math.min(1, Math.max(0, (budget - budgetNeed) / Math.max(1, budgetNeed)));
     score += 30 * (0.5 + 0.5 * h);

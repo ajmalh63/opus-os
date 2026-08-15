@@ -233,6 +233,24 @@ export default function StudyAbroadPortal() {
     onError: (e: any) => alert(e.message)
   });
 
+  const reviewDocMutation = useMutation({
+    mutationFn: async ({ docId, status }: { docId: string; status: 'verified' | 'rejected' }) => {
+      const r = await fetch(`/api/clients/${selectedStudent?.id}/documents/${docId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (!r.ok) throw new Error('Review failed');
+      return r.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientDetails', selectedStudent?.id] });
+      queryClient.invalidateQueries({ queryKey: ['studyApps', selectedStudent?.id] });
+      queryClient.invalidateQueries({ queryKey: ['globalStudyApps'] });
+    },
+    onError: (e: any) => alert(e.message)
+  });
+
   // Client details (document list & profile timeline)
   const { data: clientDetails, refetch: refetchClientDetails } = useQuery<any>({
     queryKey: ['clientDetails', selectedStudent?.id],
@@ -1094,6 +1112,28 @@ export default function StudyAbroadPortal() {
                                     >
                                       Download 📥
                                     </a>
+                                    {docObj.status === 'pending' && (
+                                      <div className="flex gap-1.5">
+                                        <button
+                                          onClick={() => reviewDocMutation.mutate({ docId: docObj.id, status: 'verified' })}
+                                          className="bg-emerald-600 text-white text-[9px] font-bold px-2 py-1 rounded hover:bg-emerald-700 transition-all cursor-pointer"
+                                        >
+                                          ✓ Approve
+                                        </button>
+                                        <button
+                                          onClick={() => { if (confirm('Reject this document?')) reviewDocMutation.mutate({ docId: docObj.id, status: 'rejected' }); }}
+                                          className="border border-rose-300 text-rose-600 text-[9px] font-bold px-2 py-1 rounded hover:bg-rose-50 transition-all cursor-pointer"
+                                        >
+                                          ✕ Reject
+                                        </button>
+                                      </div>
+                                    )}
+                                    {docObj.status === 'verified' && (
+                                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">✓ Verified</span>
+                                    )}
+                                    {docObj.status === 'rejected' && (
+                                      <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">✕ Rejected</span>
+                                    )}
                                   </>
                                 ) : (
                                   <input

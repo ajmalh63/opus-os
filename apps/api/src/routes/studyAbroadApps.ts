@@ -5,6 +5,7 @@ import { clients, engagements, studyAbroadApplications, tasks, documents, consen
 import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { sendNotification } from '../infra/notify.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 import {
   createStudyAbroadApplicationSchema, updateStudyAbroadApplicationSchema,
@@ -111,6 +112,15 @@ async function handleStatusSideEffects(db: any, c: any, row: any, newStatus: str
   if (newStatus === 'offer_letter') {
     const due = row.acceptanceDeadline || now + 14 * 86400;
     await createTask(db, row.clientId, `Acceptance Decision: ${uni.name}`, `Offer received for ${uni.program}. Decide accept/decline by deadline.`, 'high', due);
+    // Transactional email (stub-safe until Listmonk is live in the integration wave)
+    const client = await db.select().from(clients).where(eq(clients.id, row.clientId)).get();
+    if (client?.email) {
+      await sendNotification(c.env as any, db, {
+        channel: 'email', to: client.email,
+        subject: `🎉 Offer Received — ${uni.name}`,
+        body: `Congratulations! You have received an offer from ${uni.name} for ${uni.program} (${uni.intake}). Log in to your portal to accept or decline by ${new Date(due * 1000).toLocaleDateString()}.`
+      }).catch(() => {});
+    }
   }
   if (newStatus === 'deposit_paid') {
     await createTask(db, row.clientId, `Visa Documentation Checklist: ${uni.name}`, `Deposit paid. Compile financial proof, visa files, and checklist items.`, 'high', now + 3 * 86400);
@@ -422,6 +432,13 @@ portalStudyAbroadRouter.put('/profile', zValidator('json', studentProfileSchema)
     const afterPct = computeProfileCompleteness(JSON.stringify(merged)).pct;
     if (afterPct === 100 && beforePct < 100) {
       await createStaffAlert(c.env as any, { division: 'study-abroad', type: 'profile_complete', title: 'Student profile complete', body: `${client.name} completed their profile (100%) — ready for counselling & shortlisting.`, clientId: token, payload: { pct: 100 } });
+      if (client.email) {
+        await sendNotification(c.env as any, db, {
+          channel: 'email', to: client.email,
+          subject: 'Your profile is complete 🎓',
+          body: 'Thank you! Your study-abroad profile is 100% complete. Our counsellor will reach out with your personalised university shortlist shortly.'
+        }).catch(() => {});
+      }
     }
     await auditEvent(c as any, { action: 'PROFILE_UPDATED', entityName: 'clients', entityId: token, afterState: { pct: afterPct, fields: Object.keys(body) } }).catch(() => {});
 

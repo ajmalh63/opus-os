@@ -20,6 +20,35 @@ const STATUS_LABEL: Record<string, string> = {
   shortlisted: 'Shortlisted', docs_ready: 'Docs Ready', submitted: 'Submitted', under_review: 'Under Review',
   offer_letter: 'Offer Letter', deposit_paid: 'Deposit Paid', enrolled: 'Enrolled', rejected: 'Rejected', withdrawn: 'Withdrawn',
 };
+// Milestone path for the visual stepper (rejected/withdrawn render as terminal states)
+const MILESTONES = ['shortlisted', 'docs_ready', 'submitted', 'under_review', 'offer_letter', 'deposit_paid', 'enrolled'];
+const MILESTONE_ICON: Record<string, string> = {
+  shortlisted: '📋', docs_ready: '📄', submitted: '🚀', under_review: '🔍', offer_letter: '📬', deposit_paid: '💰', enrolled: '🎓',
+};
+
+/** Compact milestone stepper — where is this application in the journey? */
+function MilestoneStepper({ status }: { status: string }) {
+  if (status === 'rejected') {
+    return <div className="flex items-center gap-1.5 text-[9px] font-bold text-rose-600"><span>✕</span><span>Application rejected</span></div>;
+  }
+  if (status === 'withdrawn') {
+    return <div className="flex items-center gap-1.5 text-[9px] font-bold text-brand-navy/40"><span>⏸</span><span>Withdrawn</span></div>;
+  }
+  const idx = MILESTONES.indexOf(status);
+  return (
+    <div className="flex items-center gap-0.5">
+      {MILESTONES.map((m, i) => (
+        <div key={m} className="flex items-center gap-0.5 flex-1">
+          <div className={`flex items-center gap-1 min-w-0 ${i <= idx ? 'text-brand-gold' : 'text-brand-navy/25'}`}>
+            <span className="text-[10px]">{MILESTONE_ICON[m]}</span>
+            <span className={`text-[8px] font-bold uppercase tracking-wide truncate ${i === idx ? 'text-brand-navy' : ''}`}>{STATUS_LABEL[m]}</span>
+          </div>
+          {i < MILESTONES.length - 1 && <div className={`flex-1 h-0.5 rounded ${i < idx ? 'bg-brand-gold' : 'bg-brand-navy/[0.08]'}`} />}
+        </div>
+      ))}
+    </div>
+  );
+}
 const DOC_KEYS = ['transcript', 'cv', 'sop', 'lor1', 'lor2', 'ielts', 'passport', 'finance', 'portfolio'];
 const DOC_LABEL: Record<string, string> = { transcript: 'Transcripts', cv: 'CV/Resume', sop: 'SOP', lor1: 'LOR 1', lor2: 'LOR 2', ielts: 'Test scores', passport: 'Passport', finance: 'Financial proof', portfolio: 'Portfolio' };
 const INR = (p: number) => '₹' + (p / 100).toLocaleString('en-IN');
@@ -176,6 +205,9 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${app.status === 'offer_letter' ? 'bg-emerald-500/15 text-emerald-700' : app.status === 'rejected' ? 'bg-rose-500/15 text-rose-600' : app.status === 'enrolled' ? 'bg-emerald-600/15 text-emerald-800' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{STATUS_LABEL[app.status] || app.status}</span>
                 </div>
               </div>
+
+              {/* Milestone stepper — visual journey */}
+              <MilestoneStepper status={app.status} />
 
               {/* Match tier */}
               <div className="text-[9px] text-brand-navy/50 bg-brand-navy/[0.03] rounded-lg px-2.5 py-1.5">

@@ -2,9 +2,10 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
 import { getAuth } from '../auth.js';
-import { clients, engagements, consents, documents, communications, users } from '../db/schema.js';
+import { clients, engagements, consents, documents, communications, users, studyAbroadApplications } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
+import { sendNotification } from '../infra/notify.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 import { ensurePipelineStages } from '../db/seed.js';
 
@@ -342,6 +343,61 @@ clientsRouter.post('/:id/communications', async (c) => {
     return c.json({ success: true, id, message: "Communication logged to timeline." });
   } catch (error: any) {
     return c.json({ error: "Communication log failed", details: error.message }, 500);
+  }
+});
+
+// PATCH /api/clients/:id/documents/:docId/status — staff approves/rejects a
+// client-uploaded document. Syncs the study-abroad application checklist
+// (filename convention {key}-{appId8}-{original} from the portal upload).
+const docStatusSchema = z.object({
+  status: z.enum(['verified', 'rejected']),
+  note: z.string().max(500).optional(),
+});
+clientsRouter.patch('/:id/documents/:docId/status', async (c) => {
+  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
+  const paramResult = clientIdParamSchema.safeParse(c.req.param());
+  if (!paramResult.success) return c.json({ error: "Invalid Client ID format" }, 400);
+  const parsed = docStatusSchema.safeParse(await c.req.json().catch(() => ({})));
+  if (!parsed.success) return c.json({ error: "Invalid payload", details: parsed.error.flatten() }, 400);
+
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const doc = await db.select().from(documents).where(eq(documents.id, c.req.param('docId'))).get();
+    if (!doc) return c.json({ error: "Document not found" }, 404);
+    if (doc.clientId !== paramResult.data.id) return c.json({ error: "Document does not belong to this client" }, 403);
+
+    await db.update(documents).set({ status: parsed.data.status, verifiedAt: parsed.data.status === 'verified' ? now : null }).where(eq(documents.id, doc.id));
+
+    // Sync the study-abroad application checklist: {key}-{appId8}-{original}
+    const match = doc.fileName.match(/^([a-z_]+)-([a-zA-Z0-9]{8})-/);
+    if (match) {
+      const docKey = match[1];
+      const appIdPrefix = match[2];
+      const apps = await db.select().from(studyAbroadApplications).where(eq(studyAbroadApplications.clientId, paramResult.data.id)).all();
+      const app = apps.find(a => a.id.startsWith(appIdPrefix));
+      if (app) {
+        let checklist: Record<string, string> = {};
+        try { checklist = JSON.parse(app.docsChecklistJson || '{}'); } catch { /* tolerate */ }
+        checklist[docKey] = parsed.data.status === 'verified' ? 'verified' : 'missing';
+        await db.update(studyAbroadApplications).set({ docsChecklistJson: JSON.stringify(checklist), updatedAt: now }).where(eq(studyAbroadApplications.id, app.id));
+      }
+    }
+
+    await auditEvent(c as any, { action: 'DOC_REVIEW', entityName: 'documents', entityId: doc.id, afterState: { status: parsed.data.status, note: parsed.data.note } }).catch(() => {});
+    if (parsed.data.status === 'verified') {
+      const client = await db.select().from(clients).where(eq(clients.id, paramResult.data.id)).get();
+      if (client?.email) {
+        await sendNotification(c.env as any, db, {
+          channel: 'email', to: client.email,
+          subject: 'Document verified ✓',
+          body: `Your document "${doc.fileName}" has been verified by our team.`
+        }).catch(() => {});
+      }
+    }
+    return c.json({ success: true, message: `Document ${parsed.data.status}.` });
+  } catch (error: any) {
+    return c.json({ error: "Document review failed", details: error.message }, 500);
   }
 });
 
