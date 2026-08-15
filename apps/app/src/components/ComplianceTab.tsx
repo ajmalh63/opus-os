@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+import { exportGstr1Pdf, exportGstr3bPdf, exportCaPackPdf } from '../lib/pdf';
 
 // A-5: session-driven auth —- read the live better-auth cookie; no forged admin token.
 const AUTH = {
@@ -22,13 +23,13 @@ export default function ComplianceTab() {
   const [gstin, setGstin] = useState('');
   const saveProfile = useMutation({ mutationFn: async () => { const r = await fetch('/api/compliance/business-profile', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ gstin }) }); if (!r.ok) throw new Error('save'); return r.json(); }, onSuccess: (d) => flash(d.message || 'Saved'), onError: (e: any) => flash(e.message, false) });
 
-  const dl = (name: string, data: any) => { const b = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u); };
+
 
   const { data: g1, refetch: r1, isFetching: f1 } = useQuery<any>({ queryKey: ['gstr1', period], queryFn: async () => (await fetch(`/api/compliance/gstr1?period=${period}`, { headers: AUTH })).json(), enabled: false });
   const { data: g3, refetch: r3, isFetching: f3 } = useQuery<any>({ queryKey: ['gstr3b', period], queryFn: async () => (await fetch(`/api/compliance/gstr3b?period=${period}`, { headers: AUTH })).json(), enabled: false });
 
-  const runG1 = async () => { const d = await r1(); if (d.data?.stats) { dl(`GSTR1-${period}.json`, d.data.data); flash(`GSTR-1 exported: ${d.data.stats.b2bInvoices} B2B, ${d.data.stats.b2cLines} B2C`); } else flash('GSTR-1 failed', false); };
-  const runG3 = async () => { const d = await r3(); if (d.data?.computed) { dl(`GSTR3B-${period}.json`, d.data.data); flash(`GSTR-3B: out ${rs(d.data.computed.outputTax)} · net ${rs(d.data.computed.netPayable)}`); } else flash('GSTR-3B failed', false); };
+  const runG1 = async () => { const d = await r1(); if (d.data?.stats) { exportGstr1Pdf(d.data.data, d.data.stats, period); flash(`GSTR-1 PDF exported: ${d.data.stats.b2bInvoices} B2B, ${d.data.stats.b2cLines} B2C`); } else flash('GSTR-1 failed', false); };
+  const runG3 = async () => { const d = await r3(); if (d.data?.computed) { exportGstr3bPdf(d.data.data, d.data.computed, period); flash(`GSTR-3B PDF: out ${rs(d.data.computed.outputTax)} · net ${rs(d.data.computed.netPayable)}`); } else flash('GSTR-3B failed', false); };
 
 const [rec, setRec] = useState<any>(null);
   const on2b = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,8 +93,8 @@ const [rec, setRec] = useState<any>(null);
       const r = await fetch(`/api/compliance/export?period=${period}`, { headers: AUTH });
       const d = await r.json();
       if (!r.ok || !d.success) throw new Error(d?.error || 'Export failed');
-      dl(`CA-PACK-${period}.json`, d.pack);
-      flash(`CA pack exported (${period}) — logged to audit.`);
+      exportCaPackPdf(d.pack, period);
+      flash(`CA pack PDF exported (${period}) — logged to audit.`);
     } catch (er: any) { flash(er.message, false); }
     setIsExporting(false);
   };
@@ -141,8 +142,8 @@ const [rec, setRec] = useState<any>(null);
             <span className="gold-dot" />
             <h3 className="font-display font-bold text-sm text-brand-navy">GSTR-1 Export</h3>
           </div>
-          <p className="text-[10px] text-brand-navy/40">GSTN offline-tool JSON v1.7 —- B2B, B2C, HSN, credit notes, doc summary.</p>
-          <button onClick={runG1} disabled={f1} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-5 py-2.5 rounded text-xs font-bold disabled:opacity-40">{f1 ? 'Building...' : 'Export GSTR-1 JSON'}</button>
+          <p className="text-[10px] text-brand-navy/40">Printable PDF — B2B, B2C, HSN, credit notes, doc summary (GSTN v1.7 schema).</p>
+          <button onClick={runG1} disabled={f1} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-5 py-2.5 rounded text-xs font-bold disabled:opacity-40">{f1 ? 'Building...' : 'Export GSTR-1 PDF'}</button>
           {g1?.stats && <div className="text-[10px] text-emerald-700">{g1.stats.b2bInvoices} B2B · {g1.stats.b2cLines} B2C · {g1.stats.hsnLines} HSN</div>}
         </div>
         <div className="rounded-2xl border border-brand-navy/10 bg-white p-5 space-y-3">
@@ -151,7 +152,7 @@ const [rec, setRec] = useState<any>(null);
             <h3 className="font-display font-bold text-sm text-brand-navy">GSTR-3B Computation</h3>
           </div>
           <p className="text-[10px] text-brand-navy/40">Output tax, ITC from purchases, net payable —- from D1.</p>
-          <button onClick={runG3} disabled={f3} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-5 py-2.5 rounded text-xs font-bold disabled:opacity-40">{f3 ? 'Computing...' : 'Export GSTR-3B JSON'}</button>
+          <button onClick={runG3} disabled={f3} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-5 py-2.5 rounded text-xs font-bold disabled:opacity-40">{f3 ? 'Computing...' : 'Export GSTR-3B PDF'}</button>
           {g3?.computed && (
             <div className="grid grid-cols-3 gap-2 text-[10px]">
               <div className="bg-brand-navy/[0.06] rounded p-2"><span className="text-brand-navy/40 block">Output</span><b className="text-brand-navy">{rs(g3.computed.outputTax)}</b></div>
@@ -320,12 +321,12 @@ const [rec, setRec] = useState<any>(null);
               {isFetchingCal ? 'Loading…' : 'Refresh Calendar'}
             </button>
             <button onClick={runExport} disabled={isExporting} className="border border-brand-navy/15 bg-brand-navy/[0.04] text-brand-navy hover:border-brand-gold/50 px-4 py-2 rounded text-xs font-bold disabled:opacity-50 transition">
-              {isExporting ? 'Packing…' : `Export CA Pack (${period})`}
+              {isExporting ? 'Packing…' : `Export CA Pack PDF (${period})`}
             </button>
           </div>
           <div className="rounded-xl bg-white border border-brand-navy/10 p-3 text-[10px] text-brand-navy/40 leading-relaxed">
-            The pack is a single JSON envelope covering:<br/>
-            <code className="font-mono">gst.outwardPayments · gst.purchaseInvoices · statutory · tds · tcs · businessProfile</code><br/>
+            The pack is a single PDF covering:<br/>
+            <code className="font-mono">business profile · outward payments · purchase invoices · statutory registers · TDS · TCS</code><br/>
             Hand it to the CA; each export is written to the audit trail.
           </div>
         </div>
