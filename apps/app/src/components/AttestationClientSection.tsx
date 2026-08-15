@@ -22,7 +22,7 @@ interface AttestationApp {
 }
 
 const STAGE_LABEL: Record<string, string> = {
-  quote: 'Quote', docs_awaiting: 'Awaiting Your Documents', in_process: 'In Process', completed: 'Completed', dispatched: 'Dispatched', delivered: 'Delivered', rejected: 'Rejected',
+  quote_requested: 'Quote Requested', quote_confirmed: 'Quote Confirmed', docs_awaiting: 'Awaiting Your Documents', in_process: 'In Process', completed: 'Completed', dispatched: 'Dispatched', delivered: 'Delivered', rejected: 'Rejected',
 };
 const CATEGORY_LABEL: Record<string, string> = { educational: 'Educational', personal: 'Personal', commercial: 'Commercial' };
 const ROUTE_LABEL: Record<string, string> = { apostille: 'Apostille', embassy: 'Embassy Attestation' };
@@ -182,14 +182,17 @@ export default function AttestationClientSection({ token }: { token: string }) {
               </div>
             )}
 
+            <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-2.5 text-[9px] text-amber-800">
+              The range shown is <b>indicative only</b> — it is not compulsory to stay within this bracket and the final price <b>may go up</b> based on government fees and document specifics. We confirm the exact price before you send anything.
+            </div>
             <button
               onClick={() => createMutation.mutate()}
               disabled={!country || !docName.trim() || !holderName.trim() || !issuingState.trim() || createMutation.isPending}
               className="w-full bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-2.5 rounded-lg font-bold cursor-pointer transition-all disabled:opacity-50"
             >
-              {createMutation.isPending ? 'Creating…' : 'Request Quote'}
+              {createMutation.isPending ? 'Submitting…' : 'Get a Quote'}
             </button>
-            <div className="text-[9px] text-brand-navy/40">One application per document. After the quote, you'll send the original document to our office — we handle the entire process.</div>
+            <div className="text-[9px] text-brand-navy/40">One application per document. We'll confirm the exact price with you — then you send the original to our office and we handle the rest.</div>
           </div>
         </div>
       )}
@@ -209,7 +212,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
                   <div className="font-bold text-brand-navy">{app.document.documentName}</div>
                   <div className="text-[10px] text-brand-navy/40 mt-0.5">{app.document.holderName} · {app.document.issuingState} → {app.destinationCountry} · {ROUTE_LABEL[app.route]}</div>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase shrink-0 ${app.stage === 'delivered' ? 'bg-emerald-600/15 text-emerald-800' : app.stage === 'rejected' ? 'bg-rose-500/15 text-rose-600' : app.stage === 'in_process' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{STAGE_LABEL[app.stage]}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase shrink-0 ${app.stage === 'delivered' ? 'bg-emerald-600/15 text-emerald-800' : app.stage === 'rejected' ? 'bg-rose-500/15 text-rose-600' : app.stage === 'in_process' ? 'bg-blue-500/15 text-blue-700' : app.stage === 'quote_requested' ? 'bg-amber-500/15 text-amber-700' : app.stage === 'quote_confirmed' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{STAGE_LABEL[app.stage]}</span>
               </div>
 
               {/* Chain timeline */}
@@ -231,8 +234,19 @@ export default function AttestationClientSection({ token }: { token: string }) {
                 <b>{INR(app.fees.totalQuotePaise)}</b>
               </div>
 
+              {app.stage === 'quote_requested' && (
+                <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-3 text-[10px] text-amber-800">
+                  <b>Quote requested.</b> Our team is confirming the exact price with our processing partners — we'll update you shortly. The range shown was indicative and may vary.
+                </div>
+              )}
+              {app.stage === 'quote_confirmed' && (
+                <div className="rounded-lg bg-emerald-500/10 border border-emerald-200 p-3 text-[10px] text-emerald-800">
+                  <b>✓ Quote confirmed: {INR(app.fees.totalQuotePaise)}</b> — book the pickup below to send your documents.
+                </div>
+              )}
+
               {/* Pickup — client sends docs to US */}
-              {app.stage === 'quote' && (
+              {(app.stage === 'quote' || app.stage === 'quote_confirmed') && (
                 <div className="rounded-lg border border-brand-gold/30 bg-brand-gold/[0.05] p-3 space-y-2">
                   <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/50">📦 Send your documents to us</div>
                   <PickupForm onBook={(address, awb) => pickupMutation.mutate({ id: app.id, address, awb })} busy={pickupMutation.isPending} />

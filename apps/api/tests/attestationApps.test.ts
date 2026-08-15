@@ -71,14 +71,14 @@ describe('Attestation Division (gold-standard)', () => {
 
     const row = mockD1.tables.attestation_applications.find((a: any) => a.id === data.id);
     expect(row).toBeTruthy();
-    expect(row.stage).toBe('quote');
+    expect(row.stage).toBe('quote_requested');
     expect(row.route).toBe('embassy');
     const chain = JSON.parse(row.chain_json);
     expect(chain.length).toBe(4);
     expect(chain[0].label).toContain('HRD');
   });
 
-  it('PATCH stage enforces no-jump (quote → in_process = 409)', async () => {
+  it('PATCH stage enforces no-jump (quote_requested → in_process = 409)', async () => {
     const row = mockD1.tables.attestation_applications[0];
     const res = await app.request(`/api/attestation/applications/${row.id}/stage`, {
       method: 'PATCH',
@@ -89,18 +89,23 @@ describe('Attestation Division (gold-standard)', () => {
     expect((await res.json() as any).code).toBe('invalid_transition');
   });
 
-  it('PATCH stage quote → docs_awaiting → in_process works and creates a task', async () => {
+  it('PATCH stage quote_requested → quote_confirmed → docs_awaiting → in_process works', async () => {
     const row = mockD1.tables.attestation_applications[0];
     const r1 = await app.request(`/api/attestation/applications/${row.id}/stage`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders },
-      body: JSON.stringify({ stage: 'docs_awaiting' })
+      body: JSON.stringify({ stage: 'quote_confirmed' })
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     expect(r1.status).toBe(200);
     const r2 = await app.request(`/api/attestation/applications/${row.id}/stage`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders },
-      body: JSON.stringify({ stage: 'in_process' })
+      body: JSON.stringify({ stage: 'docs_awaiting' })
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     expect(r2.status).toBe(200);
+    const r3 = await app.request(`/api/attestation/applications/${row.id}/stage`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders },
+      body: JSON.stringify({ stage: 'in_process' })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(r3.status).toBe(200);
     const task = mockD1.tables.tasks.find((t: any) => t.title.includes('Awaiting documents'));
     expect(task).toBeTruthy();
   });
@@ -143,13 +148,17 @@ describe('Attestation Division (gold-standard)', () => {
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     expect(res.status).toBe(200);
     const data = await res.json() as any;
-    expect(data.quote.totalPaise).toBe(600000);
+    // Quote request model: no price until the agent confirms with the supplier
+    expect(data.quote.totalPaise).toBe(0);
+    expect(data.message).toContain('confirm the exact price');
     const alert = mockD1.tables.staff_alerts.find((a: any) => a.type === 'attestation_quote');
     expect(alert).toBeTruthy();
+    const row = mockD1.tables.attestation_applications.find((a: any) => a.id === data.id);
+    expect(row.stage).toBe('quote_requested');
   });
 
   it('POST pickup books the client sending documents to US (token-bound, ownership enforced)', async () => {
-    const row = mockD1.tables.attestation_applications.find((a: any) => a.stage === 'quote');
+    const row = mockD1.tables.attestation_applications.find((a: any) => a.stage === 'quote_requested');
     const res = await app.request(`/api/public/portal/attestation/applications/${row.id}/pickup?token=OP-2026-9401`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -268,7 +277,8 @@ describe('Attestation — full control (edit/delete/duplicate/doc/pipeline)', ()
 
   it('stage machine allows backward moves (full control)', async () => {
     const row = mockD1.tables.attestation_applications[0];
-    // forward: quote → docs_awaiting → in_process
+    // forward: quote_requested → quote_confirmed → docs_awaiting → in_process
+    await app.request(`/api/attestation/applications/${row.id}/stage`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders }, body: JSON.stringify({ stage: 'quote_confirmed' }) }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     await app.request(`/api/attestation/applications/${row.id}/stage`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders }, body: JSON.stringify({ stage: 'docs_awaiting' }) }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     await app.request(`/api/attestation/applications/${row.id}/stage`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders }, body: JSON.stringify({ stage: 'in_process' }) }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     // backward: in_process → docs_awaiting

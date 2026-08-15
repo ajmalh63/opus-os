@@ -428,6 +428,13 @@
       "when": 1786813256686,
       "tag": "0060_dry_rawhide_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1786814116733,
+      "tag": "0061_loose_sharon_ventura",
+      "breakpoints": true
     }
   ]
 }

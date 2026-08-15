@@ -5,6 +5,7 @@ import { clients, engagements, attestationApplications, attestationRateCards, at
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { sendNotification } from '../infra/notify.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 import { scanDocumentBytes } from '../lib/docScan.js';
 import {
@@ -37,13 +38,14 @@ async function signUploadPath(secret: string, clientId: string, filename: string
 
 // ─── Stage machine (no-jump, backward allowed for full control) ───
 const STAGE_TRANSITIONS: Record<string, string[]> = {
-  quote: ['docs_awaiting', 'rejected'],
-  docs_awaiting: ['quote', 'in_process', 'rejected'],
+  quote_requested: ['quote_confirmed', 'rejected'],
+  quote_confirmed: ['quote_requested', 'docs_awaiting', 'rejected'],
+  docs_awaiting: ['quote_confirmed', 'in_process', 'rejected'],
   in_process: ['docs_awaiting', 'completed', 'rejected'],
   completed: ['in_process', 'dispatched'],
   dispatched: ['completed', 'delivered'],
   delivered: ['dispatched'],
-  rejected: ['quote', 'docs_awaiting', 'in_process'],
+  rejected: ['quote_requested', 'quote_confirmed', 'docs_awaiting', 'in_process'],
 };
 
 const CHAIN_STEP_STATUS = ['pending', 'done', 'failed'] as const;
@@ -357,7 +359,7 @@ attestationAppsRouter.post('/applications', zValidator('json', createAttestation
       totalQuotePaise: quotePaise + (body.translationNeeded ? Math.round(quotePaise * 0.15) : 0),
       translationNeeded: !!body.translationNeeded,
       pickupStatus: 'awaiting_docs',
-      stage: 'quote',
+      stage: 'quote_requested',
       notes: body.notes ?? null,
       createdAt: now,
       updatedAt: now
@@ -405,6 +407,18 @@ attestationAppsRouter.patch('/applications/:id/stage', zValidator('json', update
       return c.json({ error: `Cannot move from '${row.stage}' to '${body.stage}'`, code: 'invalid_transition', allowed }, 409);
     }
     await db.update(attestationApplications).set({ stage: body.stage, updatedAt: now }).where(eq(attestationApplications.id, row.id));
+
+    // Notify the client when the exact quote is confirmed
+    if (body.stage === 'quote_confirmed' && row.stage !== 'quote_confirmed') {
+      const client = await db.select().from(clients).where(eq(clients.id, row.clientId)).get();
+      if (client?.email) {
+        await sendNotification(c.env as any, db, {
+          channel: 'email', to: client.email,
+          subject: `Quote confirmed — ${row.destinationCountry} attestation`,
+          body: `Your quote for ${parseDoc(row).documentName || row.category} (${row.destinationCountry}) is confirmed at ₹${((row.totalQuotePaise || 0) / 100).toFixed(2)}. Log in to your portal to book the pickup and send your documents.`
+        }).catch(() => {});
+      }
+    }
 
     // Auto-tasks
     if (body.stage === 'docs_awaiting') {
@@ -547,7 +561,7 @@ attestationAppsRouter.post('/applications/:id/duplicate', async (c) => {
       totalQuotePaise: row.totalQuotePaise,
       translationNeeded: row.translationNeeded,
       pickupStatus: 'awaiting_docs',
-      stage: 'quote',
+      stage: 'quote_requested',
       notes: `Duplicated from ${row.id.slice(0, 8)}`,
       createdAt: now,
       updatedAt: now
@@ -735,7 +749,7 @@ portalAttestationRouter.post('/applications', zValidator('json', createAttestati
       totalQuotePaise: quotePaise + (body.translationNeeded ? Math.round(quotePaise * 0.15) : 0),
       translationNeeded: !!body.translationNeeded,
       pickupStatus: 'awaiting_docs',
-      stage: 'quote',
+      stage: 'quote_requested',
       notes: body.notes ?? null,
       createdAt: now,
       updatedAt: now
@@ -744,9 +758,9 @@ portalAttestationRouter.post('/applications', zValidator('json', createAttestati
     await createStaffAlert(c.env as any, { division: 'attestation', type: 'attestation_quote', title: 'New attestation quote requested', body: `${body.document.documentName || body.category} → ${body.destinationCountry}`, clientId: token, payload: { applicationId: id } });
     return c.json({
       success: true, id,
-      quote: { totalPaise: quotePaise + (body.translationNeeded ? Math.round(quotePaise * 0.15) : 0), servicePaise: quotePaise, translationPaise: body.translationNeeded ? Math.round(quotePaise * 0.15) : 0 },
+      quote: { totalPaise: 0, servicePaise: 0, translationPaise: 0 },
       timelineDays,
-      message: `Quote created. Estimated ${timelineDays} working days. Prices are indicative and subject to change.`
+      message: 'Quote request received! Our team will confirm the exact price with you shortly — the range shown is indicative and may vary.'
     });
   } catch (e: any) {
     return c.json({ error: 'Application creation failed', details: e?.message }, 500);
@@ -765,7 +779,7 @@ portalAttestationRouter.post('/applications/:id/pickup', zValidator('json', upda
     const row = await db.select().from(attestationApplications).where(eq(attestationApplications.id, c.req.param('id'))).get();
     if (!row) return c.json({ error: 'Application not found' }, 404);
     if (row.clientId !== token) return c.json({ error: 'Not your application' }, 403);
-    if (row.stage !== 'quote' && row.stage !== 'docs_awaiting') return c.json({ error: 'Pickup can only be booked before processing' }, 409);
+    if (!['quote_requested', 'quote_confirmed', 'docs_awaiting'].includes(row.stage)) return c.json({ error: 'Pickup can only be booked before processing' }, 409);
 
     const updates: any = { updatedAt: now };
     if (body.pickupAddress !== undefined) updates.pickupAddress = body.pickupAddress;

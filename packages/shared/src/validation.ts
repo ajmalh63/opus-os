@@ -379,7 +379,7 @@ export const createAttestationApplicationSchema = z.object({
 });
 
 export const updateAttestationStageSchema = z.object({
-  stage: z.enum(['quote', 'docs_awaiting', 'in_process', 'completed', 'dispatched', 'delivered', 'rejected'])
+  stage: z.enum(['quote_requested', 'quote_confirmed', 'docs_awaiting', 'in_process', 'completed', 'dispatched', 'delivered', 'rejected'])
 });
 
 export const updateAttestationChainSchema = z.object({

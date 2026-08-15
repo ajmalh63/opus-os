@@ -449,7 +449,7 @@ export default function AttestationPortal() {
     delivered: [], rejected: [],
   };
   const STAGE_LABEL: Record<string, string> = {
-    quote: 'Quote', docs_awaiting: 'Awaiting Docs', in_process: 'In Process', completed: 'Completed', dispatched: 'Dispatched', delivered: 'Delivered', rejected: 'Rejected',
+    quote_requested: 'Quote Requested', quote_confirmed: 'Quote Confirmed', docs_awaiting: 'Awaiting Docs', in_process: 'In Process', completed: 'Completed', dispatched: 'Dispatched', delivered: 'Delivered', rejected: 'Rejected',
   };
   const PICKUP_LABEL: Record<string, string> = {
     awaiting_docs: 'Awaiting docs', docs_received: 'Docs received', dispatched_to_supplier: 'With supplier', returned: 'Returned', delivered: 'Delivered',
@@ -706,11 +706,12 @@ export default function AttestationPortal() {
       {activeSubTab === 'applications' && (
         <div className="space-y-4">
           {/* Dashboard strip */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <div className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">Total</div><div className="font-display font-extrabold text-brand-navy text-xl mt-1">{pipelineData?.total ?? 0}</div></div>
             <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-amber-700">🪨 Stuck (&gt;7d)</div><div className="font-display font-extrabold text-amber-700 text-xl mt-1">{pipelineData?.stuck ?? 0}</div></div>
             <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-blue-700">📄 Awaiting docs</div><div className="font-display font-extrabold text-blue-700 text-xl mt-1">{pipelineData?.awaitingDocs ?? 0}</div></div>
             <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-rose-600">💰 Unpaid</div><div className="font-display font-extrabold text-rose-600 text-xl mt-1">{pipelineData?.unpaid ?? 0}</div></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-amber-700">📨 Quote requests</div><div className="font-display font-extrabold text-amber-700 text-xl mt-1">{pipelineData?.counts?.quote_requested ?? 0}</div></div>
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">📤 Export</div><button onClick={exportAppsCsv} className="mt-1 bg-emerald-600 text-white text-[9px] font-bold px-2.5 py-1.5 rounded hover:bg-emerald-700 transition-all cursor-pointer">CSV</button></div>
           </div>
 
@@ -792,6 +793,17 @@ export default function AttestationPortal() {
                             )}
                           </div>
                         </div>
+
+                        {app.stage === 'quote_requested' && (
+                          <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-2.5 text-[10px] text-amber-800">
+                            📨 Quote request — check with the processing partner, set the exact fees (✎ Edit), then move to <b>Quote Confirmed</b>.
+                          </div>
+                        )}
+                        {app.stage === 'quote_confirmed' && (
+                          <div className="rounded-lg bg-emerald-500/10 border border-emerald-200 p-2.5 text-[10px] text-emerald-800">
+                            ✓ Quote confirmed at <b>{INR(app.fees?.totalQuotePaise || 0)}</b> — client notified. Awaiting documents.
+                          </div>
+                        )}
 
                         {/* Chain timeline */}
                         <div className="space-y-1">
