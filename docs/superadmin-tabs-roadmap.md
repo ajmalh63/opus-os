@@ -75,7 +75,7 @@ The Admin Console (`/control`) already covers most "hidden" modules. Decisions:
 | Compliance / Funnel / Growth / Roles / Audit | ✅ covered by console tabs | keep in console |
 | **Marketing Hub** | ⚠️ wired but no button → unreachable | **DONE: added "Marketing" button (owner)** |
 | **Infra Health** | ⚠️ wired but no button → unreachable | **DONE: added "Infra Health" button (owner)** |
-| **Performance / Boards** | ❌ not in console | **DONE: added "Performance" + "Boards" buttons (owner)** |
+| **Performance / Boards** | ❌ not in console | **DONE: added "Performance" button (owner); Boards REMOVED — duplicate of /kanban staff task board** |
 | **Team Hub** | ❌ superseded by Inbox (unified messaging) | **DROPPED** — Inbox covers all messages |
 | **Agreements / Transit / Integrations** | backend-only, no standalone UI | **DROPPED as tabs** — kept as embedded services (Client360 uses agreements+transit; MarketingTab uses integrations) |
 
