@@ -16,7 +16,7 @@ No claim below without its evidence line.
 | 5 | Guard contract | WORKS | guard.test (8): suppression/consent/transactional/invalid/auth/sanitized-audit |
 | 6 | Transactions: entry→confirm→ERP→charge link→webhook finalize→receipt/balance→refund | WORKS | razorpay_charge_gateway (12) + transactions + razorpay suites; replay-safe (event log 0026); method mapping; balance recompute |
 | 7 | Agreements: template→create→sign (DPDP hash + consent link) | WORKS | agreements_payments suite + static (sign sets signed+hash+core-processing consent+audit). NOTE: no downstream action on sign (payments are the transactions module's job — by design) |
-| 8 | Pipeline kanban: board/move + stages | GAP | kanban.ts:126 computes isWipBreached but NEVER enforces; targetStage free-string (shared/validation.ts:42 — no stage enum/continuity guard) |
+| 8 | Pipeline kanban: board/move + stages | WORKS | kanban.ts:136-144 enforces WIP ceiling (409 wip_limit) + stage integrity (409 stage_mismatch, 404 unknown target); kanban_pipeline tests (5) |
 | 9 | Task Boards system (WIP/CoS/blockers/cycle) | WORKS | board_system (6): 409 enforcement, expedite bypass, in_progress_at one-shot, prefs clamp+audit |
 | 10 | Inbox + notify channels + wa/chatwoot webhooks | WORKS | notifications + messaging + inbox suites; webhook consumers fail-closed |
 | 11 | Partners/referrals/incentives | WORKS | partnerAdmin/partnerKyc/partnerSummary/thrive/incentives suites |
@@ -32,9 +32,11 @@ No claim below without its evidence line.
 
 - **F1 [MED] Pipeline-board WIP breach not enforced** — kanban.ts:126-127 computes
   `isWipBreached`; move proceeds regardless. Fix: `if (isWipBreached) return 409 {code:'wip_limit'}` (mirrors tasks-board enforcement).
+  **→ FIXED (2026-08-14):** `kanban.ts` move handler now returns `409 {code:'wip_limit'}` before the update; card does NOT move. Covered by `kanban_pipeline.test.ts` (F1 tests: saturated stage 409 + no move; move allowed within limit).
 - **F2 [MED] `targetStage`/`sourceStage` free strings** — any stage key accepted,
   no stage-membership or continuity validation. Fix: stage enum/registry + guard
   `targetStage ∈ pipeline stages` and `sourceStage === current.stageKey`.
+  **→ FIXED (2026-08-14):** `targetStage` must exist in `pipeline_stages` (404 otherwise); `sourceStage` must equal the card's current stage (`409 {code:'stage_mismatch'}` — no jumps). Covered by `kanban_pipeline.test.ts` (F2 tests: forged source 409; unknown target 404).
 - **F3 [LOW] Leads intake flow has no dedicated test file** — SLA task + intent
   persistence paths are untested. Fix: leads.test.ts (submit → assert client row,
   intent fields, engagement, SLA task created, 409 on dup phone).
@@ -56,7 +58,7 @@ No claim below without its evidence line.
 ## Status
 - Acceptance criteria: flow inventory verified (18/18 flows assessed, 16 WORKS,
   2 GAP) · Findings: 2 medium, 2 low, 2 info
-- Open risks: F1/F2 behavior change (needs your go) · teamhub live-exercise · ERP
-  integration live (creds pending)
-- Need human input: fix F1+F2 now (my recommendation: yes — they're the only
-  logical gaps), or leave by design and document?
+- **2026-08-14 update:** F1 + F2 FIXED and committed (kanban move handler enforces
+  WIP ceiling + stage integrity; 5 dedicated tests in `kanban_pipeline.test.ts`).
+  Flow #8 (Pipeline kanban) verdict upgraded: **GAP → WORKS**.
+- Open risks: teamhub live-exercise · ERP integration live (creds pending)
