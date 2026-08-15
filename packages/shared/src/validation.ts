@@ -235,6 +235,68 @@ export type VerifyUmrahAdvanceInput = z.infer<typeof verifyUmrahAdvanceSchema>;
 export type PayUmrahBalanceInput = z.infer<typeof payUmrahBalanceSchema>;
 export type ConfirmUmrahOfficeInput = z.infer<typeof confirmUmrahOfficeSchema>;
 
+// 8. Study Abroad Applications (snapshot model — Phase 4)
+// The application modal captures everything an agent needs to apply; the
+// university object is stored as universityJson on the application row.
+export const studyAbroadUniversitySchema = z.object({
+  name: z.string().min(2, 'University name is required'),
+  country: z.string().min(2, 'Country is required'),
+  city: z.string().optional(),
+  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
+  portalUrl: z.string().optional(),
+  portalUsername: z.string().optional(),
+  program: z.string().min(2, 'Program title is required'),
+  degreeLevel: z.enum(['masters', 'bachelors', 'phd', 'diploma', 'foundation']).default('masters'),
+  intake: z.string().min(1, 'Intake is required'), // e.g. "Fall 2027"
+  deadline: z.number().int().optional(), // UNIX ts
+  applicationFeePaise: z.number().int().min(0).optional(),
+  minGpa: z.number().min(0).max(10).optional(),
+  minEnglishScore: z.number().min(0).max(9).optional(),
+  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE']).optional(),
+  greRequired: z.boolean().default(false),
+  tuitionLpaMin: z.number().min(0).optional(),
+  tuitionLpaMax: z.number().min(0).optional(),
+  scholarshipsJson: z.string().default('[]'),
+  notes: z.string().max(2000).optional()
+});
+
+export const createStudyAbroadApplicationSchema = z.object({
+  clientId: z.string().min(1, 'clientId is required'),
+  university: studyAbroadUniversitySchema,
+  status: z.enum(['shortlisted', 'docs_ready', 'submitted', 'under_review', 'offer_letter', 'deposit_paid', 'enrolled', 'rejected', 'withdrawn']).default('shortlisted'),
+  notes: z.string().max(2000).optional()
+});
+
+export const updateStudyAbroadApplicationSchema = z.object({
+  university: studyAbroadUniversitySchema.partial().optional(),
+  notes: z.string().max(2000).optional()
+});
+
+export const updateApplicationStatusSchema = z.object({
+  status: z.enum(['shortlisted', 'docs_ready', 'submitted', 'under_review', 'offer_letter', 'deposit_paid', 'enrolled', 'rejected', 'withdrawn']),
+  rejectionReason: z.string().max(500).optional()
+});
+
+export const updateApplicationOfferSchema = z.object({
+  offerLetterKey: z.string().min(1).optional(),
+  offerType: z.enum(['conditional', 'unconditional']).optional(),
+  offerConditions: z.array(z.string()).optional(),
+  acceptanceDeadline: z.number().int().optional(),
+  depositAmountPaise: z.number().int().min(0).optional(),
+  depositDeadline: z.number().int().optional(),
+  offerDecision: z.enum(['pending', 'accepted', 'declined']).optional()
+});
+
+export const updateApplicationDocsSchema = z.object({
+  docs: z.record(z.enum(['missing', 'received', 'verified']))
+});
+
+export type CreateStudyAbroadApplicationInput = z.infer<typeof createStudyAbroadApplicationSchema>;
+export type UpdateStudyAbroadApplicationInput = z.infer<typeof updateStudyAbroadApplicationSchema>;
+export type UpdateApplicationStatusInput = z.infer<typeof updateApplicationStatusSchema>;
+export type UpdateApplicationOfferInput = z.infer<typeof updateApplicationOfferSchema>;
+export type UpdateApplicationDocsInput = z.infer<typeof updateApplicationDocsSchema>;
+
 // 9. Create Transit Shipment Schema
 export const createShipmentSchema = z.object({
   clientId: z.string().min(1, { message: "Client ID is required" }),

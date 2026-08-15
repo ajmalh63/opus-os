@@ -74,11 +74,37 @@ Status of the five business divisions in the Opus OS workspace, what has been bu
 
 ---
 
-## ⏳ 4. Study Abroad — PENDING
+## ✅ 4. Study Abroad — COMPLETE (Phase 4, 2026-08-15)
 
-### To do
-- Student registry, course search/shortlist, applications, documents (desk has a foundation).
-- Client-facing + richer workflow pass (mirror the Visa/Manpower pattern): eligibility capture, offer letters, deadline alerts, fee milestones, document vault.
+**Direction (owner):** NO university catalog in OpusOS — partner tools hold realtime market data.
+OpusOS stores **application snapshots** (form modal) per student; Match/Reach/Safe computed live.
+
+### What was built
+- **Application snapshot modal** (`StudyAbroadApplicationModal.tsx`): university/program/requirements/
+  fees/deadlines + typical doc set; **live compatibility badge** (Match/Reach/Safe + score) vs the
+  student's profile — no catalog, no market-data storage. Portal passwords never stored (masked note).
+- **Backend** (`study_abroad_applications` table, migration 0054; `routes/studyAbroadApps.ts`):
+  staff CRUD, **no-jump status machine** (Shortlisted → Docs Ready → Submitted → Under Review →
+  Offer Letter → Deposit Paid → Enrolled / Rejected / Withdrawn), **auto-tasks** (14-day decision
+  follow-up on submit, acceptance task on offer, deposit reminder on accept, visa prep on deposit),
+  offer-letter management (conditional/unconditional, conditions, deadlines, decision), per-application
+  doc checklist (missing/received/verified), **pipeline aggregate** (stuck >7d, decisions pending,
+  deadlines ≤7d). Portal: student tracker + accept-offer (token-auth).
+- **Match lib** (`lib/studyAbroadMatch.ts`): pure function, reach/match/safe tiers, 0–100 score,
+  TOEFL/PTE→IELTS normalization.
+- **Student Profiles tab**: overview strip (applications / in-progress / offers / next deadline),
+  Applications tab (snapshot cards + doc checklist grid + offer panel + rejection reason),
+  **portalPassword removed** (security fix).
+- **Kanban Pipeline tab → Application Pipeline**: 8 lifecycle columns + Rejected lane, rich cards
+  (deadline countdown 🔥/⏳, missing-docs bar, match tier, program+intake, offer decision chip),
+  **Pipeline Health strip** (total / stuck / decisions pending / deadlines this week),
+  filters (country / intake / tier), no-jump status selects.
+- **Tests**: `studyAbroadApplications.test.ts` (10) + `studyAbroadMatch.test.ts` (9) — **398 total green**.
+
+### Notes
+- Legacy `universities` + `study_abroad_shortlists` tables untouched (drop in later cleanup).
+- Deferred to integration wave: reminder dispatch (WhatsApp/email), Razorpay deposit collection,
+  partner surface, OpusAI eligibility upgrade, real e2e vs VPS.
 
 ---
 

@@ -101,6 +101,13 @@ cd apps/api && pnpm run db:generate   # incremental Drizzle migration
 - **Frontend**: `UmrahCalendar.tsx` (reusable, staff/client/partner modes), `UmrahPortal.tsx` (Packages tab + calendar + party manifest w/ travellers + CSV), `UmrahClientSection.tsx` (browse→party builder→book→tracker), ClientPortal 🕋 tab.
 - **Tests**: `umrahPackages.test.ts`, `umrahPortalBooking.test.ts` (incl. solo supplement), `umrahFamilyBooking.test.ts` (party pax/capacity/advance/child pricing/group discount/waitlist/masking). Plan: `docs/umrah-division-plan.md` §13.
 
+### Study Abroad division (Phase 4 — COMPLETE 2026-08-15)
+- **Snapshot model (no catalog)**: partner tools hold realtime market data; OpusOS stores per-student **application snapshots** (`study_abroad_applications.universityJson` — migration 0054). Match/Reach/Safe computed LIVE via `lib/studyAbroadMatch.ts` (pure fn, 0–100 score, TOEFL/PTE→IELTS normalization) — never stored.
+- **Routes** `routes/studyAbroadApps.ts` (staff, RBAC counselor+): CRUD, **no-jump status machine** (shortlisted → docs_ready → submitted → under_review → offer_letter → deposit_paid → enrolled / rejected / withdrawn), auto-tasks (14-day decision follow-up, acceptance task, deposit reminder, visa prep), offer management (conditional/unconditional/conditions/deadlines/decision), per-app doc checklist (missing/received/verified), pipeline aggregate (stuck >7d, decisions pending, deadlines ≤7d). Portal: `/api/public/portal/study-abroad/*` tracker + accept-offer (token-auth).
+- **Frontend**: `StudyAbroadApplicationModal.tsx` (snapshot form + live match badge); `StudyAbroadPortal.tsx` — Profiles tab (overview strip, Applications tab w/ doc grid + offer panel, **no portalPassword — masked note**), Kanban tab = Application Pipeline (8 columns + Rejected, rich cards w/ deadline countdown, Pipeline Health strip, country/intake/tier filters).
+- **Tests**: `studyAbroadApplications.test.ts` (10), `studyAbroadMatch.test.ts` (9). Plan: `docs/study-abroad-division-plan.md`.
+- Legacy `universities`/`study_abroad_shortlists` untouched (drop later). Deferred: reminder dispatch, Razorpay deposits, partner surface, OpusAI.
+
 ### Messaging (OpenWA / Chatwoot / inbox)
 - `src/infra/messaging.ts` — `sendWhatsApp` (OpenWA 0.14.2: `X-API-Key` + `/api/sessions/{id}/messages/send-text` with `{chatId, text}`; or Meta Cloud API).
 - Webhooks: `/api/webhooks/wa` (HMAC-SHA256 body or plaintext secret header; both timing-safe), `/api/webhooks/chatwoot` → land in `conversations`.

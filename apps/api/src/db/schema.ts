@@ -1067,6 +1067,42 @@ export const studyAbroadShortlists = sqliteTable('study_abroad_shortlists', {
 });
 
 // ==========================================
+// 55.1 STUDY ABROAD APPLICATIONS (snapshot model — Phase 4)
+// No university catalog: the application modal captures everything an agent
+// needs to apply (universityJson snapshot). Match/Reach/Safe compatibility is
+// computed live vs the student's intakeContext — never stored.
+// ==========================================
+export const studyAbroadApplications = sqliteTable('study_abroad_applications', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id),
+  // Snapshot of the application modal (name, country, city, website, portalUrl,
+  // portalUsername, program, degreeLevel, intake, deadline, applicationFeePaise,
+  // minGpa, minEnglishScore, englishTest, greRequired, tuitionLpaMin/Max,
+  // scholarshipsJson, notes) — stringified JSON.
+  universityJson: text('university_json').notNull(),
+  status: text('status', { enum: ['shortlisted', 'docs_ready', 'submitted', 'under_review', 'offer_letter', 'deposit_paid', 'enrolled', 'rejected', 'withdrawn'] }).notNull().default('shortlisted'),
+  // Per-application document checklist: {transcript, cv, sop, lor1, lor2, ielts,
+  // passport, finance, portfolio} → 'missing' | 'received' | 'verified'.
+  docsChecklistJson: text('docs_checklist_json').notNull().default('{}'),
+  // Offer letter management (gold standard: conditional vs unconditional,
+  // conditions, acceptance deadline 2–4 weeks, deposit amount + deadline).
+  offerLetterKey: text('offer_letter_key'), // R2 key
+  offerType: text('offer_type', { enum: ['conditional', 'unconditional'] }),
+  offerConditionsJson: text('offer_conditions_json').notNull().default('[]'),
+  offerDecision: text('offer_decision', { enum: ['pending', 'accepted', 'declined'] }).notNull().default('pending'),
+  acceptanceDeadline: integer('acceptance_deadline'),
+  depositAmountPaise: integer('deposit_amount_paise'),
+  depositDeadline: integer('deposit_deadline'),
+  depositPaid: integer('deposit_paid', { mode: 'boolean' }).notNull().default(false),
+  rejectionReason: text('rejection_reason'),
+  decisionDate: integer('decision_date'),
+  submittedAt: integer('submitted_at'),
+  notes: text('notes'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
 // 56. VISA APPLICATIONS (Internal Counselor Workflow)
 // ==========================================
 export const visaApplications = sqliteTable('visa_applications', {

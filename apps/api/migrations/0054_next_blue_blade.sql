@@ -1,0 +1,22 @@
+CREATE TABLE `study_abroad_applications` (
+	`id` text PRIMARY KEY NOT NULL,
+	`client_id` text NOT NULL,
+	`university_json` text NOT NULL,
+	`status` text DEFAULT 'shortlisted' NOT NULL,
+	`docs_checklist_json` text DEFAULT '{}' NOT NULL,
+	`offer_letter_key` text,
+	`offer_type` text,
+	`offer_conditions_json` text DEFAULT '[]' NOT NULL,
+	`offer_decision` text DEFAULT 'pending' NOT NULL,
+	`acceptance_deadline` integer,
+	`deposit_amount_paise` integer,
+	`deposit_deadline` integer,
+	`deposit_paid` integer DEFAULT false NOT NULL,
+	`rejection_reason` text,
+	`decision_date` integer,
+	`submitted_at` integer,
+	`notes` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`client_id`) REFERENCES `clients`(`id`) ON UPDATE no action ON DELETE no action
+);

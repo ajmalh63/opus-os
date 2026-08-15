@@ -47,6 +47,7 @@ import { inboxRouter } from './routes/inbox.js';
 import { teamHubRouter } from './routes/teamHub.js';
 import { erpnextRouter } from './routes/erpnext.js';
 import { studyAbroadRouter } from './routes/studyAbroad.js';
+import { studyAbroadAppsRouter, portalStudyAbroadRouter } from './routes/studyAbroadApps.js';
 import { visaRouter } from './routes/visa.js';
 import { attestationRouter } from './routes/attestation.js';
 
@@ -197,6 +198,8 @@ app.route('/api/manpower', manpowerRouter);
 app.use('/api/study-abroad', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/study-abroad/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.route('/api/study-abroad', studyAbroadRouter);
+app.route('/api/study-abroad/applications', studyAbroadAppsRouter);
+app.route('/api/public/portal/study-abroad', portalStudyAbroadRouter);
 
 app.use('/api/visa', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/visa/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));

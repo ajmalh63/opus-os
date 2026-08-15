@@ -63,6 +63,7 @@ export class MockD1Database {
     listmonk_suppressions: [] as any[],
     board_prefs: [] as any[],
     study_abroad_shortlists: [] as any[],
+    study_abroad_applications: [] as any[],
     visa_applications: [] as any[],
     visa_products: [] as any[],
     visa_mock_interviews: [] as any[],
