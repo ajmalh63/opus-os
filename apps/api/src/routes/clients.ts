@@ -527,6 +527,7 @@ clientsRouter.patch('/:id', async (c) => {
     phone?: string;
     highestQualification?: string;
     intakeContext?: string;
+    notes?: string;
   };
 
   try {
@@ -541,6 +542,7 @@ clientsRouter.patch('/:id', async (c) => {
     if (body.phone !== undefined) updateFields.phone = body.phone;
     if (body.highestQualification !== undefined) updateFields.highestQualification = body.highestQualification;
     if (body.intakeContext !== undefined) updateFields.intakeContext = body.intakeContext;
+    if (body.notes !== undefined) updateFields.notes = body.notes;
 
     await db.update(clients).set(updateFields).where(eq(clients.id, id));
     return c.json({ success: true, id });

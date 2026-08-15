@@ -11,6 +11,7 @@ interface Student {
   primaryDivision: string;
   highestQualification: string;
   intakeContext?: string; // stringified JSON
+  notes?: string | null; // internal agent notes (staff-only)
   status: string;
 }
 
@@ -109,6 +110,8 @@ export default function StudyAbroadPortal() {
   const [showAppModal, setShowAppModal] = useState(false);
   const [showIntakeWizard, setShowIntakeWizard] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [studentNotes, setStudentNotes] = useState('');
+  const [notesDirty, setNotesDirty] = useState(false);
   const [noteChannel, setNoteChannel] = useState<'whatsapp' | 'email' | 'note'>('note');
   const [appFilter, setAppFilter] = useState<{ country: string; intake: string; tier: string }>({ country: '', intake: '', tier: '' });
 
@@ -148,6 +151,8 @@ export default function StudyAbroadPortal() {
         setAppRefNo(parsed.appRefNo || '');
         setPortalEmail(parsed.portalEmail || '');
         setCasLetterStatus(parsed.casLetterStatus || 'Awaiting Document');
+        setStudentNotes(student.notes || '');
+        setNotesDirty(false);
       } catch {
         // Fallback defaults
         setCgpa('7.5');
@@ -159,6 +164,8 @@ export default function StudyAbroadPortal() {
         setAppRefNo('');
         setPortalEmail('');
         setCasLetterStatus('Awaiting Document');
+        setStudentNotes(student.notes || '');
+        setNotesDirty(false);
       }
     } else {
       setCgpa('7.5');
@@ -170,6 +177,8 @@ export default function StudyAbroadPortal() {
       setAppRefNo('');
       setPortalEmail('');
       setCasLetterStatus('Awaiting Document');
+      setStudentNotes(student.notes || '');
+      setNotesDirty(false);
     }
   };
 
@@ -560,6 +569,7 @@ export default function StudyAbroadPortal() {
                   <div className="flex items-center gap-1.5">
                     <div className="flex-1 h-1 rounded bg-brand-navy/[0.08] overflow-hidden"><div className="h-full bg-brand-gold" style={{ width: `${studentCompleteness(s).pct}%` }} /></div>
                     <span className={`text-[8px] font-bold ${studentCompleteness(s).pct === 100 ? 'text-emerald-700' : 'text-amber-700'}`}>{studentCompleteness(s).pct}%</span>
+                    {s.notes && <span title="Has notes" className="text-[9px]">📝</span>}
                   </div>
                 </button>
               ))}
@@ -737,6 +747,32 @@ export default function StudyAbroadPortal() {
                           <p className="text-[10px] text-brand-navy/40 italic">No communication logged yet. Log your first call above.</p>
                         )}
                       </div>
+                    </div>
+
+                    {/* Internal notes — staff-only */}
+                    <div className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm mb-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">📝 Internal Notes</h4>
+                        <button
+                          onClick={() => {
+                            if (notesDirty) {
+                              updateStudentMutation.mutate({ id: selectedStudent.id, payload: { notes: studentNotes } });
+                              setNotesDirty(false);
+                            }
+                          }}
+                          disabled={!notesDirty}
+                          className={`text-[9px] font-bold px-2.5 py-1 rounded transition-all cursor-pointer ${notesDirty ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90' : 'bg-brand-navy/[0.04] text-brand-navy/30 cursor-not-allowed'}`}
+                        >
+                          {notesDirty ? 'Save Notes ✓' : 'Saved'}
+                        </button>
+                      </div>
+                      <textarea
+                        value={studentNotes}
+                        onChange={(e) => { setStudentNotes(e.target.value); setNotesDirty(true); }}
+                        rows={3}
+                        placeholder="Special notes about this student — preferences, concerns, family context, anything the team should know. (Visible to staff only, never to the student.)"
+                        className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-xs text-brand-navy outline-none focus:border-brand-gold resize-y"
+                      />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

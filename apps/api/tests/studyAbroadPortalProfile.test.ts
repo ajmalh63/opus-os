@@ -127,4 +127,15 @@ describe('Study Abroad — Student Portal Profile & Documents (sync)', () => {
     expect(data.documents.length).toBe(1);
     expect(data.applications[0].docsChecklist.transcript).toBe('received');
   });
+
+  it('PATCH /api/clients/:id persists internal notes (staff-only field)', async () => {
+    const res = await app.request('/api/clients/OP-2026-9301', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', cookie: 'better-auth.session_token=token-counselor' },
+      body: JSON.stringify({ notes: 'Prefers Canada over USA; family budget tight; wants scholarship help.' })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const client = mockD1.tables.clients.find((c: any) => c.id === 'OP-2026-9301');
+    expect(client.notes).toContain('Prefers Canada');
+  });
 });

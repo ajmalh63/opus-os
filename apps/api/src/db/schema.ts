@@ -35,6 +35,7 @@ export const clients = sqliteTable('clients', {
   // Funnel enrichment (Section 26) Ò
   leadSource: text('lead_source'), // website, whatsapp, walk-in, partner, referral
   intakeContext: text('intake_context'), // JSON: targetCountry/intake/budget/visaCategory/etc from lead form
+  notes: text('notes'), // internal agent notes (staff-only, never shown to the student)
   // Declared interest (Wave 4): division(s) the lead selected at intake  the
   // PRIMARY interest signal for nurture targeting; engagement division is the
   // operational truth once created, but intent survives even if it isn't.
