@@ -7,6 +7,7 @@ import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { sendNotification } from '../infra/notify.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
+import { scanDocumentBytes } from '../lib/docScan.js';
 import { ensurePipelineStages } from '../db/seed.js';
 
 export const clientsRouter = new Hono<{ Bindings: { DB: D1Database; BUCKET: R2Bucket; BETTER_AUTH_SECRET: string }; Variables: { user?: { id?: string; role?: string } | null } }>();
@@ -116,7 +117,7 @@ clientsRouter.get('/:id', async (c) => {
   }
 });
 
-const signUploadPath = async (secret: string, clientId: string, filename: string, expires: number): Promise<string> => {
+const signUploadPath = async (secret: string, clientId: string, filename: string, expires: number, label?: string): Promise<string> => {
   // Fail-closed (A-4): no hardcoded fallback secret
   if (!secret) throw new Error("BETTER_AUTH_SECRET not configured — cannot sign upload URL");
   const encoder = new TextEncoder();
@@ -127,7 +128,7 @@ const signUploadPath = async (secret: string, clientId: string, filename: string
     false,
     ['sign']
   );
-  const data = `${clientId}:${filename}:${expires}`;
+  const data = `${clientId}:${filename}:${expires}${label ? `:${label}` : ''}`;
   const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
   return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
 };
@@ -143,15 +144,16 @@ const timingSafeEqualHex = (a: string, b: string): boolean => {
 clientsRouter.get('/:id/documents/presigned', async (c) => {
   const id = c.req.param('id');
   const filename = c.req.query('filename');
+  const label = c.req.query('label'); // custom "Other" document label (optional)
   if (!filename) {
     return c.json({ error: "Missing filename parameter" }, 400);
   }
 
   const expires = Math.floor(Date.now() / 1000) + 900;
   const secret = c.env.BETTER_AUTH_SECRET;
-  const signature = await signUploadPath(secret, id, filename, expires);
+  const signature = await signUploadPath(secret, id, filename, expires, label || undefined);
 
-  const presignedUrl = `/api/clients/${id}/documents/upload?filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}`;
+  const presignedUrl = `/api/clients/${id}/documents/upload?filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}${label ? `&label=${encodeURIComponent(label)}` : ''}`;
 
   return c.json({
     success: true,
@@ -165,6 +167,7 @@ clientsRouter.put('/:id/documents/upload', async (c) => {
   const filename = c.req.query('filename');
   const expiresStr = c.req.query('expires');
   const signature = c.req.query('signature');
+  const label = c.req.query('label');
 
   if (!filename || !expiresStr || !signature) {
     return c.json({ error: "Missing required upload parameters" }, 400);
@@ -176,7 +179,7 @@ clientsRouter.put('/:id/documents/upload', async (c) => {
   }
 
   const secret = c.env.BETTER_AUTH_SECRET;
-  const expectedSig = await signUploadPath(secret, id, filename, expires);
+  const expectedSig = await signUploadPath(secret, id, filename, expires, label || undefined);
   if (!timingSafeEqualHex(signature, expectedSig)) {
     return c.json({ error: "Invalid upload signature" }, 400);
   }

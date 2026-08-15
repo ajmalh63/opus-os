@@ -120,6 +120,7 @@ export default function StudyAbroadPortal() {
   const [noteText, setNoteText] = useState('');
   const [studentNotes, setStudentNotes] = useState('');
   const [targetCountryOther, setTargetCountryOther] = useState('');
+  const [otherDocLabel, setOtherDocLabel] = useState('');
   const [notesDirty, setNotesDirty] = useState(false);
   const [noteChannel, setNoteChannel] = useState<'whatsapp' | 'email' | 'note'>('note');
   const [appFilter, setAppFilter] = useState<{ country: string; intake: string; tier: string }>({ country: '', intake: '', tier: '' });
@@ -491,13 +492,13 @@ export default function StudyAbroadPortal() {
     finance: docsList.find((d: any) => d.fileName.toLowerCase().includes('finance'))
   };
 
-  const handleUploadDoc = async (key: string, file: File) => {
+  const handleUploadDoc = async (key: string, file: File, label?: string) => {
     if (!selectedStudent) return;
     const cleanName = selectedStudent.name.replace(/\s+/g, '-').toLowerCase();
     const customFileName = `${cleanName}-${key}-${file.name}`;
 
     try {
-      const presignedRes = await fetch(`/api/clients/${selectedStudent.id}/documents/presigned?filename=${encodeURIComponent(customFileName)}`);
+      const presignedRes = await fetch(`/api/clients/${selectedStudent.id}/documents/presigned?filename=${encodeURIComponent(customFileName)}${label ? `&label=${encodeURIComponent(label)}` : ''}`);
       if (!presignedRes.ok) throw new Error('Failed to generate presigned upload URL');
       const { url } = await presignedRes.json();
 
@@ -1210,6 +1211,51 @@ export default function StudyAbroadPortal() {
                             </div>
                           );
                         })}
+                      </div>
+
+                      {/* Other documents — agent uploads with a label (same as student side) */}
+                      <div className="rounded-xl border border-dashed border-brand-navy/15 bg-white p-4 space-y-3">
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">📎 Other documents (labeled)</div>
+                        <div className="space-y-1.5">
+                          {docsList.filter((d: any) => d.docLabel).map((d: any) => (
+                            <div key={d.id} className="flex items-center justify-between gap-2 rounded-lg border border-brand-navy/10 bg-brand-navy/[0.02] px-3 py-2">
+                              <div className="min-w-0">
+                                <div className="text-[10px] font-bold text-brand-navy truncate">{d.docLabel}</div>
+                                <div className="text-[9px] text-brand-navy/40 font-mono truncate">{d.fileName}</div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {d.scanStatus === 'flagged' && (
+                                  <span title={d.scanNote || 'Suspicious content'} className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">⚠️ Flagged</span>
+                                )}
+                                <span className={`text-[9px] font-bold uppercase ${d.status === 'verified' ? 'text-emerald-700' : d.status === 'rejected' ? 'text-rose-600' : 'text-brand-navy/40'}`}>{d.status}</span>
+                                <a href={`/api/clients/${selectedStudent.id}/documents/${d.id}/download`} target="_blank" rel="noreferrer" className="text-[9px] text-brand-gold hover:underline font-bold">Download 📥</a>
+                              </div>
+                            </div>
+                          ))}
+                          {docsList.filter((d: any) => d.docLabel).length === 0 && (
+                            <p className="text-[10px] text-brand-navy/40 italic">No labeled documents yet.</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={otherDocLabel}
+                            onChange={(e) => setOtherDocLabel(e.target.value)}
+                            placeholder="Label — e.g. Gap year certificate, Work experience letter…"
+                            className="flex-1 rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[10px] text-brand-navy outline-none focus:border-brand-gold"
+                          />
+                          <label className="cursor-pointer shrink-0">
+                            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" className="hidden" onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              const label = otherDocLabel.trim();
+                              if (f) {
+                                if (!label) { alert('Enter a label for this document first.'); return; }
+                                handleUploadDoc('other', f, label);
+                                setOtherDocLabel('');
+                              }
+                            }} />
+                            <span className="bg-brand-navy text-white text-[9px] font-bold px-3 py-2 rounded hover:bg-brand-navy/90 transition-all">Upload</span>
+                          </label>
+                        </div>
                       </div>
                     </div>
                   )}
