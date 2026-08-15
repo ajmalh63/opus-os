@@ -256,7 +256,7 @@ export const studyAbroadUniversitySchema = z.object({
   applicationFeePaise: z.number().int().min(0).optional(),
   minGpa: z.number().min(0).max(10).optional(),
   minEnglishScore: z.number().min(0).max(9).optional(),
-  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE']).optional(),
+  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge']).optional(),
   greRequired: z.boolean().default(false),
   tuitionLpaMin: z.number().min(0).optional(),
   tuitionLpaMax: z.number().min(0).optional(),
@@ -314,12 +314,13 @@ export const studentProfileSchema = z.object({
   gapYears: z.number().min(0).max(20).optional(),
   workExperienceYears: z.number().min(0).max(40).optional(),
   // Test scores (actual or planned)
-  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE']).optional(),
+  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge']).optional(),
   englishScore: z.number().min(0).max(9).optional(),
   greScore: z.number().min(260).max(340).optional(),
   gmatScore: z.number().min(200).max(800).optional(),
   testPlanned: z.boolean().default(false),
   testDate: z.number().int().optional(),
+  englishWaiver: z.boolean().default(false), // English-medium education waiver (MOI)
   // Preferences
   targetCountry: z.string().max(60).optional(),
   targetIntake: z.string().max(30).optional(),

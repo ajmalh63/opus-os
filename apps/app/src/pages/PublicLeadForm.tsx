@@ -384,7 +384,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Quick profile (optional — helps us pre-qualify you)</label>
                     <div className="grid grid-cols-3 gap-2">
                       <input type="number" min={0} max={10} step={0.1} value={leadCgpa} onChange={(e) => setLeadCgpa(e.target.value)} placeholder="CGPA (e.g. 7.5)" className="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium" />
-                      <input type="number" min={0} max={9} step={0.5} value={leadEnglishScore} onChange={(e) => setLeadEnglishScore(e.target.value)} placeholder="IELTS (e.g. 6.5)" className="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium" />
+                      <input type="number" min={0} max={9} step={0.5} value={leadEnglishScore} onChange={(e) => setLeadEnglishScore(e.target.value)} placeholder="English score (e.g. 6.5 / 120)" className="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium" />
                       <input type="number" min={0} max={100} value={leadTuitionBudget} onChange={(e) => setLeadTuitionBudget(e.target.value)} placeholder="Budget ₹L/yr" className="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium" />
                     </div>
                   </div>

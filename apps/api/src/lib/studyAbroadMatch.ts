@@ -93,6 +93,8 @@ export function normalizeEnglish(score: number | null | undefined, test?: string
   if (score === null || score === undefined || Number.isNaN(score)) return null;
   if (test === 'TOEFL') return Math.round(((score - 31) / 10) * 2) / 2; // TOEFL 100 ≈ IELTS 7.0
   if (test === 'PTE') return Math.round(((score - 50) / 17 + 6) * 2) / 2; // PTE 50≈6.0 · 65≈7.0 · 84≈8.0
+  if (test === 'Duolingo') return Math.round(((score - 85) / 20 + 5) * 2) / 2; // DET 85≈5.0 · 120≈7.0 · 145≈8.0
+  if (test === 'Cambridge') return Math.round(((score - 160) / 20 + 5.5) * 2) / 2; // CAE 180≈6.5 · CPE 200≈7.5
   return Number(score);
 }
 

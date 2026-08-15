@@ -19,6 +19,7 @@ export interface StudentProfile {
   gmatScore?: number | null;
   testPlanned?: boolean;
   testDate?: number | null;
+  englishWaiver?: boolean;
   targetCountry?: string | null;
   targetIntake?: string | null;
   preferredCourse?: string | null;
@@ -139,10 +140,10 @@ export default function StudentProfileWizard({ initial, highestQualification, on
               <div>
                 <label className={labelCls}>English test</label>
                 <select className={inputCls} value={form.englishTest || 'IELTS'} onChange={e => set('englishTest', e.target.value)}>
-                  {['IELTS', 'TOEFL', 'PTE'].map(t => <option key={t} value={t}>{t}</option>)}
+                  {['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge'].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
-              <div><label className={labelCls}>Score (IELTS 0–9)</label><input type="number" min={0} max={9} step={0.5} className={inputCls} value={form.englishScore ?? ''} onChange={e => set('englishScore', num(e.target.value))} placeholder="6.5" /></div>
+              <div><label className={labelCls}>Score</label><input type="number" min={0} max={160} step={0.5} className={inputCls} value={form.englishScore ?? ''} onChange={e => set('englishScore', num(e.target.value))} placeholder={form.englishTest === 'Duolingo' ? '120' : form.englishTest === 'Cambridge' ? '180' : form.englishTest === 'TOEFL' ? '100' : form.englishTest === 'PTE' ? '65' : '6.5'} /></div>
               <div><label className={labelCls}>GRE (260–340)</label><input type="number" min={260} max={340} className={inputCls} value={form.greScore ?? ''} onChange={e => set('greScore', num(e.target.value))} placeholder="315" /></div>
               <div><label className={labelCls}>GMAT (200–800)</label><input type="number" min={200} max={800} className={inputCls} value={form.gmatScore ?? ''} onChange={e => set('gmatScore', num(e.target.value))} placeholder="650" /></div>
             </div>
@@ -150,6 +151,10 @@ export default function StudentProfileWizard({ initial, highestQualification, on
               <label className="flex items-center gap-2 text-brand-navy/70 cursor-pointer">
                 <input type="checkbox" checked={!!form.testPlanned} onChange={e => set('testPlanned', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
                 <span className="text-xs font-semibold">I haven't taken the test yet — it's planned</span>
+              </label>
+              <label className="flex items-center gap-2 text-brand-navy/70 cursor-pointer">
+                <input type="checkbox" checked={!!form.englishWaiver} onChange={e => set('englishWaiver', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
+                <span className="text-xs font-semibold">English-medium education (waiver may apply — e.g. some European universities)</span>
               </label>
               {form.testPlanned && (
                 <div><label className={labelCls}>Planned test date</label><input type="date" className={inputCls} value={form.testDate ? new Date(form.testDate * 1000).toISOString().slice(0, 10) : ''} onChange={e => set('testDate', e.target.value ? Math.floor(new Date(e.target.value).getTime() / 1000) : undefined)} /></div>

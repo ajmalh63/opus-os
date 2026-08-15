@@ -57,6 +57,8 @@ function normalizeEnglish(score: number | null | undefined, test?: string | null
   if (score === null || score === undefined || Number.isNaN(score)) return null;
   if (test === 'TOEFL') return Math.round(((score - 31) / 10) * 2) / 2; // TOEFL 100 ≈ IELTS 7.0
   if (test === 'PTE') return Math.round(((score - 50) / 17 + 6) * 2) / 2; // PTE 50≈6.0 · 65≈7.0 · 84≈8.0
+  if (test === 'Duolingo') return Math.round(((score - 85) / 20 + 5) * 2) / 2; // DET 85≈5.0 · 120≈7.0 · 145≈8.0
+  if (test === 'Cambridge') return Math.round(((score - 160) / 20 + 5.5) * 2) / 2; // CAE 180≈6.5 · CPE 200≈7.5
   return Number(score);
 }
 
@@ -212,12 +214,12 @@ export default function StudyAbroadApplicationModal({ profile, onClose, onCreate
               <div>
                 <label className={labelCls}>English test</label>
                 <select className={inputCls} value={form.englishTest} onChange={e => set('englishTest', e.target.value)}>
-                  {['IELTS', 'TOEFL', 'PTE'].map(t => <option key={t} value={t}>{t}</option>)}
+                  {['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge'].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><label className={labelCls}>Min score</label><input type="number" min={0} max={9} step={0.5} className={inputCls} value={form.minEnglishScore ?? ''} onChange={e => set('minEnglishScore', e.target.value ? Number(e.target.value) : undefined)} placeholder="6.5" /></div>
+              <div><label className={labelCls}>Min score</label><input type="number" min={0} max={160} step={0.5} className={inputCls} value={form.minEnglishScore ?? ''} onChange={e => set('minEnglishScore', e.target.value ? Number(e.target.value) : undefined)} placeholder={form.englishTest === 'Duolingo' ? '120' : form.englishTest === 'Cambridge' ? '180' : form.englishTest === 'TOEFL' ? '100' : form.englishTest === 'PTE' ? '65' : '6.5'} /></div>
               <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-brand-navy/60 cursor-pointer"><input type="checkbox" checked={!!form.greRequired} onChange={e => set('greRequired', e.target.checked)} className="h-3.5 w-3.5 accent-brand-gold" /> GRE required</label></div>
             </div>
             <div><label className={labelCls}>Scholarships (JSON)</label><input className={inputCls} value={form.scholarshipsJson} onChange={e => set('scholarshipsJson', e.target.value)} placeholder='["Entrance Scholarship"]' /></div>

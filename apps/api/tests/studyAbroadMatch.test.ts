@@ -65,4 +65,19 @@ describe('studyAbroadMatch — reach/match/safe tiers', () => {
     expect(normalizeEnglish(50, 'PTE')).toBe(6);
     expect(normalizeEnglish(null, 'IELTS')).toBeNull();
   });
+
+  it('normalizeEnglish maps Duolingo and Cambridge to IELTS bands', () => {
+    expect(normalizeEnglish(120, 'Duolingo')).toBe(7); // DET 120 ≈ IELTS 7.0
+    expect(normalizeEnglish(105, 'Duolingo')).toBe(6); // DET 105 ≈ IELTS 6.0
+    expect(normalizeEnglish(145, 'Duolingo')).toBe(8); // DET 145 ≈ IELTS 8.0
+    expect(normalizeEnglish(180, 'Cambridge')).toBe(6.5); // CAE 180 ≈ IELTS 6.5
+    expect(normalizeEnglish(200, 'Cambridge')).toBe(7.5); // CPE 200 ≈ IELTS 7.5
+  });
+
+  it('match: Duolingo requirement normalized against student IELTS', () => {
+    // Student IELTS 7.0 vs university DET 120 requirement (≈ IELTS 7.0) → match
+    const r = matchApplication({ cgpa: 8.0, englishScore: 7.0, tuitionBudget: 25, targetCountry: 'USA' }, { minGpa: 7.0, minEnglishScore: 120, englishTest: 'Duolingo', tuitionLpaMax: 24, country: 'USA' });
+    expect(r.tier).toBe('match');
+    expect(r.misses).not.toContain('English');
+  });
 });

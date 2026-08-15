@@ -799,7 +799,7 @@ export default function StudyAbroadPortal() {
                             <span className="font-semibold text-brand-navy/40">English Test Choice:</span>
                             {isEditingAcademic ? (
                               <div className="flex gap-2">
-                                {['IELTS', 'TOEFL', 'PTE'].map(t => (
+                                {['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge'].map(t => (
                                   <label key={t} className="flex items-center gap-1 font-semibold cursor-pointer">
                                     <input
                                       type="radio"
