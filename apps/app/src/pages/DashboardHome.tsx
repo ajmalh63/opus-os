@@ -119,6 +119,18 @@ export default function DashboardHome() {
   });
 
   const { toast: taskToast, dismissToast: dismissTaskToast } = useTaskNotifications(20000);
+  const [, navigate] = useLocation();
+
+  // Where each division's notifications should take you
+  const DIVISION_LINK: Record<string, string> = {
+    attestation: '/divisions/attestation',
+    visa: '/divisions/visa',
+    manpower: '/divisions/manpower',
+    umrah: '/divisions/umrah',
+    'study-abroad': '/divisions/study-abroad',
+  };
+  const openAlert = (a: any) => navigate(a.link || DIVISION_LINK[a.division] || '/dashboard');
+  const openTask = (t: any) => navigate(t.clientId ? `/clients/${t.clientId}` : '/kanban');
 
   const myTasks = myTasksData?.tasks || [];
   const openTasksList = myTasks.filter(t => t.status === 'open');
@@ -213,7 +225,7 @@ export default function DashboardHome() {
                 info: 'bg-brand-navy/[0.06] text-brand-navy/50',
               };
               return (
-              <div key={a.id} className={`rounded-xl border p-3.5 transition-all ${a.status === 'new' ? `${sevStyle[sev]} animate-in fade-in slide-in-from-top-2 duration-300` : sevStyle[sev]}`}>
+              <div key={a.id} onClick={() => openAlert(a)} className={`rounded-xl border p-3.5 transition-all cursor-pointer hover:shadow-md hover:border-brand-gold/50 ${a.status === 'new' ? `${sevStyle[sev]} animate-in fade-in slide-in-from-top-2 duration-300` : sevStyle[sev]}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] font-bold text-brand-navy truncate">{a.title}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -312,7 +324,7 @@ export default function DashboardHome() {
                         low: 'bg-brand-navy/[0.06] text-brand-navy/50',
                       };
                       return (
-                      <div key={t.id} className={`flex items-center gap-2.5 rounded-lg p-2.5 text-xs transition-colors hover:brightness-95 ${prioStyle[prio] || prioStyle.medium}`}>
+                      <div key={t.id} onClick={() => openTask(t)} className={`flex items-center gap-2.5 rounded-lg p-2.5 text-xs transition-colors hover:brightness-95 cursor-pointer ${prioStyle[prio] || prioStyle.medium}`}>
                         <input
                           type="checkbox"
                           className="h-4 w-4 cursor-pointer rounded accent-brand-gold"

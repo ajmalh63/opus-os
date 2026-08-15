@@ -36,7 +36,7 @@ export async function getAlertTypesForRole(env: { DB: D1Database }, role: string
 
 export async function createStaffAlert(
   env: { DB: D1Database },
-  a: { division: string; type: string; title: string; body?: string; payload?: unknown; clientId?: string | null; severity?: 'info' | 'warning' | 'urgent' }
+  a: { division: string; type: string; title: string; body?: string; payload?: unknown; clientId?: string | null; severity?: 'info' | 'warning' | 'urgent'; link?: string }
 ) {
   try {
     const db = getDb(env.DB);
@@ -50,6 +50,7 @@ export async function createStaffAlert(
       clientId: a.clientId || null,
       status: 'new',
       severity: a.severity ?? 'info',
+      link: a.link ?? null,
       createdAt: Math.floor(Date.now() / 1000),
     }).catch(() => {});
   } catch { /* alerts are best-effort, never block the primary flow */ }

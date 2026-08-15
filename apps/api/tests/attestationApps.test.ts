@@ -409,6 +409,8 @@ describe('Attestation — Live Activity severity (dashboard)', () => {
     expect(alert).toBeTruthy();
     expect(alert.severity).toBe('urgent');
     expect(alert.body).toContain('URGENT');
+    // Clickable: the alert carries the desk link
+    expect(alert.link).toBe('/divisions/attestation');
     // No dashboard task created — Live Activity is the notification channel
     expect(mockD1.tables.tasks.filter((t: any) => t.title.includes('Quote request')).length).toBe(0);
   });

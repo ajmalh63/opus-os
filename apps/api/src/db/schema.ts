@@ -639,6 +639,7 @@ export const staffAlerts = sqliteTable('staff_alerts', {
   clientId: text('client_id'),
   status: text('status', { enum: ['new', 'seen'] }).notNull().default('new'),
   severity: text('severity', { enum: ['info', 'warning', 'urgent'] }).notNull().default('info'),
+  link: text('link'), // where the notification navigates when clicked
   createdAt: integer('created_at').notNull()
 });
 

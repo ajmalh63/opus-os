@@ -775,7 +775,7 @@ portalAttestationRouter.post('/applications', zValidator('json', createAttestati
       updatedAt: now
     });
 
-    await createStaffAlert(c.env as any, { division: 'attestation', type: 'attestation_quote', title: 'New attestation quote requested', body: `${body.document.documentName || body.category} → ${body.destinationCountry}${body.urgency === 'urgent' ? ' (URGENT)' : ''}`, clientId: token, payload: { applicationId: id, urgency: body.urgency ?? 'normal' }, severity: body.urgency === 'urgent' ? 'urgent' : 'warning' });
+    await createStaffAlert(c.env as any, { division: 'attestation', type: 'attestation_quote', title: 'New attestation quote requested', body: `${body.document.documentName || body.category} → ${body.destinationCountry}${body.urgency === 'urgent' ? ' (URGENT)' : ''}`, clientId: token, payload: { applicationId: id, urgency: body.urgency ?? 'normal' }, severity: body.urgency === 'urgent' ? 'urgent' : 'warning', link: '/divisions/attestation' });
 
     return c.json({
       success: true, id,
