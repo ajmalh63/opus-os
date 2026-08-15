@@ -28,10 +28,20 @@ export function useStaffAlerts(intervalMs = 20000) {
     setNewCount((c) => Math.max(0, c - 1));
   }, []);
 
+  const dismiss = useCallback(async (id: string) => {
+    await fetch(`/api/staff/alerts/${id}`, { method: 'DELETE' }).catch(() => {});
+    setAlerts((a) => a.filter((x) => x.id !== id));
+  }, []);
+
+  const clearSeen = useCallback(async () => {
+    await fetch('/api/staff/alerts/clear', { method: 'POST' }).catch(() => {});
+    setAlerts((a) => a.filter((x) => x.status !== 'seen'));
+  }, []);
+
   const markAllSeen = useCallback(async () => {
     const fresh = alerts.filter((a) => a.status === 'new');
     for (const a of fresh) await markSeen(a.id);
   }, [alerts, markSeen]);
 
-  return { alerts, newCount, refresh, markSeen, markAllSeen };
+  return { alerts, newCount, refresh, markSeen, markAllSeen, dismiss, clearSeen };
 }

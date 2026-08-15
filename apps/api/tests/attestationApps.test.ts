@@ -432,3 +432,37 @@ describe('Attestation — Live Activity severity (dashboard)', () => {
     expect(normal.severity).toBe('warning');
   });
 });
+
+describe('Attestation — notification actions (dismiss / clear done)', () => {
+  let mockD1: MockD1Database;
+  const now = Math.floor(Date.now() / 1000);
+  const staffHeaders = { cookie: 'better-auth.session_token=token-counselor' };
+
+  beforeAll(() => {
+    mockD1 = new MockD1Database();
+    mockD1.tables.clients.push({ id: 'OP-2026-9911', name: 'Notif Client', phone: '+91 99999 44441', email: 'n@test.com', created_at: now, updated_at: now });
+    // Two alerts: one new, one seen
+    mockD1.tables.staff_alerts.push(
+      { id: 'al-1', division: 'attestation', type: 'attestation_quote', title: 'Quote request', body: 'Degree → UAE', severity: 'urgent', status: 'new', link: '/divisions/attestation', created_at: now },
+      { id: 'al-2', division: 'attestation', type: 'doc_scan_uploaded', title: 'Scan uploaded', body: 'scan.pdf', severity: 'info', status: 'seen', created_at: now }
+    );
+  });
+
+  it('DELETE /api/staff/alerts/:id dismisses a single notification', async () => {
+    const res = await app.request('/api/staff/alerts/al-1', { method: 'DELETE', headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    expect(mockD1.tables.staff_alerts.find((a: any) => a.id === 'al-1')).toBeUndefined();
+    expect(mockD1.tables.staff_alerts.length).toBe(1);
+  });
+
+  it('POST /api/staff/alerts/clear removes only SEEN notifications (keeps new)', async () => {
+    // add another new alert to prove it survives
+    mockD1.tables.staff_alerts.push({ id: 'al-3', division: 'attestation', type: 'attestation_quote', title: 'Quote request 2', body: 'Birth → Qatar', severity: 'warning', status: 'new', created_at: now });
+    const res = await app.request('/api/staff/alerts/clear', { method: 'POST', headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.cleared).toBe(1); // only al-2 (seen)
+    expect(mockD1.tables.staff_alerts.find((a: any) => a.id === 'al-2')).toBeUndefined();
+    expect(mockD1.tables.staff_alerts.find((a: any) => a.id === 'al-3')).toBeTruthy(); // new survives
+  });
+});

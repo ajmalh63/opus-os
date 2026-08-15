@@ -50,6 +50,36 @@ staffAlertsRouter.post('/:id/seen', async (c) => {
 });
 
 // GET /api/staff/alerts/visibility — current per-role visibility config (superadmin)
+// DELETE /api/staff/alerts/:id — dismiss a single alert
+staffAlertsRouter.delete('/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const row = await db.select().from(staffAlerts).where(eq(staffAlerts.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Alert not found' }, 404);
+    await db.delete(staffAlerts).where(eq(staffAlerts.id, row.id));
+    return c.json({ success: true, message: 'Alert dismissed.' });
+  } catch (e: any) {
+    return c.json({ error: 'Alert dismissal failed', details: e?.message }, 500);
+  }
+});
+
+// POST /api/staff/alerts/clear — clear all SEEN alerts (done notifications)
+staffAlertsRouter.post('/clear', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const rows = await db.select().from(staffAlerts).all();
+    const seen = rows.filter(r => r.status === 'seen');
+    for (const r of seen) {
+      await db.delete(staffAlerts).where(eq(staffAlerts.id, r.id));
+    }
+    return c.json({ success: true, cleared: seen.length, message: `${seen.length} notifications cleared.` });
+  } catch (e: any) {
+    return c.json({ error: 'Clear failed', details: e?.message }, 500);
+  }
+});
+
 staffAlertsRouter.get('/visibility', async (c) => {
   if (c.get('user')?.role !== 'super_admin') return c.json({ error: 'Forbidden' }, 403);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);

@@ -54,7 +54,7 @@ export default function DashboardHome() {
   const { me } = useSession();
   const queryClient = useQueryClient();
   const rootReveal = useRevealRoot<HTMLDivElement>();
-  const { alerts, newCount, markAllSeen } = useStaffAlerts(15000);
+  const { alerts, newCount, markAllSeen, dismiss, clearSeen } = useStaffAlerts(15000);
   const [editMode, setEditMode] = useState(false);
   const [widgets, setWidgets] = useState<Widget[]>([]);
 
@@ -201,7 +201,12 @@ export default function DashboardHome() {
             <h3 className="font-display text-sm font-bold text-brand-navy">Live Activity</h3>
             {newCount > 0 && <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-bold text-white animate-pulse">{newCount} new</span>}
           </div>
-          {newCount > 0 && <button onClick={markAllSeen} className="text-[10px] font-bold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer">Mark all seen</button>}
+          <div className="flex items-center gap-2">
+            {newCount > 0 && <button onClick={markAllSeen} className="text-[10px] font-bold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer">✓ Mark all seen</button>}
+            {alerts.some(a => a.status === 'seen') && (
+              <button onClick={() => { if (confirm('Clear all completed notifications?')) clearSeen(); }} className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 hover:text-rose-500 cursor-pointer">🗑 Clear done</button>
+            )}
+          </div>
         </div>
         {alerts.length === 0 ? (
           <p className="py-6 text-center text-xs text-brand-navy/40 italic">No client activity yet — sales and requests will appear here instantly.</p>
@@ -236,7 +241,16 @@ export default function DashboardHome() {
                 {a.body && <p className="text-[10px] text-brand-navy/50 mt-1 truncate">{a.body}</p>}
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-[9px] uppercase tracking-wider text-brand-gold font-bold">{a.division} · {a.type}</span>
-                  <span className="text-[9px] text-brand-navy/40">{new Date(a.createdAt * 1000).toLocaleTimeString()}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] text-brand-navy/40">{new Date(a.createdAt * 1000).toLocaleTimeString()}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); dismiss(a.id); }}
+                      title="Dismiss this notification"
+                      className="text-brand-navy/30 hover:text-rose-500 cursor-pointer text-[10px]"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               </div>
               );
