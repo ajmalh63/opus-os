@@ -5,6 +5,8 @@ import { clients, engagements, attestationApplications, attestationRateCards, ta
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
+import { scanDocumentBytes } from '../lib/docScan.js';
 import {
   createAttestationApplicationSchema, updateAttestationStageSchema, updateAttestationChainSchema,
   updateAttestationPickupSchema, createAttestationRateCardSchema, updateAttestationRateCardSchema
@@ -15,17 +17,33 @@ import {
 // → we dispatch to supplier → chain (HRD/SDM/Chamber → MEA → Embassy/Apostille)
 // → return → deliver. Prices are indicative ranges — NEVER supplier names (B2C).
 
-export const attestationAppsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
+export const attestationAppsRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET?: string; BUCKET?: any } }>();
 
-// ─── Stage machine (no-jump) ───
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+  return diff === 0;
+}
+
+async function signUploadPath(secret: string, clientId: string, filename: string, expires: number): Promise<string> {
+  if (!secret) throw new Error('BETTER_AUTH_SECRET not configured — cannot sign upload URL');
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const data = `${clientId}:${filename}:${expires}`;
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+  return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ─── Stage machine (no-jump, backward allowed for full control) ───
 const STAGE_TRANSITIONS: Record<string, string[]> = {
   quote: ['docs_awaiting', 'rejected'],
-  docs_awaiting: ['in_process', 'rejected'],
-  in_process: ['completed', 'rejected'],
-  completed: ['dispatched'],
-  dispatched: ['delivered'],
-  delivered: [],
-  rejected: [],
+  docs_awaiting: ['quote', 'in_process', 'rejected'],
+  in_process: ['docs_awaiting', 'completed', 'rejected'],
+  completed: ['in_process', 'dispatched'],
+  dispatched: ['completed', 'delivered'],
+  delivered: ['dispatched'],
+  rejected: ['quote', 'docs_awaiting', 'in_process'],
 };
 
 const CHAIN_STEP_STATUS = ['pending', 'done', 'failed'] as const;
@@ -63,6 +81,10 @@ function serializeApplication(row: any) {
       courierReturn: row.courierReturn,
     },
     stage: row.stage,
+    documentKey: row.documentKey,
+    documentStatus: row.documentStatus,
+    paymentStatus: row.paymentStatus,
+    paidAmountPaise: row.paidAmountPaise,
     notes: row.notes,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -348,6 +370,173 @@ attestationAppsRouter.patch('/applications/:id/pickup', zValidator('json', updat
     return c.json({ success: true, message: 'Pickup details updated.' });
   } catch (e: any) {
     return c.json({ error: 'Pickup update failed', details: e?.message }, 500);
+  }
+});
+
+// PATCH /api/attestation/applications/:id — generic edit (document, fees, payment, notes)
+attestationAppsRouter.patch('/applications/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const row = await db.select().from(attestationApplications).where(eq(attestationApplications.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Application not found' }, 404);
+    const body = await c.req.json().catch(() => ({})) as any;
+    const updates: any = { updatedAt: now };
+    if (body.document !== undefined) updates.documentJson = JSON.stringify({ ...parseDoc(row), ...body.document });
+    if (body.destinationCountry !== undefined) updates.destinationCountry = body.destinationCountry;
+    if (body.category !== undefined) updates.category = body.category;
+    if (body.route !== undefined) updates.route = body.route;
+    if (body.translationNeeded !== undefined) updates.translationNeeded = body.translationNeeded;
+    if (body.govtFeePaise !== undefined) updates.govtFeePaise = body.govtFeePaise;
+    if (body.serviceFeePaise !== undefined) updates.serviceFeePaise = body.serviceFeePaise;
+    if (body.courierFeePaise !== undefined) updates.courierFeePaise = body.courierFeePaise;
+    if (body.translationFeePaise !== undefined) updates.translationFeePaise = body.translationFeePaise;
+    if (body.totalQuotePaise !== undefined) updates.totalQuotePaise = body.totalQuotePaise;
+    if (body.paymentStatus !== undefined) updates.paymentStatus = body.paymentStatus;
+    if (body.paidAmountPaise !== undefined) updates.paidAmountPaise = body.paidAmountPaise;
+    if (body.documentStatus !== undefined) updates.documentStatus = body.documentStatus;
+    if (body.notes !== undefined) updates.notes = body.notes;
+    await db.update(attestationApplications).set(updates).where(eq(attestationApplications.id, row.id));
+    await auditEvent(c as any, { action: 'ATTESTATION_EDIT', entityName: 'attestation_applications', entityId: row.id, afterState: { fields: Object.keys(updates) } }).catch(() => {});
+    return c.json({ success: true, message: 'Application updated.' });
+  } catch (e: any) {
+    return c.json({ error: 'Application update failed', details: e?.message }, 500);
+  }
+});
+
+// DELETE /api/attestation/applications/:id — void an application
+attestationAppsRouter.delete('/applications/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const row = await db.select().from(attestationApplications).where(eq(attestationApplications.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Application not found' }, 404);
+    await db.delete(attestationApplications).where(eq(attestationApplications.id, row.id));
+    await auditEvent(c as any, { action: 'ATTESTATION_DELETED', entityName: 'attestation_applications', entityId: row.id, afterState: { country: row.destinationCountry } }).catch(() => {});
+    return c.json({ success: true, message: 'Application deleted.' });
+  } catch (e: any) {
+    return c.json({ error: 'Application deletion failed', details: e?.message }, 500);
+  }
+});
+
+// POST /api/attestation/applications/:id/duplicate — same client, new application (multi-doc)
+attestationAppsRouter.post('/applications/:id/duplicate', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const row = await db.select().from(attestationApplications).where(eq(attestationApplications.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Application not found' }, 404);
+    const id = crypto.randomUUID();
+    await db.insert(attestationApplications).values({
+      id,
+      clientId: row.clientId,
+      documentType: row.documentType,
+      destinationCountry: row.destinationCountry,
+      currentStep: 'hrd',
+      status: 'pending',
+      documentJson: row.documentJson,
+      category: row.category,
+      route: row.route,
+      chainJson: row.chainJson,
+      govtFeePaise: row.govtFeePaise,
+      serviceFeePaise: row.serviceFeePaise,
+      courierFeePaise: row.courierFeePaise,
+      translationFeePaise: row.translationFeePaise,
+      totalQuotePaise: row.totalQuotePaise,
+      translationNeeded: row.translationNeeded,
+      pickupStatus: 'awaiting_docs',
+      stage: 'quote',
+      notes: `Duplicated from ${row.id.slice(0, 8)}`,
+      createdAt: now,
+      updatedAt: now
+    });
+    return c.json({ success: true, id, message: 'Application duplicated — edit the document details for the new one.' });
+  } catch (e: any) {
+    return c.json({ error: 'Duplicate failed', details: e?.message }, 500);
+  }
+});
+
+// POST /api/attestation/applications/:id/document/presigned — staff uploads the original scan
+attestationAppsRouter.post('/applications/:id/document/presigned', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const row = await db.select().from(attestationApplications).where(eq(attestationApplications.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Application not found' }, 404);
+    const original = c.req.query('filename');
+    if (!original) return c.json({ error: 'filename is required' }, 400);
+    const secret = c.env.BETTER_AUTH_SECRET;
+    if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
+    const filename = `attestation-${row.id.slice(0, 8)}-${original.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const expires = Math.floor(Date.now() / 1000) + 900;
+    const signature = await signUploadPath(secret, row.clientId, filename, expires);
+    const url = `/api/attestation/applications/${row.id}/document/upload?filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}`;
+    return c.json({ success: true, url, expires, filename });
+  } catch (e: any) {
+    return c.json({ error: 'Presign failed', details: e?.message }, 500);
+  }
+});
+
+// PUT /api/attestation/applications/:id/document/upload — store scan + mark received
+attestationAppsRouter.put('/applications/:id/document/upload', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const row = await db.select().from(attestationApplications).where(eq(attestationApplications.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Application not found' }, 404);
+    const filename = c.req.query('filename');
+    const expiresStr = c.req.query('expires');
+    const signature = c.req.query('signature');
+    if (!filename || !expiresStr || !signature) return c.json({ error: 'Missing upload parameters' }, 400);
+    const expires = Number(expiresStr);
+    if (Math.floor(Date.now() / 1000) > expires) return c.json({ error: 'Upload URL has expired' }, 400);
+    const secret = c.env.BETTER_AUTH_SECRET;
+    if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
+    const expectedSig = await signUploadPath(secret, row.clientId, filename, expires);
+    if (!timingSafeEqual(signature, expectedSig)) return c.json({ error: 'Invalid upload signature' }, 400);
+
+    const fileBody = await c.req.arrayBuffer();
+    const bytes = new Uint8Array(fileBody);
+    const guard = guardUpload('document', filename, bytes.byteLength, bytes);
+    if (!guard.ok) return c.json({ error: guard.error }, (guard.status || 400) as any);
+    const safeName = guard.safeName!;
+    const mimeType = guard.mimeType!;
+    const scan = scanDocumentBytes(bytes, mimeType, safeName);
+
+    const r2Key = `${crypto.randomUUID()}-${safeName}`;
+    const bucket = (c.env as any).BUCKET;
+    if (bucket) await bucket.put(r2Key, fileBody, { httpMetadata: { contentType: mimeType } });
+
+    await db.update(attestationApplications).set({
+      documentKey: r2Key,
+      documentStatus: scan.status === 'flagged' ? 'rejected' : 'received',
+      notes: scan.status === 'flagged' ? `⚠️ ${scan.note}` : row.notes,
+      updatedAt: now
+    }).where(eq(attestationApplications.id, row.id));
+    return c.json({ success: true, documentStatus: scan.status === 'flagged' ? 'rejected' : 'received', message: scan.status === 'flagged' ? 'Document flagged — review before processing.' : 'Document received.' });
+  } catch (e: any) {
+    return c.json({ error: 'Upload failed', details: e?.message }, 500);
+  }
+});
+
+// GET /api/attestation/applications/pipeline — dashboard aggregate
+attestationAppsRouter.get('/applications/pipeline', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const rows = await db.select().from(attestationApplications).all();
+    const counts: Record<string, number> = {};
+    for (const r of rows) counts[r.stage] = (counts[r.stage] || 0) + 1;
+    const stuck = rows.filter(r => !['delivered', 'rejected'].includes(r.stage) && (r.updatedAt || 0) < now - 7 * 86400).length;
+    const awaitingDocs = rows.filter(r => r.stage === 'docs_awaiting' && r.documentStatus === 'missing').length;
+    const unpaid = rows.filter(r => r.paymentStatus !== 'paid' && !['delivered', 'rejected'].includes(r.stage)).length;
+    return c.json({ success: true, counts, stuck, awaitingDocs, unpaid, total: rows.length });
+  } catch (e: any) {
+    return c.json({ error: 'Pipeline fetch failed', details: e?.message }, 500);
   }
 });
 

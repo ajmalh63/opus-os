@@ -25,6 +25,10 @@ interface AttestationApplication {
   translationNeeded?: boolean;
   pickup?: { status: string; address: string | null; courierInbound: string | null; courierOutbound: string | null; courierReturn: string | null };
   stage?: string;
+  paymentStatus?: string;
+  paidAmountPaise?: number;
+  documentStatus?: string;
+  documentKey?: string | null;
   documentType?: string;
   status?: string;
   currentStep?: string;
@@ -52,6 +56,51 @@ const DOC_TYPES = [
 ];
 
 
+
+// ── Research-based product options (Siza Global + market catalog) ──
+const ATTESTATION_COUNTRIES = [
+  'UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain',
+  'Malaysia', 'China', 'Thailand', 'Vietnam', 'Taiwan', 'Sri Lanka', 'Bangladesh', 'Japan', 'South Korea', 'Singapore', 'Hong Kong',
+  'USA', 'UK', 'Canada', 'Australia', 'New Zealand', 'Ireland', 'Germany', 'France', 'Netherlands', 'Sweden', 'Switzerland', 'Spain', 'Italy', 'Poland', 'Russia', 'Turkey',
+  'Egypt', 'Jordan', 'Libya', 'South Africa', 'Brazil', 'Mexico', 'Other'
+];
+const SERVICE_TEMPLATES: Record<string, { title: string; category: string; route: string; docTypes: string[]; steps: string[]; purpose: string }> = {
+  'Degree Attestation': { title: 'Degree Attestation', category: 'educational', route: 'embassy', docTypes: ['Degree Certificate', 'Provisional Certificate'], steps: ['State HRD / GAD', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Employment visa' },
+  'Diploma Attestation': { title: 'Diploma Attestation', category: 'educational', route: 'embassy', docTypes: ['Diploma Certificate'], steps: ['State HRD / GAD', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Employment visa' },
+  'Marksheets & Transcripts': { title: 'Marksheets & Transcripts Attestation', category: 'educational', route: 'embassy', docTypes: ['Marksheets', 'Transcripts'], steps: ['State HRD / GAD', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Higher education' },
+  'School Certificates (SSC/HSC)': { title: 'School Certificates (SSC/HSC)', category: 'educational', route: 'embassy', docTypes: ['SSC Certificate', 'HSC Certificate'], steps: ['State HRD / GAD', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Employment visa' },
+  'Medical / Nursing Certificates': { title: 'Medical / Nursing Certificates', category: 'educational', route: 'embassy', docTypes: ['Nursing Certificate', 'MBBS Certificate', 'Pharmacy Certificate'], steps: ['State HRD / GAD', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Professional licensing' },
+  'Birth Certificate Attestation': { title: 'Birth Certificate Attestation', category: 'personal', route: 'embassy', docTypes: ['Birth Certificate'], steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Family / dependent visa' },
+  'Marriage Certificate Attestation': { title: 'Marriage Certificate Attestation', category: 'personal', route: 'embassy', docTypes: ['Marriage Certificate'], steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Family / dependent visa' },
+  'Death / Divorce Certificate': { title: 'Death / Divorce Certificate Attestation', category: 'personal', route: 'embassy', docTypes: ['Death Certificate', 'Divorce Certificate'], steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Legal matters' },
+  'Police Clearance Certificate': { title: 'Police Clearance Certificate (PCC)', category: 'personal', route: 'embassy', docTypes: ['Police Clearance Certificate'], steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Immigration / residency' },
+  'Experience Certificate': { title: 'Experience Certificate Attestation', category: 'personal', route: 'embassy', docTypes: ['Experience Certificate'], steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Employment visa' },
+  'Single Status Certificate': { title: 'Single Status Certificate', category: 'personal', route: 'embassy', docTypes: ['Single Status Certificate'], steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Marriage abroad' },
+  'Power of Attorney': { title: 'Power of Attorney Attestation', category: 'commercial', route: 'embassy', docTypes: ['Power of Attorney'], steps: ['Chamber of Commerce', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Business setup' },
+  'MOA / AOA': { title: 'MOA / AOA Attestation', category: 'commercial', route: 'embassy', docTypes: ['Memorandum of Association', 'Articles of Association'], steps: ['Chamber of Commerce', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Company registration' },
+  'Board Resolution': { title: 'Board Resolution Attestation', category: 'commercial', route: 'embassy', docTypes: ['Board Resolution'], steps: ['Chamber of Commerce', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Company registration' },
+  'Certificate of Origin': { title: 'Certificate of Origin', category: 'commercial', route: 'embassy', docTypes: ['Certificate of Origin'], steps: ['Chamber of Commerce', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Trade & export' },
+  'Commercial Invoice / Packing List': { title: 'Commercial Invoice / Packing List', category: 'commercial', route: 'embassy', docTypes: ['Commercial Invoice', 'Packing List'], steps: ['Chamber of Commerce', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'Trade & export' },
+  'Apostille Legalization': { title: 'Apostille Legalization (Hague countries)', category: 'educational', route: 'apostille', docTypes: ['Any educational document'], steps: ['State HRD / GAD', 'MEA Apostille'], purpose: 'Higher education / employment' },
+  'Apostille — Personal Documents': { title: 'Apostille — Personal Documents', category: 'personal', route: 'apostille', docTypes: ['Birth Certificate', 'Marriage Certificate', 'Affidavit'], steps: ['Notary', 'SDM / Home Dept', 'MEA Apostille'], purpose: 'Immigration / family visa' },
+  'Apostille — Commercial Documents': { title: 'Apostille — Commercial Documents', category: 'commercial', route: 'apostille', docTypes: ['POA', 'MOA', 'Invoices'], steps: ['Chamber of Commerce', 'MEA Apostille'], purpose: 'Business setup' },
+  'Arabic Translation + Attestation': { title: 'Arabic Translation + Attestation', category: 'personal', route: 'embassy', docTypes: ['Any document'], steps: ['Certified Arabic Translation', 'Notary', 'SDM / Home Dept', 'MEA', 'Destination Embassy', 'MOFA (in destination)'], purpose: 'GCC employment / family' },
+  'MOFA Attestation (in destination)': { title: 'MOFA Attestation (in destination)', category: 'personal', route: 'embassy', docTypes: ['Any attested document'], steps: ['MOFA (destination country)'], purpose: 'Residency / official use' },
+};
+const DOC_TYPE_OPTIONS: Record<string, string[]> = {
+  educational: ['Degree Certificate', 'Provisional Certificate', 'Diploma Certificate', 'SSC Certificate', 'HSC Certificate', 'Marksheets', 'Transcripts', 'Transfer Certificate', 'Nursing Certificate', 'MBBS Certificate', 'Pharmacy Certificate', 'PG / MS / MD Certificate', 'PhD Certificate'],
+  personal: ['Birth Certificate', 'Marriage Certificate', 'Death Certificate', 'Divorce Certificate', 'Adoption Certificate', 'Name Change Certificate', 'Single Status Certificate', 'Affidavit', 'Medical Certificate', 'Experience Certificate', 'Migration Certificate', 'Police Clearance Certificate', 'Aadhar Card'],
+  commercial: ['Power of Attorney', 'Memorandum of Association', 'Articles of Association', 'Board Resolution', 'Certificate of Incorporation', 'Certificate of Good Standing', 'Business License', 'Financial Statements', 'Patents', 'Certificate of Origin', 'Packing List', 'Export Invoice', 'NOC', 'Commercial Registration'],
+};
+const PURPOSE_OPTIONS = ['Employment visa', 'Family / dependent visa', 'Student visa', 'Business setup', 'Company registration', 'Trade & export', 'Higher education', 'Professional licensing', 'Immigration / residency', 'Medical purposes', 'Marriage abroad', 'Legal matters'];
+const CHAIN_TEMPLATES: Record<string, string[]> = {
+  'educational-embassy': ['State HRD / GAD', 'MEA', 'Destination Embassy', 'MOFA (in destination)'],
+  'personal-embassy': ['Notary', 'SDM / Home Dept', 'MEA', 'Destination Embassy', 'MOFA (in destination)'],
+  'commercial-embassy': ['Chamber of Commerce', 'MEA', 'Destination Embassy', 'MOFA (in destination)'],
+  'educational-apostille': ['State HRD / GAD', 'MEA Apostille'],
+  'personal-apostille': ['Notary', 'SDM / Home Dept', 'MEA Apostille'],
+  'commercial-apostille': ['Chamber of Commerce', 'MEA Apostille'],
+};
 
 export default function AttestationPortal() {
   const queryClient = useQueryClient();
@@ -154,7 +203,7 @@ export default function AttestationPortal() {
   // ── Rate card inventory (full CRUD) ──
   const [showRateModal, setShowRateModal] = useState(false);
   const [editingRate, setEditingRate] = useState<any>(null);
-  const [rateForm, setRateForm] = useState<any>({ country: '', category: 'educational', route: 'embassy', title: '', description: '', documentTypes: '', pricePaise: '', govtFeePaise: '', courierFeePaise: '', translationFeePaise: '', timelineDays: '10', steps: '', featured: false, active: true });
+  const [rateForm, setRateForm] = useState<any>({ country: '', category: 'educational', route: 'embassy', title: '', description: '', documentTypes: '', purpose: '', pricePaise: '', govtFeePaise: '', courierFeePaise: '', translationFeePaise: '', timelineDays: '10', steps: '', featured: false, active: true });
 
   const { data: rateCardsData } = useQuery<{ success: boolean; rateCards: any[] }>({
     queryKey: ['attestationRateCards'],
@@ -203,8 +252,8 @@ export default function AttestationPortal() {
       description: rate.description || '', documentTypes: (rate.documentTypes || []).join(', '),
       pricePaise: rate.pricePaise / 100, govtFeePaise: rate.govtFeePaise / 100, courierFeePaise: rate.courierFeePaise / 100,
       translationFeePaise: rate.translationFeePaise / 100, timelineDays: rate.timelineDays, steps: (rate.steps || []).join(' → '),
-      featured: !!rate.featured, active: !!rate.active
-    } : { country: '', category: 'educational', route: 'embassy', title: '', description: '', documentTypes: '', pricePaise: '', govtFeePaise: '', courierFeePaise: '', translationFeePaise: '', timelineDays: '10', steps: '', featured: false, active: true });
+      featured: !!rate.featured, active: !!rate.active, purpose: rate.purpose || ''
+    } : { country: '', category: 'educational', route: 'embassy', title: '', description: '', documentTypes: '', purpose: '', pricePaise: '', govtFeePaise: '', courierFeePaise: '', translationFeePaise: '', timelineDays: '10', steps: '', featured: false, active: true });
     setShowRateModal(true);
   };
 
@@ -212,7 +261,7 @@ export default function AttestationPortal() {
     const num = (v: any) => (v === '' || v === null || v === undefined ? 0 : Math.round(Number(v) * 100));
     saveRateMutation.mutate({
       country: rateForm.country, category: rateForm.category, route: rateForm.route,
-      title: rateForm.title || undefined, description: rateForm.description || undefined,
+      title: rateForm.title || undefined, description: rateForm.description || undefined, purpose: rateForm.purpose || undefined,
       documentTypes: rateForm.documentTypes.split(',').map((x: string) => x.trim()).filter(Boolean),
       pricePaise: num(rateForm.pricePaise), govtFeePaise: num(rateForm.govtFeePaise),
       courierFeePaise: num(rateForm.courierFeePaise), translationFeePaise: num(rateForm.translationFeePaise),
@@ -220,6 +269,110 @@ export default function AttestationPortal() {
       steps: rateForm.steps.split('→').map((x: string) => x.trim()).filter(Boolean),
       featured: rateForm.featured, active: rateForm.active
     });
+  };
+
+  // ── Applications & Stamping console ──
+  const [appFilter, setAppFilter] = useState<{ stage: string; country: string; category: string }>({ stage: '', country: '', category: '' });
+  const [editingApp, setEditingApp] = useState<any>(null);
+  const [showAppEdit, setShowAppEdit] = useState(false);
+  const [appEditForm, setAppEditForm] = useState<any>({});
+
+  const { data: pipelineData } = useQuery<any>({
+    queryKey: ['attestationPipeline'],
+    queryFn: async () => {
+      const r = await fetch('/api/attestation/applications/pipeline');
+      if (!r.ok) throw new Error('Pipeline failed');
+      return r.json();
+    }
+  });
+
+  const editAppMutation = useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
+      const r = await fetch(`/api/attestation/applications/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Update failed');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attestationApps', selectedClient?.id] });
+      queryClient.invalidateQueries({ queryKey: ['attestationPipeline'] });
+      setShowAppEdit(false);
+    },
+    onError: (e: any) => alert(e.message)
+  });
+
+  const deleteAppMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const r = await fetch(`/api/attestation/applications/${id}`, { method: 'DELETE' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Delete failed');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attestationApps', selectedClient?.id] });
+      queryClient.invalidateQueries({ queryKey: ['attestationPipeline'] });
+    },
+    onError: (e: any) => alert(e.message)
+  });
+
+  const duplicateAppMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const r = await fetch(`/api/attestation/applications/${id}/duplicate`, { method: 'POST' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Duplicate failed');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attestationApps', selectedClient?.id] });
+      queryClient.invalidateQueries({ queryKey: ['attestationPipeline'] });
+    },
+    onError: (e: any) => alert(e.message)
+  });
+
+  const uploadAppDoc = async (appId: string, file: File) => {
+    try {
+      const presignedRes = await fetch(`/api/attestation/applications/${appId}/document/presigned?filename=${encodeURIComponent(file.name)}`, { method: 'POST' });
+      const presigned = await presignedRes.json();
+      if (!presignedRes.ok || !presigned.url) throw new Error(presigned.error || 'Presign failed');
+      const uploadRes = await fetch(presigned.url, { method: 'PUT', body: await file.arrayBuffer() });
+      const result = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(result.error || 'Upload failed');
+      queryClient.invalidateQueries({ queryKey: ['attestationApps', selectedClient?.id] });
+      alert(result.message || 'Document uploaded.');
+    } catch (e: any) {
+      alert(`Upload failed: ${e.message}`);
+    }
+  };
+
+  const openAppEdit = (app: any) => {
+    setEditingApp(app);
+    setAppEditForm({
+      holderName: app.document?.holderName || '', documentName: app.document?.documentName || '',
+      issuingState: app.document?.issuingState || '', issuingYear: app.document?.issuingYear || '',
+      govtFeePaise: app.fees?.govtFeePaise || 0, serviceFeePaise: app.fees?.serviceFeePaise || 0,
+      courierFeePaise: app.fees?.courierFeePaise || 0, translationFeePaise: app.fees?.translationFeePaise || 0,
+      paymentStatus: app.paymentStatus || 'unpaid', paidAmountPaise: app.paidAmountPaise || 0,
+      documentStatus: app.documentStatus || 'missing', notes: app.notes || ''
+    });
+    setShowAppEdit(true);
+  };
+
+  const exportAppsCsv = () => {
+    const rows = (appsData?.applications || []).map((a: any) => [
+      a.document?.documentName || '', a.document?.holderName || '', a.document?.issuingState || '',
+      a.destinationCountry, a.category, a.route, a.stage, a.paymentStatus || 'unpaid',
+      ((a.fees?.totalQuotePaise || 0) / 100).toFixed(2), a.pickup?.courierInbound || ''
+    ]);
+    const head = ['Document', 'Holder', 'State', 'Country', 'Category', 'Route', 'Stage', 'Payment', 'Quote (₹)', 'Inbound AWB'];
+    const csv = [head, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `attestation-applications-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const STAGE_TRANSITIONS: Record<string, string[]> = {
@@ -399,6 +552,29 @@ export default function AttestationPortal() {
       )}
 
       {activeSubTab === 'applications' && (
+        <div className="space-y-4">
+          {/* Dashboard strip */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">Total</div><div className="font-display font-extrabold text-brand-navy text-xl mt-1">{pipelineData?.total ?? 0}</div></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-amber-700">🪨 Stuck (&gt;7d)</div><div className="font-display font-extrabold text-amber-700 text-xl mt-1">{pipelineData?.stuck ?? 0}</div></div>
+            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-blue-700">📄 Awaiting docs</div><div className="font-display font-extrabold text-blue-700 text-xl mt-1">{pipelineData?.awaitingDocs ?? 0}</div></div>
+            <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-rose-600">💰 Unpaid</div><div className="font-display font-extrabold text-rose-600 text-xl mt-1">{pipelineData?.unpaid ?? 0}</div></div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">📤 Export</div><button onClick={exportAppsCsv} className="mt-1 bg-emerald-600 text-white text-[9px] font-bold px-2.5 py-1.5 rounded hover:bg-emerald-700 transition-all cursor-pointer">CSV</button></div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <select value={appFilter.stage} onChange={e => setAppFilter(f => ({ ...f, stage: e.target.value }))} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+              <option value="">All stages</option>
+              {Object.keys(STAGE_LABEL).map(s => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
+            </select>
+            <input value={appFilter.country} onChange={e => setAppFilter(f => ({ ...f, country: e.target.value }))} placeholder="🌍 Country…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-32" />
+            <select value={appFilter.category} onChange={e => setAppFilter(f => ({ ...f, category: e.target.value }))} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+              <option value="">All categories</option>
+              <option value="educational">Educational</option><option value="personal">Personal</option><option value="commercial">Commercial</option>
+            </select>
+          </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 text-xs">
           <div className="lg:col-span-1 rounded-2xl border border-brand-navy/10 bg-white p-4 h-[500px] overflow-y-auto space-y-3 shadow-sm backdrop-blur-sm">
             <div className="flex items-center justify-between">
@@ -433,7 +609,12 @@ export default function AttestationPortal() {
                   <p className="text-xs text-brand-navy/50 italic">No attestation applications yet. Click "+ New App" to start a legalization workflow.</p>
                 ) : (
                   <div className="space-y-3">
-                    {(appsData?.applications || []).map(app => {
+                    {(appsData?.applications || []).filter((a: any) => {
+                      if (appFilter.stage && a.stage !== appFilter.stage) return false;
+                      if (appFilter.country && !(a.destinationCountry || '').toLowerCase().includes(appFilter.country.toLowerCase())) return false;
+                      if (appFilter.category && a.category !== appFilter.category) return false;
+                      return true;
+                    }).map(app => {
                       const next = STAGE_TRANSITIONS[(app.stage || 'quote') as string] || [];
                       const doc: any = app.document || {};
                       return (
@@ -477,22 +658,33 @@ export default function AttestationPortal() {
                           ))}
                         </div>
 
-                        {/* Fees + pickup */}
+                        {/* Fees + pickup + actions */}
                         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-brand-navy/[0.08] pt-2.5">
                           <div className="text-[10px] text-brand-navy/70">
                             Quote: <b>{INR(app.fees?.totalQuotePaise || 0)}</b>
+                            <span className={`ml-2 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${app.paymentStatus === 'paid' ? 'bg-emerald-500/15 text-emerald-700' : app.paymentStatus === 'partial' ? 'bg-amber-500/15 text-amber-700' : 'bg-rose-500/15 text-rose-600'}`}>{app.paymentStatus || 'unpaid'}</span>
                             <span className="ml-2 text-brand-navy/40">Pickup: {PICKUP_LABEL[(app.pickup?.status || 'awaiting_docs') as string] || app.pickup?.status}</span>
                             {app.pickup?.courierInbound && <span className="ml-2 text-brand-navy/40 font-mono">In: {app.pickup.courierInbound}</span>}
                             {app.pickup?.courierOutbound && <span className="ml-2 text-brand-navy/40 font-mono">Out: {app.pickup.courierOutbound}</span>}
                             {app.pickup?.courierReturn && <span className="ml-2 text-brand-navy/40 font-mono">Ret: {app.pickup.courierReturn}</span>}
                           </div>
-                          <select
-                            value={app.pickup?.status || 'awaiting_docs'}
-                            onChange={(e: any) => updatePickupMutation.mutate({ id: app.id, payload: { pickupStatus: e.target.value } })}
-                            className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[9px] font-bold text-brand-navy outline-none cursor-pointer [&>option]:bg-white"
-                          >
-                            {Object.entries(PICKUP_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                          </select>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${app.documentStatus === 'verified' ? 'bg-emerald-500/15 text-emerald-700' : app.documentStatus === 'received' ? 'bg-blue-500/15 text-blue-700' : app.documentStatus === 'rejected' ? 'bg-rose-500/15 text-rose-600' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>📄 {app.documentStatus || 'missing'}</span>
+                            <label className="cursor-pointer" title="Upload original scan">
+                              <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" className="hidden" onChange={(e: any) => { const f = e.target.files?.[0]; if (f) uploadAppDoc(app.id, f); }} />
+                              <span className="text-[9px] font-bold text-brand-gold hover:underline cursor-pointer">Upload</span>
+                            </label>
+                            <button onClick={() => openAppEdit(app)} title="Edit" className="text-[10px] text-brand-gold hover:underline font-bold cursor-pointer">✎</button>
+                            <button onClick={() => duplicateAppMutation.mutate(app.id)} title="Duplicate (multi-doc)" className="text-[10px] text-brand-navy/50 hover:text-brand-navy font-bold cursor-pointer">⧉</button>
+                            <button onClick={() => { if (confirm('Delete this application?')) deleteAppMutation.mutate(app.id); }} title="Delete" className="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">🗑</button>
+                            <select
+                              value={app.pickup?.status || 'awaiting_docs'}
+                              onChange={(e: any) => updatePickupMutation.mutate({ id: app.id, payload: { pickupStatus: e.target.value } })}
+                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[9px] font-bold text-brand-navy outline-none cursor-pointer [&>option]:bg-white"
+                            >
+                              {Object.entries(PICKUP_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                            </select>
+                          </div>
                         </div>
                         {app.notes && <p className="text-[10px] text-brand-navy/40 italic">{app.notes}</p>}
                       </div>
@@ -505,6 +697,7 @@ export default function AttestationPortal() {
               <p className="text-xs text-brand-navy/50 italic py-12 text-center">Please select a client from the directory.</p>
             )}
           </div>
+        </div>
         </div>
       )}
 
@@ -638,6 +831,60 @@ export default function AttestationPortal() {
         </div>
       )}
 
+      {/* Application edit modal */}
+      {showAppEdit && editingApp && (
+        <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 w-full max-w-2xl shadow-lg space-y-4 text-xs my-8">
+            <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
+              <h3 className="font-display font-extrabold text-brand-navy text-sm">✎ Edit Application</h3>
+              <button onClick={() => setShowAppEdit(false)} className="text-brand-navy/40 hover:text-brand-navy text-lg cursor-pointer">✕</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Document name</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.documentName} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, documentName: e.target.value }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Holder name</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.holderName} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, holderName: e.target.value }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Issuing state</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.issuingState} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, issuingState: e.target.value }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Issuing year</label><input type="number" className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.issuingYear} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, issuingYear: Number(e.target.value) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Govt fees (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.govtFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, govtFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Service fee (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.serviceFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, serviceFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Courier (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.courierFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, courierFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Translation (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.translationFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, translationFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Payment status</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={appEditForm.paymentStatus} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, paymentStatus: e.target.value }))}>
+                  <option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option>
+                </select>
+              </div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Paid amount (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.paidAmountPaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, paidAmountPaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Document status</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={appEditForm.documentStatus} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, documentStatus: e.target.value }))}>
+                  <option value="missing">Missing</option><option value="received">Received</option><option value="verified">Verified</option><option value="rejected">Rejected</option>
+                </select>
+              </div>
+              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Notes</label><textarea rows={2} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.notes} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, notes: e.target.value }))} /></div>
+            </div>
+            <div className="flex gap-3 pt-2 border-t border-brand-navy/10">
+              <button onClick={() => setShowAppEdit(false)} className="flex-1 border border-brand-navy/15 bg-brand-navy/[0.04] hover:border-brand-gold/50 py-2 rounded-lg font-bold text-brand-navy cursor-pointer transition-all">Cancel</button>
+              <button
+                onClick={() => editAppMutation.mutate({
+                  id: editingApp.id,
+                  payload: {
+                    document: { holderName: appEditForm.holderName, documentName: appEditForm.documentName, issuingState: appEditForm.issuingState, issuingYear: appEditForm.issuingYear },
+                    govtFeePaise: appEditForm.govtFeePaise, serviceFeePaise: appEditForm.serviceFeePaise,
+                    courierFeePaise: appEditForm.courierFeePaise, translationFeePaise: appEditForm.translationFeePaise,
+                    totalQuotePaise: appEditForm.govtFeePaise + appEditForm.serviceFeePaise + appEditForm.courierFeePaise + appEditForm.translationFeePaise,
+                    paymentStatus: appEditForm.paymentStatus, paidAmountPaise: appEditForm.paidAmountPaise,
+                    documentStatus: appEditForm.documentStatus, notes: appEditForm.notes
+                  }
+                })}
+                disabled={editAppMutation.isPending}
+                className="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-2 rounded-lg font-bold cursor-pointer transition-all disabled:opacity-50"
+              >
+                {editAppMutation.isPending ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Rate card product modal */}
       {showRateModal && (
         <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -647,12 +894,46 @@ export default function AttestationPortal() {
               <button onClick={() => { setShowRateModal(false); setEditingRate(null); }} className="text-brand-navy/40 hover:text-brand-navy text-lg cursor-pointer">✕</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Country *</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.country} onChange={e => setRateForm((f: any) => ({ ...f, country: e.target.value }))} placeholder="UAE" /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Category</label><select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={rateForm.category} onChange={e => setRateForm((f: any) => ({ ...f, category: e.target.value }))}>{['educational', 'personal', 'commercial'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Route</label><select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={rateForm.route} onChange={e => setRateForm((f: any) => ({ ...f, route: e.target.value }))}><option value="apostille">Apostille</option><option value="embassy">Embassy Attestation</option></select></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Service title</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.title} onChange={e => setRateForm((f: any) => ({ ...f, title: e.target.value }))} placeholder="Degree Attestation — UAE" /></div>
-              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Description (what's included)</label><textarea rows={2} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.description} onChange={e => setRateForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="HRD + MEA + Embassy + MOFA coordination, tracked at every step…" /></div>
-              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Document types covered (comma separated)</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.documentTypes} onChange={e => setRateForm((f: any) => ({ ...f, documentTypes: e.target.value }))} placeholder="Degree, Diploma, Marksheets, Transcripts" /></div>
+              <div className="md:col-span-2">
+                <label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">⚡ Start from a template (or build custom)</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value="" onChange={(e: any) => {
+                  const t = SERVICE_TEMPLATES[e.target.value];
+                  if (t) setRateForm((f: any) => ({ ...f, category: t.category, route: t.route, title: t.title, documentTypes: t.docTypes.join(', '), steps: t.steps.join(' → '), purpose: t.purpose }));
+                }}>
+                  <option value="">-- Pick a service template --</option>
+                  {Object.keys(SERVICE_TEMPLATES).map(k => <option key={k} value={k}>{k}</option>)}
+                </select>
+              </div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Country *</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={ATTESTATION_COUNTRIES.includes(rateForm.country) ? rateForm.country : 'Other'} onChange={(e: any) => setRateForm((f: any) => ({ ...f, country: e.target.value }))}>
+                  {ATTESTATION_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Category</label><select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={rateForm.category} onChange={(e: any) => setRateForm((f: any) => ({ ...f, category: e.target.value, documentTypes: '', steps: (CHAIN_TEMPLATES[`${e.target.value}-${f.route}`] || []).join(' → ') }))}>{['educational', 'personal', 'commercial'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Route</label><select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={rateForm.route} onChange={(e: any) => setRateForm((f: any) => ({ ...f, route: e.target.value, steps: (CHAIN_TEMPLATES[`${f.category}-${e.target.value}`] || []).join(' → ') }))}><option value="apostille">Apostille</option><option value="embassy">Embassy Attestation</option></select></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Service title</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.title} onChange={(e: any) => setRateForm((f: any) => ({ ...f, title: e.target.value }))} placeholder="Degree Attestation — UAE" /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Purpose / use case</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={rateForm.purpose} onChange={(e: any) => setRateForm((f: any) => ({ ...f, purpose: e.target.value }))}>
+                  <option value="">-- Select purpose --</option>
+                  {PURPOSE_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Description (what's included)</label><textarea rows={2} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.description} onChange={(e: any) => setRateForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="HRD + MEA + Embassy + MOFA coordination, tracked at every step…" /></div>
+              <div className="md:col-span-2">
+                <label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Document types covered</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {(DOC_TYPE_OPTIONS[rateForm.category] || []).map((dt: string) => {
+                    const selected = (rateForm.documentTypes || '').split(',').map((x: string) => x.trim()).filter(Boolean).includes(dt);
+                    return (
+                      <button key={dt} type="button" onClick={() => {
+                        const cur: string[] = (rateForm.documentTypes || '').split(',').map((x: string) => x.trim()).filter(Boolean);
+                        const next = selected ? cur.filter((x: string) => x !== dt) : [...cur, dt];
+                        setRateForm((f: any) => ({ ...f, documentTypes: next.join(', ') }));
+                      }} className={`px-2 py-1 rounded text-[9px] font-bold border cursor-pointer transition-all ${selected ? 'bg-brand-gold/20 border-brand-gold text-brand-navy' : 'bg-brand-navy/[0.04] border-brand-navy/10 text-brand-navy/50 hover:border-brand-gold/50'}`}>{dt}</button>
+                    );
+                  })}
+                </div>
+              </div>
               <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Indicative price (₹) *</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.pricePaise} onChange={e => setRateForm((f: any) => ({ ...f, pricePaise: e.target.value }))} placeholder="6000" /></div>
               <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Govt fees (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.govtFeePaise} onChange={e => setRateForm((f: any) => ({ ...f, govtFeePaise: e.target.value }))} placeholder="0" /></div>
               <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Courier (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.courierFeePaise} onChange={e => setRateForm((f: any) => ({ ...f, courierFeePaise: e.target.value }))} placeholder="0" /></div>

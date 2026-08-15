@@ -1195,6 +1195,12 @@ export const attestationApplications = sqliteTable('attestation_applications', {
   courierReturn: text('courier_return'), // supplier → us → client (AWB)
   // New status machine (no-jump): quote → docs_awaiting → in_process → completed → dispatched → delivered / rejected
   stage: text('stage', { enum: ['quote', 'docs_awaiting', 'in_process', 'completed', 'dispatched', 'delivered', 'rejected'] }).notNull().default('quote'),
+  // Original document scan (R2) + verification status
+  documentKey: text('document_key'),
+  documentStatus: text('document_status', { enum: ['missing', 'received', 'verified', 'rejected'] }).notNull().default('missing'),
+  // Payment tracking
+  paymentStatus: text('payment_status', { enum: ['unpaid', 'partial', 'paid'] }).notNull().default('unpaid'),
+  paidAmountPaise: integer('paid_amount_paise').notNull().default(0),
   notes: text('notes'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()

@@ -192,3 +192,89 @@ describe('Attestation Division (gold-standard)', () => {
     expect(goSrc).not.toContain("attestation: '/attestation'");
   });
 });
+
+describe('Attestation — full control (edit/delete/duplicate/doc/pipeline)', () => {
+  let mockD1: MockD1Database;
+  const now = Math.floor(Date.now() / 1000);
+  const staffHeaders = { cookie: 'better-auth.session_token=token-counselor' };
+
+  beforeAll(() => {
+    mockD1 = new MockD1Database();
+    mockD1.tables.clients.push({ id: 'OP-2026-9501', name: 'Test Client', phone: '+91 99999 88888', email: 't@test.com', created_at: now, updated_at: now });
+    mockD1.tables.attestation_rate_cards.push({
+      id: 'rc-qa', country: 'Qatar', category: 'personal', route: 'embassy', price_paise: 600000, timeline_days: 18,
+      steps_json: JSON.stringify(['Notary', 'SDM', 'MEA', 'Qatar Embassy']), active: 1, created_at: now, updated_at: now
+    });
+  });
+
+  it('creates an application, then edits fees + payment + document status', async () => {
+    const create = await app.request('/api/attestation/applications', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...staffHeaders },
+      body: JSON.stringify({ clientId: 'OP-2026-9501', document: { holderName: 'Anil Kumar', documentName: 'Birth Certificate', issuingState: 'Kerala' }, category: 'personal', route: 'embassy', destinationCountry: 'Qatar' })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(create.status).toBe(200);
+    const { id } = await create.json() as any;
+
+    const edit = await app.request(`/api/attestation/applications/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders },
+      body: JSON.stringify({ govtFeePaise: 50000, serviceFeePaise: 600000, paymentStatus: 'partial', paidAmountPaise: 300000, documentStatus: 'received', notes: 'Docs arrived' })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(edit.status).toBe(200);
+    const row = mockD1.tables.attestation_applications.find((a: any) => a.id === id);
+    expect(row.payment_status).toBe('partial');
+    expect(row.paid_amount_paise).toBe(300000);
+    expect(row.document_status).toBe('received');
+  });
+
+  it('duplicates an application (multi-doc) and deletes it', async () => {
+    const row = mockD1.tables.attestation_applications[0];
+    const dup = await app.request(`/api/attestation/applications/${row.id}/duplicate`, { method: 'POST', headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(dup.status).toBe(200);
+    const { id } = await dup.json() as any;
+    expect(mockD1.tables.attestation_applications.length).toBe(2);
+
+    const del = await app.request(`/api/attestation/applications/${id}`, { method: 'DELETE', headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(del.status).toBe(200);
+    expect(mockD1.tables.attestation_applications.length).toBe(1);
+  });
+
+  it('uploads the original document scan (flagged content rejected)', async () => {
+    const row = mockD1.tables.attestation_applications[0];
+    const bucket = { put: vi.fn(async () => ({})) };
+    const presigned = await app.request(`/api/attestation/applications/${row.id}/document/presigned?filename=birth-cert.pdf`, { method: 'POST', headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(presigned.status).toBe(200);
+    const { url } = await presigned.json() as any;
+    const urlObj = new URL(url, 'http://localhost');
+
+    const clean = await app.request(urlObj.pathname + urlObj.search, {
+      method: 'PUT', headers: { 'Content-Type': 'application/pdf', ...staffHeaders },
+      body: new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34])
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', BUCKET: bucket });
+    expect(clean.status).toBe(200);
+    const updated = mockD1.tables.attestation_applications.find((a: any) => a.id === row.id);
+    expect(updated.document_status).toBe('received');
+    expect(updated.document_key).toBeTruthy();
+  });
+
+  it('pipeline aggregate reports counts, stuck, awaiting docs, unpaid', async () => {
+    const res = await app.request('/api/attestation/applications/pipeline', { headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.total).toBe(1);
+    expect(typeof data.stuck).toBe('number');
+    expect(typeof data.awaitingDocs).toBe('number');
+    expect(typeof data.unpaid).toBe('number');
+  });
+
+  it('stage machine allows backward moves (full control)', async () => {
+    const row = mockD1.tables.attestation_applications[0];
+    // forward: quote → docs_awaiting → in_process
+    await app.request(`/api/attestation/applications/${row.id}/stage`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders }, body: JSON.stringify({ stage: 'docs_awaiting' }) }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    await app.request(`/api/attestation/applications/${row.id}/stage`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders }, body: JSON.stringify({ stage: 'in_process' }) }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    // backward: in_process → docs_awaiting
+    const back = await app.request(`/api/attestation/applications/${row.id}/stage`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...staffHeaders }, body: JSON.stringify({ stage: 'docs_awaiting' }) }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(back.status).toBe(200);
+    const updated = mockD1.tables.attestation_applications.find((a: any) => a.id === row.id);
+    expect(updated.stage).toBe('docs_awaiting');
+  });
+});
