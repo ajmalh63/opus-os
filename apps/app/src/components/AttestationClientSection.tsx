@@ -17,6 +17,9 @@ interface AttestationApp {
   translationNeeded: boolean;
   pickup: { status: string; address: string | null; courierInbound: string | null; courierOutbound: string | null; courierReturn: string | null };
   stage: string;
+  urgency?: string;
+  deadline?: number | null;
+  documentStatus?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -37,6 +40,9 @@ export default function AttestationClientSection({ token }: { token: string }) {
   const [holderName, setHolderName] = useState('');
   const [issuingState, setIssuingState] = useState('');
   const [translation, setTranslation] = useState(false);
+  const [urgency, setUrgency] = useState('normal');
+  const [deadline, setDeadline] = useState('');
+  const [scanFile, setScanFile] = useState<File | null>(null);
 
   const { data: bandsData } = useQuery<{ success: boolean; bands: any; disclaimer: string }>({
     queryKey: ['attestationBands', token],
@@ -75,16 +81,26 @@ export default function AttestationClientSection({ token }: { token: string }) {
         body: JSON.stringify({
           clientId: token,
           document: { holderName, documentName: docName, issuingState },
-          category, route: 'embassy', destinationCountry: country, translationNeeded: translation
+          category, route: 'embassy', destinationCountry: country, translationNeeded: translation,
+          urgency, deadline: deadline ? Math.floor(new Date(deadline).getTime() / 1000) : undefined
         })
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'Creation failed');
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['attestationApps', token] });
-      alert(data.message || 'Application created.');
+      if (scanFile && data.id) {
+        try {
+          const presignedRes = await fetch(`/api/public/portal/attestation/applications/${data.id}/document/presigned?token=${token}&filename=${encodeURIComponent(scanFile.name)}`, { method: 'POST' });
+          const presigned = await presignedRes.json();
+          if (presignedRes.ok && presigned.url) {
+            await fetch(presigned.url, { method: 'PUT', body: await scanFile.arrayBuffer() });
+          }
+        } catch { /* scan upload failure shouldn't block the request */ }
+      }
+      alert(data.message || 'Quote request submitted.');
       setTab('tracker');
     },
     onError: (e: any) => alert(e.message)
@@ -180,6 +196,26 @@ export default function AttestationClientSection({ token }: { token: string }) {
               </div>
             )}
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Urgency</label>
+                <select className={inputCls} value={urgency} onChange={e => setUrgency(e.target.value)}>
+                  <option value="normal">Normal</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Needed by (optional)</label>
+                <input type="date" className={inputCls} value={deadline} onChange={e => setDeadline(e.target.value)} />
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelCls}>Document scan (helps us quote faster — optional)</label>
+                <label className="flex items-center gap-2 rounded-lg border border-dashed border-brand-navy/20 px-3 py-2.5 cursor-pointer hover:border-brand-gold/50 transition-all">
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" className="hidden" onChange={(e) => setScanFile(e.target.files?.[0] || null)} />
+                  <span className="text-[10px] text-brand-navy/60">{scanFile ? `✓ ${scanFile.name}` : '📎 Attach a scan of the document'}</span>
+                </label>
+              </div>
+            </div>
             <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-2.5 text-[9px] text-amber-800">
               The range shown is <b>indicative only</b> — it is not compulsory to stay within this bracket and the final price <b>may go up</b> based on government fees and document specifics. We confirm the exact price before you send anything.
             </div>
@@ -233,8 +269,13 @@ export default function AttestationClientSection({ token }: { token: string }) {
               </div>
 
               {app.stage === 'quote_requested' && (
-                <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-3 text-[10px] text-amber-800">
-                  <b>Quote requested.</b> Our team is confirming the exact price with our processing partners — we'll update you shortly. The range shown was indicative and may vary.
+                <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-3 text-[10px] text-amber-800 space-y-1">
+                  <div><b>Quote requested.</b> Our team is confirming the exact price with our processing partners — we'll update you shortly.</div>
+                  <div className="flex flex-wrap gap-2 text-[9px]">
+                    {app.urgency === 'urgent' && <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 font-bold">⚡ Urgent</span>}
+                    {app.deadline && <span>Needed by: <b>{new Date(app.deadline * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</b></span>}
+                    <span>Scan: <b className={app.documentStatus === 'received' ? 'text-emerald-700' : 'text-brand-navy/50'}>{app.documentStatus === 'received' ? '✓ uploaded' : 'not uploaded'}</b></span>
+                  </div>
                 </div>
               )}
               {app.stage === 'quote_confirmed' && (

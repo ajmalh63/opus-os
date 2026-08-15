@@ -87,6 +87,8 @@ function serializeApplication(row: any) {
     documentStatus: row.documentStatus,
     paymentStatus: row.paymentStatus,
     paidAmountPaise: row.paidAmountPaise,
+    deadline: row.deadline,
+    urgency: row.urgency,
     notes: row.notes,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -308,6 +310,8 @@ attestationAppsRouter.post('/applications', zValidator('json', createAttestation
       translationNeeded: !!body.translationNeeded,
       pickupStatus: 'awaiting_docs',
       stage: 'quote_requested',
+      deadline: body.deadline ?? null,
+      urgency: body.urgency ?? 'normal',
       notes: body.notes ?? null,
       createdAt: now,
       updatedAt: now
@@ -603,7 +607,7 @@ attestationAppsRouter.get('/applications/pipeline', async (c) => {
 });
 
 // ─── Client portal (token-auth) ───
-export const portalAttestationRouter = new Hono<{ Bindings: { DB: D1Database } }>();
+export const portalAttestationRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET?: string; BUCKET?: any } }>();
 
 // GET /api/public/portal/attestation/price-bands?token= — indicative ranges for the quote form
 portalAttestationRouter.get('/price-bands', async (c) => {
@@ -632,6 +636,77 @@ portalAttestationRouter.get('/rate-cards', async (c) => {
     });
   } catch (e: any) {
     return c.json({ error: 'Rate cards fetch failed', details: e?.message }, 500);
+  }
+});
+
+// POST /api/public/portal/attestation/applications/:id/document/presigned?token= — client uploads the scan
+portalAttestationRouter.post('/applications/:id/document/presigned', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token is required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const row = await db.select().from(attestationApplications).where(eq(attestationApplications.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Application not found' }, 404);
+    if (row.clientId !== token) return c.json({ error: 'Not your application' }, 403);
+    const original = c.req.query('filename');
+    if (!original) return c.json({ error: 'filename is required' }, 400);
+    const secret = c.env.BETTER_AUTH_SECRET;
+    if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
+    const filename = `attestation-${row.id.slice(0, 8)}-${original.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const expires = Math.floor(Date.now() / 1000) + 900;
+    const signature = await signUploadPath(secret, token, filename, expires);
+    const url = `/api/public/portal/attestation/applications/${row.id}/document/upload?token=${token}&filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}`;
+    return c.json({ success: true, url, expires, filename });
+  } catch (e: any) {
+    return c.json({ error: 'Presign failed', details: e?.message }, 500);
+  }
+});
+
+// PUT /api/public/portal/attestation/applications/:id/document/upload — store scan + mark received
+portalAttestationRouter.put('/applications/:id/document/upload', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token is required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const row = await db.select().from(attestationApplications).where(eq(attestationApplications.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Application not found' }, 404);
+    if (row.clientId !== token) return c.json({ error: 'Not your application' }, 403);
+    const filename = c.req.query('filename');
+    const expiresStr = c.req.query('expires');
+    const signature = c.req.query('signature');
+    if (!filename || !expiresStr || !signature) return c.json({ error: 'Missing upload parameters' }, 400);
+    const expires = Number(expiresStr);
+    if (Math.floor(Date.now() / 1000) > expires) return c.json({ error: 'Upload URL has expired' }, 400);
+    const secret = c.env.BETTER_AUTH_SECRET;
+    if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
+    const expectedSig = await signUploadPath(secret, token, filename, expires);
+    if (!timingSafeEqual(signature, expectedSig)) return c.json({ error: 'Invalid upload signature' }, 400);
+
+    const fileBody = await c.req.arrayBuffer();
+    const bytes = new Uint8Array(fileBody);
+    const guard = guardUpload('document', filename, bytes.byteLength, bytes);
+    if (!guard.ok) return c.json({ error: guard.error }, (guard.status || 400) as any);
+    const safeName = guard.safeName!;
+    const mimeType = guard.mimeType!;
+    const scan = scanDocumentBytes(bytes, mimeType, safeName);
+
+    const r2Key = `${crypto.randomUUID()}-${safeName}`;
+    const bucket = (c.env as any).BUCKET;
+    if (bucket) await bucket.put(r2Key, fileBody, { httpMetadata: { contentType: mimeType } });
+
+    await db.update(attestationApplications).set({
+      documentKey: r2Key,
+      documentStatus: scan.status === 'flagged' ? 'rejected' : 'received',
+      notes: scan.status === 'flagged' ? `⚠️ ${scan.note}` : row.notes,
+      updatedAt: now
+    }).where(eq(attestationApplications.id, row.id));
+    await createStaffAlert(c.env as any, { division: 'attestation', type: 'doc_scan_uploaded', title: 'Document scan uploaded with quote request', body: `${safeName} — ready to forward to the processing partner.`, clientId: token, payload: { applicationId: row.id } });
+    return c.json({ success: true, documentStatus: scan.status === 'flagged' ? 'rejected' : 'received', message: scan.status === 'flagged' ? 'Document flagged — our team will review.' : 'Document scan received.' });
+  } catch (e: any) {
+    return c.json({ error: 'Upload failed', details: e?.message }, 500);
   }
 });
 
@@ -692,12 +767,14 @@ portalAttestationRouter.post('/applications', zValidator('json', createAttestati
       translationNeeded: !!body.translationNeeded,
       pickupStatus: 'awaiting_docs',
       stage: 'quote_requested',
+      deadline: body.deadline ?? null,
+      urgency: body.urgency ?? 'normal',
       notes: body.notes ?? null,
       createdAt: now,
       updatedAt: now
     });
 
-    await createStaffAlert(c.env as any, { division: 'attestation', type: 'attestation_quote', title: 'New attestation quote requested', body: `${body.document.documentName || body.category} → ${body.destinationCountry}`, clientId: token, payload: { applicationId: id } });
+    await createStaffAlert(c.env as any, { division: 'attestation', type: 'attestation_quote', title: 'New attestation quote requested', body: `${body.document.documentName || body.category} → ${body.destinationCountry}${body.urgency === 'urgent' ? ' (URGENT)' : ''}`, clientId: token, payload: { applicationId: id, urgency: body.urgency ?? 'normal' } });
     return c.json({
       success: true, id,
       quote: { totalPaise: 0, servicePaise: 0, translationPaise: 0 },

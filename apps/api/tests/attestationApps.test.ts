@@ -327,3 +327,59 @@ describe('Attestation — price bands (Option 1)', () => {
     expect(data.bands.embassy.educational.min).toBe(6000); // saved value
   });
 });
+
+describe('Attestation — supplier-check intake (deadline/urgency/scan)', () => {
+  let mockD1: MockD1Database;
+  const now = Math.floor(Date.now() / 1000);
+  const staffHeaders = { cookie: 'better-auth.session_token=token-counselor' };
+
+  beforeAll(() => {
+    mockD1 = new MockD1Database();
+    mockD1.tables.clients.push({ id: 'OP-2026-9801', name: 'Scan Client', phone: '+91 99999 66661', email: 's@test.com', created_at: now, updated_at: now });
+  });
+
+  it('portal create captures urgency + deadline', async () => {
+    const res = await app.request('/api/public/portal/attestation/applications?token=OP-2026-9801', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientId: 'OP-2026-9801',
+        document: { holderName: 'Ravi Kumar', documentName: 'Degree Certificate', issuingState: 'Telangana' },
+        category: 'educational', route: 'embassy', destinationCountry: 'UAE',
+        urgency: 'urgent', deadline: now + 20 * 86400
+      })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const { id } = await res.json() as any;
+    const row = mockD1.tables.attestation_applications.find((a: any) => a.id === id);
+    expect(row.urgency).toBe('urgent');
+    expect(row.deadline).toBe(now + 20 * 86400);
+    // Staff alert flags urgency
+    const alert = mockD1.tables.staff_alerts.find((a: any) => a.type === 'attestation_quote');
+    expect(alert.body).toContain('URGENT');
+  });
+
+  it('client uploads the document scan with the quote request (token-bound)', async () => {
+    const row = mockD1.tables.attestation_applications.find((a: any) => a.urgency === 'urgent');
+    const bucket = { put: vi.fn(async () => ({})) };
+    const presigned = await app.request(`/api/public/portal/attestation/applications/${row.id}/document/presigned?token=OP-2026-9801&filename=degree.pdf`, { method: 'POST' }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(presigned.status).toBe(200);
+    const { url } = await presigned.json() as any;
+    const urlObj = new URL(url, 'http://localhost');
+
+    const upload = await app.request(urlObj.pathname + urlObj.search, {
+      method: 'PUT', headers: { 'Content-Type': 'application/pdf' },
+      body: new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34])
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', BUCKET: bucket });
+    expect(upload.status).toBe(200);
+    const updated = mockD1.tables.attestation_applications.find((a: any) => a.id === row.id);
+    expect(updated.document_status).toBe('received');
+    expect(updated.document_key).toBeTruthy();
+    const alert = mockD1.tables.staff_alerts.find((a: any) => a.type === 'doc_scan_uploaded');
+    expect(alert).toBeTruthy();
+
+    // Ownership: another token cannot upload to this application
+    mockD1.tables.clients.push({ id: 'OP-2026-9802', name: 'Other', phone: '+91 99999 66662', email: 'o2@test.com', created_at: now, updated_at: now });
+    const presigned2 = await app.request(`/api/public/portal/attestation/applications/${row.id}/document/presigned?token=OP-2026-9802&filename=x.pdf`, { method: 'POST' }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(presigned2.status).toBe(403);
+  });
+});

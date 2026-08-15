@@ -375,6 +375,8 @@ export const createAttestationApplicationSchema = z.object({
   route: z.enum(['apostille', 'embassy']),
   destinationCountry: z.string().min(2, 'Destination country is required'),
   translationNeeded: z.boolean().default(false),
+  deadline: z.number().int().optional(), // UNIX ts — needed by date
+  urgency: z.enum(['normal', 'urgent']).default('normal'),
   notes: z.string().max(2000).optional()
 });
 

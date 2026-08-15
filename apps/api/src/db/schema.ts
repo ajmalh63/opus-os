@@ -1201,6 +1201,9 @@ export const attestationApplications = sqliteTable('attestation_applications', {
   // Payment tracking
   paymentStatus: text('payment_status', { enum: ['unpaid', 'partial', 'paid'] }).notNull().default('unpaid'),
   paidAmountPaise: integer('paid_amount_paise').notNull().default(0),
+  // Supplier-check intake (Siza-style): deadline + urgency
+  deadline: integer('deadline'), // UNIX ts — needed by date
+  urgency: text('urgency', { enum: ['normal', 'urgent'] }).notNull().default('normal'),
   notes: text('notes'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()

@@ -25,6 +25,8 @@ interface AttestationApplication {
   translationNeeded?: boolean;
   pickup?: { status: string; address: string | null; courierInbound: string | null; courierOutbound: string | null; courierReturn: string | null };
   stage?: string;
+  urgency?: string;
+  deadline?: number | null;
   paymentStatus?: string;
   paidAmountPaise?: number;
   documentStatus?: string;
@@ -726,8 +728,23 @@ export default function AttestationPortal() {
                         </div>
 
                         {app.stage === 'quote_requested' && (
-                          <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-2.5 text-[10px] text-amber-800">
-                            📨 Quote request — check with the processing partner, set the exact fees (✎ Edit), then move to <b>Quote Confirmed</b>.
+                          <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-2.5 text-[10px] text-amber-800 space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <b>📨 Quote request</b>
+                              {app.urgency === 'urgent' && <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 font-bold text-[9px]">⚡ URGENT</span>}
+                              {app.deadline && <span className="text-[9px]">Needed by <b>{new Date(app.deadline * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</b></span>}
+                              <span className={`text-[9px] ${app.documentStatus === 'received' ? 'text-emerald-700 font-bold' : 'text-brand-navy/50'}`}>{app.documentStatus === 'received' ? '✓ Scan uploaded' : 'No scan yet'}</span>
+                            </div>
+                            <div className="text-[9px] text-amber-700/80">Check with the processing partner → set exact fees (✎ Edit) → move to <b>Quote Confirmed</b>.</div>
+                            <button
+                              onClick={() => {
+                                const msg = `Hi, quote please: ${app.document?.documentName || ''} (${app.document?.issuingState || ''}) → ${app.destinationCountry}, ${app.category}, ${app.urgency === 'urgent' ? 'URGENT' : 'normal'}${app.deadline ? `, needed by ${new Date(app.deadline * 1000).toLocaleDateString('en-IN')}` : ''}${app.documentStatus === 'received' ? ', scan attached' : ''}`;
+                                navigator.clipboard?.writeText(msg).then(() => alert('Supplier message copied — paste it on WhatsApp.')).catch(() => alert(msg));
+                              }}
+                              className="text-[9px] font-bold text-brand-gold hover:underline cursor-pointer"
+                            >
+                              📋 Copy supplier message
+                            </button>
                           </div>
                         )}
                         {app.stage === 'quote_confirmed' && (
