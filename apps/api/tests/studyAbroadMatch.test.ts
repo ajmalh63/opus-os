@@ -75,8 +75,10 @@ describe('studyAbroadMatch — reach/match/safe tiers', () => {
   });
 
   it('match: Duolingo requirement normalized against student IELTS', () => {
-    // Student IELTS 7.0 vs university DET 120 requirement (≈ IELTS 7.0) → match
-    const r = matchApplication({ cgpa: 8.0, englishScore: 7.0, tuitionBudget: 25, targetCountry: 'USA' }, { minGpa: 7.0, minEnglishScore: 120, englishTest: 'Duolingo', tuitionLpaMax: 24, country: 'USA' });
+    // Route normalizes the university requirement first (serializeApplication),
+    // then matchApplication compares on the IELTS scale.
+    const minEnglish = normalizeEnglish(120, 'Duolingo'); // ≈ 7.0
+    const r = matchApplication({ cgpa: 8.0, englishScore: 7.0, tuitionBudget: 25, targetCountry: 'USA' }, { minGpa: 7.0, minEnglishScore: minEnglish, tuitionLpaMax: 24, country: 'USA' });
     expect(r.tier).toBe('match');
     expect(r.misses).not.toContain('English');
   });
