@@ -2,6 +2,29 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
+vi.mock('../src/auth.js', () => {
+  return {
+    getAuth: (env: any) => {
+      return {
+        api: {
+          getSession: async (options: any) => {
+            const cookieHeader = options?.headers?.get('cookie') || '';
+            const match = cookieHeader.match(/better-auth\.session_token=([^;]+)/);
+            const token = match ? match[1] : null;
+            if (token === 'token-counselor') {
+              return {
+                user: { id: 'counselor-1', name: 'Counselor', email: 'c@test.com', role: 'counselor', userDivisions: JSON.stringify(['study-abroad']) },
+                session: { id: 's1', token, userId: 'counselor-1' }
+              };
+            }
+            return null;
+          }
+        }
+      };
+    }
+  };
+});
+
 describe('Study Abroad — Student Portal Profile & Documents (sync)', () => {
   let mockD1: MockD1Database;
   const now = Math.floor(Date.now() / 1000);
