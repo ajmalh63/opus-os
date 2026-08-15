@@ -2,7 +2,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
-import { tasks, notifications, users } from '../db/schema.js';
+import { tasks, notifications, users, engagements, studyAbroadApplications, seatBookings, visaApplications, manpowerDeployments, attestationApplications } from '../db/schema.js';
 import { eq, and, desc } from 'drizzle-orm';
 
 export const tasksRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string }; Variables: { user?: { id?: string } | null } }>();
@@ -81,6 +81,35 @@ tasksRouter.post('/', zValidator('json', createTaskSchema), async (c) => {
 });
 
 // GET /api/tasks?assignee=:id&status=open (list with filters)
+// GET /api/tasks/divisions-stats — live counters per division (hub cards, all staff)
+tasksRouter.get('/divisions-stats', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const [engs, apps, umrah, visa, manpower, attest, allTasks] = await Promise.all([
+      db.select().from(engagements).all(),
+      db.select().from(studyAbroadApplications).all(),
+      db.select().from(seatBookings).all(),
+      db.select().from(visaApplications).all(),
+      db.select().from(manpowerDeployments).all(),
+      db.select().from(attestationApplications).all(),
+      db.select().from(tasks).all(),
+    ]);
+    const openTasks = allTasks.filter(t => t.status === 'open').length;
+    const stats: Record<string, any> = {
+      'study-abroad': { applications: apps.length, inProgress: apps.filter((a: any) => !['enrolled', 'rejected', 'withdrawn'].includes(a.stage)).length, openTasks },
+      visa: { applications: visa.length, inProgress: visa.filter(v => !['delivered', 'cancelled'].includes(v.status)).length, openTasks },
+      umrah: { bookings: umrah.length, active: umrah.filter(b => ['held', 'reserved', 'confirmed'].includes(b.status)).length, openTasks },
+      manpower: { deployments: manpower.length, inProgress: manpower.filter(m => m.selectionStatus === 'selected' || m.visaStatus === 'submitted').length, openTasks },
+      attestation: { applications: attest.length, quoteRequests: attest.filter((a: any) => a.stage === 'quote_requested').length, inProcess: attest.filter((a: any) => ['in_process', 'completed', 'dispatched'].includes(a.stage)).length, openTasks },
+      engagements: engs.length,
+    };
+    return c.json({ success: true, stats });
+  } catch (e: any) {
+    return c.json({ error: 'Stats fetch failed', details: e?.message }, 500);
+  }
+});
+
 tasksRouter.get('/', async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
