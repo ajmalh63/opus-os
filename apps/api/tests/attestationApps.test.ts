@@ -482,8 +482,8 @@ describe('Divisions hub — live stats', () => {
     });
   });
 
-  it('GET /api/infrastructure/divisions-stats returns per-division counters', async () => {
-    const res = await app.request('/api/infrastructure/divisions-stats', { headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+  it('GET /api/tasks/divisions-stats returns per-division counters (all staff roles)', async () => {
+    const res = await app.request('/api/tasks/divisions-stats', { headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     expect(res.status).toBe(200);
     const data = await res.json() as any;
     expect(data.stats.attestation.applications).toBe(1);
