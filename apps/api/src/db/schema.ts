@@ -1207,8 +1207,25 @@ export const attestationApplications = sqliteTable('attestation_applications', {
 });
 
 // ==========================================
-// 59.1 ATTESTATION RATE CARDS — configurable price list (country × category × route).
-// Seeded with market ranges; owner edits. NEVER shown with supplier names (B2C).
+// 59.1 ATTESTATION RATE MATRIX — the source of truth (country × category × route).
+// Bulk-editable, price bands, CSV. Powers every quote. NEVER supplier names (B2C).
+// ==========================================
+export const attestationRateMatrix = sqliteTable('attestation_rate_matrix', {
+  id: text('id').primaryKey(),
+  country: text('country').notNull(),
+  category: text('category', { enum: ['educational', 'personal', 'commercial'] }).notNull(),
+  route: text('route', { enum: ['apostille', 'embassy'] }).notNull(),
+  pricePaise: integer('price_paise').notNull(),
+  timelineDays: integer('timeline_days').notNull().default(10),
+  stepsJson: text('steps_json').notNull().default('[]'),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 59.2 ATTESTATION RATE CARDS — FEATURED products (optional showcase for the client portal).
+// Hand-crafted with title/description/document types. The matrix powers quotes.
 // ==========================================
 export const attestationRateCards = sqliteTable('attestation_rate_cards', {
   id: text('id').primaryKey(),

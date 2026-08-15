@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { clients, engagements, attestationApplications, attestationRateCards, tasks } from '../db/schema.js';
+import { clients, engagements, attestationApplications, attestationRateCards, attestationRateMatrix, tasks } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
@@ -105,6 +105,103 @@ async function createTask(db: any, clientId: string, title: string, description:
     updatedAt: Math.floor(Date.now() / 1000)
   });
 }
+
+// ─── RATE MATRIX (staff) — the source of truth ───
+
+// GET /api/attestation/rate-matrix — all rows
+attestationAppsRouter.get('/rate-matrix', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const rows = await db.select().from(attestationRateMatrix).all();
+    return c.json({ success: true, matrix: rows.map(r => ({ ...r, steps: JSON.parse(r.stepsJson || '[]') })) });
+  } catch (e: any) {
+    return c.json({ error: 'Matrix fetch failed', details: e?.message }, 500);
+  }
+});
+
+// PUT /api/attestation/rate-matrix — bulk upsert (rows: [{country, category, route, pricePaise, timelineDays, steps, active}])
+attestationAppsRouter.put('/rate-matrix', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const body = await c.req.json().catch(() => ({})) as any;
+    const rows = Array.isArray(body.rows) ? body.rows : [];
+    if (rows.length === 0) return c.json({ error: 'rows[] is required' }, 400);
+    let upserted = 0;
+    for (const r of rows) {
+      if (!r.country || !r.category || !r.route || r.pricePaise === undefined) continue;
+      const existing = await db.select().from(attestationRateMatrix)
+        .where(and(eq(attestationRateMatrix.country, r.country), eq(attestationRateMatrix.category, r.category), eq(attestationRateMatrix.route, r.route)))
+        .get();
+      if (existing) {
+        await db.update(attestationRateMatrix).set({
+          pricePaise: r.pricePaise,
+          timelineDays: r.timelineDays ?? existing.timelineDays,
+          stepsJson: r.steps ? JSON.stringify(r.steps) : existing.stepsJson,
+          active: r.active ?? existing.active,
+          updatedAt: now
+        }).where(eq(attestationRateMatrix.id, existing.id));
+      } else {
+        await db.insert(attestationRateMatrix).values({
+          id: crypto.randomUUID(),
+          country: r.country,
+          category: r.category,
+          route: r.route,
+          pricePaise: r.pricePaise,
+          timelineDays: r.timelineDays ?? 10,
+          stepsJson: JSON.stringify(r.steps || []),
+          active: r.active ?? true,
+          createdAt: now,
+          updatedAt: now
+        });
+      }
+      upserted++;
+    }
+    await auditEvent(c as any, { action: 'RATE_MATRIX_UPDATED', entityName: 'attestation_rate_matrix', entityId: 'bulk', afterState: { rows: upserted } }).catch(() => {});
+    return c.json({ success: true, upserted, message: `${upserted} matrix rows saved.` });
+  } catch (e: any) {
+    return c.json({ error: 'Matrix update failed', details: e?.message }, 500);
+  }
+});
+
+// POST /api/attestation/rate-matrix/bands — price-band quick-fill (set all matching rows)
+attestationAppsRouter.post('/rate-matrix/bands', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const body = await c.req.json().catch(() => ({})) as any;
+    const { route, category, pricePaise, timelineDays } = body;
+    if (!route || pricePaise === undefined) return c.json({ error: 'route and pricePaise are required' }, 400);
+    const rows = await db.select().from(attestationRateMatrix).all();
+    let updated = 0;
+    for (const r of rows) {
+      if (r.route !== route) continue;
+      if (category && r.category !== category) continue;
+      await db.update(attestationRateMatrix).set({ pricePaise, timelineDays: timelineDays ?? r.timelineDays, updatedAt: now }).where(eq(attestationRateMatrix.id, r.id));
+      updated++;
+    }
+    return c.json({ success: true, updated, message: `${updated} rows updated to ₹${(pricePaise / 100).toFixed(0)}.` });
+  } catch (e: any) {
+    return c.json({ error: 'Band update failed', details: e?.message }, 500);
+  }
+});
+
+// DELETE /api/attestation/rate-matrix/:id — remove a row
+attestationAppsRouter.delete('/rate-matrix/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const row = await db.select().from(attestationRateMatrix).where(eq(attestationRateMatrix.id, c.req.param('id'))).get();
+    if (!row) return c.json({ error: 'Matrix row not found' }, 404);
+    await db.delete(attestationRateMatrix).where(eq(attestationRateMatrix.id, row.id));
+    return c.json({ success: true, message: 'Matrix row deleted.' });
+  } catch (e: any) {
+    return c.json({ error: 'Matrix row deletion failed', details: e?.message }, 500);
+  }
+});
 
 // ─── RATE CARDS (staff) ───
 
@@ -230,13 +327,16 @@ attestationAppsRouter.post('/applications', zValidator('json', createAttestation
     const client = await db.select().from(clients).where(eq(clients.id, body.clientId)).get();
     if (!client) return c.json({ error: 'Client not found' }, 404);
 
-    // Quote from the rate card (indicative — never guaranteed)
-    const rateCard = await db.select().from(attestationRateCards)
+    // Quote from the RATE MATRIX (source of truth), fallback to featured rate card
+    const matrixRow = await db.select().from(attestationRateMatrix)
+      .where(and(eq(attestationRateMatrix.country, body.destinationCountry), eq(attestationRateMatrix.category, body.category), eq(attestationRateMatrix.route, body.route), eq(attestationRateMatrix.active, true)))
+      .get();
+    const rateCard = matrixRow ? null : await db.select().from(attestationRateCards)
       .where(and(eq(attestationRateCards.country, body.destinationCountry), eq(attestationRateCards.category, body.category), eq(attestationRateCards.route, body.route), eq(attestationRateCards.active, true)))
       .get();
-    const quotePaise = rateCard?.pricePaise ?? 0;
-    const timelineDays = rateCard?.timelineDays ?? 10;
-    const chainSteps = rateCard ? JSON.parse(rateCard.stepsJson || '[]') : [];
+    const quotePaise = matrixRow?.pricePaise ?? rateCard?.pricePaise ?? 0;
+    const timelineDays = matrixRow?.timelineDays ?? rateCard?.timelineDays ?? 10;
+    const chainSteps = matrixRow ? JSON.parse(matrixRow.stepsJson || '[]') : (rateCard ? JSON.parse(rateCard.stepsJson || '[]') : []);
 
     const id = crypto.randomUUID();
     await db.insert(attestationApplications).values({
@@ -542,6 +642,24 @@ attestationAppsRouter.get('/applications/pipeline', async (c) => {
 
 // ─── Client portal (token-auth) ───
 export const portalAttestationRouter = new Hono<{ Bindings: { DB: D1Database } }>();
+
+// GET /api/public/portal/attestation/rate-matrix?token= — quote calculator data (indicative)
+portalAttestationRouter.get('/rate-matrix', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const rows = await db.select().from(attestationRateMatrix).where(eq(attestationRateMatrix.active, true)).all();
+    const countries = [...new Set(rows.map(r => r.country))].sort();
+    return c.json({
+      success: true,
+      countries,
+      matrix: rows.map(r => ({ country: r.country, category: r.category, route: r.route, pricePaise: r.pricePaise, timelineDays: r.timelineDays, steps: JSON.parse(r.stepsJson || '[]') })),
+      disclaimer: 'Prices shown are indicative ranges and are not guaranteed — final cost may vary based on government fees, document type and processing. Subject to change without notice.'
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Matrix fetch failed', details: e?.message }, 500);
+  }
+});
 
 // GET /api/public/portal/attestation/rate-cards?token= — public price ranges (indicative)
 portalAttestationRouter.get('/rate-cards', async (c) => {

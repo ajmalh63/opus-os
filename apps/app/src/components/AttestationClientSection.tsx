@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // Browse indicative price ranges → create application (one doc) → send docs to
 // our office → track the chain timeline → delivery. Prices NEVER guaranteed.
 
-interface RateCard { country: string; category: string; route: string; pricePaise: number; timelineDays: number; steps: string[] }
+interface RateCard { id: string; country: string; category: string; route: string; title?: string | null; description?: string | null; featured?: boolean; pricePaise: number; timelineDays: number; steps: string[] }
 interface AttestationApp {
   id: string;
   document: { holderName: string; documentName: string; issuingState: string; issuingYear?: number; documentNumber?: string; purpose?: string };
@@ -37,6 +37,15 @@ export default function AttestationClientSection({ token }: { token: string }) {
   const [holderName, setHolderName] = useState('');
   const [issuingState, setIssuingState] = useState('');
   const [translation, setTranslation] = useState(false);
+
+  const { data: matrixData } = useQuery<{ success: boolean; countries: string[]; matrix: { country: string; category: string; route: string; pricePaise: number; timelineDays: number; steps: string[] }[]; disclaimer: string }>({
+    queryKey: ['attestationMatrix', token],
+    queryFn: async () => {
+      const r = await fetch(`/api/public/portal/attestation/rate-matrix?token=${token}`);
+      if (!r.ok) throw new Error('Matrix failed');
+      return r.json();
+    }
+  });
 
   const { data: rateData } = useQuery<{ success: boolean; countries: string[]; rateCards: RateCard[]; disclaimer: string }>({
     queryKey: ['attestationRates', token],
@@ -99,7 +108,8 @@ export default function AttestationClientSection({ token }: { token: string }) {
     onError: (e: any) => alert(e.message)
   });
 
-  const selectedRate = rateData?.rateCards.find(r => r.country === country && r.category === category);
+  const selectedRate = matrixData?.matrix.find(r => r.country === country && r.category === category);
+  const featuredProducts = (rateData?.rateCards || []).filter(rc => rc.featured || rc.title);
   const inputCls = 'w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2.5 text-xs text-brand-navy outline-none focus:border-brand-gold min-h-[44px]';
   const labelCls = 'font-semibold text-brand-navy/40 text-[10px] mb-1 block';
 
@@ -120,8 +130,26 @@ export default function AttestationClientSection({ token }: { token: string }) {
       {tab === 'browse' && (
         <div className="space-y-4">
           <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3 text-[10px] text-brand-navy/70">
-            {rateData?.disclaimer || 'Prices shown are indicative ranges and are not guaranteed — final cost may vary based on government fees, document type and processing. Subject to change without notice.'}
+            {matrixData?.disclaimer || rateData?.disclaimer || 'Prices shown are indicative ranges and are not guaranteed — final cost may vary based on government fees, document type and processing. Subject to change without notice.'}
           </div>
+
+          {featuredProducts.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">★ Popular services</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {featuredProducts.slice(0, 4).map(fp => (
+                  <div key={fp.id} className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm space-y-1">
+                    <div className="font-bold text-brand-navy text-[11px]">{fp.title || `${fp.country} — ${fp.category}`}</div>
+                    {fp.description && <div className="text-[9px] text-brand-navy/50 line-clamp-2">{fp.description}</div>}
+                    <div className="flex items-center justify-between">
+                      <span className="text-brand-gold font-bold text-sm">{INR(fp.pricePaise)}</span>
+                      <button onClick={() => { setCountry(fp.country); setCategory(fp.category); }} className="text-[9px] font-bold text-brand-gold hover:underline cursor-pointer">Quote this →</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-3">
             <div className="font-bold text-brand-navy text-xs">Request an attestation quote</div>
@@ -130,7 +158,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
                 <label className={labelCls}>Destination country</label>
                 <select className={inputCls} value={country} onChange={e => setCountry(e.target.value)}>
                   <option value="">-- Select --</option>
-                  {(rateData?.countries || []).map(c => <option key={c} value={c}>{c}</option>)}
+                  {(matrixData?.countries || rateData?.countries || []).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>

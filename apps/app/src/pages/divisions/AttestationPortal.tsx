@@ -375,6 +375,71 @@ export default function AttestationPortal() {
     URL.revokeObjectURL(url);
   };
 
+  // ── Rate matrix (source of truth) ──
+  const [ratesView, setRatesView] = useState<'matrix' | 'products'>('matrix');
+  const [matrixData, setMatrixData] = useState<any[]>([]);
+  const [matrixDirty, setMatrixDirty] = useState(false);
+
+  const { data: matrixQuery } = useQuery<{ success: boolean; matrix: any[] }>({
+    queryKey: ['attestationRateMatrix'],
+    queryFn: async () => {
+      const r = await fetch('/api/attestation/rate-matrix');
+      if (!r.ok) throw new Error('Matrix failed');
+      return r.json();
+    }
+  });
+
+  const saveMatrixMutation = useMutation({
+    mutationFn: async (rows: any[]) => {
+      const r = await fetch('/api/attestation/rate-matrix', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Save failed');
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['attestationRateMatrix'] });
+      setMatrixDirty(false);
+      alert(data.message || 'Matrix saved.');
+    },
+    onError: (e: any) => alert(e.message)
+  });
+
+  const bandMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const r = await fetch('/api/attestation/rate-matrix/bands', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Band failed');
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['attestationRateMatrix'] });
+      alert(data.message || 'Band applied.');
+    },
+    onError: (e: any) => alert(e.message)
+  });
+
+  const setMatrixCell = (id: string, field: string, value: any) => {
+    setMatrixData(rows => rows.map(r => r.id === id ? { ...r, [field]: value } : r));
+    setMatrixDirty(true);
+  };
+
+  const exportMatrixCsv = () => {
+    const rows = matrixData.map(r => [r.country, r.category, r.route, (r.pricePaise / 100).toFixed(0), r.timelineDays, r.active ? 'yes' : 'no']);
+    const head = ['Country', 'Category', 'Route', 'Price (₹)', 'Timeline (days)', 'Active'];
+    const csv = [head, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `attestation-rate-matrix.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const STAGE_TRANSITIONS: Record<string, string[]> = {
     quote: ['docs_awaiting', 'rejected'],
     docs_awaiting: ['in_process', 'rejected'],
@@ -504,12 +569,98 @@ export default function AttestationPortal() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-display font-bold text-brand-navy text-sm">Attestation Services Inventory</h3>
-              <p className="text-[10px] text-brand-navy/40">Your own products — clients see these in their portal. Prices are indicative ranges.</p>
+              <h3 className="font-display font-bold text-brand-navy text-sm">Attestation Services</h3>
+              <p className="text-[10px] text-brand-navy/40">Rate matrix powers every quote · Featured products showcase on the client portal.</p>
             </div>
-            <button onClick={() => openRateModal(null)} className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ New Product</button>
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1 bg-brand-navy/[0.05] p-1 rounded-xl text-[10px] font-bold text-brand-navy/60">
+                <button onClick={() => setRatesView('matrix')} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${ratesView === 'matrix' ? 'bg-brand-gold text-brand-navy' : 'hover:text-brand-navy'}`}>📊 Rate Matrix</button>
+                <button onClick={() => setRatesView('products')} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${ratesView === 'products' ? 'bg-brand-gold text-brand-navy' : 'hover:text-brand-navy'}`}>★ Featured Products</button>
+              </div>
+              {ratesView === 'products' && (
+                <button onClick={() => openRateModal(null)} className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ New Product</button>
+              )}
+            </div>
           </div>
 
+          {ratesView === 'matrix' && (
+            <div className="space-y-3">
+              {/* Price band quick-fill */}
+              <div className="rounded-xl border border-brand-navy/10 bg-white p-3 flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold text-brand-navy/50">⚡ Price band quick-fill:</span>
+                <select id="band-route" className="rounded-lg border border-brand-navy/10 bg-white px-2 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+                  <option value="embassy">Embassy route</option>
+                  <option value="apostille">Apostille route</option>
+                </select>
+                <select id="band-cat" className="rounded-lg border border-brand-navy/10 bg-white px-2 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+                  <option value="">All categories</option>
+                  <option value="educational">Educational</option>
+                  <option value="personal">Personal</option>
+                  <option value="commercial">Commercial</option>
+                </select>
+                <input id="band-price" type="number" min={0} placeholder="Price ₹" className="rounded-lg border border-brand-navy/10 bg-white px-2 py-1.5 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-24" />
+                <button
+                  onClick={() => {
+                    const route = (document.getElementById('band-route') as HTMLSelectElement).value;
+                    const category = (document.getElementById('band-cat') as HTMLSelectElement).value;
+                    const price = Number((document.getElementById('band-price') as HTMLInputElement).value);
+                    if (!price) { alert('Enter a price first.'); return; }
+                    bandMutation.mutate({ route, category: category || undefined, pricePaise: Math.round(price * 100) });
+                  }}
+                  className="bg-brand-navy text-white text-[9px] font-bold px-3 py-1.5 rounded hover:bg-brand-navy/90 transition-all cursor-pointer"
+                >
+                  Apply to all matching
+                </button>
+                <button onClick={exportMatrixCsv} className="border border-brand-navy/15 text-brand-navy text-[9px] font-bold px-3 py-1.5 rounded hover:border-brand-gold/50 transition-all cursor-pointer ml-auto">Export CSV</button>
+              </div>
+
+              {/* Matrix table */}
+              <div className="overflow-x-auto rounded-xl border border-brand-navy/10 bg-white">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-brand-navy/[0.08] bg-brand-navy/[0.04] text-[10px] uppercase font-bold tracking-wider text-brand-gold">
+                    <tr>
+                      <th className="px-3 py-2.5">Country</th>
+                      <th className="px-3 py-2.5">Category</th>
+                      <th className="px-3 py-2.5">Route</th>
+                      <th className="px-3 py-2.5">Price (₹)</th>
+                      <th className="px-3 py-2.5">Days</th>
+                      <th className="px-3 py-2.5">Live</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-brand-navy/[0.06] text-brand-navy/70">
+                    {(matrixData.length ? matrixData : (matrixQuery?.matrix || [])).map(r => (
+                      <tr key={r.id} className="hover:bg-brand-navy/[0.03]">
+                        <td className="px-3 py-2 font-semibold text-brand-navy">{r.country}</td>
+                        <td className="px-3 py-2 capitalize">{r.category}</td>
+                        <td className="px-3 py-2">{r.route === 'apostille' ? 'Apostille' : 'Embassy'}</td>
+                        <td className="px-3 py-2">
+                          <input type="number" min={0} value={r.pricePaise / 100} onChange={(e: any) => setMatrixCell(r.id, 'pricePaise', Math.round(Number(e.target.value) * 100))} className="w-20 rounded border border-brand-navy/10 bg-white px-2 py-1 text-[11px] text-brand-navy outline-none focus:border-brand-gold" />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input type="number" min={1} value={r.timelineDays} onChange={(e: any) => setMatrixCell(r.id, 'timelineDays', Number(e.target.value))} className="w-14 rounded border border-brand-navy/10 bg-white px-2 py-1 text-[11px] text-brand-navy outline-none focus:border-brand-gold" />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input type="checkbox" checked={!!r.active} onChange={(e: any) => setMatrixCell(r.id, 'active', e.target.checked)} className="h-4 w-4 accent-brand-gold cursor-pointer" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {(matrixQuery?.matrix || []).length === 0 && <p className="text-[10px] text-brand-navy/40 italic p-6 text-center">Matrix empty — run the seed or add rows.</p>}
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => saveMatrixMutation.mutate(matrixData.length ? matrixData : (matrixQuery?.matrix || []))}
+                  disabled={!matrixDirty || saveMatrixMutation.isPending}
+                  className={`text-[10px] font-bold px-4 py-2 rounded-lg transition-all cursor-pointer ${matrixDirty ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90' : 'bg-brand-navy/[0.04] text-brand-navy/30 cursor-not-allowed'}`}
+                >
+                  {saveMatrixMutation.isPending ? 'Saving…' : matrixDirty ? 'Save All Changes ✓' : 'Saved'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {ratesView === 'products' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
             {(rateCardsData?.rateCards || []).map(rc => (
               <div key={rc.id} className={`rounded-xl border bg-white p-4 shadow-sm space-y-2 transition-all ${rc.active ? 'border-brand-navy/10' : 'border-brand-navy/[0.06] opacity-60'}`}>
@@ -544,10 +695,11 @@ export default function AttestationPortal() {
             ))}
             {(rateCardsData?.rateCards || []).length === 0 && (
               <div className="col-span-full rounded-xl border border-dashed border-brand-navy/15 bg-white/60 p-10 text-center text-xs text-brand-navy/40">
-                No products yet. Click "+ New Product" to build your attestation inventory — clients will see it in their portal.
+                No featured products yet. Click "+ New Product" to showcase a service on the client portal.
               </div>
             )}
           </div>
+          )}
         </div>
       )}
 

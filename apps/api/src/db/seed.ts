@@ -1,7 +1,7 @@
 import { getDb } from './client.js';
 import {
   pipelineStages, clauseLibrary, permissions, roles, businessProfile, campaigns, campaignTouches, visaProducts,
-  universities, jobPostings, attestationChains, groupDepartures, attestationRateCards
+  universities, jobPostings, attestationChains, groupDepartures, attestationRateCards, attestationRateMatrix
 } from './schema.js';
 import { eq } from 'drizzle-orm';
 import { PERMISSION_SEED, ROLES_SEED } from '../routes/rbac.js';
@@ -889,6 +889,26 @@ const ATTESTATION_RATE_CARDS: { country: string; category: 'educational' | 'pers
   { country: 'Malaysia', category: 'personal', route: 'embassy', pricePaise: 500000, timelineDays: 14, steps: ['Notary', 'SDM / Home Dept', 'MEA', 'Malaysia Embassy'] },
   { country: 'Malaysia', category: 'commercial', route: 'embassy', pricePaise: 850000, timelineDays: 18, steps: ['Chamber of Commerce', 'MEA', 'Malaysia Embassy'] },
 ];
+
+export async function seedAttestationRateMatrix(db: DbClient): Promise<void> {
+  const existing = await db.select().from(attestationRateMatrix).all();
+  if (existing.length > 0) return; // idempotent
+  const now = Math.floor(Date.now() / 1000);
+  for (const rc of ATTESTATION_RATE_CARDS) {
+    await db.insert(attestationRateMatrix).values({
+      id: crypto.randomUUID(),
+      country: rc.country,
+      category: rc.category,
+      route: rc.route,
+      pricePaise: rc.pricePaise,
+      timelineDays: rc.timelineDays,
+      stepsJson: JSON.stringify(rc.steps),
+      active: true,
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+}
 
 export async function seedAttestationRateCards(db: DbClient): Promise<void> {
   const existing = await db.select().from(attestationRateCards).all();

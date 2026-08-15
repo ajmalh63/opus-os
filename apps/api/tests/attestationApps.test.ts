@@ -278,3 +278,72 @@ describe('Attestation — full control (edit/delete/duplicate/doc/pipeline)', ()
     expect(updated.stage).toBe('docs_awaiting');
   });
 });
+
+describe('Attestation — rate matrix (Option C hybrid)', () => {
+  let mockD1: MockD1Database;
+  const now = Math.floor(Date.now() / 1000);
+  const staffHeaders = { cookie: 'better-auth.session_token=token-counselor' };
+
+  beforeAll(() => {
+    mockD1 = new MockD1Database();
+    mockD1.tables.clients.push({ id: 'OP-2026-9601', name: 'Matrix Client', phone: '+91 99999 99999', email: 'm@test.com', created_at: now, updated_at: now });
+    mockD1.tables.attestation_rate_matrix.push(
+      { id: 'mx-1', country: 'UAE', category: 'educational', route: 'embassy', price_paise: 600000, timeline_days: 18, steps_json: JSON.stringify(['HRD', 'MEA', 'UAE Embassy']), active: 1, created_at: now, updated_at: now },
+      { id: 'mx-2', country: 'USA', category: 'educational', route: 'apostille', price_paise: 250000, timeline_days: 8, steps_json: JSON.stringify(['HRD', 'MEA Apostille']), active: 1, created_at: now, updated_at: now }
+    );
+  });
+
+  it('GET /api/attestation/rate-matrix lists all rows (staff)', async () => {
+    const res = await app.request('/api/attestation/rate-matrix', { headers: staffHeaders }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.matrix.length).toBe(2);
+    expect(data.matrix[0].steps.length).toBe(3);
+  });
+
+  it('PUT /api/attestation/rate-matrix bulk-upserts rows', async () => {
+    const res = await app.request('/api/attestation/rate-matrix', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', ...staffHeaders },
+      body: JSON.stringify({ rows: [
+        { country: 'UAE', category: 'educational', route: 'embassy', pricePaise: 650000, timelineDays: 18 },
+        { country: 'Qatar', category: 'personal', route: 'embassy', pricePaise: 600000, timelineDays: 18, steps: ['Notary', 'SDM', 'MEA', 'Qatar Embassy'] }
+      ] })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.upserted).toBe(2);
+    const uae = mockD1.tables.attestation_rate_matrix.find((r: any) => r.country === 'UAE' && r.category === 'educational');
+    expect(uae.price_paise).toBe(650000); // updated
+    const qatar = mockD1.tables.attestation_rate_matrix.find((r: any) => r.country === 'Qatar');
+    expect(qatar).toBeTruthy(); // created
+  });
+
+  it('POST /rate-matrix/bands quick-fills all matching rows', async () => {
+    const res = await app.request('/api/attestation/rate-matrix/bands', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...staffHeaders },
+      body: JSON.stringify({ route: 'apostille', pricePaise: 220000 })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const usa = mockD1.tables.attestation_rate_matrix.find((r: any) => r.id === 'mx-2');
+    expect(usa.price_paise).toBe(220000);
+  });
+
+  it('portal rate-matrix powers the quote calculator (indicative + disclaimer)', async () => {
+    const res = await app.request('/api/public/portal/attestation/rate-matrix?token=OP-2026-9601', {}, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.countries).toContain('UAE');
+    expect(data.matrix.length).toBe(3);
+    expect(data.disclaimer.toLowerCase()).toContain('subject to change');
+  });
+
+  it('application quote now comes from the matrix', async () => {
+    const res = await app.request('/api/attestation/applications', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...staffHeaders },
+      body: JSON.stringify({ clientId: 'OP-2026-9601', document: { holderName: 'Ravi Kumar', documentName: 'Degree', issuingState: 'Telangana' }, category: 'educational', route: 'embassy', destinationCountry: 'UAE' })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.quote.totalPaise).toBe(650000); // matrix price
+  });
+});
