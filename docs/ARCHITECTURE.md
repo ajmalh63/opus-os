@@ -1,6 +1,7 @@
 # Opus OS — Complete Architecture Map
 
-> **Version:** 2026-08-16 · **Status:** Live (dev/test via Tailscale) → Production target (Cloudflare + Cloudflared tunnel)
+> **Version:** 2026-08-16 (v2 — full VPS inventory + new integrations)
+> **Status:** Live (dev/test via Tailscale) → Production target (Cloudflare + Cloudflared tunnel)
 
 ---
 
@@ -29,14 +30,8 @@
                                 │
                     ┌───────────▼──────────────────────────────┐
                     │   ORACLE VPS (129.159.238.227)           │
-                    │   Docker apps (tailnet-only, locked)     │
-                    │  ──────────────────────────────────────  │
-                    │  Listmonk :9009  · Mautic :8085          │
-                    │  Stalwart mail  · OpenWA :2785           │
-                    │  Chatwoot :3200 · n8n :5678              │
-                    │  Umami :3002    · ERPNext :8080          │
-                    │  Uptime Kuma :3003 · india-post-api      │
-                    │  openreply :3100                         │
+                    │   37 Docker containers, 14 apps          │
+                    │   (tailnet-only, UFW locked, secrets 600)│
                     └──────────────────────────────────────────┘
 ```
 
@@ -47,32 +42,52 @@
 | Service | Role | Status |
 |---|---|---|
 | **Workers API** (`apps/api`, Hono) | All business logic: auth, clients, payments, compliance, analytics, visibility, cal, notifications | ✅ Live (dev :8787) |
-| **D1** (`opusos-db`) | Single source of truth — 69 migrations, all business tables | ✅ Live |
-| **R2** | Document vault (attestation/visa docs), resume uploads | ✅ Coded |
+| **D1** (`opusos-db`) | Single source of truth — 69 migrations | ✅ Live |
+| **R2** | Document vault, resume uploads | ✅ Coded |
 | **KV** | Prompt cache, session helpers | ✅ Coded |
-| **Turnstile** | Bot protection on public forms (lead, partner, match, manpower) | ✅ Live (mock key dev) |
-| **Cron** | Heartbeat every 6h (Uptime Kuma push) | ✅ Live |
-| **Email Service** | OS transactional fallback (`EMAIL` binding) — **not needed now** (Titan relay live) | ⏸ Optional |
+| **Turnstile** | Bot protection on public forms | ✅ Live |
+| **Cron** | Heartbeat every 6h | ✅ Live |
+| **Email Service** | OS transactional fallback — **not needed** (Titan relay live) | ⏸ Optional |
 | **Logpush** | Long-term runtime log retention | ⏳ Pending (G1) |
-| **Workers AI** | AEO citation checks, resume parsing (graceful degradation) | ✅ Coded |
+| **Workers AI** | AEO citation checks, resume parsing | ✅ Coded |
+| **Security** | Timing-safe HMAC · crypto.randomUUID · rate-limited public endpoints · secrets via `wrangler secret put` | ✅ Hardened |
 
 ---
 
-## 3. VPS Layer (Oracle, Docker)
+## 3. VPS Layer — FULL Inventory (37 containers / 14 apps)
 
-| App | Port (tailnet) | Role | Integration |
-|---|---|---|---|
-| **Listmonk** | :9009 | Email campaigns + transactional engine (single sender) | OS `notify.ts` → `/api/tx` → **Titan relay** ✅ |
-| **Mautic** | :8085 | Marketing automation (drip sequences, lead scoring) | Route through Listmonk (single-sender rule) ⏳ |
-| **Stalwart** | 25/465/587/993 | Mail server (inbound MX, personal mailboxes) | DNS MX pending (Z0) |
-| **OpenWA** | :2785 | WhatsApp gateway (test path) | OS `/api/webhooks/wa` ✅ |
-| **Chatwoot** | :3200 | Customer support inbox | OS `/api/webhooks/chatwoot` ✅ |
-| **n8n** | :5678 | Automation spine (Wave 2) | `AUTOMATION_TOKEN` service auth |
-| **Umami** | :3002 | Web analytics (self-hosted) | Visibility Hub alternative |
-| **ERPNext** | :8080 | Accounting/ERP | OS `/api/erpnext` sync ✅ |
-| **Uptime Kuma** | :3003 | Monitoring | Heartbeat cron push ✅ |
-| **india-post-api** | :9888 | India Post tracking | Attestation transit |
-| **openreply** | :3100 | (OpenReply) | — |
+### 3.1 Email & Marketing Stack
+| App | Containers | Port | Role | OS Integration |
+|---|---|---|---|---|
+| **Listmonk** | listmonk, listmonk-db (Postgres) | :9009 | **Single email sender** — campaigns + transactional | ✅ `notify.ts` → `/api/tx` → **Titan relay** (v6.2 API, `opus.api` user) |
+| **Mautic** | mautic_web, mautic_cron, mautic_worker, db (MySQL) | :8085 | **Journey canvas** — visual automations, lead scoring, behavioral triggers | ✅ API live (Basic Auth), SMTP → Titan, single-sender rule |
+| **Stalwart** | stalwart-mail | 25/465/587/993 | Mail server (inbound MX, personal mailboxes) | ⏳ DNS MX pending (Z0) |
+| **Titan (GoDaddy)** | — (external) | — | **Outbound relay** — `smtpout.secureserver.net:465` | ✅ Verified end-to-end (500/day) |
+
+### 3.2 CRM & Customer Stack
+| App | Containers | Port | Role | OS Integration |
+|---|---|---|---|---|
+| **Twenty CRM** | twenty-server, twenty-worker, twenty-db (Postgres), twenty-redis | :3001 | **Open-source CRM** — contacts, companies, deals, pipeline | ⏳ **NEW** — `TWENTY_BASE_URL` already in `.dev.vars`; candidate for client/deal sync |
+| **Chatwoot** | chatwoot-rails, chatwoot-sidekiq, chatwoot-redis, chatwoot-postgres (pgvector) | :3200 | Customer support inbox | ✅ OS `/api/webhooks/chatwoot` |
+| **OpenReply** | openreply-web, openreply-worker, openreply-postgres, openreply-redis | :3100 | **Review reply management** (Google Maps etc.) | ⏳ **NEW** — feeds Visibility Hub V6 Reviews |
+
+### 3.3 Messaging
+| App | Containers | Port | Role | OS Integration |
+|---|---|---|---|---|
+| **OpenWA** | openwa | :2785 | WhatsApp gateway (test path) | ✅ OS `/api/webhooks/wa`; Meta Cloud API = prod path |
+
+### 3.4 Automation & Ops
+| App | Containers | Port | Role | OS Integration |
+|---|---|---|---|---|
+| **n8n** | n8n, n8n-db (Postgres) | :5678 | Automation spine | ✅ `AUTOMATION_TOKEN` service auth |
+| **Uptime Kuma** | uptime-kuma | :3003 | Monitoring | ✅ Heartbeat cron push |
+| **india-post-api** | india-post-api | :9888 | India Post tracking | ⏳ Attestation transit enrichment |
+
+### 3.5 Analytics & ERP
+| App | Containers | Port | Role | OS Integration |
+|---|---|---|---|---|
+| **Umami** | umami, umami-db (Postgres) | :3002 | Web analytics (self-hosted) | ⏳ Visibility Hub alternative |
+| **ERPNext** | frontend, backend, websocket, scheduler, queue-long, queue-short, redis-queue, redis-cache, db (MariaDB) | :8080 | Accounting/ERP | ✅ OS `/api/erpnext` sync (GST tax template) |
 
 ---
 
@@ -80,12 +95,12 @@
 
 | Service | Purpose | Integration |
 |---|---|---|
-| **cal.com** | Consultation booking (3 event types, Requires Confirmation, anti-spam) | Webhook → OS bookings pipeline ✅ |
-| **Titan (GoDaddy)** | Outbound email relay — `smtpout.secureserver.net:465` | Listmonk SMTP ✅ verified |
-| **Razorpay** | Payments | Webhook HMAC → payments table ✅ |
-| **better-auth** | Sessions, RBAC | Workers auth ✅ |
-| **Google** | GA4 / GBP / Search Console (Visibility Hub) | Config-driven, OAuth pending |
-| **Listmonk webhooks** | Bounce/unsubscribe hygiene | `/api/webhooks/listmonk` ✅ |
+| **cal.com** | Consultation booking (3 event types, Requires Confirmation, anti-spam stack) | ✅ Webhook → OS bookings pipeline |
+| **Titan (GoDaddy)** | Outbound email relay — `smtpout.secureserver.net:465` | ✅ Listmonk SMTP (verified) |
+| **Razorpay** | Payments | ✅ Webhook HMAC → payments |
+| **better-auth** | Sessions, RBAC | ✅ Workers auth |
+| **Google** | GA4 / GBP / Search Console (Visibility Hub) | ⏳ Config-driven, OAuth pending |
+| **Listmonk webhooks** | Bounce/unsubscribe hygiene | ✅ `/api/webhooks/listmonk` |
 
 ---
 
@@ -114,33 +129,42 @@ apps/app (React 19 + wouter + TanStack Query + GSAP)
 
 ### 6.1 Consultation booking (cal.com → OS → notifications)
 ```
-Client books (cal.com, Requires Confirmation)
-  → webhook BOOKING_REQUESTED (HMAC)
-  → OS: booking (pending) + client upsert + engagement + task
-  → staff alert (custom WAV sound) + toast
+Client books (cal.com, Requires Confirmation + anti-spam)
+  → webhook BOOKING_REQUESTED (HMAC timing-safe, rate-limited)
+  → OS: booking (pending, risk-scored) + client + engagement + task
+  → staff alert (custom WAV) + toast
   → email: notify.ts → Listmonk /api/tx → Titan → staff inbox
   → WhatsApp: notify.ts → OpenWA/Chatwoot → staff phone
-  → staff approves in cal.com → BOOKING_CONFIRMED → status scheduled
+  → staff approves in cal.com → BOOKING_CONFIRMED → scheduled
 ```
 
 ### 6.2 Email (single-sender rule)
 ```
 OS transactional ──┐
 Listmonk campaigns ─┼──► smtpout.secureserver.net:465 ──► Gmail/Outlook
-Mautic automations ─┘        (Titan, 500/day budget)
+Mautic automations ─┘        (Titan, 500/day budget, warm-up pending)
 ```
 
-### 6.3 Payments
+### 6.3 Marketing journeys (lead tiers)
+```
+OS lead scoring (hot/cold/junk) → Mautic segments
+  → Mautic visual journeys (behavioral triggers, branches)
+  → Listmonk delivery → Titan → inbox
+  → OS events (umrah booking, payments) → Mautic webhook → journeys
+```
+
+### 6.4 Payments
 ```
 Razorpay → webhook (HMAC) → payments table → GSTR-1/3B → CA pack PDF
 ```
 
-### 6.4 Visibility
+### 6.5 Visibility
 ```
-Public site → UTM capture + GA events → D1
+Public site → UTM capture + GA events (rate-limited) → D1
             → CF Web Analytics beacon → CF dashboard
 SEO Hub → sitemap.xml + robots.txt (AI crawlers allowed)
 AEO Monitor → Workers AI citation checks
+Reviews → OpenReply (Google Maps replies) → Visibility Hub V6
 ```
 
 ---
@@ -151,19 +175,23 @@ AEO Monitor → Workers AI citation checks
 |---|---|---|
 | VPS access | **Tailscale** 100.87.71.38 | **Cloudflared tunnel** (Z0/F pending CF creds) |
 | OS → Listmonk | `http://100.87.71.38:9009` | `https://listmonk.opusoverseas.com` |
+| OS → Mautic | `http://100.87.71.38:8085` (Basic Auth) | `https://mautic.opusoverseas.com` |
+| OS → Twenty/OpenReply | tailnet IPs | tunnel hostnames |
 | Webhooks | tailnet IPs | tunnel hostnames |
 | Email | Titan relay (live) | Titan relay (unchanged) |
 
 ---
 
-## 8. Security Posture
+## 8. Security Posture (hardened 2026-08-16)
 
-- **RBAC**: super_admin / manager / counselor / receptionist / coordinator + custom roles, division-scoped nav
-- **Webhooks**: HMAC-verified (Razorpay, cal.com, WhatsApp, Chatwoot, Listmonk)
+- **RBAC**: 5 roles + custom, division-scoped nav
+- **Webhooks**: HMAC timing-safe (Razorpay, cal.com, WhatsApp, Chatwoot, Listmonk)
+- **Rate limiting**: D1 sliding-window on all public endpoints (UTM 60/hr, GA 120/hr, cal 120/hr, forms, auth)
 - **Turnstile**: all public writes
-- **Audit trail**: every critical mutation → `audit_log` (before/after JSON + IP)
+- **Secrets**: VPS files 600/640 (33 locked) · legacy creds removed · `.dev.vars` gitignored · prod = `wrangler secret put`
+- **Crypto**: `crypto.randomUUID()` (no Math.random) · timing-safe comparisons
+- **Audit trail**: every critical mutation → `audit_log` (before/after + IP)
 - **Runtime logs**: in-OS viewer (Security Logs → Runtime)
-- **Secrets**: `wrangler secret put` in prod; `.dev.vars` local only; API keys never in git
 - **VPS**: tailnet-only ports, UFW locked, fail-closed service tokens
 
 ---
@@ -171,7 +199,8 @@ AEO Monitor → Workers AI citation checks
 ## 9. Pending (see PENDING-CONFIGS.md)
 
 - G1 Logpush · G2 cal.com webhook secret · G3 cal.com key rotation
-- G4 anti-spam done · G5 Titan relay LIVE
+- G4 anti-spam done · G5 Titan relay LIVE · G6 VPS secrets hardening DONE
 - Z0 DNS → Cloudflare · F Cloudflare production phase (tunnel, secrets)
-- A0 Tool-First creds (Mautic/Listmonk/Chatwoot) · A4 Listmonk envs
-- Mautic → Listmonk single-sender wiring
+- A0 Tool-First creds (Mautic ✅ done · Listmonk ✅ done · Chatwoot pending)
+- **NEW candidates**: Twenty CRM sync (contacts/deals) · OpenReply → Reviews tab · india-post-api → transit enrichment · Umami → Visibility Hub
+- Mautic journey design (hot/cold/junk, umrah booking) · warm-up schedule
