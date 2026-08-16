@@ -319,6 +319,20 @@ Setup steps:
 Scale-out (when 500/day insufficient):
 - [ ] Add second mailbox campaigns@ (own 500/day + separate reputation)
 - [ ] Or Brevo free (300/day) as campaign overflow
+### G6. VPS secrets hardening — DONE (2026-08-16)
+Gold-standard per 2026 research (file-based secrets > env vars; env leaks via
+`docker inspect`; legacy creds must go):
+- [x] 33 compose/.env files locked to 600 (were 664 world-readable)
+- [x] Mautic local.php → 640 www-data (was 755 — contained DB + Titan passwords)
+- [x] Listmonk legacy admin_username/admin_password REMOVED from compose
+      (Listmonk's own warning; opus.api is the only API credential now)
+- [x] Verified: Listmonk API works (opus.api), no WARNING in logs, Mautic env
+      has zero Titan-password leaks
+- [ ] Tier 2 (later): Docker secrets file mounts (/run/secrets) for DB
+      passwords · sops+age encrypted secrets in repo · image digest pinning +
+      CVE scanning · container hardening (non-root, read-only, pids limits)
+
+
 ### G4. Cal.com anti-spam â€” DONE (2026-08-16): Requires Confirmation enabled
 Turnstile is NOT available in cal.com cloud (it was self-hosted/Cal ID only) â€”
 verified. The strongest available lever is now LIVE on all 3 event types:
