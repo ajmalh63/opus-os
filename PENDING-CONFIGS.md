@@ -319,6 +319,25 @@ Setup steps:
 Scale-out (when 500/day insufficient):
 - [ ] Add second mailbox campaigns@ (own 500/day + separate reputation)
 - [ ] Or Brevo free (300/day) as campaign overflow
+### G8. Chatwoot automations — DONE (2026-08-16) + 1 UI action
+Gold-standard support stack implemented via API (account 2):
+- [x] 4 Automation Rules: Welcome auto-reply, Label by service intent,
+      Assign to support agent, Flag payment/refund as urgent
+- [x] 5 Macros: Escalate to Manager, Close as Spam, Send to Billing,
+      Transfer to Sales, Follow Up Later
+- [x] 9 Canned Responses: /greeting /studyabroad /visa /attestation /umrah
+      /manpower /payment /tracking /closing
+- [x] 2 SLAs: Standard (FRT 30m, RT 24h, business hours) · Urgent (FRT 15m,
+      RT 4h, 24/7)
+- [x] OS webhook: chat visitors → client records (leadSource=chatwoot) +
+      staff alerts; CHATWOOT_API_TOKEN wired in .dev.vars
+- [ ] UI ACTION (SLA auto-apply): Chatwoot API rejects apply_sla action
+      (Community Edition gates it). Create ONE rule in the UI:
+      Settings → Automation → Add Rule → Event: Conversation Updated →
+      Condition: Labels contains urgent → Action: Apply SLA → Urgent.
+      (SLA applied via DB works — proven on conversation 1.)
+
+
 ### G7. India Post — contract ID from office (PENDING, owner action)
 India Post booking pipeline is LIVE and tested end-to-end (pincode, tariff,
 booking request → batch → backend validation). The ONLY blocker for real

@@ -1,7 +1,8 @@
 ﻿import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
-import { conversations } from '../db/schema.js';
+import { conversations, clients } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { createStaffAlert } from '../infra/staffAlerts.js';
 
 type WhBindings = { DB: D1Database; WA_WEBHOOK_SECRET?: string };
 
@@ -108,9 +109,30 @@ chatwootWebhookRouter.post('/', async (c) => {
     const ev = JSON.parse(rawCw) as any;
     const phone = ev?.conversation?.meta?.sender?.phone_number || ev?.conversation?.meta?.sender?.email;
     const name = ev?.conversation?.meta?.sender?.name || null;
+    const email = ev?.conversation?.meta?.sender?.email || null;
     const body = ev?.message?.content || ev?.content || '';
     if ((phone || name) && body) {
       await persistMessage(db, 'whatsapp', String(phone || name || 'unknown'), name, body);
+    }
+    // Lead capture: chat visitors become client records (leadSource=chatwoot)
+    if (email || phone) {
+      try {
+        const existing = email
+          ? await db.select().from(clients).where(eq(clients.email, email)).get()
+          : (phone ? await db.select().from(clients).where(eq(clients.phone, String(phone))).get() : null);
+        if (!existing && (email || (phone && String(phone).length >= 10))) {
+          const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+          await db.insert(clients).values({
+            id: cid, name: name || 'Chat lead', phone: String(phone || '0000000000'),
+            email: email || `${String(phone || 'unknown').replace(/\D/g, '')}@chat.lead`, leadSource: 'chatwoot',
+            status: 'active', createdAt: Math.floor(Date.now() / 1000), updatedAt: Math.floor(Date.now() / 1000),
+          });
+          await createStaffAlert(c.env, {
+            division: 'other', type: 'chat_lead', title: `💬 New chat lead: ${name || 'Visitor'}`,
+            body: `${body.slice(0, 120)}`, severity: 'info', link: '/inbox',
+          });
+        }
+      } catch { /* fail-open */ }
     }
     return c.json({ ok: true });
   } catch (e: any) {
