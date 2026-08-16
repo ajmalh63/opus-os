@@ -234,9 +234,10 @@ function GaTab() {
   const { data: cfg } = useQuery<any>({ queryKey: ['ga4Config'], queryFn: async () => (await fetch('/api/visibility/ga4/config', { headers: AUTH })).json() });
   const { data: events } = useQuery<any>({ queryKey: ['ga4Events'], queryFn: async () => (await fetch('/api/visibility/ga4/events', { headers: AUTH })).json() });
   const [mid, setMid] = useState('');
+  const [cfToken, setCfToken] = useState('');
   const saveCfg = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/ga4/config', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ measurementId: mid }) });
+      const r = await fetch('/api/visibility/ga4/config', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ measurementId: mid, cfWaToken: cfToken }) });
       if (!r.ok) throw new Error('cfg');
       return r.json();
     },
@@ -247,15 +248,19 @@ function GaTab() {
 
   return (
     <div className="space-y-5">
-      <Section title="Google Analytics (GA4) Configuration">
+      <Section title="Analytics Configuration — GA4 + Cloudflare Web Analytics">
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[220px]">
-            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Measurement ID</label>
+            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">GA4 Measurement ID (optional)</label>
             <input value={mid || cfg?.measurementId || ''} onChange={e => setMid(e.target.value)} placeholder="G-XXXXXXXXXX" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
+          </div>
+          <div className="flex-1 min-w-[220px]">
+            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Cloudflare Web Analytics token (free)</label>
+            <input value={cfToken || cfg?.cfWaToken || ''} onChange={e => setCfToken(e.target.value)} placeholder="Paste token from Cloudflare dashboard → Web Analytics" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
           </div>
           <button onClick={() => saveCfg.mutate()} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded text-xs font-bold cursor-pointer">Save</button>
         </div>
-        <p className="text-[10px] text-brand-navy/40">Events are captured locally (lead form, payments, portal visits) and shown below. The Measurement ID wires the real GA4 snippet on the public site.</p>
+        <p className="text-[10px] text-brand-navy/40">Option A: the CF Web Analytics beacon (cookie-free, bot-filtered) is injected on public pages when the token is set — real traffic lives in your Cloudflare dashboard. Local events (lead form, payments, portal) stay here for goals + attribution.</p>
       </Section>
 
       <Section title={`Traffic Events — last 30 days (${events?.total ?? 0} total)`}>

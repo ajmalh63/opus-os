@@ -138,23 +138,30 @@ visibilityRouter.post('/seo/keywords', zValidator('json', seoKeywordSchema), asy
 // V2 — GOOGLE ANALYTICS (GA4)
 // ============================================================
 
-// GET /api/visibility/ga4/config
+// GET /api/visibility/ga4/config — GA4 measurement ID + Cloudflare Web Analytics token
 visibilityRouter.get('/ga4/config', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
-  const row = await db.select().from(appSettings).where(eq(appSettings.key, 'ga4_measurement_id')).get();
-  return c.json({ success: true, measurementId: row?.value || '' });
+  const [ga, cf] = await Promise.all([
+    db.select().from(appSettings).where(eq(appSettings.key, 'ga4_measurement_id')).get(),
+    db.select().from(appSettings).where(eq(appSettings.key, 'cf_wa_token')).get(),
+  ]);
+  return c.json({ success: true, measurementId: ga?.value || '', cfWaToken: cf?.value || '' });
 });
 
 // POST /api/visibility/ga4/config
-visibilityRouter.post('/ga4/config', zValidator('json', z.object({ measurementId: z.string().optional() })), async (c) => {
+visibilityRouter.post('/ga4/config', zValidator('json', z.object({ measurementId: z.string().optional(), cfWaToken: z.string().optional() })), async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
-  const { measurementId } = c.req.valid('json');
-  const existing = await db.select().from(appSettings).where(eq(appSettings.key, 'ga4_measurement_id')).get();
-  if (existing) await db.update(appSettings).set({ value: measurementId || '', updatedAt: now() }).where(eq(appSettings.key, 'ga4_measurement_id'));
-  else await db.insert(appSettings).values({ key: 'ga4_measurement_id', value: measurementId || '', updatedAt: now() });
-  return c.json({ success: true, message: 'GA4 config saved' });
+  const { measurementId, cfWaToken } = c.req.valid('json');
+  const upsert = async (key: string, value?: string) => {
+    const existing = await db.select().from(appSettings).where(eq(appSettings.key, key)).get();
+    if (existing) await db.update(appSettings).set({ value: value || '', updatedAt: now() }).where(eq(appSettings.key, key));
+    else await db.insert(appSettings).values({ key, value: value || '', updatedAt: now() });
+  };
+  if (measurementId !== undefined) await upsert('ga4_measurement_id', measurementId);
+  if (cfWaToken !== undefined) await upsert('cf_wa_token', cfWaToken);
+  return c.json({ success: true, message: 'Analytics config saved' });
 });
 
 // POST /api/visibility/ga4/events — public event capture (rate-limited by IP via rateLimit table)

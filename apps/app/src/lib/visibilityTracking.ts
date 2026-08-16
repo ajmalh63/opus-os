@@ -30,8 +30,26 @@ export function useVisibilityTracking(route: string) {
       }
     } catch { /* silent */ }
 
-    // 2. GA event (V2)
+    // 2. GA event (V2) — local capture
     post('/api/visibility/ga4/events', { eventName: 'page_view', page: route });
+
+    // 2b. Cloudflare Web Analytics beacon (Option A) — inject once when token configured
+    try {
+      if (!document.getElementById('cf-beacon')) {
+        fetch('/api/visibility/ga4/config')
+          .then(r => r.json())
+          .then((d: any) => {
+            if (!d?.cfWaToken) return;
+            const script = document.createElement('script');
+            script.id = 'cf-beacon';
+            script.defer = true;
+            script.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+            script.setAttribute('data-cf-beacon', JSON.stringify({ token: d.cfWaToken }));
+            document.head.appendChild(script);
+          })
+          .catch(() => {});
+      }
+    } catch { /* silent */ }
 
     // 3. Meta injection from SEO Hub (V1) — best effort for the SPA
     fetch(`/api/visibility/public/meta?route=${encodeURIComponent(route)}`)
