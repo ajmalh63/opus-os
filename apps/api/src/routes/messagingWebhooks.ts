@@ -17,8 +17,8 @@ function timingSafeEqualStr(a: string, b: string): boolean {
 }
 
 // Accepts either a shared-secret header (x-webhook-secret) — plaintext compare —
-// or an HMAC-SHA256 body signature (x-wa-signature) computed with the shared
-// secret, as OpenWA delivers. Timing-safe in both paths.
+// or an HMAC-SHA256 body signature (x-wa-signature / x-chatwoot-signature)
+// computed with the shared secret, as OpenWA + Chatwoot deliver. Timing-safe.
 async function secretOk(c: any, body: string): Promise<boolean> {
   const secret = c.env?.WA_WEBHOOK_SECRET || '';
   if (!secret) return false;
@@ -26,7 +26,7 @@ async function secretOk(c: any, body: string): Promise<boolean> {
   const plain = c.req.header('x-webhook-secret') || '';
   if (plain && timingSafeEqualStr(plain.trim(), secret)) return true;
 
-  const sig = c.req.header('x-wa-signature') || '';
+  const sig = c.req.header('x-wa-signature') || c.req.header('x-chatwoot-signature') || '';
   if (!sig) return false;
   const expected = await hmacSha256(secret, body);
   return timingSafeEqualStr(sig.trim(), expected);
