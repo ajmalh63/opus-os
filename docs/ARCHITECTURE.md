@@ -114,9 +114,9 @@ apps/app (React 19 + wouter + TanStack Query + GSAP)
 ├── Client portal    → /portal (status, docs, payments)
 ├── Partner portal   → /partner (catalog, links, commissions)
 └── Workspace (shell + RBAC nav)
-    ├── Overview: Dashboard · Inbox · Clients · Pipeline · Divisions
+    ├── Overview: Dashboard · Inbox (clients + team chat) · Clients · Pipeline · Divisions
     ├── Operations: Billing & GST · Taxes & Compliance · Flow Analytics
-    │               · Visibility Hub · Consultations
+    │               · Visibility Hub · Consultations · Agreements
     ├── Divisions: Study Abroad · Visa · Attestation · Umrah · Manpower
     └── Admin (/control): Staff · Roles · Audit · Growth · Funnel · Compliance
                           · Campaigns · Partners · Alerts · Growth Metrics

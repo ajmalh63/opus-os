@@ -25,6 +25,30 @@ export default function Inbox() {
   const [reply, setReply] = useState('');
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [search, setSearch] = useState('');
+  // Team chat (merged into inbox): staff rooms
+  const [teamMode, setTeamMode] = useState(false);
+  const [roomId, setRoomId] = useState('ops');
+  const [teamMsg, setTeamMsg] = useState('');
+  const TEAM_ROOMS = [
+    { id: 'ops', label: 'Operations' },
+    { id: 'sales', label: 'Sales & Funnel' },
+    { id: 'finance', label: 'Finance & Compliance' },
+    { id: 'umrah', label: 'Umrah & Travel' },
+  ];
+  const { data: teamThread } = useQuery<{ messages: any[] }>({
+    queryKey: ['teamRoom', roomId],
+    queryFn: async () => { const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, { headers: baseAuth() }); if (!r.ok) throw new Error('team'); return r.json(); },
+    enabled: teamMode,
+    refetchInterval: 5000,
+  });
+  const sendTeam = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, { method: 'POST', headers: { ...baseAuth(), 'Content-Type': 'application/json' }, body: JSON.stringify({ body: teamMsg }) });
+      if (!r.ok) throw new Error('team send');
+      return r.json();
+    },
+    onSuccess: () => { setTeamMsg(''); qc.invalidateQueries({ queryKey: ['teamRoom', roomId] }); },
+  });
 
   const { data, isLoading } = useQuery<{ conversations: Conversation[]; unreadTotal: number }>({
     queryKey: ['inbox'],
@@ -68,6 +92,10 @@ return (
             <p className="text-xs text-brand-navy/40">WhatsApp + website chat (OpenWA / Chatwoot)</p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="flex gap-1 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-1 text-[10px] font-bold uppercase">
+              <button onClick={() => setTeamMode(false)} className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${!teamMode ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-navy'}`}>Clients</button>
+              <button onClick={() => setTeamMode(true)} className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${teamMode ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-navy'}`}>Team</button>
+            </div>
             {data?.unreadTotal ? (
               <span className="rounded-full bg-rose-500/20 px-3 py-1 text-[10px] font-bold text-rose-700">{data.unreadTotal} unread</span>
             ) : (
@@ -78,6 +106,38 @@ return (
 
         {toast && <div className={`rounded-xl px-4 py-3 text-xs font-semibold ${toast.kind === 'ok' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-700'}`}>{toast.text}</div>}
 
+        {teamMode ? (
+          <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
+            {/* Team rooms */}
+            <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-3">
+              <div className="mb-3 px-2 text-[10px] font-bold uppercase tracking-wider text-brand-gold">Team Rooms</div>
+              <div className="space-y-2">
+                {TEAM_ROOMS.map(r => (
+                  <button key={r.id} onClick={() => setRoomId(r.id)} className={`w-full rounded-xl p-3 text-left transition-all ${roomId === r.id ? 'bg-brand-gold/15 border border-brand-gold/40' : 'bg-brand-navy/[0.04] border border-transparent hover:bg-brand-navy/[0.06]'}`}>
+                    <span className="text-sm font-semibold">{r.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Team thread */}
+            <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-4 lg:col-span-2 flex flex-col">
+              <div className="mb-3 text-[10px] font-bold uppercase tracking-wider text-brand-gold">{TEAM_ROOMS.find(r => r.id === roomId)?.label} — internal chat</div>
+              <div className="flex-1 space-y-2 overflow-y-auto max-h-[420px] pr-1">
+                {(teamThread?.messages || []).map((m: any) => (
+                  <div key={m.id} className={`max-w-[80%] rounded-xl px-3 py-2 text-xs ${m.senderId === me?.id ? 'bg-brand-gold/15 ml-auto' : 'bg-brand-navy/[0.06]'}`}>
+                    <div className="text-[9px] text-brand-navy/40 mb-0.5">{m.senderName || 'staff'} · {fmt(m.createdAt)}</div>
+                    {m.body}
+                  </div>
+                ))}
+                {(teamThread?.messages || []).length === 0 && <p className="text-center text-xs text-brand-navy/40 py-6">No messages yet — start the conversation.</p>}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <input value={teamMsg} onChange={e => setTeamMsg(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && teamMsg.trim()) sendTeam.mutate(); }} placeholder={`Message ${TEAM_ROOMS.find(r => r.id === roomId)?.label}…`} className="flex-1 rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-xs text-brand-navy outline-none focus:border-brand-gold" />
+                <button onClick={() => sendTeam.mutate()} disabled={!teamMsg.trim()} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40 cursor-pointer">Send</button>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Conversation list */}
           <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-3">
@@ -156,6 +216,7 @@ return (
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );
