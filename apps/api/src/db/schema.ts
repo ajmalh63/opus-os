@@ -515,11 +515,16 @@ export const erpnextSyncLog = sqliteTable('erpnext_sync_log', {
 export const transitShipments = sqliteTable('transit_shipments', {
   id: text('id').primaryKey(),
   clientId: text('client_id').notNull().references(() => clients.id),
-  courierPartner: text('courier_partner', { enum: ['blue-dart', 'dtdc'] }).notNull(),
+  courierPartner: text('courier_partner', { enum: ['blue-dart', 'dtdc', 'india-post'] }).notNull(),
   trackingNumber: text('tracking_number').notNull(),
   status: text('status', { enum: ['pickup', 'in_transit', 'out_for_delivery', 'delivered', 'exception'] }).notNull().default('pickup'),
   shippingAddress: text('shipping_address').notNull(),
   estimatedDelivery: integer('estimated_delivery'),
+  articleType: text('article_type'), // india-post: SP (Speed Post) / PARCEL
+  weightGrams: integer('weight_grams'), // india-post
+  tariffPaise: integer('tariff_paise'), // india-post booking cost
+  labelUrl: text('label_url'), // india-post label
+  rawJson: text('raw_json'), // india-post booking response
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });

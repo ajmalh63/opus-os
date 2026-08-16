@@ -266,6 +266,7 @@ import { performanceRouter } from './routes/performance.js';
 import { analyticsRouter } from './routes/analytics.js';
 import { visibilityRouter, publicSeoRouter } from './routes/visibility.js';
 import { calRouter, calWebhookRouter, calPublicRouter } from './routes/cal.js';
+import { indiaPostRouter } from './routes/indiaPost.js';
 import { integrationsRouter } from './routes/integrations.js';
 
 // Staff performance & team operations scorecard (manager+; balanced metric set)
@@ -293,6 +294,11 @@ app.route('/api/visibility', visibilityRouter);
 
 // Cal.com public booking links (no auth) — MUST precede the RBAC mount
 app.route('/api/cal/public', calPublicRouter);
+
+// India Post shipping (staff — attestation document dispatch)
+app.use('/api/india-post', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.use('/api/india-post/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.route('/api/india-post', indiaPostRouter);
 
 // Cal.com bookings (staff, division-scoped) + config (manager+)
 app.use('/api/cal', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));

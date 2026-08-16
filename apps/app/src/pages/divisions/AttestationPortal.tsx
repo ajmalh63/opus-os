@@ -111,11 +111,31 @@ export default function AttestationPortal() {
 
   // India Post form
   const [senderName] = useState('Opus Overseas Office');
+  const [senderCompany] = useState('Opus Overseas');
+  const [senderAddLine1, setSenderAddLine1] = useState('');
+  const [senderCity, setSenderCity] = useState('');
+  const [senderState, setSenderState] = useState('');
   const [senderPincode] = useState('400001');
+  const [senderMobile, setSenderMobile] = useState('');
   const [receiverName, setReceiverName] = useState('');
+  const [receiverCompany, setReceiverCompany] = useState('');
+  const [receiverAddLine1, setReceiverAddLine1] = useState('');
+  const [receiverAddLine2, setReceiverAddLine2] = useState('');
+  const [receiverCity, setReceiverCity] = useState('');
+  const [receiverState, setReceiverState] = useState('');
   const [receiverPincode, setReceiverPincode] = useState('');
+  const [receiverMobile, setReceiverMobile] = useState('');
+  const [receiverEmail, setReceiverEmail] = useState('');
+  const [articleType, setArticleType] = useState('SP');
   const [weight, setWeight] = useState('200');
-  const [shippingAddress, setShippingAddress] = useState('');
+  const [length, setLength] = useState('');
+  const [breadth, setBreadth] = useState('');
+  const [height, setHeight] = useState('');
+  const [insuranceValue, setInsuranceValue] = useState('');
+  const [codValue, setCodValue] = useState('');
+  const [acknowledgement, setAcknowledgement] = useState(false);
+  const [deliveryInstruction, setDeliveryInstruction] = useState('');
+  const [pincodeOffices, setPincodeOffices] = useState<any[]>([]);
   const [tariffResult, setTariffResult] = useState<any>(null);
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [loadingTariff, setLoadingTariff] = useState(false);
@@ -459,61 +479,65 @@ export default function AttestationPortal() {
     setLoadingTariff(true);
     setTariffResult(null);
     try {
-      const url = `https://test.cept.gov.in/beextcustomer/v1/speed-post/tariffs?product-code=SP&weight=${weight}&source-pincode=${senderPincode}&destination-pincode=${receiverPincode}&length=30&width=21&height=0.5&INS=0&POD=NO`;
-      const r = await fetch(url, { headers: { 'Authorization': 'Bearer test-token-mock' } });
-      if (!r.ok) {
-        setTariffResult({ success: true, base_tariff: 72, total_tax: 24, final_amount: 96, currency: 'INR' });
-      } else {
-        setTariffResult(await r.json());
-      }
-    } catch {
-      setTariffResult({ success: true, base_tariff: 72, total_tax: 24, final_amount: 96, currency: 'INR' });
-    } finally {
-      setLoadingTariff(false);
-    }
+      const r = await fetch(`/api/india-post/tariff?source=${senderPincode}&destination=${receiverPincode}&weight=${weight}&articleType=${articleType === 'SP' ? 'speed-post' : 'parcel'}`);
+      const d = await r.json();
+      if (!r.ok) { alert(d?.error || 'Tariff failed'); setTariffResult(null); }
+      else setTariffResult(d.tariff);
+    } catch { alert('Tariff lookup failed'); }
+    finally { setLoadingTariff(false); }
   };
 
-  const createShipmentMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      const r = await fetch('/api/transit/shipments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!r.ok) throw new Error('Failed to book consignment');
-      return r.json();
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['attestationShipments', selectedClient?.id] });
-      setBookingResult({
-        success: true,
-        barcode: data.trackingNumber || 'EB468827991IN',
-        delivery_office: 'New Delhi GPO',
-        chargeable_weight: weight,
-        amount: tariffResult?.final_amount || 96
-      });
-    },
-    onError: (e: any) => alert(e.message)
-  });
+  // Pincode autocomplete (real India Post office lookup)
+  const lookupPincode = async (pin: string, isSender: boolean) => {
+    if (!/^\d{6}$/.test(pin)) { setPincodeOffices([]); return; }
+    try {
+      const r = await fetch(`/api/india-post/pincode?pincode=${pin}`);
+      const d = await r.json();
+      if (d?.offices?.length) {
+        const o = d.offices[0];
+        setPincodeOffices(d.offices);
+        if (isSender) { setSenderCity(o.city_name || ''); setSenderState(o.state_name || ''); }
+        else { setReceiverCity(o.city_name || ''); setReceiverState(o.state_name || ''); }
+      }
+    } catch { /* silent */ }
+  };
 
   const bookPost = async () => {
     setLoadingBooking(true);
     try {
-      if (selectedClient) {
-        createShipmentMutation.mutate({
+      if (!selectedClient) { alert('Select a client first (Applications tab)'); return; }
+      const r = await fetch('/api/india-post/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           clientId: selectedClient.id,
-          courierPartner: 'dtdc',
-          trackingNumber: 'EB' + Date.now().toString().slice(-10) + 'IN',
-          shippingAddress: shippingAddress || `Receiver: ${receiverName}, Pincode: ${receiverPincode}`
-        });
-      } else {
-        setBookingResult({ success: true, barcode: 'EB468827991IN', delivery_office: 'New Delhi GPO', chargeable_weight: weight, amount: tariffResult?.final_amount || 96 });
-      }
-    } catch {
-      setBookingResult({ success: true, barcode: 'EB468827991IN', delivery_office: 'New Delhi GPO', chargeable_weight: weight, amount: 96 });
-    } finally {
-      setTimeout(() => setLoadingBooking(false), 1500);
-    }
+          articleType,
+          physicalWeight: Number(weight),
+          ...(length ? { length: Number(length) } : {}),
+          ...(breadth ? { breadth: Number(breadth) } : {}),
+          ...(height ? { height: Number(height) } : {}),
+          senderName, senderCompany, senderAddLine1, senderCity, senderState, senderPincode, senderMobile,
+          receiverName, receiverCompany, receiverAddLine1, receiverAddLine2, receiverCity, receiverState,
+          receiverPincode, receiverMobile, receiverEmail,
+          ...(insuranceValue ? { insuranceValue: Number(insuranceValue) } : {}),
+          ...(codValue ? { codValue: Number(codValue) } : {}),
+          acknowledgement,
+          ...(deliveryInstruction ? { deliveryInstruction } : {}),
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) { alert(d?.error || 'Booking failed'); return; }
+      queryClient.invalidateQueries({ queryKey: ['attestationShipments', selectedClient?.id] });
+      setBookingResult({
+        success: true,
+        barcode: d.barcode,
+        delivery_office: receiverCity || '—',
+        chargeable_weight: weight,
+        amount: (d.tariff || 0) / 100,
+        shipmentId: d.shipmentId,
+      });
+    } catch { alert('Booking failed — check India Post API'); }
+    finally { setLoadingBooking(false); }
   };
 
   const createAppMutation = useMutation({
@@ -857,30 +881,67 @@ export default function AttestationPortal() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
           <div className="lg:col-span-2 rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm space-y-4 backdrop-blur-sm">
             <h4 className="font-bold text-brand-gold uppercase tracking-wider text-[10px]">Create Postal Consignment</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="font-semibold text-brand-navy/40">Sender Name</label>
-                <input value={senderName} disabled className="w-full rounded-lg border border-brand-navy/10 bg-white px-3.5 py-2 text-brand-navy" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* SENDER (Opus office — pre-filled) */}
+              <div className="md:col-span-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
+                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-[9px] mb-2">Sender (Opus Overseas office)</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input value={senderName} disabled className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy" />
+                  <input value={senderCompany} disabled className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy" />
+                  <input value={senderPincode} disabled className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy" />
+                  <input value={senderAddLine1} onChange={(e: any) => setSenderAddLine1(e.target.value)} placeholder="Sender address line 1" className="md:col-span-2 rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={senderMobile} onChange={(e: any) => setSenderMobile(e.target.value)} placeholder="Sender mobile" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="font-semibold text-brand-navy/40">Sender Pincode</label>
-                <input value={senderPincode} disabled className="w-full rounded-lg border border-brand-navy/10 bg-white px-3.5 py-2 text-brand-navy" />
+
+              {/* RECEIVER (supplier) */}
+              <div className="md:col-span-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
+                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-[9px] mb-2">Receiver (supplier / destination)</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input value={receiverName} onChange={(e: any) => setReceiverName(e.target.value)} placeholder="Receiver name *" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={receiverCompany} onChange={(e: any) => setReceiverCompany(e.target.value)} placeholder="Receiver company" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={receiverMobile} onChange={(e: any) => setReceiverMobile(e.target.value)} placeholder="Receiver mobile *" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={receiverAddLine1} onChange={(e: any) => setReceiverAddLine1(e.target.value)} placeholder="Address line 1 *" className="md:col-span-2 rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={receiverAddLine2} onChange={(e: any) => setReceiverAddLine2(e.target.value)} placeholder="Address line 2" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={receiverCity} onChange={(e: any) => setReceiverCity(e.target.value)} placeholder="City *" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={receiverState} onChange={(e: any) => setReceiverState(e.target.value)} placeholder="State" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={receiverPincode} onChange={(e: any) => { setReceiverPincode(e.target.value); lookupPincode(e.target.value, false); }} placeholder="Pincode (6 digits) *" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={receiverEmail} onChange={(e: any) => setReceiverEmail(e.target.value)} placeholder="Receiver email" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                </div>
+                {pincodeOffices.length > 0 && (
+                  <div className="mt-2 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
+                    ✓ {pincodeOffices[0].office_name} · {pincodeOffices[0].office_type_code} · {pincodeOffices[0].state_name} — auto-filled city/state
+                  </div>
+                )}
               </div>
-              <div className="space-y-1.5">
-                <label className="font-semibold text-brand-navy/40">Receiver Addressee Name</label>
-                <input value={receiverName} onChange={(e: any) => setReceiverName(e.target.value)} placeholder="e.g. Saurabh Shukla" className="w-full rounded-lg border border-brand-navy/10 bg-white px-3.5 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+
+              {/* ARTICLE */}
+              <div className="md:col-span-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
+                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-[9px] mb-2">Article</div>
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                  <select value={articleType} onChange={(e: any) => setArticleType(e.target.value)} className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy">
+                    <option value="SP">Speed Post</option>
+                    <option value="PARCEL">Parcel</option>
+                  </select>
+                  <input value={weight} onChange={(e: any) => setWeight(e.target.value)} placeholder="Weight (g) *" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={length} onChange={(e: any) => setLength(e.target.value)} placeholder="Length (cm)" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={breadth} onChange={(e: any) => setBreadth(e.target.value)} placeholder="Breadth (cm)" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={height} onChange={(e: any) => setHeight(e.target.value)} placeholder="Height (cm)" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={deliveryInstruction} onChange={(e: any) => setDeliveryInstruction(e.target.value)} placeholder="Delivery instruction" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="font-semibold text-brand-navy/40">Receiver Pincode (6 digits)</label>
-                <input value={receiverPincode} onChange={(e: any) => setReceiverPincode(e.target.value)} placeholder="e.g. 110001" className="w-full rounded-lg border border-brand-navy/10 bg-white px-3.5 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="font-semibold text-brand-navy/40">Parcel Weight (Grams)</label>
-                <input value={weight} onChange={(e: any) => setWeight(e.target.value)} className="w-full rounded-lg border border-brand-navy/10 bg-white px-3.5 py-2 text-brand-navy outline-none focus:border-brand-gold" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="font-semibold text-brand-navy/40">Full Delivery Address</label>
-                <input value={shippingAddress} onChange={(e: any) => setShippingAddress(e.target.value)} placeholder="Street, city, state — used for courier record" className="w-full rounded-lg border border-brand-navy/10 bg-white px-3.5 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+
+              {/* ADD-ONS */}
+              <div className="md:col-span-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
+                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-[9px] mb-2">Add-ons</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <input value={insuranceValue} onChange={(e: any) => setInsuranceValue(e.target.value)} placeholder="Insurance value (₹)" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <input value={codValue} onChange={(e: any) => setCodValue(e.target.value)} placeholder="COD amount (₹)" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
+                  <label className="flex items-center gap-2 text-brand-navy/60 cursor-pointer">
+                    <input type="checkbox" checked={acknowledgement} onChange={(e: any) => setAcknowledgement(e.target.checked)} className="accent-brand-gold" />
+                    Acknowledgement (POD)
+                  </label>
+                </div>
               </div>
             </div>
 

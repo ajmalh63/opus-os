@@ -319,6 +319,17 @@ Setup steps:
 Scale-out (when 500/day insufficient):
 - [ ] Add second mailbox campaigns@ (own 500/day + separate reputation)
 - [ ] Or Brevo free (300/day) as campaign overflow
+### G7. India Post — contract ID from office (PENDING, owner action)
+India Post booking pipeline is LIVE and tested end-to-end (pincode, tariff,
+booking request → batch → backend validation). The ONLY blocker for real
+bookings: contract 41585456 has no service_type defined in the India Post
+backend. Obtain the correct contract ID(s) from the India Post office:
+- [ ] Get contract ID with service_type configured (Speed Post + Parcel)
+- [ ] Update INDIA_POST_CONTRACT_ID in the VPS india-post-api container env
+      (and INDIA_POST_CONTRACT_ID_SP if separate)
+- [ ] Re-test booking with the real contract
+
+
 ### G6. VPS secrets hardening — DONE (2026-08-16)
 Gold-standard per 2026 research (file-based secrets > env vars; env leaks via
 `docker inspect`; legacy creds must go):
