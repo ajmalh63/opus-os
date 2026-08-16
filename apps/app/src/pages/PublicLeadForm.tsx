@@ -1,4 +1,4 @@
-import { useVisibilityTracking } from '../lib/visibilityTracking';
+import { useVisibilityTracking, trackLeadFormSubmit } from '../lib/visibilityTracking';
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Nav from '../components/Nav';
@@ -190,6 +190,8 @@ const [consentMarketing, setConsentMarketing] = useState(true);
       },
     };
 
+    // Visibility Hub: fire the lead_form_submit goal event (V2) + attribute source (V7)
+    trackLeadFormSubmit();
     leadMutation.mutate({ ...payload, resumeFile: manpowerFile });
   };
 

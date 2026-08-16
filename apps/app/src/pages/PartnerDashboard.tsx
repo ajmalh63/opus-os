@@ -1,3 +1,4 @@
+import { useVisibilityTracking } from '../lib/visibilityTracking';
 import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import LiveWallpaper from '../components/LiveWallpaper';
@@ -32,6 +33,7 @@ interface PartnerSessionPayload {
 const rs = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
 export default function PartnerDashboard() {
+  useVisibilityTracking('/partner');
   const panelRef = useRef<HTMLDivElement>(null);
 
   const queryClient = useQueryClient();

@@ -1,3 +1,4 @@
+import { useVisibilityTracking } from '../lib/visibilityTracking';
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Link } from 'wouter';
@@ -103,6 +104,7 @@ const DEFAULT_PRODUCTS = [
 
 
 export default function ClientPortal() {
+  useVisibilityTracking('/portal');
   const [toast, setToast] = useState<{ show: boolean; msg: string }>({ show: false, msg: '' });
   const showToast = (msg: string) => {
     setToast({ show: true, msg });

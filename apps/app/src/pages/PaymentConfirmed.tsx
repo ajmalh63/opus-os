@@ -1,3 +1,4 @@
+import { useVisibilityTracking } from '../lib/visibilityTracking';
 import { useSearch } from 'wouter';
 
 // Public payment callback page — where Razorpay redirects the customer after
@@ -7,6 +8,7 @@ import { useSearch } from 'wouter';
 // razorpay_signature. Never trusts the page alone — the ledger updates only via
 // the verified payment_link.paid webhook; this is UX confirmation only.
 export default function PaymentConfirmed() {
+  useVisibilityTracking('/payment-confirmed');
   const q = new URLSearchParams(useSearch());
   const status = q.get('razorpay_payment_link_status') || 'unknown';
   const paymentId = q.get('razorpay_payment_id') || '';
