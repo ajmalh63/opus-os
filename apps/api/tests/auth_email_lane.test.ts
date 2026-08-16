@@ -41,10 +41,10 @@ const listmonkEnv = () => ({
     expect(calls).toHaveLength(1);
     expect(calls[0].url).toBe('http://100.87.71.38:9009/api/tx');
     expect(calls[0].body.subscriber_email).toBe('customer@example.com');
-    expect(calls[0].body.headers.subject).toContain('Reset');
+    expect(calls[0].body.subject).toContain('Reset');
 // link is present AND wrapped as a clickable <a> (auto-linkify)
-    expect(calls[0].body.template_body).toContain('https://app.opusoverseas.com/reset?token=abc');
-    expect(calls[0].body.template_body).toContain('<a href="https://app.opusoverseas.com/reset?token=abc&x=1"');
+    expect(calls[0].body.data.Body).toContain('https://app.opusoverseas.com/reset?token=abc');
+    expect(calls[0].body.data.Body).toContain('<a href="https://app.opusoverseas.com/reset?token=abc&x=1"');
     // delivered + persisted as a notification
     expect(mockD1.tables.notifications.some((n) => n.channel === 'email' && n.to === 'customer@example.com' && n.status === 'sent')).toBe(true);
   });
@@ -61,8 +61,8 @@ const listmonkEnv = () => ({
     await sendOtpEmail(listmonkEnv() as any, getDb(mockD1 as any), { email: 'otp@example.com' }, '482913');
     expect(txBodies).toHaveLength(1);
     expect(txBodies[0].subscriber_email).toBe('otp@example.com');
-    expect(txBodies[0].headers.subject).toContain('482913');
-    expect(txBodies[0].template_body).toContain('482913');
+    expect(txBodies[0].subject).toContain('482913');
+    expect(txBodies[0].data.Body).toContain('482913');
   });
 
   it('verification email passes through with the URL', async () => {
@@ -75,8 +75,8 @@ const listmonkEnv = () => ({
     }) as any;
 
     await sendVerificationEmailSafe(listmonkEnv() as any, getDb(mockD1 as any), { email: 'verify@example.com' }, 'https://app.opusoverseas.com/verify?token=v1');
-    expect(txBodies[0].headers.subject).toContain('Verify');
-    expect(txBodies[0].template_body).toContain('https://app.opusoverseas.com/verify?token=v1');
+    expect(txBodies[0].subject).toContain('Verify');
+    expect(txBodies[0].data.Body).toContain('https://app.opusoverseas.com/verify?token=v1');
   });
 
   it('unconfigured Listmonk â†’ stub-ok, auth never blocks (dev log remains)', async () => {

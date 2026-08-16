@@ -58,8 +58,8 @@ describe('Nurture email lane (Wave 3)', () => {
     // /api/tx contract: subscriber + subject + personalized body
     expect(txBodies).toHaveLength(1);
     expect(txBodies[0].subscriber_email).toBe('one@example.com');
-    expect(txBodies[0].headers.subject).toBe('nurture:default:case_study');
-    expect(txBodies[0].template_body).toContain('Hi Client One, here is the Canada case study.');
+    expect(txBodies[0].subject).toBe('nurture:default:case_study');
+    expect(txBodies[0].data.Body).toContain('Hi Client One, here is the Canada case study.');
 
     // durable records: communications row (channel email) + touch flipped
     const comm = mockD1.tables.communications.find((c) => c.channel === 'email');
