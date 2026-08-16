@@ -256,6 +256,91 @@ const TABS = [
   { key: 'suppression', label: 'Suppression' },
 ] as const;
 
+
+// ============ JOURNEYS VIEW (tier campaigns + touches) ============
+function JourneysView() {
+  const { data, isLoading, isError, refetch } = useQuery<any>({
+    queryKey: ['marketingJourneys'],
+    queryFn: async () => {
+      const r = await fetch('/api/marketing/journeys', { headers: AUTH });
+      if (!r.ok) throw new Error('journeys');
+      return r.json();
+    },
+    refetchInterval: 60000,
+  });
+
+  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading journeys…</div>;
+  if (isError || !data?.success) return <div className="p-10 text-center text-xs text-rose-600">Journeys unavailable. <button className="underline" onClick={() => refetch()}>Retry</button></div>;
+
+  const s = data.summary;
+  const tierMeta: Record<string, { label: string; cls: string; icon: string }> = {
+    hot: { label: '🔥 Hot — Fast Track', cls: 'border-rose-200 bg-rose-50/50', icon: '🔥' },
+    warm: { label: '🌤️ Warm — Nurture', cls: 'border-amber-200 bg-amber-50/50', icon: '🌤️' },
+    cold: { label: '❄️ Cold — Re-engagement', cls: 'border-blue-200 bg-blue-50/50', icon: '❄️' },
+    ops: { label: '⚙️ Ops — Transactional', cls: 'border-emerald-200 bg-emerald-50/50', icon: '⚙️' },
+  };
+  const tierOf = (j: any) => j.eligibility?.tier || 'ops';
+  const groups = ['hot', 'warm', 'cold', 'ops'];
+
+  return (
+    <div className="space-y-5">
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Total journeys', value: s.total, cls: 'text-brand-navy' },
+          { label: 'Active', value: s.active, cls: 'text-emerald-700' },
+          { label: 'Clients planned', value: s.totalPlanned, cls: 'text-brand-gold' },
+          { label: 'Touches sent', value: s.totalSent, cls: 'text-blue-700' },
+        ].map(k => (
+          <div key={k.label} className="rounded-2xl border border-brand-navy/10 bg-white p-4">
+            <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-brand-navy/40">{k.label}</div>
+            <div className={`mt-1 font-display font-extrabold text-2xl ${k.cls}`}>{k.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Journey groups */}
+      {groups.map(g => {
+        const items = data.journeys.filter((j: any) => tierOf(j) === g);
+        if (items.length === 0) return null;
+        const meta = tierMeta[g];
+        return (
+          <div key={g} className={`rounded-2xl border p-5 space-y-3 ${meta.cls}`}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-bold text-sm text-brand-navy">{meta.icon} {meta.label} <span className="text-brand-navy/40 font-normal">({items.length})</span></h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {items.map((j: any) => (
+                <div key={j.id} className="rounded-xl border border-brand-navy/10 bg-white p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-brand-navy">{j.name}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${j.status === 'active' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{j.status}</span>
+                  </div>
+                  <div className="text-[10px] text-brand-navy/40 capitalize">{j.division.replace('-', ' ')}</div>
+                  {/* Touch timeline */}
+                  <div className="flex items-center gap-1">
+                    {j.touches.map((t: any) => (
+                      <div key={t.id} className="flex-1 text-center">
+                        <div className={`h-1.5 rounded-full ${t.channel === 'email' ? 'bg-brand-gold' : 'bg-brand-navy/30'}`} />
+                        <div className="text-[8px] text-brand-navy/40 mt-0.5">D{t.day}</div>
+                        <div className="text-[8px] text-brand-navy/50 font-bold uppercase">{t.stage}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-[9px] text-brand-navy/40">
+                    <span>{j.clientsPlanned} clients</span>
+                    <span>{j.touchesSent} sent</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function MarketingTab() {
   const { data: emailTrack } = useQuery<any>({
     queryKey: ['emailTracking'],
@@ -335,6 +420,7 @@ export default function MarketingTab() {
       {tab === 'templates' && <TemplatesView />}
       {tab === 'audiences' && <AudiencesView />}
       {tab === 'suppression' && <SuppressionView />}
+      {tab === 'journeys' && <JourneysView />}
     </div>
   );
 }

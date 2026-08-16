@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { webhookEvents } from '../db/schema.js';
-import { clients, engagements, agreements, interactionPoints, scoringEvents, segments, partners, referrals, commissionLedger, experiments, experimentAssignments } from '../db/schema.js';
+import { clients, engagements, agreements, interactionPoints, scoringEvents, segments, partners, referrals, commissionLedger, experiments, experimentAssignments, campaigns, campaignTouches, nurtureTouches } from '../db/schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 
@@ -389,6 +389,53 @@ const createExperimentSchema = z.object({
 });
 
 // POST /api/marketing/experiments  (manager+)
+// GET /api/marketing/journeys — tier journeys with touches + live stats
+marketingRouter.get('/journeys', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const [camps, touches, plans] = await Promise.all([
+      db.select().from(campaigns).all(),
+      db.select().from(campaignTouches).all(),
+      db.select().from(nurtureTouches).all(),
+    ]);
+    const touchMap: Record<string, any[]> = {};
+    touches.forEach(t => { (touchMap[t.campaignId] = touchMap[t.campaignId] || []).push(t); });
+    const planCounts: Record<string, number> = {};
+    const sentCounts: Record<string, number> = {};
+    plans.forEach(p => {
+      if (p.campaignId) {
+        planCounts[p.campaignId] = (planCounts[p.campaignId] || 0) + 1;
+        if (p.status === 'sent') sentCounts[p.campaignId] = (sentCounts[p.campaignId] || 0) + 1;
+      }
+    });
+    const journeys = camps.map(c => ({
+      id: c.id, key: c.key, name: c.name, division: c.division,
+      status: c.status, eligibility: JSON.parse(c.eligibilityJson || '{}'),
+      touches: (touchMap[c.id] || []).sort((a, b) => a.seq - b.seq),
+      clientsPlanned: planCounts[c.id] || 0,
+      touchesSent: sentCounts[c.id] || 0,
+    }));
+    const tier = (j: any) => j.eligibility?.tier || 'ops';
+    return c.json({
+      success: true,
+      journeys,
+      summary: {
+        total: journeys.length,
+        active: journeys.filter(j => j.status === 'active').length,
+        hot: journeys.filter(j => tier(j) === 'hot').length,
+        warm: journeys.filter(j => tier(j) === 'warm').length,
+        cold: journeys.filter(j => tier(j) === 'cold').length,
+        ops: journeys.filter(j => tier(j) === 'ops').length,
+        totalPlanned: plans.length,
+        totalSent: plans.filter(p => p.status === 'sent').length,
+      },
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Journeys failed', details: e?.message }, 500);
+  }
+});
+
 marketingRouter.post('/experiments', zValidator('json', createExperimentSchema), async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);

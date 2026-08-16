@@ -145,7 +145,18 @@ Listmonk campaigns ─┼──► smtpout.secureserver.net:465 ──► Gmail/
 Mautic automations ─┘        (Titan, 500/day budget, warm-up pending)
 ```
 
-### 6.3 Marketing journeys (lead tiers)
+### 6.3 Marketing journeys (lead tiers) — AUTO-TRIGGERED
+```
+Lead created → tier computed (hot>75 / warm 50-75 / cold<50 from scoringEvents)
+  → nurture auto-plan → journey matched (19 campaigns: 5 divisions × 3 tiers
+    + 4 ops) → touches scheduled at day offsets
+  → cron dispatch (6h) → email via Listmonk /api/tx → Titan relay
+    → WhatsApp via OpenWA
+  → Chatwoot: proactive campaigns (5, per division page, 5s on page) +
+    automation rules (welcome/labels/assign/urgent) + macros + SLAs
+  → OS Marketing tab → Journeys view (KPI cards + tier groups + touch
+    timelines + client/sent stats)
+```
 ```
 OS lead scoring (hot/cold/junk) → Mautic segments
   → Mautic visual journeys (behavioral triggers, branches)
