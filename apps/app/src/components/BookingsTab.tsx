@@ -135,6 +135,14 @@ export default function BookingsTab() {
               <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Booking links JSON (division → cal.com URL)</label>
               <input value={cfgForm.bookingLinks ? JSON.stringify(cfgForm.bookingLinks) : ''} onChange={e => { try { setCfgForm({ ...cfgForm, bookingLinks: JSON.parse(e.target.value) }); } catch { /* typing */ } }} placeholder='{"study-abroad":"https://cal.com/you/study-abroad","visa":"https://cal.com/you/visa","manpower":"https://cal.com/you/manpower"}' className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
             </div>
+            <div>
+              <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Pending-booking email alert →</label>
+              <input value={cfgForm.notifyEmail || ''} onChange={e => setCfgForm({ ...cfgForm, notifyEmail: e.target.value })} placeholder="ops@opusoverseas.com" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
+            </div>
+            <div>
+              <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Pending-booking WhatsApp alert →</label>
+              <input value={cfgForm.notifyWhatsapp || ''} onChange={e => setCfgForm({ ...cfgForm, notifyWhatsapp: e.target.value })} placeholder="+91XXXXXXXXXX (OpenWA/Chatwoot number)" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
+            </div>
           </div>
           <button onClick={() => saveCfg.mutate()} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded text-xs font-bold cursor-pointer">💾 Save Config</button>
           <p className="text-[10px] text-brand-navy/40">Webhook URL: <code className="font-mono">https://&lt;api&gt;/api/webhooks/cal</code> — set it in cal.com → Settings → Developer → Webhooks with triggers: booking.created / cancelled / rescheduled / meeting.ended.</p>

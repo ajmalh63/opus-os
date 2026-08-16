@@ -7,6 +7,18 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 const SEEN_KEY = 'opusos_seen_alert_ids';
 
+// Custom booking sound (user-assigned): mixkit software interface back.
+// Plays for cal.com booking alerts; the synthesized beep stays for everything else.
+function playBookingSound() {
+  try {
+    const audio = new Audio('/sounds/booking-alert.wav');
+    audio.volume = 0.8;
+    audio.play().catch(() => playBeep(false)); // fallback if asset fails
+  } catch {
+    playBeep(false);
+  }
+}
+
 function playBeep(urgent: boolean) {
   try {
     const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
@@ -54,7 +66,9 @@ export function useTaskNotifications(intervalMs = 20000) {
       if (fresh.length > 0) {
         const newest = fresh[0];
         const urgent = newest.severity === 'urgent';
-        playBeep(urgent);
+        // Booking alerts (cal_*) play the custom booking sound; others beep
+        if ((newest.type || '').startsWith('cal_')) playBookingSound();
+        else playBeep(urgent);
         setToast({ title: newest.title, urgent });
         // Auto-dismiss after 6s
         setTimeout(() => setToast(null), 6000);

@@ -5,6 +5,8 @@ import { getDb } from '../db/client.js';
 import { bookings, clients, engagements, tasks, communications, appSettings } from '../db/schema.js';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { sendNotification } from '../infra/notify.js';
+import { notifications } from '../db/schema.js';
 
 // ============================================================
 // CAL.COM — consultation scheduling for the 3 consultation-led
@@ -35,7 +37,26 @@ async function getConfig(db: any) {
   try { if (get('cal_event_types')) eventMap = { ...eventMap, ...JSON.parse(get('cal_event_types')) }; } catch { /* ignore */ }
   let bookingLinks: Record<string, string> = {};
   try { if (get('cal_booking_links')) bookingLinks = JSON.parse(get('cal_booking_links')); } catch { /* ignore */ }
-  return { apiKey: get('cal_api_key'), webhookSecret: get('cal_webhook_secret'), eventMap, bookingLinks };
+  return {
+    apiKey: get('cal_api_key'), webhookSecret: get('cal_webhook_secret'), eventMap, bookingLinks,
+    notifyEmail: get('cal_notify_email'), notifyWhatsapp: get('cal_notify_whatsapp'),
+  };
+}
+
+// ---- Email verification: MX-record check via Cloudflare DNS-over-HTTPS.
+// Catches nonexistent domains (asdf@nonexistent.com) that pass format checks.
+// Workers can't do raw DNS; the 1.1.1.1 DoH JSON API is the infrastructure path.
+async function hasMxRecord(domain: string): Promise<boolean> {
+  try {
+    const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=MX`, {
+      headers: { accept: 'application/dns-json' },
+    });
+    if (!r.ok) return true; // fail-open: don't block on DNS outage
+    const d = await r.json() as any;
+    return (d?.Answer || []).length > 0;
+  } catch {
+    return true; // fail-open
+  }
 }
 
 // ---- Anti-spam: suspicion scoring (gold-standard: disposable email block,
@@ -49,7 +70,7 @@ const DISPOSABLE_DOMAINS = new Set([
 const SUSPICIOUS_NAME = /^(test|asdf|qwerty|aaa|abc|demo|user|x{2,}|a{2,}|z{2,})/i;
 const SUSPICIOUS_TEXT = /(test|demo|asdf|qwerty|placeholder|spam)/i;
 
-function scoreBooking(attendee: any, existingClient: boolean, start: number): { score: number; flags: string[] } {
+async function scoreBooking(attendee: any, existingClient: boolean, start: number): Promise<{ score: number; flags: string[] }> {
   const flags: string[] = [];
   let score = 0;
   const email = (attendee?.email || '').toLowerCase();
@@ -59,6 +80,7 @@ function scoreBooking(attendee: any, existingClient: boolean, start: number): { 
   if (email) {
     const domain = email.split('@')[1] || '';
     if (DISPOSABLE_DOMAINS.has(domain)) { score += 30; flags.push('disposable_email'); }
+    else if (!(await hasMxRecord(domain))) { score += 25; flags.push('no_mx_record'); }
   } else { score += 20; flags.push('no_email'); }
   if (!phone) { score += 20; flags.push('no_phone'); }
   if (SUSPICIOUS_NAME.test(name)) { score += 20; flags.push('suspicious_name'); }
@@ -169,7 +191,7 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
       priority: 'medium', status: 'open', dueDate: start, createdAt: now(), updatedAt: now(),
     });
     // Anti-spam: suspicion score (disposable email, no phone, patterns, new contact)
-    const { score, flags } = scoreBooking(attendee, existingClient, start);
+    const { score, flags } = await scoreBooking(attendee, existingClient, start);
 
     // Insert booking — pending when Requires Confirmation is active (BOOKING_REQUESTED)
     const isPending = trigger === 'BOOKING_REQUESTED';
@@ -194,6 +216,24 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
       body: `${attendee?.name || 'Attendee'} · ${new Date(start * 1000).toLocaleString('en-IN')}${flags.length ? ` · flags: ${flags.join(', ')}` : ''}${isPending ? ' · approve in cal.com' : ''}`,
       severity: riskLevel as any, link: '/bookings', clientId,
     });
+
+    // Out-of-band notifications for PENDING bookings: email + WhatsApp
+    if (isPending) {
+      const when = new Date(start * 1000).toLocaleString('en-IN');
+      const msg = `⏳ PENDING consultation: ${p?.title || 'Booking'} (${division})\n${attendee?.name || 'Attendee'} · ${when}\n${attendee?.email || ''}${attendee?.phone ? ' · ' + attendee.phone : ''}${flags.length ? '\nFlags: ' + flags.join(', ') : ''}\nApprove in cal.com → OS Consultations tab`;
+      if (cfg.notifyEmail) {
+        await sendNotification(c.env as any, { insert: () => ({}) } as any, {
+          channel: 'email', to: cfg.notifyEmail,
+          subject: `⏳ Pending consultation: ${p?.title || 'Booking'} (${division})`,
+          body: msg,
+        }).catch(() => {});
+      }
+      if (cfg.notifyWhatsapp) {
+        await sendNotification(c.env as any, { insert: () => ({}) } as any, {
+          channel: 'whatsapp', to: cfg.notifyWhatsapp, body: msg,
+        }).catch(() => {});
+      }
+    }
   }
 
   if (trigger === 'BOOKING_CONFIRMED' && existing) {
@@ -265,6 +305,8 @@ const configSchema = z.object({
   webhookSecret: z.string().optional(),
   eventTypes: z.record(z.string()).optional(),
   bookingLinks: z.record(z.string()).optional(),
+  notifyEmail: z.string().optional(),
+  notifyWhatsapp: z.string().optional(),
 });
 
 calRouter.post('/config', zValidator('json', configSchema), async (c) => {
@@ -280,6 +322,8 @@ calRouter.post('/config', zValidator('json', configSchema), async (c) => {
   if (body.webhookSecret) await upsert('cal_webhook_secret', body.webhookSecret);
   if (body.eventTypes) await upsert('cal_event_types', JSON.stringify(body.eventTypes));
   if (body.bookingLinks) await upsert('cal_booking_links', JSON.stringify(body.bookingLinks));
+  if (body.notifyEmail) await upsert('cal_notify_email', body.notifyEmail);
+  if (body.notifyWhatsapp) await upsert('cal_notify_whatsapp', body.notifyWhatsapp);
   return c.json({ success: true, message: 'Cal.com config saved' });
 });
 
