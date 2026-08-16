@@ -117,6 +117,8 @@ app.route('/api/webhooks/chatwoot', chatwootWebhookRouter);
 app.route('/api/webhooks/listmonk', listmonkWebhookRouter);
 // Razorpay webhook (Section 44) - gateway POSTs here with HMAC; no session auth
 app.route('/api/public/payments/razorpay/webhook', razorpayWebhookRouter);
+// Cal.com webhook (consultation scheduling) - public, secret-verified
+app.route('/api/webhooks', calWebhookRouter);
 
 // ===== PROTECTED (session + RBAC) =====
 app.use('/api/clients', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
@@ -260,6 +262,7 @@ import { runHeartbeat } from './cron/heartbeat.js';
 import { performanceRouter } from './routes/performance.js';
 import { analyticsRouter } from './routes/analytics.js';
 import { visibilityRouter, publicSeoRouter } from './routes/visibility.js';
+import { calRouter, calWebhookRouter, calPublicRouter } from './routes/cal.js';
 import { integrationsRouter } from './routes/integrations.js';
 
 // Staff performance & team operations scorecard (manager+; balanced metric set)
@@ -278,6 +281,14 @@ app.route('/', publicSeoRouter);
 app.use('/api/visibility', rbacMiddleware(['super_admin', 'manager'], true));
 app.use('/api/visibility/*', rbacMiddleware(['super_admin', 'manager'], true));
 app.route('/api/visibility', visibilityRouter);
+
+// Cal.com public booking links (no auth) — MUST precede the RBAC mount
+app.route('/api/cal/public', calPublicRouter);
+
+// Cal.com bookings (staff, division-scoped) + config (manager+)
+app.use('/api/cal', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.use('/api/cal/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.route('/api/cal', calRouter);
 
 // Tool-First adapters (manager+): unified status + live feed for Listmonk /
 // Mautic / Chatwoot / OpenWA — the OS campaigns dashboard is INFORMATIONAL.

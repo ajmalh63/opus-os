@@ -41,6 +41,7 @@ const I = {
   signout: 'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1',
   panel: 'M11 19l-7-7 7-7m8 14l-7-7 7-7',
   panelOpen: 'M13 5l7 7-7 7M5 5l7 7-7 7',
+  calendar: 'M8 2v4M16 2v4M3 8h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z',
 };
 
 export const NAV_SECTIONS: NavSection[] = [
@@ -61,6 +62,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { key: 'taxes', label: 'Taxes & Compliance', to: '/taxes', icon: I.compliance, roles: ['super_admin', 'manager'], match: '/taxes' },
       { key: 'analytics', label: 'Flow Analytics', to: '/analytics', icon: I.growth, roles: ['super_admin', 'manager'], match: '/analytics' },
       { key: 'visibility', label: 'Visibility Hub', to: '/visibility', icon: I.growth, roles: ['super_admin', 'manager'], match: '/visibility' },
+      { key: 'bookings', label: 'Consultations', to: '/bookings', icon: I.calendar, roles: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], match: '/bookings' },
       { key: 'control', label: 'Admin Desk', to: '/control', icon: I.admindesk, roles: ['super_admin'], match: '/control' },
       { key: 'audit', label: 'Security Logs', to: '/audit', icon: I.audit, roles: ['super_admin'], match: '/audit' },
     ],
@@ -78,7 +80,7 @@ export function allowedNavFor(me: Me | null): NavSection[] {
       items: s.items.filter((i) => {
         if (!i.roles.includes(role)) return false;
         // Verify custom divisions/modules assigned to standard staff
-        const checkKeys = ['clients', 'kanban', 'billing', 'taxes', 'analytics', 'audit', 'divisions', 'study-abroad', 'visa', 'umrah', 'attestation', 'manpower', 'visibility'];
+        const checkKeys = ['clients', 'kanban', 'billing', 'taxes', 'analytics', 'audit', 'divisions', 'study-abroad', 'visa', 'umrah', 'attestation', 'manpower', 'visibility', 'bookings'];
         if (checkKeys.includes(i.key)) {
           return me.userDivisions.includes(i.key);
         }

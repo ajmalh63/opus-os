@@ -470,6 +470,13 @@
       "when": 1786819239373,
       "tag": "0066_visibility-hub",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "6",
+      "when": 1786859589929,
+      "tag": "0067_cal-bookings",
+      "breakpoints": true
     }
   ]
 }

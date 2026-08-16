@@ -1381,3 +1381,24 @@ export const reportSchedules = sqliteTable('report_schedules', {
   lastRunAt: integer('last_run_at'),
   createdAt: integer('created_at').notNull()
 });
+
+// ==========================================
+// 63. CAL.COM BOOKINGS (consultation scheduling)
+// ==========================================
+export const bookings = sqliteTable('bookings', {
+  id: text('id').primaryKey(),
+  calUid: text('cal_uid').notNull().unique(), // cal.com booking uid (dedupes webhook replays)
+  eventTypeId: text('event_type_id').notNull(),
+  division: text('division').notNull(), // study-abroad | visa | manpower
+  title: text('title').notNull(),
+  startTime: integer('start_time').notNull(),
+  endTime: integer('end_time').notNull(),
+  attendeeName: text('attendee_name'),
+  attendeeEmail: text('attendee_email'),
+  attendeePhone: text('attendee_phone'),
+  status: text('status', { enum: ['scheduled', 'cancelled', 'rescheduled', 'completed', 'no_show'] }).notNull().default('scheduled'),
+  clientId: text('client_id'),
+  taskId: text('task_id'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});

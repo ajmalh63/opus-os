@@ -48,6 +48,10 @@ export default function PublicService({ params }: { params: { division: string }
   const [, setLocation] = useLocation();
   const heroRef = useRef<HTMLElement>(null);
   const [submitted, setSubmitted] = useState<string | null>(null);
+  const [bookingLinks, setBookingLinks] = useState<Record<string, string>>({});
+  useEffect(() => {
+    fetch('/api/cal/public/links').then(r => r.json()).then((d: any) => { if (d?.links) setBookingLinks(d.links); }).catch(() => {});
+  }, []);
   const reduced = prefersReducedMotion();
 
   // Partner attribution: /go/:ref/:type/:id redirects land here with ?ref=
@@ -293,6 +297,18 @@ export default function PublicService({ params }: { params: { division: string }
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> LIVE
               </span>
             </div>
+
+            {/* Book a consultation (cal.com) — consultation-led divisions only */}
+            {['study-abroad', 'visa', 'manpower'].includes(currentDiv) && bookingLinks[currentDiv] && (
+              <a
+                href={bookingLinks[currentDiv]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-gold px-6 py-3 text-xs font-extrabold uppercase tracking-[0.15em] text-brand-navy shadow-lg shadow-brand-gold/25 transition-transform hover:scale-[1.03]"
+              >
+                📅 Book a Free Consultation
+              </a>
+            )}
           </div>
 
           <Img src={imageFor(`hero-${currentDiv}`).src} prompt={imageFor(`hero-${currentDiv}`).prompt} label={data.title} className="hidden lg:block" />
