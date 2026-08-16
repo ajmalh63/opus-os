@@ -69,7 +69,7 @@
 |---|---|---|---|---|
 | **Twenty CRM** | twenty-server, twenty-worker, twenty-db (Postgres), twenty-redis | :3001 | **Open-source CRM** — contacts, companies, deals, pipeline | ⏳ **NEW** — `TWENTY_BASE_URL` already in `.dev.vars`; candidate for client/deal sync |
 | **Chatwoot** | chatwoot-rails, chatwoot-sidekiq, chatwoot-redis, chatwoot-postgres (pgvector) | :3200 | Customer support inbox | ✅ OS `/api/webhooks/chatwoot` |
-| **OpenReply** | openreply-web, openreply-worker, openreply-postgres, openreply-redis | :3100 | **Review reply management** (Google Maps etc.) | ⏳ **NEW** — feeds Visibility Hub V6 Reviews |
+| **OpenReply** | openreply-web, openreply-worker, openreply-postgres, openreply-redis | :3100 | **Instagram DM/comment automation** (auto-replies, link tracking) | ⏳ Needs IG account connected; candidate for Marketing Hub (NOT Reviews — corrected) |
 
 ### 3.3 Messaging
 | App | Containers | Port | Role | OS Integration |
@@ -164,7 +164,7 @@ Public site → UTM capture + GA events (rate-limited) → D1
             → CF Web Analytics beacon → CF dashboard
 SEO Hub → sitemap.xml + robots.txt (AI crawlers allowed)
 AEO Monitor → Workers AI citation checks
-Reviews → OpenReply (Google Maps replies) → Visibility Hub V6
+Reviews → OS gbp_reviews table (Google/Trustpilot intake + response drafts) → Visibility Hub V6
 ```
 
 ---
@@ -202,5 +202,5 @@ Reviews → OpenReply (Google Maps replies) → Visibility Hub V6
 - G4 anti-spam done · G5 Titan relay LIVE · G6 VPS secrets hardening DONE
 - Z0 DNS → Cloudflare · F Cloudflare production phase (tunnel, secrets)
 - A0 Tool-First creds (Mautic ✅ done · Listmonk ✅ done · Chatwoot pending)
-- **NEW candidates**: Twenty CRM sync (contacts/deals) · OpenReply → Reviews tab · india-post-api → transit enrichment · Umami → Visibility Hub
+- **NEW candidates**: Twenty CRM sync (contacts/deals) · OpenReply → Marketing Hub (IG automation, needs account) · india-post-api → transit enrichment ✅ DONE · Umami → Visibility Hub
 - Mautic journey design (hot/cold/junk, umrah booking) · warm-up schedule
