@@ -12,6 +12,10 @@ import type { ToolAdapter, ToolEnv, ToolFeedItem, ToolSnapshot } from './types.j
 interface MauticToken { access_token: string; expires_in: number; }
 
 async function mauticToken(env: ToolEnv): Promise<{ token: string | null; reason?: string }> {
+  // Basic Auth path (verified): MAUTIC_USER + MAUTIC_PASS — simplest, no OAuth dance.
+  if (env.MAUTIC_URL && env.MAUTIC_USER && env.MAUTIC_PASS) {
+    return { token: `basic:${btoa(`${env.MAUTIC_USER}:${env.MAUTIC_PASS}`)}` };
+  }
   if (!env.MAUTIC_URL || !env.MAUTIC_CLIENT_ID || !env.MAUTIC_CLIENT_SECRET) {
     return { token: null, reason: 'MAUTIC_URL / MAUTIC_CLIENT_ID / MAUTIC_CLIENT_SECRET not set' };
   }
@@ -42,11 +46,14 @@ export const mauticAdapter: ToolAdapter = {
     if (!token) {
       return { ...base, status: { state: 'unconfigured', label: this.label, summary: reason || 'unconfigured' }, metrics: {}, items: [] };
     }
+    const authHeaders = token.startsWith('basic:')
+      ? { Authorization: `Basic ${token.slice(6)}` }
+      : { Authorization: `Bearer ${token}` };
     try {
       const [camps, conts, segs] = await Promise.all([
-        fetch(`${env.MAUTIC_URL}/api/campaigns?limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${env.MAUTIC_URL}/api/contacts?limit=1`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${env.MAUTIC_URL}/api/segments?limit=1`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${env.MAUTIC_URL}/api/campaigns?limit=10`, { headers: authHeaders }),
+        fetch(`${env.MAUTIC_URL}/api/contacts?limit=1`, { headers: authHeaders }),
+        fetch(`${env.MAUTIC_URL}/api/segments?limit=1`, { headers: authHeaders }),
       ]);
       const cj: any = await camps.json().catch(() => ({ total: null, campaigns: [] }));
       const oj: any = await conts.json().catch(() => ({ total: null }));
