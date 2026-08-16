@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
@@ -40,6 +40,23 @@ export default function Inbox() {
     queryFn: async () => { const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, { headers: baseAuth() }); if (!r.ok) throw new Error('team'); return r.json(); },
     enabled: teamMode,
     refetchInterval: 5000,
+  });
+  const { data: teamMembers } = useQuery<{ members: any[] }>({
+    queryKey: ['teamMembers'],
+    queryFn: async () => { const r = await fetch('/api/teamhub/members', { headers: baseAuth() }); if (!r.ok) throw new Error('members'); return r.json(); },
+    enabled: teamMode,
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadFile = useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch(`/api/teamhub/rooms/${roomId}/files`, { method: 'POST', headers: baseAuth(), body: fd });
+      if (!r.ok) throw new Error('upload');
+      return r.json();
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['teamRoom', roomId] }); },
+    onError: (e: any) => setToast({ kind: 'err', text: e.message }),
   });
   const sendTeam = useMutation({
     mutationFn: async () => {
@@ -121,18 +138,34 @@ return (
             </div>
             {/* Team thread */}
             <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-4 lg:col-span-2 flex flex-col">
-              <div className="mb-3 text-[10px] font-bold uppercase tracking-wider text-brand-gold">{TEAM_ROOMS.find(r => r.id === roomId)?.label} — internal chat</div>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">{TEAM_ROOMS.find(r => r.id === roomId)?.label} — internal chat</div>
+                <div className="flex items-center gap-1.5">
+                  {(teamMembers?.members || []).slice(0, 6).map((m: any) => (
+                    <span key={m.id} title={`${m.name} · ${m.role}`} className="grid h-6 w-6 place-items-center rounded-full bg-brand-navy text-[8px] font-bold text-white cursor-help">{m.initials}</span>
+                  ))}
+                  {(teamMembers?.members || []).length > 6 && <span className="text-[9px] text-brand-navy/40">+{(teamMembers?.members || []).length - 6}</span>}
+                </div>
+              </div>
               <div className="flex-1 space-y-2 overflow-y-auto max-h-[420px] pr-1">
                 {(teamThread?.messages || []).map((m: any) => (
                   <div key={m.id} className={`max-w-[80%] rounded-xl px-3 py-2 text-xs ${m.senderId === me?.id ? 'bg-brand-gold/15 ml-auto' : 'bg-brand-navy/[0.06]'}`}>
                     <div className="text-[9px] text-brand-navy/40 mb-0.5">{m.senderName || 'staff'} · {fmt(m.createdAt)}</div>
                     {m.body}
+                    {m.file && (
+                      <a href={`/api/teamhub/files/${encodeURIComponent(m.file.key)}`} download={m.file.name} className="mt-1.5 flex items-center gap-2 rounded-lg border border-brand-navy/15 bg-white px-2.5 py-1.5 text-[10px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all">
+                        📎 {m.file.name}
+                        <span className="text-brand-navy/40 font-normal">({(m.file.size / 1024).toFixed(0)} KB)</span>
+                      </a>
+                    )}
                   </div>
                 ))}
                 {(teamThread?.messages || []).length === 0 && <p className="text-center text-xs text-brand-navy/40 py-6">No messages yet — start the conversation.</p>}
               </div>
               <div className="mt-3 flex gap-2">
                 <input value={teamMsg} onChange={e => setTeamMsg(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && teamMsg.trim()) sendTeam.mutate(); }} placeholder={`Message ${TEAM_ROOMS.find(r => r.id === roomId)?.label}…`} className="flex-1 rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-xs text-brand-navy outline-none focus:border-brand-gold" />
+                <button onClick={() => fileInputRef.current?.click()} className="border border-brand-navy/15 bg-brand-navy/[0.04] text-brand-navy hover:border-brand-gold/50 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer" title="Share file (max 10MB)">📎</button>
+                <input ref={fileInputRef} type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile.mutate(f); e.target.value = ''; }} />
                 <button onClick={() => sendTeam.mutate()} disabled={!teamMsg.trim()} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40 cursor-pointer">Send</button>
               </div>
             </div>

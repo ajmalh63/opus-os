@@ -15,6 +15,7 @@ export interface TeamHubMessage {
   senderName: string;
   body: string;
   ts: number;
+  file?: { key: string; name: string; size: number; mime: string };
 }
 
 export class TeamHubRoom extends DurableObject<Env> {
@@ -32,8 +33,9 @@ export class TeamHubRoom extends DurableObject<Env> {
         senderName: String(body.senderName || 'System'),
         body: String(body.body || '').slice(0, 2000),
         ts: Math.floor(Date.now() / 1000),
+        ...(body.file ? { file: body.file } : {}),
       };
-      if (!msg.body.trim()) return new Response(JSON.stringify({ error: 'empty message' }), { status: 400, headers: HEADERS });
+      if (!msg.body.trim() && !msg.file) return new Response(JSON.stringify({ error: 'empty message' }), { status: 400, headers: HEADERS });
       const list = await this.getMessages();
       list.push(msg);
       if (list.length > 500) list.splice(0, list.length - 500); // cap history
@@ -101,6 +103,68 @@ teamHubRouter.post('/rooms/:id/messages', async (c) => {
     return new Response(res.body, { status: res.status, headers: { 'Content-Type': 'application/json' } });
   } catch (e: any) {
     return c.json({ error: 'Send failed', details: e.message }, 500);
+  }
+});
+
+// GET /api/teamhub/members — staff profiles for the room roster (Slack-like)
+teamHubRouter.get('/members', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const staff = await db.select().from(users).all();
+    const members = staff.map((u: any) => ({
+      id: u.id, name: u.name || u.email, email: u.email,
+      role: u.role || 'staff',
+      initials: (u.name || u.email || '?').split(' ').map((p: string) => p[0]).join('').slice(0, 2).toUpperCase(),
+    }));
+    return c.json({ members });
+  } catch (e: any) {
+    return c.json({ error: 'Members failed', details: e.message }, 500);
+  }
+});
+
+// POST /api/teamhub/rooms/:id/files — upload a file to R2 + post as attachment message
+teamHubRouter.post('/rooms/:id/files', async (c) => {
+  if (!c.env?.BUCKET || !c.env?.TEAM_HUB) return c.json({ error: 'File drive not configured' }, 503);
+  const user = (c.get('user') as any) || {};
+  const roomId = c.req.param('id');
+  try {
+    const form = await c.req.formData();
+    const file = form.get('file') as File | null;
+    if (!file) return c.json({ error: 'No file provided' }, 400);
+    const MAX = 10 * 1024 * 1024;
+    if (file.size > MAX) return c.json({ error: 'File too large (max 10MB)' }, 413);
+    const key = `team/${roomId}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    await c.env.BUCKET.put(key, file.stream(), { httpMetadata: { contentType: file.type || 'application/octet-stream' } });
+    // Post as attachment message
+    const res = await roomStub(c.env, roomId).fetch('http://room/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        senderId: user.id, senderName: user.name || 'Staff',
+        body: `📎 ${file.name}`,
+        file: { key, name: file.name, size: file.size, mime: file.type || 'application/octet-stream' },
+      }),
+    });
+    return new Response(res.body, { status: res.status, headers: { 'Content-Type': 'application/json' } });
+  } catch (e: any) {
+    return c.json({ error: 'Upload failed', details: e.message }, 500);
+  }
+});
+
+// GET /api/teamhub/files/:key — download from R2
+teamHubRouter.get('/files/:key', async (c) => {
+  if (!c.env?.BUCKET) return c.json({ error: 'File drive not configured' }, 503);
+  try {
+    const key = c.req.param('key');
+    const obj = await c.env.BUCKET.get(key);
+    if (!obj) return c.json({ error: 'File not found' }, 404);
+    const headers = new Headers();
+    headers.set('Content-Type', obj.httpMetadata?.contentType || 'application/octet-stream');
+    headers.set('Content-Disposition', `attachment; filename="${key.split('/').pop()}"`);
+    return new Response(obj.body, { headers });
+  } catch (e: any) {
+    return c.json({ error: 'Download failed', details: e.message }, 500);
   }
 });
 
