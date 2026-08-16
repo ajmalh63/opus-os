@@ -326,7 +326,9 @@ Gold-standard support stack implemented via API (account 2):
 - [x] 5 Macros: Escalate to Manager, Close as Spam, Send to Billing,
       Transfer to Sales, Follow Up Later
 - [x] 9 Canned Responses: /greeting /studyabroad /visa /attestation /umrah
-      /manpower /payment /tracking /closing
+      /manpower /payment /tracking /closing — upgraded with gold-standard
+      reply architecture (acknowledge → substance → action → close, 1-4
+      sentences for chat) per vm0-ai customer-reply skill
 - [x] 2 SLAs: Standard (FRT 30m, RT 24h, business hours) · Urgent (FRT 15m,
       RT 4h, 24/7)
 - [x] OS webhook: chat visitors → client records (leadSource=chatwoot) +
