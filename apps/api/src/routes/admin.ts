@@ -3,12 +3,28 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { registerStaffSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
-import { users, auditLog } from '../db/schema.js';
+import { users, auditLog, runtimeLogs } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { getAuth } from '../auth.js';
 import { auditEvent } from '../middleware/audit.js';
 
 export const adminRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string } }>();
+
+// GET /api/admin/runtime-logs — in-OS runtime log viewer (super_admin)
+adminRouter.get('/runtime-logs', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const limit = Math.min(Number(c.req.query('limit') || 200), 500);
+  const level = c.req.query('level') || '';
+  const source = c.req.query('source') || '';
+  const rows = await db.select().from(runtimeLogs).all();
+  const filtered = rows
+    .filter(r => (!level || r.level === level) && (!source || r.source.includes(source)))
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, limit);
+  const sources = [...new Set(rows.map(r => r.source))].sort();
+  return c.json({ success: true, logs: filtered, sources });
+});
 
 // GET /api/admin/audit-logs (Audit trails fetch) — newest first, bounded
 adminRouter.get('/audit-logs', async (c) => {

@@ -69,6 +69,21 @@ function AuditView() {
     return true;
   });
 
+  // Runtime logs sub-view (in-OS log viewer)
+  const [view, setView] = useState<'audit' | 'runtime'>('audit');
+  const [rtLevel, setRtLevel] = useState('');
+  const [rtSource, setRtSource] = useState('');
+  const { data: rt } = useQuery<{ logs?: any[]; sources?: string[] }>({
+    queryKey: ['runtimeLogs', rtLevel, rtSource],
+    queryFn: async () => {
+      const r = await fetch(`/api/admin/runtime-logs?limit=300&level=${rtLevel}&source=${encodeURIComponent(rtSource)}`, { headers: AUTH });
+      if (!r.ok) throw new Error('runtime');
+      return r.json();
+    },
+    refetchInterval: 30000,
+  });
+  const rtLogs = rt?.logs || [];
+
   const exportCsv = () => {
     const rows = filtered.map((l: any) => [new Date((l.createdAt || 0) * 1000).toISOString(), l.actorName || l.actorId || '', l.action || '', l.entityName || '', l.entityId || '', l.ipAddress || '']);
     const head = ['Time', 'Actor', 'Action', 'Entity', 'ID', 'IP'];
@@ -82,9 +97,15 @@ function AuditView() {
 
   return (
     <div ref={rootRef} className="min-h-full p-6 md:p-8">
-      <div className="reveal mb-6">
-        <h2 className="font-display text-lg font-bold text-brand-navy">Audit trail</h2>
-        <p className="mt-1 text-xs text-brand-navy/40">Immutable record of every critical mutation: money, agreements, consents, RBAC, kanban moves, inbox replies.</p>
+      <div className="reveal mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-lg font-bold text-brand-navy">Security Logs</h2>
+          <p className="mt-1 text-xs text-brand-navy/40">Immutable audit trail of every critical mutation + runtime logs from the API.</p>
+        </div>
+        <div className="flex gap-1 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-1 text-[10px] font-bold uppercase">
+          <button onClick={() => setView('audit')} className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${view === 'audit' ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-navy'}`}>Audit Trail</button>
+          <button onClick={() => setView('runtime')} className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${view === 'runtime' ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-navy'}`}>Runtime Logs</button>
+        </div>
       </div>
       <div className="reveal mb-4 flex flex-wrap items-center gap-2">
         <select value={fAction} onChange={(e) => setFAction(e.target.value)} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
@@ -102,6 +123,54 @@ function AuditView() {
         <span className="text-[10px] text-brand-navy/40 font-bold">{filtered.length} events</span>
         <button onClick={exportCsv} disabled={filtered.length === 0} className="ml-auto rounded-lg border border-brand-navy/15 bg-brand-navy/[0.04] px-3 py-1.5 text-[10px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all cursor-pointer disabled:opacity-40">📤 Export CSV</button>
       </div>
+      {view === 'runtime' && (
+        <div className="reveal mb-4 flex flex-wrap items-center gap-2">
+          <select value={rtLevel} onChange={(e) => setRtLevel(e.target.value)} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+            <option value="">All levels</option>
+            <option value="info">info</option>
+            <option value="warn">warn</option>
+            <option value="error">error</option>
+          </select>
+          <select value={rtSource} onChange={(e) => setRtSource(e.target.value)} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+            <option value="">All sources</option>
+            {(rt?.sources || []).map(sr => <option key={sr} value={sr}>{sr}</option>)}
+          </select>
+          <span className="text-[10px] text-brand-navy/40 font-bold">{rtLogs.length} entries · 30s auto-refresh</span>
+        </div>
+      )}
+      {view === 'runtime' && (
+        <div className="reveal overflow-x-auto rounded-2xl border border-brand-navy/10 bg-white shadow-[0_20px_40px_-15px_rgba(10,45,80,0.10)]">
+          <table className="w-full text-left text-xs">
+            <thead className="border-b border-brand-navy/[0.08] bg-brand-navy/[0.04] text-[10px] uppercase tracking-wider text-brand-gold">
+              <tr>
+                <th className="px-4 py-3">Time</th>
+                <th className="px-4 py-3">Level</th>
+                <th className="px-4 py-3">Source</th>
+                <th className="px-4 py-3">Message</th>
+                <th className="px-4 py-3">Detail</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rtLogs.length === 0 && (
+                <tr><td colSpan={5} className="px-4 py-10 text-center text-brand-navy/50">No runtime logs yet — they appear as the API handles requests.</td></tr>
+              )}
+              {rtLogs.map((l: any) => (
+                <tr key={l.id} className="border-b border-brand-navy/[0.08] text-brand-navy/70 hover:bg-brand-navy/[0.04]">
+                  <td className="whitespace-nowrap px-4 py-2.5">{new Date((l.createdAt || 0) * 1000).toLocaleString()}</td>
+                  <td className="px-4 py-2.5">
+                    <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${l.level === 'error' ? 'bg-rose-500/15 text-rose-600' : l.level === 'warn' ? 'bg-amber-500/15 text-amber-700' : 'bg-emerald-500/15 text-emerald-700'}`}>{l.level}</span>
+                  </td>
+                  <td className="px-4 py-2.5 font-mono text-[10px] text-brand-navy/50">{l.source}</td>
+                  <td className="px-4 py-2.5">{l.message}</td>
+                  <td className="px-4 py-2.5 font-mono text-[10px] text-brand-navy/40">{l.detail ? String(l.detail).slice(0, 80) : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {view === 'audit' && (
       <div className="reveal overflow-x-auto rounded-2xl border border-brand-navy/10 bg-white shadow-[0_20px_40px_-15px_rgba(10,45,80,0.10)]">
         <table className="w-full text-left text-xs">
           <thead className="border-b border-brand-navy/[0.08] bg-brand-navy/[0.04] text-[10px] uppercase tracking-wider text-brand-gold">
@@ -133,6 +202,7 @@ function AuditView() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { clientsRouter } from './routes/clients.js';
 import { kanbanRouter } from './routes/kanban.js';
 import { authRouter } from './routes/auth.js';
 import { rbacMiddleware } from './middleware/rbac.js';
+import { logError } from './infra/runtimeLog.js';
 import { serviceTokenMiddleware } from './middleware/serviceToken.js';
 import { turnstileVerify } from './middleware/turnstile.js';
 import { agreementsRouter } from './routes/agreements.js';
@@ -65,6 +66,7 @@ app.onError((err, c) => {
   const status = (err as any)?.status || 500;
   const code = status >= 400 && status < 600 ? 'HTTP_ERROR' : 'INTERNAL_ERROR';
   console.error(`[error] ${c.req.method} ${c.req.path} -> ${err?.name}: ${err?.message}`);
+  logError(c.env, 'error.handler', `${c.req.method} ${c.req.path} -> ${err?.name}: ${err?.message}`, { status });
   return c.json(
     {
       error: {

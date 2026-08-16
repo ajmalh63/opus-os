@@ -1402,3 +1402,15 @@ export const bookings = sqliteTable('bookings', {
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });
+
+// ==========================================
+// 64. RUNTIME LOGS (in-OS log viewer)
+// ==========================================
+export const runtimeLogs = sqliteTable('runtime_logs', {
+  id: text('id').primaryKey(),
+  level: text('level', { enum: ['info', 'warn', 'error'] }).notNull().default('info'),
+  source: text('source').notNull(), // e.g. webhook.cal, error.handler, ai.aeo
+  message: text('message').notNull(),
+  detail: text('detail'),
+  createdAt: integer('created_at').notNull()
+});
