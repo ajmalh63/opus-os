@@ -2,7 +2,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
-import { nurtureTouches, consents, engagements, clients, campaigns, campaignTouches } from '../db/schema.js';
+import { nurtureTouches, consents, engagements, clients, campaigns, campaignTouches, scoringEvents } from '../db/schema.js';
 import { eq, and, lte } from 'drizzle-orm';
 import { resolvePrimaryDivision } from '../lib/intent.js';
 
@@ -109,6 +109,16 @@ async function planSequence(db: D1, clientId: string, engagementId: string | nul
   }
   const div = resolved;
   const context = safeParse(client.intakeContext);
+
+  // TIER-AWARE: compute the lead band (hot/warm/cold) from scoring events and
+  // inject it into the context so tier campaigns (eligibilityJson {"tier": X})
+  // match. Gold-standard: scoring drives journey entry (2026 nurture practice).
+  try {
+    const events = await db.select().from(scoringEvents).where(eq(scoringEvents.clientId, clientId)).all();
+    const total = events.reduce((sum: number, e: any) => sum + (e.points || 0), 0);
+    const HOT = 75, WARM = 50;
+    context.tier = total >= HOT ? 'hot' : total >= WARM ? 'warm' : 'cold';
+  } catch { context.tier = 'cold'; }
 
   // CAMPAIGN-AWARE: division+context match wins over the default sequence.
   const matched = await pickCampaign(db, div, context);
