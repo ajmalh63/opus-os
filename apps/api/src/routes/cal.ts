@@ -23,7 +23,7 @@ export const calPublicRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 export const calRouter = new Hono<{ Bindings: { DB: D1Database }; Variables: { user: any; session: any } }>();
 
 const now = () => Math.floor(Date.now() / 1000);
-const uid = () => `CAL-${now()}-${Math.random().toString(36).slice(2, 8)}`;
+const uid = () => `CAL-${now()}-${crypto.randomUUID().slice(0, 8)}`;
 
 // Division ↔ event type map (seeded via config; fallback for dev)
 const DEFAULT_EVENT_MAP: Record<string, string> = {
@@ -106,7 +106,17 @@ calWebhookRouter.post('/cal', async (c) => {
     const key = await cryptoObj.subtle.importKey('raw', new TextEncoder().encode(cfg.webhookSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
     const mac = await cryptoObj.subtle.sign('HMAC', key, new TextEncoder().encode(raw));
     const expected = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, '0')).join('');
-    if (!sig || sig !== expected) return c.json({ error: 'Invalid signature' }, 401);
+    // Timing-safe comparison (Cloudflare gold standard): hash both to fixed size,
+    // compare in constant time — never direct string equality on secrets.
+    const [sigHash, expHash] = await Promise.all([
+      cryptoObj.subtle.digest('SHA-256', new TextEncoder().encode(sig || '')),
+      cryptoObj.subtle.digest('SHA-256', new TextEncoder().encode(expected)),
+    ]);
+    const sigBytes = new Uint8Array(sigHash);
+    const expBytes = new Uint8Array(expHash);
+    let diff = sigBytes.length ^ expBytes.length;
+    for (let i = 0; i < Math.min(sigBytes.length, expBytes.length); i++) diff |= sigBytes[i] ^ expBytes[i];
+    if (diff !== 0) return c.json({ error: 'Invalid signature' }, 401);
     const body = JSON.parse(raw);
     await handleEvent(c, db, cfg, body);
     return c.json({ success: true });
@@ -163,7 +173,7 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
         clientId = found.id;
         existingClient = true;
       } else if (email) {
-        const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+        const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`; // client ID is display-only, not security-sensitive
         await db.insert(clients).values({
           id: cid, name: attendee?.name || 'Consultation lead', phone: phone || '0000000000',
           email: email || 'pending@cal.com', leadSource: 'cal.com', primaryDivision: division,

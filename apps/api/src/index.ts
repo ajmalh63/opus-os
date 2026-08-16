@@ -8,6 +8,7 @@ import { rbacMiddleware } from './middleware/rbac.js';
 import { logError } from './infra/runtimeLog.js';
 import { serviceTokenMiddleware } from './middleware/serviceToken.js';
 import { turnstileVerify } from './middleware/turnstile.js';
+import { rateLimit, rateLimitGroup } from './middleware/rateLimit.js';
 import { agreementsRouter } from './routes/agreements.js';
 import { paymentsRouter } from './routes/payments.js';
 import { transactionsRouter } from './routes/transactions.js';
@@ -274,6 +275,12 @@ app.route('/api/performance', performanceRouter);
 app.use('/api/analytics', rbacMiddleware(['super_admin', 'manager'], true));
 app.use('/api/analytics/*', rbacMiddleware(['super_admin', 'manager'], true));
 app.route('/api/analytics', analyticsRouter);
+
+// Rate-limited public endpoints (anti-abuse): UTM capture + GA events
+app.use('/api/visibility/utm', rateLimit({ bucket: 'utm-capture', windowSeconds: 3600, limit: 60 }));
+app.use('/api/visibility/ga4/events', rateLimit({ bucket: 'ga-events', windowSeconds: 3600, limit: 120 }));
+// Cal.com webhook — rate-limited (anti-flood) + HMAC-verified
+app.use('/api/webhooks/cal', rateLimit({ bucket: 'cal-webhook', windowSeconds: 3600, limit: 120 }));
 
 // Public SEO endpoints (no auth): sitemap.xml + robots.txt + public meta
 // MUST be mounted before the visibility RBAC middleware so /api/visibility/public/meta stays open.

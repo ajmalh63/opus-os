@@ -22,7 +22,7 @@ import { createStaffAlert } from '../infra/staffAlerts.js';
 export const visibilityRouter = new Hono<{ Bindings: { DB: D1Database; AI?: any } }>();
 
 const now = () => Math.floor(Date.now() / 1000);
-const uid = () => `V-${now()}-${Math.random().toString(36).slice(2, 8)}`;
+const uid = () => `V-${now()}-${crypto.randomUUID().slice(0, 8)}`;
 
 // ---- Static public routes (the SPA pages) ----
 const STATIC_ROUTES = [

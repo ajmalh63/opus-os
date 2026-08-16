@@ -28,6 +28,11 @@ const RULES: Record<string, RateLimitRule[]> = {
   'public:leads': [{ bucket: 'lead-form', windowSeconds: 3600, limit: 5 }],
   'public:portal': [{ bucket: 'lookup', windowSeconds: 3600, limit: 10 }],
   'public:partners': [{ bucket: 'partner-signup', windowSeconds: 3600, limit: 8 }],
+  'public:visibility': [
+    { bucket: 'utm-capture', windowSeconds: 3600, limit: 60 },
+    { bucket: 'ga-events', windowSeconds: 3600, limit: 120 },
+  ],
+  'webhooks:cal': [{ bucket: 'cal-webhook', windowSeconds: 3600, limit: 120 }],
 };
 
 function hashKey(mat: string[]): string {
