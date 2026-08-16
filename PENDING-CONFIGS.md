@@ -287,17 +287,18 @@ secret is NOT set yet (dev mode = accepts without verification).
 - [ ] Rotate `cal_live_...` key (was shared in chat) â†' Settings â†' Developer â†' API keys
 - [ ] Paste new key into OS: Consultations â†' âš™ Config â†' API key â†' Save
 
-### G5. Listmonk outbound email — SMTP2GO relay (Oracle blocks port 25)
-Oracle VPS blocks outbound SMTP port 25; cloudflared tunnel only fixes INBOUND
-access to Listmonk. Outbound delivery must relay on 587/465 (already planned:
-SPF record includes `include:senders.smtp2go.com`):
-- [ ] Create SMTP2GO account (or SES/Mailgun/SendGrid/Brevo) → API key
-- [ ] Listmonk Settings â†' SMTP: host `mail.smtp2go.com`, port `587` (STARTTLS),
-      username/password, from-email `no-reply@opusoverseas.com`
-- [ ] DKIM: add SMTP2GO DKIM selector to DNS (playbook has the record)
-- [ ] OS transactional email (pending bookings) can bypass the VPS entirely via
-      the Cloudflare Email Workers binding (`EMAIL` env) — already coded in notify.ts
-
+### G5. Outbound email — Cloudflare Email Service (REPLACES SMTP2GO plan)
+Oracle blocks outbound port 25; tunnel fixes inbound only. Solution: Cloudflare
+Email Sending service (launched Apr 2026) — native relay, $5/mo Workers Paid +
+3,000 free emails/mo + $0.35/1k after. SMTP2GO plan DROPPED (was $15/mo).
+- [ ] Upgrade Workers to Paid plan ($5/mo) — needed for production anyway
+- [ ] Dashboard → Compute → Email Service → Email Sending → Onboard Domain
+      (auto-adds SPF/DKIM/DMARC + cf-bounce MX)
+- [ ] Add `[[send_email]] name = "EMAIL" remote = true` to wrangler.toml
+      (notify.ts already uses env.EMAIL.send() for OS transactional)
+- [ ] Listmonk Settings → SMTP: host `smtp.mx.cloudflare.net`, port `465`,
+      user `api_token:<API_TOKEN>`, from `no-reply@opusoverseas.com`
+- [ ] Scale-out path when >10k/mo: Amazon SES ($0.10/1k) — same SMTP slot swap
 ### G4. Cal.com anti-spam â€” DONE (2026-08-16): Requires Confirmation enabled
 Turnstile is NOT available in cal.com cloud (it was self-hosted/Cal ID only) â€”
 verified. The strongest available lever is now LIVE on all 3 event types:
