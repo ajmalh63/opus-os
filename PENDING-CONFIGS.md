@@ -287,15 +287,17 @@ secret is NOT set yet (dev mode = accepts without verification).
 - [ ] Rotate `cal_live_...` key (was shared in chat) â†' Settings â†' Developer â†' API keys
 - [ ] Paste new key into OS: Consultations â†' âš™ Config â†' API key â†' Save
 
-### G4. Cal.com anti-spam â€” Turnstile CAPTCHA + manual confirmation (PENDING)
-Code-side anti-spam is LIVE (email verification, 1/day limit, 2 active max,
-phone + qualifying question on all 3 event types; OS-side suspicion scoring +
-flood blocking + risk badges). Two cal.com UI actions remain:
-- [ ] **Turnstile app**: cal.com â†' Apps â†' install **Cloudflare Turnstile** â†'
-      enable on the 3 event types (invisible CAPTCHA on booking pages)
-- [ ] **Requires Confirmation** (optional, strongest): each event type â†'
-      Advanced â†' toggle "Requires Confirmation" â†' bookings become PENDING
-      until staff approves (adds staff work; recommended once volume grows)
+### G4. Cal.com anti-spam â€” DONE (2026-08-16): Requires Confirmation enabled
+Turnstile is NOT available in cal.com cloud (it was self-hosted/Cal ID only) â€”
+verified. The strongest available lever is now LIVE on all 3 event types:
+- [x] **Requires Confirmation** (confirmationPolicy=always, via API) â€” every
+      booking is PENDING until staff approves in cal.com
+- [x] Email verification + 1/day limit + 2 active max + phone + qualifying
+      question (via API)
+- [x] OS-side: suspicion scoring, flood blocking, risk badges, pending badge,
+      BOOKING_REQUESTED/CONFIRMED/REJECTED webhook handling
+- [ ] **Staff workflow**: approve/reject bookings in cal.com (each booking
+      arrives as PENDING in the OS Consultations tab + alert)
 - [ ] Rotate `cal_live_...` key (was shared in chat) â†’ Settings â†’ Developer â†’ API keys
 - [ ] Paste new key into OS: Consultations â†’ âš™ Config â†’ API key â†’ Save
 

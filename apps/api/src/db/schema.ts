@@ -1396,7 +1396,7 @@ export const bookings = sqliteTable('bookings', {
   attendeeName: text('attendee_name'),
   attendeeEmail: text('attendee_email'),
   attendeePhone: text('attendee_phone'),
-  status: text('status', { enum: ['scheduled', 'cancelled', 'rescheduled', 'completed', 'no_show'] }).notNull().default('scheduled'),
+  status: text('status', { enum: ['pending', 'scheduled', 'cancelled', 'rescheduled', 'completed', 'no_show', 'rejected'] }).notNull().default('scheduled'),
   riskScore: integer('risk_score').notNull().default(0),
   riskFlags: text('risk_flags'), // JSON array of suspicion flags
   verified: integer('verified', { mode: 'boolean' }).notNull().default(false),

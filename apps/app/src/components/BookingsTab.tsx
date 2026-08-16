@@ -22,6 +22,8 @@ function RiskBadge({ score, flags, verified }: { score: number; flags: string[];
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
+    pending: 'bg-blue-500/15 text-blue-700',
+    rejected: 'bg-rose-500/15 text-rose-600',
     scheduled: 'bg-emerald-500/15 text-emerald-700',
     rescheduled: 'bg-amber-500/15 text-amber-700',
     cancelled: 'bg-rose-500/15 text-rose-600',

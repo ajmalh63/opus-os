@@ -115,7 +115,7 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
 
   const existing = await db.select().from(bookings).where(eq(bookings.calUid, calUid)).get();
 
-  if (trigger === 'BOOKING_CREATED' || trigger === 'BOOKING_CREATED_TEST') {
+  if (trigger === 'BOOKING_CREATED' || trigger === 'BOOKING_CREATED_TEST' || trigger === 'BOOKING_REQUESTED') {
     if (existing) return; // dedupe replay
     // Rate limit: max 3 bookings per email/phone per day (anti-flood)
     const email = attendee?.email || '';
@@ -171,12 +171,13 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
     // Anti-spam: suspicion score (disposable email, no phone, patterns, new contact)
     const { score, flags } = scoreBooking(attendee, existingClient, start);
 
-    // Insert booking
+    // Insert booking — pending when Requires Confirmation is active (BOOKING_REQUESTED)
+    const isPending = trigger === 'BOOKING_REQUESTED';
     await db.insert(bookings).values({
       id: uid(), calUid, eventTypeId, division, title: p?.title || 'Consultation',
       startTime: start, endTime: end,
       attendeeName: attendee?.name || null, attendeeEmail: attendee?.email || null, attendeePhone: attendee?.phone || null,
-      status: 'scheduled', riskScore: score, riskFlags: JSON.stringify(flags), clientId, taskId, createdAt: now(), updatedAt: now(),
+      status: isPending ? 'pending' : 'scheduled', riskScore: score, riskFlags: JSON.stringify(flags), clientId, taskId, createdAt: now(), updatedAt: now(),
     });
     // Communication row
     if (clientId) {
@@ -186,12 +187,32 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
         createdAt: now(),
       });
     }
-    // Staff alert — severity escalates with suspicion score
+    // Staff alert — severity escalates with suspicion score; pending needs approval
     const riskLevel = score >= 50 ? 'urgent' : score >= 20 ? 'warning' : 'info';
     await createStaffAlert(c.env, {
-      division, type: 'cal_booking', title: `${score >= 50 ? '🚨' : score >= 20 ? '⚠️' : '📅'} Consultation booked: ${p?.title || 'Booking'}${score >= 20 ? ` (risk ${score})` : ''}`,
-      body: `${attendee?.name || 'Attendee'} · ${new Date(start * 1000).toLocaleString('en-IN')}${flags.length ? ` · flags: ${flags.join(', ')}` : ''}`,
+      division, type: 'cal_booking', title: `${score >= 50 ? '🚨' : score >= 20 ? '⚠️' : '📅'} ${isPending ? '⏳ Pending approval' : 'Consultation booked'}: ${p?.title || 'Booking'}${score >= 20 ? ` (risk ${score})` : ''}`,
+      body: `${attendee?.name || 'Attendee'} · ${new Date(start * 1000).toLocaleString('en-IN')}${flags.length ? ` · flags: ${flags.join(', ')}` : ''}${isPending ? ' · approve in cal.com' : ''}`,
       severity: riskLevel as any, link: '/bookings', clientId,
+    });
+  }
+
+  if (trigger === 'BOOKING_CONFIRMED' && existing) {
+    await db.update(bookings).set({ status: 'scheduled', updatedAt: now() }).where(eq(bookings.calUid, calUid));
+    if (existing.taskId) await db.update(tasks).set({ status: 'open', updatedAt: now() }).where(eq(tasks.id, existing.taskId));
+    await createStaffAlert(c.env, {
+      division: existing.division, type: 'cal_confirmed', title: `✅ Consultation approved: ${existing.title}`,
+      body: `${existing.attendeeName || 'Attendee'} · ${new Date(existing.startTime * 1000).toLocaleString('en-IN')}`,
+      severity: 'info', link: '/bookings', clientId: existing.clientId,
+    });
+  }
+
+  if (trigger === 'BOOKING_REJECTED' && existing) {
+    await db.update(bookings).set({ status: 'rejected', updatedAt: now() }).where(eq(bookings.calUid, calUid));
+    if (existing.taskId) await db.update(tasks).set({ status: 'cancelled', updatedAt: now() }).where(eq(tasks.id, existing.taskId));
+    await createStaffAlert(c.env, {
+      division: existing.division, type: 'cal_rejected', title: `🚫 Consultation rejected: ${existing.title}`,
+      body: `${existing.attendeeName || 'Attendee'} — not approved.`,
+      severity: 'warning', link: '/bookings', clientId: existing.clientId,
     });
   }
 
