@@ -51,6 +51,8 @@ export default function Inbox() {
     enabled: teamMode,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const membersRef = useRef<HTMLDivElement>(null);
   const uploadFile = useMutation({
     mutationFn: async (file: File) => {
       const fd = new FormData();
@@ -153,11 +155,25 @@ return (
             <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-4 lg:col-span-2 flex flex-col">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">{TEAM_ROOMS.find(r => r.id === roomId)?.label} — internal chat</div>
-                <div className="flex items-center gap-1.5">
-                  {(teamMembers?.members || []).slice(0, 6).map((m: any) => (
-                    <span key={m.id} title={`${m.name} · ${m.role}`} className="grid h-6 w-6 place-items-center rounded-full bg-brand-navy text-[8px] font-bold text-white cursor-help">{m.initials}</span>
-                  ))}
-                  {(teamMembers?.members || []).length > 6 && <span className="text-[9px] text-brand-navy/40">+{(teamMembers?.members || []).length - 6}</span>}
+                <div className="relative" ref={membersRef}>
+                  <button onClick={() => setMembersOpen(!membersOpen)} className="flex items-center gap-1.5 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] px-3 py-1 text-[10px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all cursor-pointer">
+                    👥 Members <span className="text-brand-navy/40">({(teamMembers?.members || []).length})</span>
+                    <span className={`transition-transform ${membersOpen ? 'rotate-180' : ''}`}>▾</span>
+                  </button>
+                  {membersOpen && (
+                    <div className="absolute right-0 top-8 z-20 w-64 rounded-xl border border-brand-navy/10 bg-white shadow-xl p-2 space-y-1">
+                      {(teamMembers?.members || []).map((m: any) => (
+                        <div key={m.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-brand-navy/[0.04]">
+                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-navy text-[9px] font-bold text-white">{m.initials}</span>
+                          <div className="min-w-0">
+                            <div className="truncate text-[11px] font-semibold text-brand-navy">{m.name}</div>
+                            <div className="truncate text-[9px] text-brand-navy/40">{m.role} · {m.email}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {(teamMembers?.members || []).length === 0 && <p className="px-2 py-3 text-center text-[10px] text-brand-navy/40">No staff found.</p>}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto max-h-[420px] pr-1">
