@@ -13,6 +13,13 @@ const DIV_LABELS: Record<string, string> = {
   'study-abroad': 'Study Abroad', visa: 'Visa', manpower: 'Manpower',
 };
 
+function RiskBadge({ score, flags, verified }: { score: number; flags: string[]; verified: boolean }) {
+  if (verified) return <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-500/15 text-emerald-700">✓ Verified</span>;
+  if (score >= 50) return <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-rose-500/15 text-rose-600" title={flags.join(', ')}>🚨 High risk {score}</span>;
+  if (score >= 20) return <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-500/15 text-amber-700" title={flags.join(', ')}>⚠ Review {score}</span>;
+  return <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-500/15 text-emerald-700">🟢 Genuine</span>;
+}
+
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     scheduled: 'bg-emerald-500/15 text-emerald-700',
@@ -24,8 +31,9 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${map[status] || 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{status}</span>;
 }
 
-function BookingRow({ b }: { b: any }) {
+function BookingRow({ b, onVerify }: { b: any; onVerify?: (id: string) => void }) {
   const d = new Date(b.startTime * 1000);
+  const flags = (() => { try { return JSON.parse(b.riskFlags || '[]'); } catch { return []; } })();
   return (
     <div className="flex justify-between items-center bg-brand-navy/[0.06] border border-brand-navy/10 rounded px-3 py-2 text-xs">
       <div>
@@ -35,10 +43,15 @@ function BookingRow({ b }: { b: any }) {
           {b.attendeeName || 'Attendee'}{b.attendeeEmail ? ` · ${b.attendeeEmail}` : ''}
           {b.clientId ? ` · client ${b.clientId}` : ''}
         </div>
+        {flags.length > 0 && <div className="flex flex-wrap gap-1 mt-1">{flags.map((f: string) => <span key={f} className="px-1 py-0.5 rounded bg-brand-navy/[0.06] text-[8px] font-bold uppercase text-brand-navy/50">{f.replace(/_/g, ' ')}</span>)}</div>}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <span className="font-mono text-brand-navy/40">{d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} {d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+        <RiskBadge score={b.riskScore || 0} flags={flags} verified={b.verified} />
         <StatusBadge status={b.status} />
+        {onVerify && !b.verified && b.status === 'scheduled' && (
+          <button onClick={() => onVerify(b.id)} className="border border-emerald-600/40 px-2 py-0.5 rounded text-[9px] font-bold uppercase text-emerald-700 hover:bg-emerald-600 hover:text-white transition cursor-pointer">Verify</button>
+        )}
       </div>
     </div>
   );
@@ -57,6 +70,15 @@ export default function BookingsTab() {
     refetchInterval: 60000,
   });
   const { data: cfg } = useQuery<any>({ queryKey: ['calConfig'], queryFn: async () => (await fetch('/api/cal/config', { headers: AUTH })).json() });
+  const [riskFilter, setRiskFilter] = useState('all');
+  const verifyBooking = useMutation({
+    mutationFn: async (id: string) => {
+      const r = await fetch(`/api/cal/bookings/${id}/verify`, { method: 'POST', headers: AUTH });
+      if (!r.ok) throw new Error('verify');
+      return r.json();
+    },
+    onSuccess: (d) => { alert(d.message); qc.invalidateQueries({ queryKey: ['calBookings'] }); },
+  });
   const [cfgForm, setCfgForm] = useState<any>({});
   const [showCfg, setShowCfg] = useState(false);
 
@@ -117,6 +139,15 @@ export default function BookingsTab() {
         </div>
       )}
 
+      {/* Risk filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[10px] font-bold uppercase text-brand-navy/40">Risk filter:</span>
+        {[['all', 'All'], ['high', '🚨 High risk'], ['review', '⚠️ Review'], ['genuine', '🟢 Genuine']].map(([k, label]) => (
+          <button key={k} onClick={() => setRiskFilter(k)} className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${riskFilter === k ? 'bg-brand-gold text-brand-navy' : 'border border-brand-navy/15 text-brand-navy/50 hover:text-brand-navy'}`}>{label}</button>
+        ))}
+        <span className="text-[10px] text-brand-navy/40 ml-auto">Anti-spam: email verification + 1/day limit + phone + qualifying question (cal.com) · suspicion scoring + flood blocking (OS)</span>
+      </div>
+
       {/* Counts */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
@@ -139,7 +170,7 @@ export default function BookingsTab() {
           <h3 className="font-display font-bold text-sm text-brand-navy">Today's Consultations ({data?.today?.length ?? 0})</h3>
         </div>
         <div className="space-y-1.5">
-          {(data?.today || []).map((b: any) => <BookingRow key={b.id} b={b} />)}
+          {(data?.today || []).map((b: any) => <BookingRow key={b.id} b={b} onVerify={(id) => verifyBooking.mutate(id)} />)}
           {(data?.today || []).length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-2">No consultations today.</p>}
         </div>
       </div>
@@ -151,7 +182,7 @@ export default function BookingsTab() {
           <h3 className="font-display font-bold text-sm text-brand-navy">Upcoming ({data?.upcoming?.length ?? 0})</h3>
         </div>
         <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-          {(data?.upcoming || []).map((b: any) => <BookingRow key={b.id} b={b} />)}
+          {(data?.upcoming || []).map((b: any) => <BookingRow key={b.id} b={b} onVerify={(id) => verifyBooking.mutate(id)} />)}
           {(data?.upcoming || []).length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-2">No upcoming consultations.</p>}
         </div>
       </div>

@@ -284,6 +284,18 @@ secret is NOT set yet (dev mode = accepts without verification).
 - [ ] Verify: a test booking now requires the signature (401 without it)
 
 ### G3. Cal.com API key rotation (PENDING)
+- [ ] Rotate `cal_live_...` key (was shared in chat) â†' Settings â†' Developer â†' API keys
+- [ ] Paste new key into OS: Consultations â†' âš™ Config â†' API key â†' Save
+
+### G4. Cal.com anti-spam â€” Turnstile CAPTCHA + manual confirmation (PENDING)
+Code-side anti-spam is LIVE (email verification, 1/day limit, 2 active max,
+phone + qualifying question on all 3 event types; OS-side suspicion scoring +
+flood blocking + risk badges). Two cal.com UI actions remain:
+- [ ] **Turnstile app**: cal.com â†' Apps â†' install **Cloudflare Turnstile** â†'
+      enable on the 3 event types (invisible CAPTCHA on booking pages)
+- [ ] **Requires Confirmation** (optional, strongest): each event type â†'
+      Advanced â†' toggle "Requires Confirmation" â†' bookings become PENDING
+      until staff approves (adds staff work; recommended once volume grows)
 - [ ] Rotate `cal_live_...` key (was shared in chat) â†’ Settings â†’ Developer â†’ API keys
 - [ ] Paste new key into OS: Consultations â†’ âš™ Config â†’ API key â†’ Save
 

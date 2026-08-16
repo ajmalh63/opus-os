@@ -38,6 +38,36 @@ async function getConfig(db: any) {
   return { apiKey: get('cal_api_key'), webhookSecret: get('cal_webhook_secret'), eventMap, bookingLinks };
 }
 
+// ---- Anti-spam: suspicion scoring (gold-standard: disposable email block,
+// phone requirement, pattern rejection, rate limiting) ----
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com', '10minutemail.com', 'tempmail.com', 'guerrillamail.com',
+  'yopmail.com', 'throwawaymail.com', 'temp-mail.org', 'maildrop.cc',
+  'getnada.com', 'dispostable.com', 'sharklasers.com', 'trashmail.com',
+  'mailnesia.com', 'spam4.me', 'mytemp.email', 'fakeinbox.com',
+]);
+const SUSPICIOUS_NAME = /^(test|asdf|qwerty|aaa|abc|demo|user|x{2,}|a{2,}|z{2,})/i;
+const SUSPICIOUS_TEXT = /(test|demo|asdf|qwerty|placeholder|spam)/i;
+
+function scoreBooking(attendee: any, existingClient: boolean, start: number): { score: number; flags: string[] } {
+  const flags: string[] = [];
+  let score = 0;
+  const email = (attendee?.email || '').toLowerCase();
+  const name = attendee?.name || '';
+  const phone = attendee?.phone || '';
+
+  if (email) {
+    const domain = email.split('@')[1] || '';
+    if (DISPOSABLE_DOMAINS.has(domain)) { score += 30; flags.push('disposable_email'); }
+  } else { score += 20; flags.push('no_email'); }
+  if (!phone) { score += 20; flags.push('no_phone'); }
+  if (SUSPICIOUS_NAME.test(name)) { score += 20; flags.push('suspicious_name'); }
+  if (SUSPICIOUS_TEXT.test(name + ' ' + email)) { score += 15; flags.push('suspicious_text'); }
+  if (!existingClient) { score += 10; flags.push('new_contact'); }
+  if (start - Math.floor(Date.now() / 1000) < 2 * 3600) { score += 10; flags.push('last_minute'); }
+  return { score, flags };
+}
+
 // ============================================================
 // WEBHOOK — booking lifecycle (public, secret-verified)
 // ============================================================
@@ -87,15 +117,29 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
 
   if (trigger === 'BOOKING_CREATED' || trigger === 'BOOKING_CREATED_TEST') {
     if (existing) return; // dedupe replay
-    // Upsert client by email/phone
-    let clientId: string | null = null;
+    // Rate limit: max 3 bookings per email/phone per day (anti-flood)
     const email = attendee?.email || '';
     const phone = attendee?.phone || '';
+    const dayAgo = now() - 86400;
+    const recent = await db.select().from(bookings).where(gte(bookings.createdAt, dayAgo)).all();
+    const sameContact = recent.filter((b: any) => (email && b.attendeeEmail === email) || (phone && b.attendeePhone === phone));
+    if (sameContact.length >= 3) {
+      await createStaffAlert(c.env, {
+        division, type: 'cal_flood', title: `🚫 Booking flood blocked: ${attendee?.email || attendee?.phone || 'unknown'}`,
+        body: `${sameContact.length} bookings in 24h — rate limit hit.`,
+        severity: 'urgent', link: '/bookings',
+      });
+      return;
+    }
+    // Upsert client by email/phone
+    let clientId: string | null = null;
+    let existingClient = false;
     if (email || phone) {
       const found = await db.select().from(clients).where(eq(clients.email, email)).get()
         || (phone ? await db.select().from(clients).where(eq(clients.phone, phone)).get() : null);
       if (found) {
         clientId = found.id;
+        existingClient = true;
       } else if (email) {
         const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
         await db.insert(clients).values({
@@ -124,12 +168,15 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
       description: `${attendee?.name || 'Attendee'} · ${start ? new Date(start * 1000).toLocaleString('en-IN') : ''} · ${attendee?.email || ''}`,
       priority: 'medium', status: 'open', dueDate: start, createdAt: now(), updatedAt: now(),
     });
+    // Anti-spam: suspicion score (disposable email, no phone, patterns, new contact)
+    const { score, flags } = scoreBooking(attendee, existingClient, start);
+
     // Insert booking
     await db.insert(bookings).values({
       id: uid(), calUid, eventTypeId, division, title: p?.title || 'Consultation',
       startTime: start, endTime: end,
       attendeeName: attendee?.name || null, attendeeEmail: attendee?.email || null, attendeePhone: attendee?.phone || null,
-      status: 'scheduled', clientId, taskId, createdAt: now(), updatedAt: now(),
+      status: 'scheduled', riskScore: score, riskFlags: JSON.stringify(flags), clientId, taskId, createdAt: now(), updatedAt: now(),
     });
     // Communication row
     if (clientId) {
@@ -139,11 +186,12 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
         createdAt: now(),
       });
     }
-    // Staff alert
+    // Staff alert — severity escalates with suspicion score
+    const riskLevel = score >= 50 ? 'urgent' : score >= 20 ? 'warning' : 'info';
     await createStaffAlert(c.env, {
-      division, type: 'cal_booking', title: `📅 Consultation booked: ${p?.title || 'Booking'}`,
-      body: `${attendee?.name || 'Attendee'} · ${new Date(start * 1000).toLocaleString('en-IN')}`,
-      severity: 'info', link: '/bookings', clientId,
+      division, type: 'cal_booking', title: `${score >= 50 ? '🚨' : score >= 20 ? '⚠️' : '📅'} Consultation booked: ${p?.title || 'Booking'}${score >= 20 ? ` (risk ${score})` : ''}`,
+      body: `${attendee?.name || 'Attendee'} · ${new Date(start * 1000).toLocaleString('en-IN')}${flags.length ? ` · flags: ${flags.join(', ')}` : ''}`,
+      severity: riskLevel as any, link: '/bookings', clientId,
     });
   }
 
@@ -220,6 +268,15 @@ calPublicRouter.get('/links', async (c) => {
   const db = getDb(c.env.DB);
   const cfg = await getConfig(db);
   return c.json({ success: true, links: cfg.bookingLinks });
+});
+
+// POST /api/cal/bookings/:id/verify — staff marks a booking as verified genuine
+calRouter.post('/bookings/:id/verify', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const id = c.req.param('id');
+  await db.update(bookings).set({ verified: true, updatedAt: now() }).where(eq(bookings.id, id));
+  return c.json({ success: true, message: 'Booking verified' });
 });
 
 // ============================================================
