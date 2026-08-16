@@ -33,7 +33,11 @@ export default function Inbox() {
     { id: 'ops', label: 'Operations' },
     { id: 'sales', label: 'Sales & Funnel' },
     { id: 'finance', label: 'Finance & Compliance' },
-    { id: 'umrah', label: 'Umrah & Travel' },
+    { id: 'study-abroad', label: '🎓 Study Abroad' },
+    { id: 'visa', label: '🛂 Visa Services' },
+    { id: 'attestation', label: '📜 Attestation' },
+    { id: 'umrah', label: '🕋 Umrah & Travel' },
+    { id: 'manpower', label: '💼 Manpower' },
   ];
   const { data: teamThread } = useQuery<{ messages: any[] }>({
     queryKey: ['teamRoom', roomId],
