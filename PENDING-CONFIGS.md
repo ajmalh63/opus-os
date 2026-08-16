@@ -265,6 +265,28 @@ OpenWA stays the tailscale/testing path; a production switch flips `WA_PROVIDER=
 `conversations` table + HMAC webhooks (`/api/webhooks/wa`, `/api/webhooks/chatwoot`) land there.
 Remaining: staff inbox UI + reply hook (`sendWhatsApp`). Data layer ready.
 
+
+## â˜… 2026-08-16 â€” Logpush + cal.com webhook secret (owner manual actions)
+
+### G1. Cloudflare Logpush â€” long-term runtime log retention (PENDING)
+In-OS runtime log viewer is LIVE (Security Logs â†’ Runtime Logs, commit a90dcc0).
+Logpush ships the same logs to long-term storage â€” needs the Cloudflare dashboard:
+- [ ] Dashboard â†’ Analytics & Logs â†’ Logpush â†’ Create job
+- [ ] Dataset: **Workers Trace Events** â†’ destination: **R2** (or S3)
+- [ ] Fields: timestamp, event, message, outcome, scriptName
+- [ ] Enable; verify a test batch lands in the bucket
+
+### G2. Cal.com webhook secret (PENDING)
+Webhook receiver `/api/webhooks/cal` is live and accepts events, but the HMAC
+secret is NOT set yet (dev mode = accepts without verification).
+- [ ] cal.com â†’ Settings â†’ Developer â†’ Webhooks â†’ edit the webhook
+- [ ] Add a secret â†’ paste it into OS: Consultations â†’ âš™ Config â†’ Webhook secret â†’ Save
+- [ ] Verify: a test booking now requires the signature (401 without it)
+
+### G3. Cal.com API key rotation (PENDING)
+- [ ] Rotate `cal_live_...` key (was shared in chat) â†’ Settings â†’ Developer â†’ API keys
+- [ ] Paste new key into OS: Consultations â†’ âš™ Config â†’ API key â†’ Save
+
 ## â˜… Cloudflare production phase (DO NOT use existing tunnel JSONs â€” old account)
 Once the real CF account API token is provided: `cloudflared tunnel login` â†’ create `opusos-tunnel` â†’
 config.yml ingress (openwa/chatwoot/cal hostnames) â†’ systemd `cloudflared.service` (auto-restart,
