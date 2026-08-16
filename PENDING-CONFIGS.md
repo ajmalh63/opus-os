@@ -287,23 +287,28 @@ secret is NOT set yet (dev mode = accepts without verification).
 - [ ] Rotate `cal_live_...` key (was shared in chat) â†' Settings â†' Developer â†' API keys
 - [ ] Paste new key into OS: Consultations â†' âš™ Config â†' API key â†' Save
 
-### G5. Outbound email — TITAN paid mailbox relay (GoDaddy Professional Email)
-Oracle blocks outbound port 25; tunnel fixes inbound only. Titan SMTP relay:
-smtp.titan.email:465 (SSL) — port 465 NOT blocked. PAID mailbox limit (official
-GoDaddy): 500/day via SMTP (15k/mo) · 100 recipients/msg · bounce limit 5/hr,
-10/day (exceed = suspension). ONE mailbox = ONE quota pool + ONE reputation.
+### G5. Outbound email — TITAN paid mailbox relay ✅ LIVE (2026-08-16)
+Oracle blocks outbound port 25; tunnel fixes inbound only. **KEY DISCOVERY:**
+GoDaddy resells Titan on its OWN infrastructure — SMTP host is
+`smtpout.secureserver.net:465` (NOT smtp.titan.email). Auth verified, test
+email received, OS → Listmonk → Titan → Gmail chain verified end-to-end.
+PAID mailbox limit (official GoDaddy): 500/day via SMTP (15k/mo) · 100
+recipients/msg · bounce limit 5/hr, 10/day (exceed = suspension).
 
 Daily budget (500/day):
 - Transactional reserve 50/day: booking alerts + signup verification via
-  notify.ts → Listmonk /api/tx → Titan (already coded)
+  notify.ts → Listmonk /api/tx → Titan ✅ (OS code updated to Listmonk v6.2
+  API: template_id 5 + subject + data + from_email info@opusoverseas.com)
 - Campaigns 350/day: Listmonk SMTP → Titan, throttle 50/hr × 7h evening
 - Automations 100/day: Mautic throttled 10/hr, off-peak
 - SINGLE-SENDER RULE: Mautic automations → webhook → Listmonk /api/tx
-  (never two direct SMTP senders — quota race + bounce risk)
 
 Setup steps:
-- [ ] Titan Webmail → Settings → enable third-party access + disable 2FA
-- [ ] Listmonk Settings → SMTP: smtp.titan.email:465, user info@opusoverseas.com
+- [x] Listmonk SMTP → smtpout.secureserver.net:465, user info@opusoverseas.com
+      (auth verified, test email received)
+- [x] OS listmonk.ts updated to v6.2 API (commit cc45011)
+- [ ] Titan Webmail → Settings (gear, top-right) → "Enable Titan on Other Apps"
+      (if you see "Configure 3rd party apps" it's already enabled)
 - [ ] Mautic SMTP → route through Listmonk /api/tx (single sender) or direct
       with 10/hr throttle
 - [ ] DNS (zone on Cloudflare): SPF `v=spf1 include:secureserver.net ~all`
