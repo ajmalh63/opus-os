@@ -12,5 +12,22 @@
 <body class="bg-brand-cream text-brand-text-dark font-sans min-h-screen">
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
+  <!-- Chatwoot live chat widget (Opus Live Chat, account 2) -->
+  <script>
+    (function(d,t) {
+      var BASE_URL="http://100.87.71.38:3200";
+      var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+      g.src=BASE_URL+"/packs/js/sdk.js";
+      g.defer = true;
+      g.async = true;
+      s.parentNode.insertBefore(g,s);
+      g.onload=function(){
+        window.chatwootSDK.run({
+          websiteToken: 'nxgJhEiCBTQRvawVy7SJYXRR',
+          baseUrl: BASE_URL
+        })
+      }
+    })(document,"script");
+  </script>
 </body>
 </html>

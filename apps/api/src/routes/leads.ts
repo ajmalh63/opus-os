@@ -2,6 +2,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { leadIntakeSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
+import { planSequence } from './nurture.js';
 import { clients, consents, engagements, interactionPoints, scoringEvents, partners, referrals, commissionLedger } from '../db/schema.js';
 import { and, eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';

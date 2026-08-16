@@ -262,6 +262,9 @@ export { TeamHubRoom } from './routes/teamHub.js';
 // Attached to the Hono app so the default export keeps `app.request` working for
 // tests while wrangler sees both fetch and scheduled on the same object.
 import { runHeartbeat } from './cron/heartbeat.js';
+import { getDb } from './db/client.js';
+import { nurtureTouches, clients } from './db/schema.js';
+import { eq, and, lte } from 'drizzle-orm';
 import { performanceRouter } from './routes/performance.js';
 import { analyticsRouter } from './routes/analytics.js';
 import { visibilityRouter, publicSeoRouter } from './routes/visibility.js';
@@ -316,6 +319,47 @@ app.route('/api/integrations', integrationsRouter);
     await runHeartbeat(env);
   } catch {
     /* fail-open: heartbeat must never crash the scheduled run */
+  }
+  // Nurture delivery worker: dispatch due journey touches (email/whatsapp)
+  try {
+    if (env?.DB) {
+      const db = getDb((env as any).DB);
+      const now = Math.floor(Date.now() / 1000);
+      const rows = await db.select().from(nurtureTouches)
+        .where(and(eq(nurtureTouches.status, 'scheduled'), lte(nurtureTouches.dueAt, now)))
+        .all();
+      for (const t of rows) {
+        try {
+          const client = await db.select().from(clients).where(eq(clients.id, t.clientId)).get();
+          if (!client) continue;
+          const body = (t.body || '').replace(/{{name}}/g, client.name || 'there').replace(/{{division}}/g, t.campaignId || '');
+          if (t.channel === 'email' && (env as any).LISTMONK_BASE_URL) {
+            const r = await fetch(`${(env as any).LISTMONK_BASE_URL}/api/tx`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Basic ${btoa(`${(env as any).LISTMONK_API_USER || ''}:${(env as any).LISTMONK_API_PASS || ''}`)}` },
+              body: JSON.stringify({
+                subscriber_email: client.email,
+                template_id: Number((env as any).LISTMONK_TX_TEMPLATE_ID || 5),
+                from_email: (env as any).LISTMONK_FROM_EMAIL || 'info@opusoverseas.com',
+                subject: `Opus Overseas — ${t.stage}`,
+                data: { Subject: `Opus Overseas — ${t.stage}`, Body: body },
+              }),
+            });
+            if (!r.ok) continue;
+          } else if (t.channel === 'whatsapp' && (env as any).OPENWA_BASE_URL) {
+            const wa = await fetch(`${(env as any).OPENWA_BASE_URL}/api/sessions/${(env as any).OPENWA_SESSION_ID || ''}/messages/send-text`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-API-Key': (env as any).OPENWA_API_KEY || '' },
+              body: JSON.stringify({ chatId: `${client.phone}@c.us`, text: body }),
+            });
+            if (!wa.ok) continue;
+          }
+          await db.update(nurtureTouches).set({ status: 'sent', sentAt: now }).where(eq(nurtureTouches.id, t.id)).run();
+        } catch { /* per-touch fail-open */ }
+      }
+    }
+  } catch {
+    /* fail-open: nurture dispatch must never crash the scheduled run */
   }
 };
 type HeartbeatEnvLike = Parameters<typeof runHeartbeat>[0];

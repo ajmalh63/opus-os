@@ -83,7 +83,7 @@ export async function pickCampaign(db: D1, division: string, context: Record<str
   return null;
 }
 
-async function planSequence(db: D1, clientId: string, engagementId: string | null, now: number) {
+export async function planSequence(db: D1, clientId: string, engagementId: string | null, now: number) {
   const client = await db.select().from(clients).where(eq(clients.id, clientId)).get();
   if (!client) throw Object.assign(new Error("Client not found"), { status: 404 });
 
@@ -199,6 +199,54 @@ nurtureRouter.get('/due', async (c) => {
     return c.json({ touches: rows });
   } catch (error: any) {
     return c.json({ error: "Due touch lookup failed", details: error.message }, 500);
+  }
+});
+
+// POST /api/marketing/nurture/dispatch — delivery worker: pull due touches,
+// send via Listmonk (email) / OpenWA (whatsapp), mark sent. Called by cron.
+nurtureRouter.post('/dispatch', async (c) => {
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const rows = await db.select().from(nurtureTouches)
+      .where(and(eq(nurtureTouches.status, 'scheduled'), lte(nurtureTouches.dueAt, now)))
+      .all();
+    let sent = 0, failed = 0;
+    for (const t of rows) {
+      try {
+        const client = await db.select().from(clients).where(eq(clients.id, t.clientId)).get();
+        if (!client) { failed++; continue; }
+        const body = (t.body || '').replace(/{{name}}/g, client.name || 'there').replace(/{{division}}/g, t.campaignId || '');
+        if (t.channel === 'email') {
+          const r = await fetch(`${(c.env as any).LISTMONK_BASE_URL || ''}/api/tx`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Basic ${btoa(`${(c.env as any).LISTMONK_API_USER || ''}:${(c.env as any).LISTMONK_API_PASS || ''}`)}` },
+            body: JSON.stringify({
+              subscriber_email: client.email,
+              template_id: Number((c.env as any).LISTMONK_TX_TEMPLATE_ID || 5),
+              from_email: (c.env as any).LISTMONK_FROM_EMAIL || 'info@opusoverseas.com',
+              subject: `Opus Overseas — ${t.stage}`,
+              data: { Subject: `Opus Overseas — ${t.stage}`, Body: body },
+            }),
+          });
+          if (!r.ok) { failed++; continue; }
+        } else {
+          // whatsapp via OpenWA
+          const wa = await fetch(`${(c.env as any).OPENWA_BASE_URL || ''}/api/sessions/${(c.env as any).OPENWA_SESSION_ID || ''}/messages/send-text`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': (c.env as any).OPENWA_API_KEY || '' },
+            body: JSON.stringify({ chatId: `${client.phone}@c.us`, text: body }),
+          });
+          if (!wa.ok) { failed++; continue; }
+        }
+        await db.update(nurtureTouches).set({ status: 'sent', sentAt: now }).where(eq(nurtureTouches.id, t.id)).run();
+        sent++;
+      } catch { failed++; }
+    }
+    return c.json({ success: true, sent, failed, total: rows.length });
+  } catch (error: any) {
+    return c.json({ error: "Dispatch failed", details: error.message }, 500);
   }
 });
 
