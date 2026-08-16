@@ -287,22 +287,33 @@ secret is NOT set yet (dev mode = accepts without verification).
 - [ ] Rotate `cal_live_...` key (was shared in chat) â†' Settings â†' Developer â†' API keys
 - [ ] Paste new key into OS: Consultations â†' âš™ Config â†' API key â†' Save
 
-### G5. Outbound email — TITAN webmail relay (FREE, included with domain) ✅
-Oracle blocks outbound port 25; tunnel fixes inbound only. Solution: Titan
-(GoDaddy) SMTP relay — smtp.titan.email:465 (SSL), port 465 NOT blocked.
-Free mailbox limit: 50/hr · 100/day external (~3,000/mo) — enough for
-transactional + early campaigns. Overflow path: Brevo free (300/day, $0).
-SMTP2GO ($15/mo) and Cloudflare Email Service ($5/mo plan) both DROPPED.
+### G5. Outbound email — TITAN paid mailbox relay (GoDaddy Professional Email)
+Oracle blocks outbound port 25; tunnel fixes inbound only. Titan SMTP relay:
+smtp.titan.email:465 (SSL) — port 465 NOT blocked. PAID mailbox limit (official
+GoDaddy): 500/day via SMTP (15k/mo) · 100 recipients/msg · bounce limit 5/hr,
+10/day (exceed = suspension). ONE mailbox = ONE quota pool + ONE reputation.
+
+Daily budget (500/day):
+- Transactional reserve 50/day: booking alerts + signup verification via
+  notify.ts → Listmonk /api/tx → Titan (already coded)
+- Campaigns 350/day: Listmonk SMTP → Titan, throttle 50/hr × 7h evening
+- Automations 100/day: Mautic throttled 10/hr, off-peak
+- SINGLE-SENDER RULE: Mautic automations → webhook → Listmonk /api/tx
+  (never two direct SMTP senders — quota race + bounce risk)
+
+Setup steps:
 - [ ] Titan Webmail → Settings → enable third-party access + disable 2FA
-      (Titan blocks SMTP otherwise)
-- [ ] Listmonk Settings → SMTP: host `smtp.titan.email`, port `465` (SSL),
-      user `info@opusoverseas.com`, password, from same address
+- [ ] Listmonk Settings → SMTP: smtp.titan.email:465, user info@opusoverseas.com
+- [ ] Mautic SMTP → route through Listmonk /api/tx (single sender) or direct
+      with 10/hr throttle
 - [ ] DNS (zone on Cloudflare): SPF `v=spf1 include:secureserver.net ~all`
-      + Titan DKIM records (from Titan dashboard → DKIM)
-- [ ] OS transactional (pending bookings) flows through Listmonk /api/tx
-      (already coded) → same Titan relay
-- [ ] When campaigns exceed 100/day: add Brevo free SMTP (smtp-relay.brevo.com:587)
-      as a second Listmonk sender or swap
+      + Titan DKIM records
+- [ ] WARM-UP: 20-30/day → +10-15%/day → 400/day over 2-3 weeks
+- [ ] Bounce discipline: verify lists before campaigns (Listmonk bounce handling)
+
+Scale-out (when 500/day insufficient):
+- [ ] Add second mailbox campaigns@ (own 500/day + separate reputation)
+- [ ] Or Brevo free (300/day) as campaign overflow
 ### G4. Cal.com anti-spam â€” DONE (2026-08-16): Requires Confirmation enabled
 Turnstile is NOT available in cal.com cloud (it was self-hosted/Cal ID only) â€”
 verified. The strongest available lever is now LIVE on all 3 event types:
