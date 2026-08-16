@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
@@ -103,6 +103,15 @@ export default function Inbox() {
   });
 
   const fmt = (ts: number | null) => ts ? new Date(ts * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+
+  // Close members dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (membersRef.current && !membersRef.current.contains(e.target as Node)) setMembersOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
 return (
     <div ref={rootRef} className="min-h-full text-brand-navy">
