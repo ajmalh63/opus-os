@@ -7,6 +7,8 @@ export interface ListmonkEnv {
   LISTMONK_BASE_URL?: string;
   LISTMONK_API_USER?: string;   // admin email (Basic auth)
   LISTMONK_API_PASS?: string;   // admin password
+  LISTMONK_TX_TEMPLATE_ID?: string; // v6.2 transactional template id (default 5)
+  LISTMONK_FROM_EMAIL?: string;     // sender (must match authenticated Titan domain)
 }
 
 export interface ListmonkResult {
@@ -55,6 +57,9 @@ export async function listmonkUpsertSubscriber(
 }
 
 // POST /api/tx — transactional send (receipts, OTPs, agreement confirmations)
+// Listmonk v6.2 API shape: requires template_id + top-level subject + data map.
+// The "OpusOS Transactional" template (id from LISTMONK_TX_TEMPLATE_ID, default 5)
+// renders {{ .Tx.Data.Subject }} / {{ .Tx.Data.Body }}.
 export async function listmonkSendTransactional(
   env: ListmonkEnv,
   email: string,
@@ -64,14 +69,17 @@ export async function listmonkSendTransactional(
 ): Promise<ListmonkResult> {
   if (!env.LISTMONK_BASE_URL) return { ok: true, configured: false, provider: 'stub-email' };
   try {
+    const templateId = Number(env.LISTMONK_TX_TEMPLATE_ID || 5);
+    const fromEmail = env.LISTMONK_FROM_EMAIL || 'info@opusoverseas.com';
     const res = await fetch(`${env.LISTMONK_BASE_URL.replace(/\/$/, '')}/api/tx`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: authHeader(env) },
       body: JSON.stringify({
         subscriber_email: email,
-        template_body: bodyHtml, // direct HTML body (or use template_id for branded ones)
-        data,
-        headers: { subject },
+        template_id: templateId,
+        from_email: fromEmail,
+        subject,
+        data: { Subject: subject, Body: bodyHtml, ...data },
       }),
     });
     const json: any = await res.json().catch(() => null);
