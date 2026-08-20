@@ -42,7 +42,7 @@ KUMA_PUSH_URL = ""
 
 # First-run owner bootstrap (auth gateway). ADMIN_EMAIL is public-safe;
 # ADMIN_PASSWORD lives in .dev.vars (local) / `wrangler secret put ADMIN_PASSWORD` (prod).
-ADMIN_EMAIL = "owner@opusoverseas.com"
+ADMIN_EMAIL = "ajmalsn63@gmail.com"
 
 # NOTE — BETTER_AUTH_SECRET is intentionally NOT in [vars] (it is a secret):
 #   local dev  → put it in `.dev.vars` (gitignored)
