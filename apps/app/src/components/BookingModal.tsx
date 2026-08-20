@@ -181,20 +181,51 @@ export default function BookingModal({
 
   const fullPhone = phone.trim() ? `${countryCode} ${phone.trim()}` : '';
 
+  const DISPOSABLE_DOMAINS = [
+    'mailinator.com', '10minutemail.com', 'tempmail.com', 'guerrillamail.com', 'throwawaymail.com',
+    'yopmail.com', 'sharklasers.com', 'dispostable.com', 'trashmail.com', 'fakeinbox.com', 'getairmail.com',
+    'generator.email', 'temp-mail.org', 'tempail.com', 'mohmal.com', 'disposablemail.com'
+  ];
+
+  const validateInputQuality = () => {
+    if (name.trim().length < 3 || !/^[a-zA-Z\s.'-]+$/.test(name.trim())) {
+      setError('Please provide your authentic full name (at least 3 alphabetic characters).');
+      return false;
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 8 || cleanPhone.length > 15) {
+      setError('Please enter a valid active WhatsApp number (8 to 15 digits).');
+      return false;
+    }
+    if (/^(\d)\1+$/.test(cleanPhone) || ['1234567890', '0123456789', '9876543210', '0000000000', '1111111111'].includes(cleanPhone)) {
+      setError('Please provide a genuine, active WhatsApp mobile number.');
+      return false;
+    }
+    if (email.trim()) {
+      const emailDomain = email.trim().toLowerCase().split('@')[1];
+      if (emailDomain && DISPOSABLE_DOMAINS.includes(emailDomain)) {
+        setError('Temporary/disposable email addresses are blocked. Please provide your real active email.');
+        return false;
+      }
+    }
+    if (!token && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+      setError('Please complete the Cloudflare Turnstile security verification.');
+      return false;
+    }
+    return true;
+  };
+
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSlot) {
       setError('Please select an available time slot.');
       return;
     }
-    if (!name.trim() || !email.trim()) {
-      setError('Full name and email address are required.');
+    if (!email.trim()) {
+      setError('Email address is required for calendar invite confirmation.');
       return;
     }
-    if (!phone.trim()) {
-      setError('Please provide an active WhatsApp / phone number.');
-      return;
-    }
+    if (!validateInputQuality()) return;
 
     setSubmitting(true);
     setError('');
@@ -255,10 +286,7 @@ export default function BookingModal({
 
   const handleCallbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) {
-      setError('Name and WhatsApp / phone number are required.');
-      return;
-    }
+    if (!validateInputQuality()) return;
 
     setSubmitting(true);
     setError('');

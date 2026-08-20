@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useLocation } from 'wouter';
 import Logo from './Logo';
-import { CAL_BOOKING_URL } from '../config/booking';
+import BookingModal from './BookingModal';
 
 export default function Footer() {
   const [, setLocation] = useLocation();
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -70,15 +72,13 @@ export default function Footer() {
                 </button>
               </li>
               <li>
-                <a
-                  href={CAL_BOOKING_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 transition-colors hover:text-brand-gold text-white/85 font-medium"
+                <button
+                  onClick={() => setBookingOpen(true)}
+                  className="inline-flex items-center gap-1.5 transition-colors hover:text-brand-gold text-white/85 font-medium cursor-pointer"
                 >
                   <span>📅 Book 1-on-1 Session</span>
                   <span className="text-[10px] text-brand-gold">↗</span>
-                </a>
+                </button>
               </li>
               <li>
                 <button onClick={() => setLocation('/lead-form')} className="cursor-pointer transition-colors hover:text-brand-gold">
@@ -129,6 +129,12 @@ export default function Footer() {
           </div>
         </div>
       </div>
+
+      <BookingModal
+        open={bookingOpen}
+        onClose={() => setBookingOpen(false)}
+        division="study-abroad"
+      />
     </footer>
   );
 }

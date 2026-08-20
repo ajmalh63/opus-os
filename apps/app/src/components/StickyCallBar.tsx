@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { getBookingUrlForDivision } from '../config/booking';
 import InteractiveFunnelModal, { FunnelDivision } from './funnel/InteractiveFunnelModal';
+import BookingModal from './BookingModal';
 
 interface Props {
   division?: FunnelDivision;
@@ -11,6 +11,7 @@ interface Props {
 export default function StickyCallBar({ division, hookText }: Props) {
   const [location] = useLocation();
   const [modalOpen, setModalOpen] = useState(false);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [visible, setVisible] = useState(true);
 
   // Determine current division from route if not explicitly passed
@@ -86,16 +87,14 @@ export default function StickyCallBar({ division, hookText }: Props) {
               <span>⚡ Free Eligibility Check</span>
             </button>
 
-            {/* Direct 1-on-1 Cal.com Booking */}
-            <a
-              href={getBookingUrlForDivision(activeDivision)}
-              target="_blank"
-              rel="noopener noreferrer"
+            {/* Protected 1-on-1 Turnstile Booking Modal */}
+            <button
+              onClick={() => setBookingModalOpen(true)}
               className="tactile-btn hidden md:inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:border-brand-gold hover:text-brand-gold hover:bg-white/15 cursor-pointer"
             >
               <span>📅 Book 1-on-1</span>
               <span className="text-[10px] text-brand-gold">↗</span>
-            </a>
+            </button>
 
             {/* Live Chat Action */}
             <button
@@ -115,6 +114,13 @@ export default function StickyCallBar({ division, hookText }: Props) {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         initialDivision={activeDivision}
+      />
+
+      {/* Turnstile Protected 1-on-1 Consultation Booking Modal */}
+      <BookingModal
+        open={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
+        division={activeDivision}
       />
     </>
   );

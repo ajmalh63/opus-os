@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useVisibilityTracking } from '../lib/visibilityTracking';
 import { useLocation } from 'wouter';
 import TurnstileWidget from '../components/TurnstileWidget';
@@ -11,6 +11,7 @@ import StickyCallBar from '../components/StickyCallBar';
 import Img from '../components/Img';
 import ChatWidget from '../components/ChatWidget';
 import LiveWallpaper from '../components/LiveWallpaper';
+import BookingModal from '../components/BookingModal';
 import { imageFor } from '../config/images';
 import { useDivisions } from '../lib/divisions';
 import { prefersReducedMotion, animateHeadlineWords, fadeUp, staggerReveal } from '../lib/motion';
@@ -50,10 +51,7 @@ export default function PublicService({ params }: { params: { division: string }
   const [, setLocation] = useLocation();
   const heroRef = useRef<HTMLElement>(null);
   const [submitted, setSubmitted] = useState<string | null>(null);
-  const [bookingLinks, setBookingLinks] = useState<Record<string, string>>({});
-  useEffect(() => {
-    fetch('/api/cal/public/links').then(r => r.json()).then((d: any) => { if (d?.links) setBookingLinks(d.links); }).catch(() => {});
-  }, []);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const reduced = prefersReducedMotion();
   const divisions = useDivisions();
 
@@ -365,16 +363,14 @@ export default function PublicService({ params }: { params: { division: string }
               </span>
             </div>
 
-            {/* Book a consultation (cal.com) — consultation-led divisions only */}
-            {['study-abroad', 'visa', 'manpower'].includes(currentDiv) && bookingLinks[currentDiv] && (
-              <a
-                href={bookingLinks[currentDiv]}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-gold px-6 py-3 text-xs font-extrabold uppercase tracking-[0.15em] text-brand-navy shadow-lg shadow-brand-gold/25 transition-transform hover:scale-[1.03]"
+            {/* Book a consultation (Protected Turnstile Modal) — consultation-led divisions only */}
+            {['study-abroad', 'visa', 'manpower'].includes(currentDiv) && (
+              <button
+                onClick={() => setBookingModalOpen(true)}
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-gold px-6 py-3 text-xs font-extrabold uppercase tracking-[0.15em] text-brand-navy shadow-lg shadow-brand-gold/25 transition-transform hover:scale-[1.03] cursor-pointer"
               >
                 📅 Book a Free Consultation
-              </a>
+              </button>
             )}
           </div>
 
@@ -532,6 +528,12 @@ export default function PublicService({ params }: { params: { division: string }
           </div>
         </div>
       </main>
+
+      <BookingModal
+        open={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
+        division={currentDiv}
+      />
 
       <Footer />
     </div>
