@@ -377,19 +377,19 @@ export default function ApplicationReadinessAuditor() {
                 </div>
 
                 <button
-                  onClick={() => setLocation('/signup')}
+                  onClick={() => setLocation('/lead-form')}
                   className="cursor-pointer shrink-0 rounded-full bg-brand-navy px-6 py-3 text-xs font-extrabold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all shadow-md tactile-btn"
                 >
-                  Sign Up to Unlock Full Action Dossier →
+                  Get Full Readiness Assessment & Consultation →
                 </button>
               </div>
 
               {/* CRM-linked report capture — express lead, deduped by phone */}
               {reportSent ? (
                 <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
-                  <p className="text-sm font-bold text-emerald-800">✅ Detailed report on its way!</p>
+                  <p className="text-sm font-bold text-emerald-800">✅ Personalized Application Plan Ready!</p>
                   <p className="mt-1 text-xs text-emerald-800/80">
-                    Our senior counsellor will WhatsApp your full action dossier within business hours.
+                    Our senior counsellor will review your profile criteria and reach out with your recommended roadmap.
                   </p>
                   <a
                     href={`/portal?token=${encodeURIComponent(reportSent)}`}

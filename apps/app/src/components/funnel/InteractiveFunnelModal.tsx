@@ -610,7 +610,7 @@ export default function InteractiveFunnelModal({
                 </h3>
 
                 <p className="mt-1 text-[11px] text-emerald-800/80">
-                  Enter your direct contact details to unlock your <strong>Complete Dossier</strong> and get connected with our Senior Advisory Desk.
+                  Enter your direct contact details to unlock your <strong>Personalized Evaluation Report</strong> and connect directly with our Senior Advisory Desk.
                 </p>
               </div>
 
@@ -687,7 +687,7 @@ export default function InteractiveFunnelModal({
                   disabled={leadMutation.isPending}
                   className="tactile-btn w-full min-h-12 rounded-full bg-brand-gold py-3 text-xs font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 sm:min-h-0 sm:flex-1"
                 >
-                  {leadMutation.isPending ? 'Verifying & Generating...' : 'Get Full Dossier & Advisor Call →'}
+                  {leadMutation.isPending ? 'Verifying Profile...' : 'Unlock Evaluation & Request Advisory Session →'}
                 </button>
               </div>
             </form>
@@ -705,10 +705,10 @@ export default function InteractiveFunnelModal({
                   Tracking Token: {leadToken || 'OP-2026-ACTIVE'}
                 </span>
                 <h3 className="mt-3 font-display text-xl font-extrabold text-brand-navy">
-                  Application Dossier Ready!
+                  Application Profile Verified!
                 </h3>
                 <p className="mt-1 text-xs text-brand-navy/70 max-w-sm mx-auto">
-                  Thank you, <strong>{name}</strong>. Your profile has been created and assigned to an Opus senior advisory specialist.
+                  Thank you, <strong>{name}</strong>. Your profile evaluation is ready and an advisory specialist has been assigned to your file.
                 </p>
               </div>
 
