@@ -61,6 +61,7 @@ import { attestationAppsRouter, portalAttestationRouter } from './routes/attesta
 import { indexingRouter } from './routes/indexing.js';
 import { adminAiRouter } from './routes/adminAi.js';
 import { staffAiRouter } from './routes/staffAi.js';
+import { chatwootContextRouter } from './routes/chatwootContext.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
@@ -171,6 +172,8 @@ app.route('/go', goRouter);
 // Unified messaging webhooks (PENDING-CONFIGS #1) — WhatsApp + Chatwoot inbound
 app.route('/api/webhooks/wa', waWebhookRouter);
 app.route('/api/webhooks/chatwoot', chatwootWebhookRouter);
+// Chatwoot Live CRM Context Sidebar Desk
+app.route('/api/public/chatwoot', chatwootContextRouter);
 // Listmonk webhooks (Wave 3 email hygiene) — bounce/unsubscribe/subscribe
 app.route('/api/webhooks/listmonk', listmonkWebhookRouter);
 // Mautic webhooks (Two-way sync) — score changes, form submits, asset downloads

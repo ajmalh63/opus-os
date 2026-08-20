@@ -47,6 +47,7 @@ import ManpowerPortal from './pages/divisions/ManpowerPortal.js';
 import Inbox from './pages/Inbox.js';
 import Settings from './pages/Settings.js';
 import GoRedirectPage from './pages/GoRedirectPage.js';
+import ChatwootDashboardWidget from './pages/ChatwootDashboardWidget.js';
 
 // ONE umbrella: every authenticated page renders inside the WorkspaceShell so
 // sidebar/brand/topbar persist across ALL modules. The workspace shell owns
@@ -92,6 +93,8 @@ export default function App() {
         <Route path="/partner" component={PartnerDashboard} />
         <Route path="/payment-confirmed" component={PaymentConfirmed} />
         <Route path="/go/:ref/:type/:id" component={GoRedirectPage} />
+        <Route path="/widget/chatwoot" component={ChatwootDashboardWidget} />
+        <Route path="/staff/chatwoot-sidebar" component={ChatwootDashboardWidget} />
 
         {/* Authenticated surface — EVERY route inside the one workspace shell */}
         <Route path="/workspaces">
