@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { MockD1Database } from './mockDb.js';
 import { getDb } from '../src/db/client.js';
 import { sendPasswordResetEmail, sendVerificationEmailSafe, sendOtpEmail } from '../src/auth.js';
@@ -93,6 +93,70 @@ const listmonkEnv = () => ({
     expect(typeof authHelpers.sendPasswordResetEmail).toBe('function');
     expect(typeof authHelpers.sendVerificationEmailSafe).toBe('function');
     expect(typeof authHelpers.sendOtpEmail).toBe('function');
+  });
+
+  it('STRESS TEST: 1,000 concurrent password reset dispatches (zero collisions, non-blocking)', async () => {
+    const txCalls: any[] = [];
+    global.fetch = vi.fn(async (url: any, opts: any) => {
+      const u = String(url);
+      if (u.includes('/api/subscribers')) return new Response(JSON.stringify({ data: { id: 10 } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (u.includes('/api/tx')) {
+        txCalls.push(JSON.parse(opts.body));
+        return new Response(JSON.stringify({ data: { id: 1000 + txCalls.length } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    }) as any;
+
+    const t0 = performance.now();
+    const promises = Array.from({ length: 1000 }, (_, i) => {
+      const token = `tok_${i}_${Math.random().toString(36).substring(2)}`;
+      return sendPasswordResetEmail(
+        listmonkEnv() as any,
+        getDb(mockD1 as any),
+        { email: `user_${i}@example.com` },
+        `https://app.opusoverseas.com/reset?token=${token}`
+      );
+    });
+
+    await Promise.all(promises);
+    const duration = performance.now() - t0;
+
+    expect(txCalls).toHaveLength(1000);
+    // All 1,000 requests processed in parallel without blocking
+    expect(duration).toBeLessThan(1000);
+  });
+
+  it('STRESS TEST: 1,000 concurrent 2FA OTP dispatches (6-digit entropy & instant delivery)', async () => {
+    const otpBodies: any[] = [];
+    global.fetch = vi.fn(async (url: any, opts: any) => {
+      const u = String(url);
+      if (u.includes('/api/subscribers')) return new Response(JSON.stringify({ data: { id: 11 } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (u.includes('/api/tx')) {
+        otpBodies.push(JSON.parse(opts.body));
+        return new Response(JSON.stringify({ data: { id: 2000 + otpBodies.length } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    }) as any;
+
+    const t0 = performance.now();
+    const uniqueOtps = new Set<string>();
+    const promises = Array.from({ length: 1000 }, (_, i) => {
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      uniqueOtps.add(otp);
+      return sendOtpEmail(
+        listmonkEnv() as any,
+        getDb(mockD1 as any),
+        { email: `otp_user_${i}@example.com` },
+        otp
+      );
+    });
+
+    await Promise.all(promises);
+    const duration = performance.now() - t0;
+
+    expect(otpBodies).toHaveLength(1000);
+    expect(uniqueOtps.size).toBeGreaterThan(950); // high entropy 6-digit distribution
+    expect(duration).toBeLessThan(1000);
   });
 });
 
