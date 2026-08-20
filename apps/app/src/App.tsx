@@ -34,6 +34,7 @@ import AboutUsPage from './pages/public/AboutUsPage.js';
 import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage.js';
 import TermsOfServicePage from './pages/public/TermsOfServicePage.js';
 import RefundPolicyPage from './pages/public/RefundPolicyPage.js';
+import ShippingPolicyPage from './pages/public/ShippingPolicyPage.js';
 import Login from './pages/Login.js';
 import Signup from './pages/Signup.js';
 import DashboardHome from './pages/DashboardHome.js';
@@ -83,6 +84,7 @@ export default function App() {
         <Route path="/privacy" component={PrivacyPolicyPage} />
         <Route path="/terms" component={TermsOfServicePage} />
         <Route path="/refund-policy" component={RefundPolicyPage} />
+        <Route path="/shipping-policy" component={ShippingPolicyPage} />
 
         {/* Central auth gateway */}
         <Route path="/login" component={Login} />

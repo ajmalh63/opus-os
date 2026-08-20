@@ -101,10 +101,10 @@ export default function Footer() {
                 </button>
               </li>
               <li>
-                <a href="tel:+919876500001" className="hover:text-brand-gold transition-colors">+91 98765 00001</a>
+                <a href="tel:+919398848376" className="hover:text-brand-gold transition-colors">+91 93988 48376</a>
               </li>
               <li>
-                <a href="mailto:hello@opusoverseas.com" className="hover:text-brand-gold transition-colors">hello@opusoverseas.com</a>
+                <a href="mailto:contact@opusoverseas.com" className="hover:text-brand-gold transition-colors">contact@opusoverseas.com</a>
               </li>
             </ul>
           </div>
@@ -113,10 +113,12 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row">
           <p>© {new Date().getFullYear()} Opus Overseas. All rights reserved.</p>
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-5">
             <button onClick={() => setLocation('/privacy')} className="cursor-pointer hover:text-brand-gold transition-colors">Privacy Policy</button>
             <button onClick={() => setLocation('/terms')} className="cursor-pointer hover:text-brand-gold transition-colors">Terms of Service</button>
             <button onClick={() => setLocation('/refund-policy')} className="cursor-pointer hover:text-brand-gold transition-colors">Refund Policy</button>
+            <button onClick={() => setLocation('/shipping-policy')} className="cursor-pointer hover:text-brand-gold transition-colors">Shipping Policy</button>
+            <button onClick={() => setLocation('/contact')} className="cursor-pointer hover:text-brand-gold transition-colors">Contact Us</button>
             <button 
               onClick={scrollToTop} 
               className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/15 px-3 py-1 text-[11px] text-white/80 transition-all cursor-pointer"
