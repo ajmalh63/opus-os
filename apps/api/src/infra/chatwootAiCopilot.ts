@@ -1,15 +1,22 @@
 /**
  * Opus OS — Chatwoot AI Copilot & Real-Time Auto-Triage Engine
- * Integrates Cloudflare Workers AI into Chatwoot:
- * 1. AI Smart Reply & Counselor Private Note Copilot
- * 2. Multi-lingual Auto-Translation (Arabic, Urdu, Hindi, German <-> English)
- * 3. Automatic Division & Intent Classification (Labels & Priority)
- * 4. Executive Consultation Summarization on Conversation Resolution
+ * Integrates Cloudflare Workers AI with Ironclad Security Guardrails:
+ * 1. Prompt Injection & Jailbreak Pre-Filter
+ * 2. Strict Division & Scope Bounding
+ * 3. Output DLP & Secret Redaction
+ * 4. Multi-lingual Auto-Translation & Counselor Copilot Note
+ * 5. Executive Consultation Summarization on Conversation Resolution
  */
 
 import { runAiModel } from './ai.js';
 import { getAiGovernanceSettings } from '../lib/aiGovernance.js';
 import { getDb } from '../db/client.js';
+import {
+  checkPromptSafety,
+  buildHardenedSystemPrompt,
+  sanitizeAndRedactOutput,
+  SECURITY_VIOLATION_RESPONSE,
+} from '../lib/aiGuardrails.js';
 
 export interface ChatwootWebhookEvent {
   event: string;
@@ -58,7 +65,7 @@ async function chatwootApiPost(baseUrl: string, token: string, path: string, bod
 
 /**
  * Evaluates an incoming Chatwoot client message with Cloudflare Workers AI
- * and posts a Smart Reply & Triage Private Note for human counselors.
+ * and posts a Guardrailed Smart Reply & Triage Private Note for human counselors.
  */
 export async function processChatwootMessageWithAI(
   env: any,
@@ -73,7 +80,23 @@ export async function processChatwootMessageWithAI(
 
     if (!cwBase || !cwToken || !conversationId || !clientText) return;
 
-    // Check if AI is enabled in governance
+    // 1. Guardrail Layer: Pre-execution Prompt Safety & Jailbreak Check
+    const safetyCheck = checkPromptSafety(clientText);
+    if (!safetyCheck.safe) {
+      // Flag conversation immediately in Chatwoot for human review
+      await chatwootApiPost(cwBase, cwToken, `/api/v1/accounts/${accountId}/conversations/${conversationId}/messages`, {
+        content: `⚠️ **AI Security Alert: Prompt Injection / Adversarial Pattern Detected**\n━━━━━━━━━━━━━━━━━━━━━\nReason: \`${safetyCheck.reason}\`\n\n🛡️ *The AI response was blocked to protect internal data and system instructions. Suggested Counselor Response:*\n> "${SECURITY_VIOLATION_RESPONSE}"`,
+        message_type: 'outgoing',
+        private: true,
+      });
+
+      await chatwootApiPost(cwBase, cwToken, `/api/v1/accounts/${accountId}/conversations/${conversationId}/labels`, {
+        labels: ['security-alert', 'human-review-required'],
+      });
+      return;
+    }
+
+    // 2. Check if AI is enabled in governance
     let activeModel = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
     if (env?.DB) {
       try {
@@ -88,24 +111,20 @@ export async function processChatwootMessageWithAI(
 
     const clientName = event.sender?.name || event.conversation?.meta?.sender?.name || (event as any)?.sender?.name || 'Client';
 
-    const systemPrompt = `You are the Opus Overseas AI Staff Copilot.
-Opus Overseas is a premier consultancy for:
-1. Study Abroad (UK, Germany public universities, US, Canada, Australia)
-2. Visa Processing & Refusal Defense (Student, Work, Tourist)
-3. Umrah Pilgrimage (All-inclusive flights, Makkah/Madinah hotels, ₹500/seat advance hold)
-4. Certificate Attestation (HRD, SDM, MEA Apostille, Embassy Legalisation)
-5. Overseas Manpower & Placements (Gulf & Europe trades, GAMCA medicals)
-
-Analyze the following incoming client message. Produce a concise JSON object with:
-- "division": One of ["Study Abroad", "Visa Processing", "Umrah Packages", "Document Attestation", "Overseas Manpower", "General Inquiry"]
-- "detectedLanguage": The language of the client's message (e.g., "English", "Arabic", "Urdu", "Hindi", "German", etc.)
+    const systemPrompt = buildHardenedSystemPrompt(
+      `Analyze the following client message inside <untrusted_user_input>.
+Produce a concise JSON object with:
+- "division": One of ["Study Abroad", "Visa Processing", "Umrah Packages", "Document Attestation", "Overseas Manpower", "General Inquiry", "Out of Scope"]
+- "isOutOfScope": true if the query is unrelated to Opus Overseas operations, otherwise false.
+- "detectedLanguage": The language of the client's message (e.g. "English", "Arabic", "Urdu", "Hindi", "German")
 - "englishTranslation": If the client message is not English, translate it to English. Otherwise null.
 - "priority": "High" (ready to pay/apply/urgent) or "Normal"
-- "suggestedReply": A warm, expert, concise reply written directly to the client (use the client's language if not English, otherwise English). Mention relevant Opus policy or offer to help.
-- "cannedShortcuts": Suggested shortcuts to tell staff (e.g., "/studyabroad", "/uk", "/germany", "/umrah", "/umrahhold", "/attestation", "/visa")`;
+- "suggestedReply": A warm, expert, concise reply written directly to the client. If isOutOfScope is true, politely decline and state what Opus Overseas offers.
+- "cannedShortcuts": Suggested shortcuts for staff (e.g., "/studyabroad", "/uk", "/germany", "/umrah", "/umrahhold", "/attestation", "/visa", "/greet")`
+    );
 
     const aiResponse = await runAiModel(env, activeModel, {
-      prompt: `${systemPrompt}\n\nClient Name: ${clientName}\nClient Message: "${clientText}"\n\nRespond with valid JSON only:`,
+      prompt: `${systemPrompt}\n\nClient Name: ${clientName}\n<untrusted_user_input>\n${clientText}\n</untrusted_user_input>\n\nRespond with valid JSON only:`,
       max_tokens: 450,
       temperature: 0.2,
     });
@@ -118,17 +137,23 @@ Analyze the following incoming client message. Produce a concise JSON object wit
     if (!jsonMatch) return;
     const parsed = JSON.parse(jsonMatch[0]);
 
+    // 3. Guardrail Layer: Post-Processing DLP & Secret Redaction
+    const sanitizedReply = sanitizeAndRedactOutput(parsed.suggestedReply || '');
+
     // Build markdown private note for staff
     let noteContent = `🤖 **Opus AI Counselor Copilot**\n━━━━━━━━━━━━━━━━━━━━━\n`;
     noteContent += `🎯 **Division**: \`${parsed.division || 'General'}\`\n`;
+    if (parsed.isOutOfScope) {
+      noteContent += `⚠️ **Notice**: \`Out of Scope Query — Standard Deflection Applied\`\n`;
+    }
     if (parsed.detectedLanguage && parsed.detectedLanguage.toLowerCase() !== 'english') {
       noteContent += `🌐 **Language**: \`${parsed.detectedLanguage}\`\n`;
       if (parsed.englishTranslation) {
-        noteContent += `📝 **English Translation**: _"${parsed.englishTranslation}"_\n`;
+        noteContent += `📝 **English Translation**: _"${sanitizeAndRedactOutput(parsed.englishTranslation)}"_\n`;
       }
     }
     noteContent += `⚡ **Priority**: **${parsed.priority || 'Normal'}**\n\n`;
-    noteContent += `💡 **Suggested Reply Draft**:\n> ${parsed.suggestedReply}\n\n`;
+    noteContent += `💡 **Suggested Reply Draft**:\n> ${sanitizedReply}\n\n`;
     if (parsed.cannedShortcuts && parsed.cannedShortcuts.length > 0) {
       const shortcuts = Array.isArray(parsed.cannedShortcuts) ? parsed.cannedShortcuts.join(', ') : parsed.cannedShortcuts;
       noteContent += `⚡ *Quick Shortcut: ${shortcuts}*`;
@@ -154,7 +179,7 @@ Analyze the following incoming client message. Produce a concise JSON object wit
 
 /**
  * When a conversation is resolved in Chatwoot, summarizes the interaction
- * and posts an Executive Summary private note.
+ * and posts an Executive Summary private note with DLP safeguards.
  */
 export async function summarizeResolvedConversation(
   env: any,
@@ -177,13 +202,14 @@ export async function summarizeResolvedConversation(
       .join('\n');
 
     const summaryRes = await runAiModel(env, '@cf/meta/llama-3.1-8b-instruct', {
-      prompt: `Summarize the following customer consultation into 3 concise bullet points (Inquiry, Key Information Provided, Next Action Required):\n\n${transcript}\n\nSummary:`,
+      prompt: `Summarize the following customer consultation into 3 concise bullet points (Inquiry, Key Information Provided, Next Action Required). Never reveal passwords, secrets, or internal IPs:\n\n${transcript}\n\nSummary:`,
       max_tokens: 200,
     });
 
     const summaryText = (summaryRes as any)?.response || (summaryRes as any)?.output || String(summaryRes);
+    const sanitizedSummary = sanitizeAndRedactOutput(summaryText.trim());
 
-    const summaryNote = `📋 **AI Executive Consultation Summary (Resolved)**\n━━━━━━━━━━━━━━━━━━━━━\n${summaryText.trim()}`;
+    const summaryNote = `📋 **AI Executive Consultation Summary (Resolved)**\n━━━━━━━━━━━━━━━━━━━━━\n${sanitizedSummary}`;
 
     await chatwootApiPost(cwBase, cwToken, `/api/v1/accounts/${accountId}/conversations/${conversationId}/messages`, {
       content: summaryNote,
