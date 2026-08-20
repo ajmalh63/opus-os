@@ -13,6 +13,13 @@ workers_dev = true
 mode = "smart"
 
 # ============================================================
+# Cloudflare Workers & Agent Tracing (100% Sampling, Metadata Only)
+# ============================================================
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+
+# ============================================================
 # Wave 1 — Uptime Kuma push heartbeat producer (cron).
 # Every 6h the scheduled handler pings KUMA_PUSH_URL with status
 # up/down (D1 reachability). Set the URL after creating the push
