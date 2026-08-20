@@ -1,3 +1,4 @@
+import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
@@ -8,6 +9,8 @@ import { createStaffAlert } from '../infra/staffAlerts.js';
 import { sendNotification } from '../infra/notify.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 import { scanDocumentBytes } from '../lib/docScan.js';
+import { isDivisionEnabled } from '../lib/divisions.js';
+import { dispatchWebhookEvent, safeExecutionCtx } from '../lib/webhookDispatcher.js';
 import {
   createAttestationApplicationSchema, updateAttestationStageSchema, updateAttestationChainSchema,
   updateAttestationPickupSchema, createAttestationRateCardSchema, updateAttestationRateCardSchema
@@ -18,7 +21,7 @@ import {
 // → we dispatch to supplier → chain (HRD/SDM/Chamber → MEA → Embassy/Apostille)
 // → return → deliver. Prices are indicative ranges — NEVER supplier names (B2C).
 
-export const attestationAppsRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET?: string; BUCKET?: any } }>();
+export const attestationAppsRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET?: string; BUCKET?: any; N8N_WEBHOOK_URL?: string; N8N_WEBHOOK_SECRET?: string } }>();
 
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -334,6 +337,29 @@ attestationAppsRouter.post('/applications', zValidator('json', createAttestation
     }
 
     await auditEvent(c as any, { action: 'ATTESTATION_QUOTE', entityName: 'attestation_applications', entityId: id, afterState: { country: body.destinationCountry, category: body.category, route: body.route, quotePaise } }).catch(() => {});
+    
+    // Asynchronously dispatch attestation.created event to n8n
+    dispatchWebhookEvent(
+      c.env,
+      'attestation.created',
+      {
+        applicationId: id,
+        clientId: body.clientId,
+        clientName: client.name,
+        clientPhone: client.phone,
+        clientEmail: client.email,
+        destinationCountry: body.destinationCountry,
+        category: body.category,
+        route: body.route,
+        document: body.document,
+        quotePaise: quotePaise + (body.translationNeeded ? Math.round(quotePaise * 0.15) : 0),
+        timelineDays,
+        chainSteps,
+        urgency: body.urgency ?? 'normal',
+      },
+      safeExecutionCtx(c)
+    );
+
     return c.json({
       success: true, id,
       quote: { totalPaise: quotePaise + (body.translationNeeded ? Math.round(quotePaise * 0.15) : 0), servicePaise: quotePaise, translationPaise: body.translationNeeded ? Math.round(quotePaise * 0.15) : 0 },
@@ -380,6 +406,22 @@ attestationAppsRouter.patch('/applications/:id/stage', zValidator('json', update
       await createTask(db, row.clientId, `Dispatch attested documents: ${parseDoc(row).documentName || row.category}`, `Attestation complete for ${row.destinationCountry}. Prepare return dispatch to client.`, 'high', now + 24 * 3600);
     }
     await auditEvent(c as any, { action: 'ATTESTATION_STAGE', entityName: 'attestation_applications', entityId: row.id, afterState: { oldStage: row.stage, newStage: body.stage } }).catch(() => {});
+    
+    // Dispatch status update to n8n
+    dispatchWebhookEvent(
+      c.env,
+      'attestation.status_updated',
+      {
+        applicationId: row.id,
+        clientId: row.clientId,
+        destinationCountry: row.destinationCountry,
+        previousStage: row.stage,
+        currentStage: body.stage,
+        updatedAt: now,
+      },
+      safeExecutionCtx(c)
+    );
+
     return c.json({ success: true, message: `Application moved to ${body.stage}.` });
   } catch (e: any) {
     return c.json({ error: 'Stage update failed', details: e?.message }, 500);
@@ -410,6 +452,23 @@ attestationAppsRouter.patch('/applications/:id/chain', zValidator('json', update
       await createTask(db, row.clientId, `Dispatch attested documents: ${parseDoc(row).documentName || row.category}`, `Attestation complete for ${row.destinationCountry}. Prepare return dispatch to client.`, 'high', now + 24 * 3600);
     }
     await auditEvent(c as any, { action: 'ATTESTATION_CHAIN', entityName: 'attestation_applications', entityId: row.id, afterState: { stepKey: body.stepKey, status: body.status } }).catch(() => {});
+    
+    // Dispatch chain step event to n8n
+    dispatchWebhookEvent(
+      c.env,
+      'attestation.status_updated',
+      {
+        applicationId: row.id,
+        clientId: row.clientId,
+        stepKey: body.stepKey,
+        stepStatus: body.status,
+        allStepsDone: allDone,
+        chain,
+        updatedAt: now,
+      },
+      safeExecutionCtx(c)
+    );
+
     return c.json({ success: true, chain });
   } catch (e: any) {
     return c.json({ error: 'Chain update failed', details: e?.message }, 500);
@@ -612,6 +671,10 @@ export const portalAttestationRouter = new Hono<{ Bindings: { DB: D1Database; BE
 // GET /api/public/portal/attestation/price-bands?token= — indicative ranges for the quote form
 portalAttestationRouter.get('/price-bands', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  // Division availability (kill-switch): pricing hidden when attestation is OFF.
+  if (!(await isDivisionEnabled(c.env, 'attestation'))) {
+    return c.json({ success: true, bands: [], disclaimer: 'Prices shown are indicative ranges and are not guaranteed — final cost may vary based on government fees, document type and processing. Subject to change without notice.' });
+  }
   const db = getDb(c.env.DB);
   try {
     const bands = await getPriceBands(db);
@@ -624,6 +687,10 @@ portalAttestationRouter.get('/price-bands', async (c) => {
 // GET /api/public/portal/attestation/rate-cards?token= — public price ranges (indicative)
 portalAttestationRouter.get('/rate-cards', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  // Division availability (kill-switch): rate cards hidden when attestation is OFF.
+  if (!(await isDivisionEnabled(c.env, 'attestation'))) {
+    return c.json({ success: true, countries: [], rateCards: [], disclaimer: 'Prices shown are indicative ranges and are not guaranteed — final cost may vary based on government fees, document type and processing. Subject to change without notice.' });
+  }
   const db = getDb(c.env.DB);
   try {
     const rows = await db.select().from(attestationRateCards).where(eq(attestationRateCards.active, true)).all();
@@ -718,7 +785,7 @@ portalAttestationRouter.get('/applications', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     const rows = await db.select().from(attestationApplications).where(eq(attestationApplications.clientId, token)).all();
     rows.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
@@ -728,8 +795,17 @@ portalAttestationRouter.get('/applications', async (c) => {
   }
 });
 
+// Division-availability gate middleware: runs BEFORE zod validation so the
+// 409 fires even for malformed bodies (kill-switch semantics).
+const attestationIntakeGate = async (c: any, next: any) => {
+  if (!(await isDivisionEnabled(c.env, 'attestation'))) {
+    return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
+  }
+  await next();
+};
+
 // POST /api/public/portal/attestation/applications — client creates from rate card
-portalAttestationRouter.post('/applications', zValidator('json', createAttestationApplicationSchema), async (c) => {
+portalAttestationRouter.post('/applications', attestationIntakeGate, zValidator('json', createAttestationApplicationSchema), async (c) => {
   const token = c.req.query('token');
   if (!token) return c.json({ error: 'token is required' }, 400);
   const body = c.req.valid('json');
@@ -737,7 +813,7 @@ portalAttestationRouter.post('/applications', zValidator('json', createAttestati
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     if (body.clientId !== token) return c.json({ error: 'Not your account' }, 403);
 

@@ -38,9 +38,11 @@ describe('Visa Client Portal (Phase 1) — draft wizard, submit, staff interlock
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
 
     mockD1.tables.clients.push({
       id: "OP-2026-9001",
+      portal_token: "OP-2026-9001",
       name: "Rohit Sharma",
       phone: "+91 99999 90001",
       email: "rohit.portal@example.com",

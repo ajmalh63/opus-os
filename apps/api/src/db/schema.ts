@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, index, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 // ==========================================
 // 1. USERS & STAFF accounts (RBAC system)
@@ -11,17 +11,35 @@ export const users = sqliteTable('users', {
   image: text('image'),
   passwordHash: text('password_hash'),
   twoFactorEnabled: integer('two_factor_enabled', { mode: 'boolean' }).notNull().default(false),
-  role: text('role', { enum: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'] }).notNull().default('counselor'),
+  role: text('role', { enum: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator', 'partner'] }).notNull().default('counselor'),
   userDivisions: text('user_divisions').notNull().default('[]'), // JSON array of division keys
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
+});
+
+// Better Auth twoFactor plugin table (RFC 6238 TOTP secrets + backup codes).
+// Column names match the plugin's default field names exactly (userId, secret,
+// backupCodes, verified, failedVerificationCount, lockedUntil).
+export const twoFactor = sqliteTable('twoFactor', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  secret: text('secret').notNull(),
+  backupCodes: text('backupCodes').notNull(),
+  verified: integer('verified', { mode: 'boolean' }).notNull().default(true),
+  failedVerificationCount: integer('failedVerificationCount').notNull().default(0),
+  lockedUntil: integer('lockedUntil', { mode: 'timestamp' })
 });
 
 // ==========================================
 // 2. CLIENT RECORDS
 // ==========================================
 export const clients = sqliteTable('clients', {
-  id: text('id').primaryKey(), // Format: OP-2026-XXXX (Token-based)
+  id: text('id').primaryKey(),
+  // Portal credential: 128-bit CSPRNG token (crypto.getRandomValues). The
+  // OP-YYYY-XXXX id is DISPLAY-ONLY — it must never gate portal access
+  // (9000-value Math.random space was brute-forceable). Null until backfilled
+  // for legacy rows (scripts/backfill-portal-tokens.mjs).
+  portalToken: text('portal_token'), // Format: OP-2026-XXXX (Token-based)
   name: text('name').notNull(),
   phone: text('phone').notNull(),
   email: text('email').notNull(),
@@ -155,7 +173,11 @@ export const conversations = sqliteTable('conversations', {
 });
 
 // ==========================================
-// 8. AUDIT LOG (Immutable)
+// 8. AUDIT LOG (Immutable, tamper-evident v1.1)
+// Gold-standard (docs/audit-logging-gold-standard.md): SHA-256 hash chaining —
+// record_hash = SHA-256(prev_hash + canonicalize(payload)); prev_hash of the
+// first row is 'GENESIS'. Never UPDATE/DELETE rows; verify with
+// scripts/audit-chain-verify.mjs (weekly cron + on demand).
 // ==========================================
 export const auditLog = sqliteTable('audit_log', {
   id: text('id').primaryKey(),
@@ -166,8 +188,21 @@ export const auditLog = sqliteTable('audit_log', {
   beforeState: text('before_state'), // Stringified JSON state
   afterState: text('after_state'),  // Stringified JSON state
   ipAddress: text('ip_address'),
-  createdAt: integer('created_at').notNull()
+  createdAt: integer('created_at').notNull(),
+  // ---- v1.1 gold-standard metadata (OCSF-aligned) ----
+  category: text('category'), // auth|access|money|compliance|document|lead|partner|config|communication|workflow|system
+  actorType: text('actor_type'), // user|system|partner|service|public
+  result: text('result'), // success|denied|error
+  authMethod: text('auth_method'), // session|partner_token|service_token|none
+  dataClassification: text('data_classification'), // public|internal|confidential|restricted
+  requestId: text('request_id'), // cf-ray correlation id
+  schemaVersion: text('schema_version').notNull().default('1.1'),
+  prevHash: text('prev_hash'), // SHA-256 of previous record ('GENESIS' for first)
+  recordHash: text('record_hash'), // SHA-256(prev_hash + canonicalize(payload))
 });
+
+export const auditLogCreatedIdx = index('audit_log_created_idx').on(auditLog.createdAt);
+export const auditLogCategoryIdx = index('audit_log_category_idx').on(auditLog.category);
 
 // Better Auth support tables for Drizzle adapter mapping
 export const sessions = sqliteTable('sessions', {
@@ -183,6 +218,8 @@ export const sessions = sqliteTable('sessions', {
 
 export const accounts = sqliteTable('accounts', {
   id: text('id').primaryKey(),
+  // better-auth 1.7+ requires issuer on OAuth accounts (schema contract)
+  issuer: text('issuer'),
   userId: text('user_id').notNull().references(() => users.id),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
@@ -199,7 +236,10 @@ export const accounts = sqliteTable('accounts', {
 export const verifications = sqliteTable('verifications', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
+  // value stores a SHA-256 HASH of the OTP (never the plaintext code)
   value: text('value').notNull(),
+  // Failed-attempt counter — lockout after MAX_OTP_ATTEMPTS (anti brute-force)
+  attempts: integer('attempts').notNull().default(0),
   expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
@@ -240,7 +280,7 @@ export const agreements = sqliteTable('agreements', {
   templateId: text('template_id').notNull().references(() => agreementTemplates.id),
   status: text('status', { enum: ['draft', 'sent', 'signed', 'active', 'terminated'] }).notNull().default('draft'),
   content: text('content').notNull(),
-  esignMethod: text('esign_method', { enum: ['aadhaar', 'otp', 'wet_ink'] }),
+  esignMethod: text('esign_method', { enum: ['typed', 'otp', 'wet_ink'] }),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   sha256Hash: text('sha256_hash'),
@@ -542,7 +582,28 @@ export const partners = sqliteTable('partners', {
   status: text('status', { enum: ['active', 'blocked'] }).notNull().default('active'),
   referralCode: text('referral_code').unique(), // OPUS-affiliate short code for ?ref= tracking
   apiToken: text('api_token'), // partner-scoped bearer token for referrals/commissions (A-3)
+  // ---- Gold-standard self-service payouts (docs/partner-portal-gold-standard.md) ----
+  payoutMethod: text('payout_method', { enum: ['bank', 'upi'] }), // preferred settlement method
+  payoutDetail: text('payout_detail'), // account number+IFSC or UPI id (partner-entered)
+  payoutThresholdPaise: integer('payout_threshold_paise').notNull().default(0), // min matured balance to request
   createdAt: integer('created_at').notNull()
+});
+
+// ==========================================
+// 65. PARTNER CREATIVE LIBRARY — pre-approved marketing materials partners
+// can copy (compliance-controlled; gold-standard activation + governance).
+// Banners reference R2 keys; text creatives are copy-paste snippets.
+// ==========================================
+export const partnerCreatives = sqliteTable('partner_creatives', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  type: text('type', { enum: ['banner', 'text'] }).notNull().default('text'),
+  size: text('size'), // e.g. "728x90", "300x250" (banners) or null (text)
+  url: text('url').notNull(), // target path e.g. "/study-abroad" (partner ref appended at render)
+  imageKey: text('image_key'), // R2 key for banners
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
 });
 
 // ==========================================

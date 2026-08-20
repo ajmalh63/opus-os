@@ -1,8 +1,10 @@
 ﻿import { Hono } from 'hono';
+import { newPortalToken } from '../lib/clientToken.js';
 import { getDb } from '../db/client.js';
 import { conversations, clients } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { auditBounded } from '../middleware/audit.js';
 
 type WhBindings = { DB: D1Database; WA_WEBHOOK_SECRET?: string };
 
@@ -74,7 +76,19 @@ async function persistMessage(
 
 waWebhookRouter.post('/', async (c) => {
   const raw = await c.req.text();
-  if (!(await secretOk(c, raw))) return c.json({ error: 'Forbidden' }, 403);
+  if (!(await secretOk(c, raw))) {
+    await auditBounded(c, {
+      action: 'WEBHOOK_REJECTED',
+      entityName: 'webhooks',
+      entityId: 'wa',
+      result: 'error',
+      category: 'access',
+      actorType: 'service',
+      authMethod: 'hmac',
+      afterState: { source: 'wa' },
+    }, 'webhook');
+    return c.json({ error: 'Forbidden' }, 403);
+  }
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
@@ -102,7 +116,19 @@ const parsed = JSON.parse(raw) as any;
 
 chatwootWebhookRouter.post('/', async (c) => {
   const rawCw = await c.req.text();
-  if (!(await secretOk(c, rawCw))) return c.json({ error: 'Forbidden' }, 403);
+  if (!(await secretOk(c, rawCw))) {
+    await auditBounded(c, {
+      action: 'WEBHOOK_REJECTED',
+      entityName: 'webhooks',
+      entityId: 'chatwoot',
+      result: 'error',
+      category: 'access',
+      actorType: 'service',
+      authMethod: 'hmac',
+      afterState: { source: 'chatwoot' },
+    }, 'webhook');
+    return c.json({ error: 'Forbidden' }, 403);
+  }
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
@@ -121,9 +147,10 @@ chatwootWebhookRouter.post('/', async (c) => {
           ? await db.select().from(clients).where(eq(clients.email, email)).get()
           : (phone ? await db.select().from(clients).where(eq(clients.phone, String(phone))).get() : null);
         if (!existing && (email || (phone && String(phone).length >= 10))) {
-          const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+          const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`; // display id
+        const portalToken = newPortalToken();
           await db.insert(clients).values({
-            id: cid, name: name || 'Chat lead', phone: String(phone || '0000000000'),
+            id: cid, portalToken, name: name || 'Chat lead', phone: String(phone || '0000000000'),
             email: email || `${String(phone || 'unknown').replace(/\D/g, '')}@chat.lead`, leadSource: 'chatwoot',
             status: 'active', createdAt: Math.floor(Date.now() / 1000), updatedAt: Math.floor(Date.now() / 1000),
           });

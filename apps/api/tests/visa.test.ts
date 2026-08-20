@@ -32,6 +32,7 @@ describe('Visa Counseling, Booking, and Mock Interview Workflow Tests', () => {
     // Seed mock client
     mockD1.tables.clients.push({
       id: "OP-2026-2001",
+      portal_token: "OP-2026-2001",
       name: "Rohit Sharma",
       phone: "+91 99999 88888",
       email: "rohit.sharma@example.com",

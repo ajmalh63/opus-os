@@ -7,12 +7,6 @@ import { useRevealRoot } from '../lib/reveal';
 // §16.4.5 Flow Analytics — CFD (cumulative flow) + throughput + Monte Carlo
 // forecast of days-to-clear current WIP. Manager+ surface.
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 interface CFD { date: string; counts: Record<string, number>; }
 interface FlowAnalytics {
@@ -34,7 +28,7 @@ export default function FlowAnalytics() {
   const { data: funnelsData } = useQuery<any>({
     queryKey: ['divisionFunnels'],
     queryFn: async () => {
-      const r = await fetch('/api/analytics/funnels', { headers: AUTH });
+      const r = await fetch('/api/analytics/funnels', { credentials: 'include' });
       if (!r.ok) throw new Error('funnels');
       return r.json();
     },
@@ -43,7 +37,7 @@ export default function FlowAnalytics() {
   const { data, isLoading, isError } = useQuery<{ analytics: FlowAnalytics }>({
     queryKey: ['flowAnalytics', days],
     queryFn: async () => {
-      const r = await fetch(`/api/kanban/analytics?days=${days}`, { headers: AUTH });
+      const r = await fetch(`/api/kanban/analytics?days=${days}`, { credentials: 'include' });
       if (!r.ok) throw new Error('load failed');
       return r.json();
     },

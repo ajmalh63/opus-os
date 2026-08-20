@@ -19,6 +19,16 @@ vi.mock('../src/auth.js', () => {
           }
           return null;
         },
+        signUpEmail: async () => ({ user: { id: 'u-fresh' } }),
+      },
+      // Handler used by the 2FA intercept routes (enable/disable). Tests stub a
+      // 200 so the audit write path is exercised without a real Better Auth.
+      handler: async (request: Request) => {
+        const url = new URL(request.url);
+        if (url.pathname.endsWith('/two-factor/enable') || url.pathname.endsWith('/two-factor/disable')) {
+          return new Response(JSON.stringify({ status: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+        return new Response(JSON.stringify({ error: 'not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
       },
     }),
   };
@@ -74,5 +84,46 @@ describe('Auth gateway (email+password / OTP / 2FA-ready)', () => {
       DB: mockD1, BETTER_AUTH_SECRET: 'x', ADMIN_EMAIL: 'OWNER@test.com', ADMIN_PASSWORD: 'Passw123!',
     });
     expect(conflict.status).toBe(409);
+  });
+
+  // ============ Audit trail for auth events ============
+  it('bootstrap-admin writes a BOOTSTRAP_ADMIN audit row when it creates the owner', async () => {
+    // Fresh DB: the shared mockD1 already has a verified super_admin from the
+    // seedSuperAdmin test, which would 409 the bootstrap path.
+    const fresh = new MockD1Database();
+    const res = await app.request('/api/auth/bootstrap-admin', { method: 'POST' }, {
+      DB: fresh, BETTER_AUTH_SECRET: 'x', ADMIN_EMAIL: 'fresh@owner.com', ADMIN_PASSWORD: 'FreshPass123!',
+    });
+    expect(res.status).toBe(200);
+    const row = (fresh.tables.audit_log as any[]).find((l: any) => l.action === 'BOOTSTRAP_ADMIN');
+    expect(row).toBeTruthy();
+    expect(row.actor_id).toBeNull(); // no session at first-run bootstrap
+    expect(row.entity_name).toBe('users');
+    expect(JSON.parse(row.after_state).email).toBe('fresh@owner.com');
+  });
+
+  it('2FA enable writes a TWO_FACTOR_ENABLED audit row on success only', async () => {
+    const res = await app.request('/api/auth/two-factor/enable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Cookie': 'better-auth.session_token=token-admin' },
+      body: JSON.stringify({ password: 'Passw123!' }),
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const row = (mockD1.tables.audit_log as any[]).find((l: any) => l.action === 'TWO_FACTOR_ENABLED');
+    expect(row).toBeTruthy();
+    expect(row.actor_id).toBe('u-admin');
+    expect(row.entity_name).toBe('users');
+  });
+
+  it('2FA disable writes a TWO_FACTOR_DISABLED audit row on success only', async () => {
+    const res = await app.request('/api/auth/two-factor/disable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Cookie': 'better-auth.session_token=token-admin' },
+      body: JSON.stringify({ password: 'Passw123!' }),
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const row = (mockD1.tables.audit_log as any[]).find((l: any) => l.action === 'TWO_FACTOR_DISABLED');
+    expect(row).toBeTruthy();
+    expect(row.actor_id).toBe('u-admin');
   });
 });

@@ -40,9 +40,10 @@ describe('Paid Exclusive Community (Manpower) — membership gating + admin plan
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
 
-    mockD1.tables.clients.push({ id: 'OP-MEMBER', name: 'Member', phone: '1', email: 'm@x.com', exclusive_member: 1, exclusive_expires_at: now + 86400 * 30, exclusive_plan: 'exclusive-30', created_at: 0, updated_at: 0 } as any);
-    mockD1.tables.clients.push({ id: 'OP-FREE', name: 'Free', phone: '2', email: 'f@x.com', exclusive_member: 0, created_at: 0, updated_at: 0 } as any);
+    mockD1.tables.clients.push({ id: 'OP-MEMBER', portal_token: 'OP-MEMBER', name: 'Member', phone: '1', email: 'm@x.com', exclusive_member: 1, exclusive_expires_at: now + 86400 * 30, exclusive_plan: 'exclusive-30', created_at: 0, updated_at: 0 } as any);
+    mockD1.tables.clients.push({ id: 'OP-FREE', portal_token: 'OP-FREE', name: 'Free', phone: '2', email: 'f@x.com', exclusive_member: 0, created_at: 0, updated_at: 0 } as any);
 
     mockD1.tables.job_postings.push({ id: 'job-pub', title: 'Public Welder', country: 'UAE', sector: 'Construction', salary_text: 'AED 2500', collar: 'blue_collar', tier: 'public', status: 'open', created_at: 0 } as any);
     mockD1.tables.job_postings.push({ id: 'job-sec', title: 'Secret Operator', country: 'Qatar', sector: 'Oil & Gas', salary_text: 'QAR 4000', collar: 'blue_collar', tier: 'secret', status: 'open', created_at: 0 } as any);

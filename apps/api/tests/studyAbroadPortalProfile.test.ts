@@ -32,7 +32,8 @@ describe('Study Abroad — Student Portal Profile & Documents (sync)', () => {
   beforeAll(() => {
     mockD1 = new MockD1Database();
     mockD1.tables.clients.push({
-      id: 'OP-2026-9301', name: 'Priya Sharma', phone: '+91 99999 44444', email: 'priya@test.com',
+      id: 'OP-2026-9301',
+      portal_token: 'OP-2026-9301', name: 'Priya Sharma', phone: '+91 99999 44444', email: 'priya@test.com',
       highest_qualification: 'undergrad', intake_context: JSON.stringify({ cgpa: 8.0 }),
       created_at: now, updated_at: now
     });
@@ -216,7 +217,8 @@ describe('Study Abroad — Student Portal Profile & Documents (sync)', () => {
   it('ownership: another user cannot download someone else\'s document (403)', async () => {
     // Second client (attacker) with their own token
     mockD1.tables.clients.push({
-      id: 'OP-2026-9302', name: 'Other User', phone: '+91 99999 55555', email: 'other@test.com',
+      id: 'OP-2026-9302',
+      portal_token: 'OP-2026-9302', name: 'Other User', phone: '+91 99999 55555', email: 'other@test.com',
       created_at: now, updated_at: now
     });
     const doc = mockD1.tables.documents.find((d: any) => d.client_id === 'OP-2026-9301');

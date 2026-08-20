@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { incentiveRules, incentiveEntries, payoutStatements } from '../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
+import { auditEvent } from '../middleware/audit.js';
 
 export const incentivesRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
 
@@ -17,7 +18,7 @@ incentivesRouter.get('/rules', async (c) => {
     const rules = await db.select().from(incentiveRules).all();
     return c.json({ rules });
   } catch (error: any) {
-    return c.json({ error: "Failed to fetch incentive rules", details: error.message }, 500);
+    return c.json({ error: "Failed to fetch incentive rules",  }, 500);
   }
 });
 
@@ -35,8 +36,9 @@ incentivesRouter.post('/rules', zValidator('json', ruleSchema), async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
   try {
+    const id = crypto.randomUUID();
     await db.insert(incentiveRules).values({
-      id: crypto.randomUUID(),
+      id,
       division: data.division,
       serviceId: data.serviceId || null,
       trigger: data.trigger,
@@ -45,9 +47,10 @@ incentivesRouter.post('/rules', zValidator('json', ruleSchema), async (c) => {
       active: true,
       createdAt: Math.floor(Date.now() / 1000),
     });
+    await auditEvent(c, { action: 'INCENTIVE_RULE_CREATED', entityName: 'incentive_rules', entityId: id, afterState: { division: data.division, trigger: data.trigger, amount: data.amount, isPercent: data.isPercent } });
     return c.json({ success: true, message: "Incentive rule created." });
   } catch (error: any) {
-    return c.json({ error: "Failed to create incentive rule", details: error.message }, 500);
+    return c.json({ error: "Failed to create incentive rule",  }, 500);
   }
 });
 
@@ -61,9 +64,10 @@ incentivesRouter.patch('/rules/:id', zValidator('json', z.object({ active: z.boo
     await db.update(incentiveRules)
       .set({ ...(data.active !== undefined ? { active: data.active } : {}), ...(data.amount !== undefined ? { amount: data.amount } : {}) })
       .where(eq(incentiveRules.id, id));
+    await auditEvent(c, { action: 'INCENTIVE_RULE_UPDATED', entityName: 'incentive_rules', entityId: id, afterState: data });
     return c.json({ success: true, message: "Incentive rule updated." });
   } catch (error: any) {
-    return c.json({ error: "Failed to update incentive rule", details: error.message }, 500);
+    return c.json({ error: "Failed to update incentive rule",  }, 500);
   }
 });
 
@@ -81,7 +85,7 @@ incentivesRouter.get('/entries', async (c) => {
     if (status) list = list.filter(e => e.status === status);
     return c.json({ entries: list });
   } catch (error: any) {
-    return c.json({ error: "Failed to fetch incentive entries", details: error.message }, 500);
+    return c.json({ error: "Failed to fetch incentive entries",  }, 500);
   }
 });
 
@@ -89,9 +93,11 @@ incentivesRouter.get('/entries', async (c) => {
 async function myIncentiveView(c: any) {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
-  const session = c.req.raw.headers.get('cookie') || '';
-  const token = (session.match(/better-auth\.session_token=([^;]+)/) || [])[1] || '';
-  const employeeId = token === 'token-counselor' ? 'counselor-1' : token === 'token-manager' ? 'mgr-1' : token === 'token-admin' ? 'admin-1' : 'me';
+  // Identity comes from the RBAC session (c.set('user')), never from cookie
+  // string-parsing — the old token-magic mapping leaked test fixtures into prod.
+  const user = (c.get('user') as any) || null;
+  if (!user?.id) return c.json({ error: 'Not authenticated' }, 401);
+  const employeeId = user.id;
   const rows = await db.select().from(incentiveEntries).where(eq(incentiveEntries.employeeId, employeeId)).all();
   const total = rows.filter(e => e.status === 'accrued').reduce((a, b) => a + b.amount, 0);
   return c.json({ employeeId, entries: rows, total, message: "This month's accrual visible." });
@@ -139,9 +145,11 @@ incentivesRouter.post('/close', zValidator('json', closeSchema), async (c) => {
       await db.update(incentiveEntries).set({ status: 'paid', period }).where(eq(incentiveEntries.id, e.id));
     }
 
+    await auditEvent(c, { action: 'INCENTIVE_PERIOD_CLOSED', entityName: 'incentive_entries', entityId: period, afterState: { period, statementCount: statements.length, statements } });
+
     return c.json({ success: true, statements, message: "Period closed; payout statements drafted." });
   } catch (error: any) {
-    return c.json({ error: "Incentive close failed", details: error.message }, 500);
+    return c.json({ error: "Incentive close failed",  }, 500);
   }
 });
 
@@ -155,7 +163,7 @@ incentivesRouter.get('/statements', async (c) => {
     if (employee) list = list.filter(s => s.employeeId === employee);
     return c.json({ statements: list });
   } catch (error: any) {
-    return c.json({ error: "Failed to fetch payout statements", details: error.message }, 500);
+    return c.json({ error: "Failed to fetch payout statements",  }, 500);
   }
 });
 
@@ -168,8 +176,9 @@ incentivesRouter.post('/statements/:id/approve', async (c) => {
     const current = await db.select().from(payoutStatements).where(eq(payoutStatements.id, id)).get();
     if (!current) return c.json({ error: "Statement not found" }, 404);
     await db.update(payoutStatements).set({ status: 'approved', approvedBy: 'owner' }).where(eq(payoutStatements.id, id));
+    await auditEvent(c, { action: 'PAYOUT_APPROVED', entityName: 'payout_statements', entityId: id, afterState: { employeeId: current.employeeId, period: current.period, gross: current.gross, tds: current.tds, net: current.net, status: 'approved' } });
     return c.json({ success: true, message: "Statement approved." });
   } catch (error: any) {
-    return c.json({ error: "Approval failed", details: error.message }, 500);
+    return c.json({ error: "Approval failed",  }, 500);
   }
 });

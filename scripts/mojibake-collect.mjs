@@ -6,7 +6,7 @@ import { join, extname } from 'path';
 
 const ROOTS = ['apps/api/src', 'apps/app/src', 'ops', 'automation'];
 const EXTS = ['.ts', '.tsx', '.js', '.json', '.toml', '.ps1', '.md'];
-const SUS = /(Â.|Ã.|â€.|ï¿½|dY.|A·|�)/g;
+const SUS = /(Â.|Ã.|â€.|ï¿½|A·|�)/g;
 
 function walk(dir, acc = []) {
   for (const e of readdirSync(dir)) {

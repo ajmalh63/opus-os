@@ -1,0 +1,151 @@
+{
+  "name": "OpusOS — Razorpay WhatsApp In-Chat Checkout & Failed Payment Recovery",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "opusos-razorpay-whatsapp",
+        "options": {}
+      },
+      "name": "Razorpay Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.event}}",
+              "value2": "payment.failed"
+            }
+          ]
+        }
+      },
+      "name": "Is Payment Failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        440,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:2785/api/send-message",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "phone",
+              "value": "={{$node[\"Razorpay Webhook Trigger\"].json.body.data.client_phone}}"
+            },
+            {
+              "name": "message",
+              "value": "=⚠️ *Payment Notice — Opus Overseas*\n\nHello {{$node[\"Razorpay Webhook Trigger\"].json.body.data.client_name || 'Candidate'}},\n\nYour transaction of *₹{{$node[\"Razorpay Webhook Trigger\"].json.body.data.amount_inr}}* could not be completed by your bank.\n\n*Reason:* {{$node[\"Razorpay Webhook Trigger\"].json.body.data.error_description}}\n\n💡 *Note:* If any amount was deducted, your bank will auto-reverse it within 24–48 hours.\n\n🔄 *1-Tap Retry:* {{$node[\"Razorpay Webhook Trigger\"].json.body.data.retry_link}}\n\nReply directly to this WhatsApp chat if you need our accounts team to share a direct UPI QR or NEFT account details."
+            }
+          ]
+        }
+      },
+      "name": "Send WhatsApp Failed Payment Rescue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        700,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.event}}",
+              "value2": "payment.received"
+            }
+          ]
+        }
+      },
+      "name": "Is Payment Successful?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        440,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:2785/api/send-message",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "phone",
+              "value": "={{$node[\"Razorpay Webhook Trigger\"].json.body.data.client_phone}}"
+            },
+            {
+              "name": "message",
+              "value": "=✅ *Payment Confirmed — Opus Overseas*\n\nDear {{$node[\"Razorpay Webhook Trigger\"].json.body.data.client_name}},\n\nWe have successfully received your payment of *₹{{$node[\"Razorpay Webhook Trigger\"].json.body.data.amount_inr}}* (Ref: `{{$node[\"Razorpay Webhook Trigger\"].json.body.data.payment_id}}`).\n\n📄 Your official GST Tax Invoice has been registered.\n\n👉 Track your document milestone & application status live on your portal:\nhttps://opusoverseas.com/portal\n\nThank you for trusting Opus Overseas (British Council Certified #115050)."
+            }
+          ]
+        }
+      },
+      "name": "Send WhatsApp Success Receipt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        700,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Razorpay Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is Payment Failed?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Payment Successful?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Payment Failed?": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Failed Payment Rescue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Payment Successful?": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Success Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

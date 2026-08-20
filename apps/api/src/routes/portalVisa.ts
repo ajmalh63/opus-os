@@ -1,9 +1,11 @@
+import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
 import { clients, visaApplications, visaProducts, documents, tasks } from '../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { isDivisionEnabled } from '../lib/divisions.js';
 import { VISA_FORM_SECTIONS, visaFormSchema, missingVisaSections } from '../validation/visaForm.js';
 
 // Client-portal Visa services (Visa Phase-1, spec section 3).
@@ -27,6 +29,8 @@ function safeParseArray(json: string | null | undefined): string[] {
 // GET /api/public/portal/visa/products — active visa product inventory
 portalVisaRouter.get('/products', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  // Division availability (kill-switch): catalog hidden when visa is OFF.
+  if (!(await isDivisionEnabled(c.env, 'visa'))) return c.json({ success: true, products: [] });
   const db = getDb(c.env.DB);
   try {
     const list = await db.select().from(visaProducts).where(eq(visaProducts.status, 'active')).all();
@@ -41,7 +45,7 @@ portalVisaRouter.get('/products', async (c) => {
     }));
     return c.json({ success: true, products });
   } catch (error: any) {
-    return c.json({ error: 'Failed to fetch visa products', details: error.message }, 500);
+    return c.json({ error: 'Failed to fetch visa products',  }, 500);
   }
 });
 
@@ -52,7 +56,7 @@ portalVisaRouter.get('/applications', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
 
     const apps = await db.select().from(visaApplications).where(eq(visaApplications.clientId, token)).orderBy(desc(visaApplications.createdAt)).all();
@@ -101,12 +105,16 @@ portalVisaRouter.get('/applications', async (c) => {
     }
     return c.json({ success: true, applications });
   } catch (error: any) {
-    return c.json({ error: 'Failed to fetch visa applications', details: error.message }, 500);
+    return c.json({ error: 'Failed to fetch visa applications',  }, 500);
   }
 });
 
 // POST /api/public/portal/visa/applications — create draft (idempotent per product)
 portalVisaRouter.post('/applications', async (c) => {
+  // Division availability: new intake blocked when visa is OFF.
+  if (!(await isDivisionEnabled(c.env, 'visa'))) {
+    return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
+  }
   const body = await c.req.json().catch(() => ({})) as { token?: string; country?: string; visaProductId?: string };
   const { token, visaProductId } = body;
   if (!token) return c.json({ error: 'Token is required' }, 400);
@@ -116,7 +124,7 @@ portalVisaRouter.post('/applications', async (c) => {
   const now = Math.floor(Date.now() / 1000);
 
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
 
     const product = await db.select().from(visaProducts).where(eq(visaProducts.id, visaProductId)).get();
@@ -155,7 +163,7 @@ portalVisaRouter.post('/applications', async (c) => {
 
     return c.json({ success: true, id, message: 'Visa application draft created.' });
   } catch (error: any) {
-    return c.json({ error: 'Failed to create visa application', details: error.message }, 500);
+    return c.json({ error: 'Failed to create visa application',  }, 500);
   }
 });
 
@@ -214,12 +222,16 @@ portalVisaRouter.put('/applications/:id', async (c) => {
 
     return c.json({ success: true, id, message: 'Application form updated.' });
   } catch (error: any) {
-    return c.json({ error: 'Failed to update application form', details: error.message }, 500);
+    return c.json({ error: 'Failed to update application form',  }, 500);
   }
 });
 
 // POST /api/public/portal/visa/applications/:id/submit — require full form + terms
 portalVisaRouter.post('/applications/:id/submit', async (c) => {
+  // Division availability: submitting a new application is intake — blocked when OFF.
+  if (!(await isDivisionEnabled(c.env, 'visa'))) {
+    return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
+  }
   const id = c.req.param('id');
   const body = await c.req.json().catch(() => ({})) as { token?: string; agreedToTerms?: boolean };
   const { token, agreedToTerms } = body;
@@ -279,6 +291,6 @@ portalVisaRouter.post('/applications/:id/submit', async (c) => {
     await createStaffAlert(c.env as any, { division: 'visa', type: 'visa_application', title: `Visa application submitted: ${entry.country}`, body: `${entry.visaType} — ${entry.clientId}`, clientId: entry.clientId, payload: { country: entry.country, visaType: entry.visaType } });
 return c.json({ success: true, id, message: 'Visa application submitted for review.' });
   } catch (error: any) {
-    return c.json({ error: 'Failed to submit visa application', details: error.message }, 500);
+    return c.json({ error: 'Failed to submit visa application',  }, 500);
   }
 });

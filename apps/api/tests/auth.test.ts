@@ -62,6 +62,7 @@ describe('Better Auth & RBAC Security Integration Tests', () => {
     // Seed mock clients and engagements for division checking
     mockD1.tables.clients.push({
       id: "OP-2026-1001",
+      portal_token: "OP-2026-1001",
       name: "Client One",
       phone: "+91 99999 99999",
       email: "client1@example.com",

@@ -46,9 +46,10 @@ describe('Umrah Family & Group Booking (multi-passenger party)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
     mockD1.tables.app_settings.push({ key: 'umrah_inventory_enabled', value: 'true', updated_at: now });
     mockD1.tables.clients.push(
-      { id: 'OP-2026-9101', name: 'Ahmed Khan', phone: '+91 99999 11111', email: 'ahmed@test.com', created_at: now, updated_at: now },
+      { id: 'OP-2026-9101', portal_token: 'OP-2026-9101', name: 'Ahmed Khan', phone: '+91 99999 11111', email: 'ahmed@test.com', created_at: now, updated_at: now },
       { id: 'OP-2026-9102', name: 'Solo Traveller', phone: '+91 99999 22222', email: 'solo@test.com', created_at: now, updated_at: now }
     );
     mockD1.tables.engagements.push(

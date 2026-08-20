@@ -3,6 +3,12 @@ import { useSession } from '../../lib/session';
 import { useRevealRoot } from '../../lib/reveal';
 import { useQuery } from '@tanstack/react-query';
 
+const AUTH = {
+  get Authorization() {
+    return 'Bearer ' + (typeof window !== 'undefined' ? localStorage.getItem('opus_token') || '' : '');
+  }
+};
+
 export default function DivisionsHub() {
   const rootRef = useRevealRoot<HTMLDivElement>();
   const [, setLocation] = useLocation();
@@ -24,7 +30,7 @@ export default function DivisionsHub() {
   const { data: statsData } = useQuery<any>({
     queryKey: ['divisionsStats'],
     queryFn: async () => {
-      const r = await fetch('/api/infrastructure/divisions-stats');
+      const r = await fetch('/api/tasks/divisions-stats', { headers: { ...AUTH } });
       if (!r.ok) throw new Error('stats');
       return r.json();
     },

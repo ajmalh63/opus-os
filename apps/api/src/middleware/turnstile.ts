@@ -20,9 +20,10 @@ export const turnstileVerify = createMiddleware<{
     return c.json({ error: { code: 'TURNSTILE_UNCONFIGURED', message: 'Bot check not configured' } }, 503);
   }
 
-  // Mock keys (documented Cloudflare test keys)
-  if (secret.startsWith('1x')) return next();            // always-pass mock
-  if (secret.startsWith('2x')) {
+  // Mock keys (documented Cloudflare test keys) — EXACT match only, never a
+  // prefix match (a real secret starting with '1x' would silently disable the check).
+  if (secret === '1x0000000000000000000000000000000AA') return next(); // always-pass mock
+  if (secret === '2x0000000000000000000000000000000AA') {
     return c.json({ error: { code: 'BOT_BLOCKED', message: 'Bot check failed' } }, 403);
   }
 

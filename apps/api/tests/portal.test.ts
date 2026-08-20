@@ -61,6 +61,7 @@ describe('Public Client Portal & Partner Referral Tracking Integration Tests', (
     // Seed mock client, engagement, and consents for public lookup test
     mockD1.tables.clients.push({
       id: "OP-2026-5555",
+      portal_token: "OP-2026-5555",
       name: "Suresh Kumar",
       phone: "+91 99999 44444",
       email: "suresh@test.com",
@@ -182,7 +183,8 @@ describe('Public Client Portal & Partner Referral Tracking Integration Tests', (
     expect(ref).toBeDefined();
     expect(ref.partner_id).toBe(partnerId);
     expect(ref.client_id).toBe("OP-2026-5555");
-    expect(ref.commission_rate).toBe(8);
+    // SECURITY: commission rate is server-side constant (5%) — client input ignored
+    expect(ref.commission_rate).toBe(5);
   });
 
   it('GET /api/public/partners/:id/commissions is token-scoped (A-3)', async () => {

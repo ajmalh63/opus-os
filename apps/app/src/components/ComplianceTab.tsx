@@ -4,12 +4,6 @@ import { useRevealRoot } from '../lib/reveal';
 import { exportGstr1Pdf, exportGstr3bPdf, exportCaPackPdf } from '../lib/pdf';
 
 // A-5: session-driven auth —- read the live better-auth cookie; no forged admin token.
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 const nowPeriod = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
 const rs = (n?: number) => `₹${((n || 0) / 100).toFixed(2)}`;
 
@@ -19,14 +13,14 @@ export default function ComplianceTab() {
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const flash = (t: string, ok = true) => { setMsg({ t, ok }); setTimeout(() => setMsg(null), 5000); };
 
-  const { data: prof } = useQuery<any>({ queryKey: ['cmpProfile'], queryFn: async () => (await fetch('/api/compliance/business-profile', { headers: AUTH })).json() });
+  const { data: prof } = useQuery<any>({ queryKey: ['cmpProfile'], queryFn: async () => (await fetch('/api/compliance/business-profile', { credentials: 'include' })).json() });
   const [gstin, setGstin] = useState('');
-  const saveProfile = useMutation({ mutationFn: async () => { const r = await fetch('/api/compliance/business-profile', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ gstin }) }); if (!r.ok) throw new Error('save'); return r.json(); }, onSuccess: (d) => flash(d.message || 'Saved'), onError: (e: any) => flash(e.message, false) });
+  const saveProfile = useMutation({ mutationFn: async () => { const r = await fetch('/api/compliance/business-profile', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ gstin }) }); if (!r.ok) throw new Error('save'); return r.json(); }, onSuccess: (d) => flash(d.message || 'Saved'), onError: (e: any) => flash(e.message, false) });
 
 
 
-  const { data: g1, refetch: r1, isFetching: f1 } = useQuery<any>({ queryKey: ['gstr1', period], queryFn: async () => (await fetch(`/api/compliance/gstr1?period=${period}`, { headers: AUTH })).json(), enabled: false });
-  const { data: g3, refetch: r3, isFetching: f3 } = useQuery<any>({ queryKey: ['gstr3b', period], queryFn: async () => (await fetch(`/api/compliance/gstr3b?period=${period}`, { headers: AUTH })).json(), enabled: false });
+  const { data: g1, refetch: r1, isFetching: f1 } = useQuery<any>({ queryKey: ['gstr1', period], queryFn: async () => (await fetch(`/api/compliance/gstr1?period=${period}`, { credentials: 'include' })).json(), enabled: false });
+  const { data: g3, refetch: r3, isFetching: f3 } = useQuery<any>({ queryKey: ['gstr3b', period], queryFn: async () => (await fetch(`/api/compliance/gstr3b?period=${period}`, { credentials: 'include' })).json(), enabled: false });
 
   const runG1 = async () => { const d = await r1(); if (d.data?.stats) { exportGstr1Pdf(d.data.data, d.data.stats, period); flash(`GSTR-1 PDF exported: ${d.data.stats.b2bInvoices} B2B, ${d.data.stats.b2cLines} B2C`); } else flash('GSTR-1 failed', false); };
   const runG3 = async () => { const d = await r3(); if (d.data?.computed) { exportGstr3bPdf(d.data.data, d.data.computed, period); flash(`GSTR-3B PDF: out ${rs(d.data.computed.outputTax)} · net ${rs(d.data.computed.netPayable)}`); } else flash('GSTR-3B failed', false); };
@@ -34,7 +28,7 @@ export default function ComplianceTab() {
 const [rec, setRec] = useState<any>(null);
   const on2b = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
-    try { const r = await fetch('/api/compliance/reconcile-2b', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ period, gstr2b: JSON.parse(await f.text()) }) }); const d = await r.json(); if (!r.ok) throw new Error(d?.error); setRec(d); flash(`2B: ${d.summary.matched} matched · ${d.summary.mismatched} mismatch · ${d.summary.booksOnly} books-only · ${d.summary.twoBOnly} 2B-only`); } catch (er: any) { flash(er.message, false); } e.target.value = '';
+    try { const r = await fetch('/api/compliance/reconcile-2b', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ period, gstr2b: JSON.parse(await f.text()) }) }); const d = await r.json(); if (!r.ok) throw new Error(d?.error); setRec(d); flash(`2B: ${d.summary.matched} matched · ${d.summary.mismatched} mismatch · ${d.summary.booksOnly} books-only · ${d.summary.twoBOnly} 2B-only`); } catch (er: any) { flash(er.message, false); } e.target.value = '';
   };
 
   // ---- Employer statutory registers (§14.5.4) ----
@@ -45,14 +39,14 @@ const [rec, setRec] = useState<any>(null);
   const [sEmpShare, setSEmpShare] = useState('');
   const { data: stat, refetch: refetchStat } = useQuery<any>({
     queryKey: ['statutory', period],
-    queryFn: async () => (await fetch(`/api/compliance/statutory?month=${period}`, { headers: AUTH })).json(),
+    queryFn: async () => (await fetch(`/api/compliance/statutory?month=${period}`, { credentials: 'include' })).json(),
   });
   const statRows = stat?.registers || [];
   const statSummary = stat?.summary;
   const addStatutory = useMutation({
     mutationFn: async () => {
       const r = await fetch('/api/compliance/statutory', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH },
+        method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ entries: [{
           month: period, type: sType, employeeName: sEmp,
           wageAmount: Math.round(parseFloat(sWage || '0') * 100),
@@ -69,7 +63,7 @@ const [rec, setRec] = useState<any>(null);
   const markPaid = useMutation({
     mutationFn: async (id: string) => {
       const r = await fetch(`/api/compliance/statutory/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json', ...AUTH },
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ status: 'paid' }),
       });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Update failed'); }
@@ -82,7 +76,7 @@ const [rec, setRec] = useState<any>(null);
   // ---- Compliance calendar (§14.5.6) + CA export (§6) ----
   const { data: cal, refetch: refetchCal, isFetching: isFetchingCal } = useQuery<any>({
     queryKey: ['complianceCalendar'],
-    queryFn: async () => (await fetch('/api/compliance/calendar', { headers: AUTH })).json(),
+    queryFn: async () => (await fetch('/api/compliance/calendar', { credentials: 'include' })).json(),
   });
   const calItems = cal?.calendar || [];
   const runCalendar = () => { refetchCal(); };
@@ -90,7 +84,7 @@ const [rec, setRec] = useState<any>(null);
   const runExport = async () => {
     setIsExporting(true);
     try {
-      const r = await fetch(`/api/compliance/export?period=${period}`, { headers: AUTH });
+      const r = await fetch(`/api/compliance/export?period=${period}`, { credentials: 'include' });
       const d = await r.json();
       if (!r.ok || !d.success) throw new Error(d?.error || 'Export failed');
       exportCaPackPdf(d.pack, period);
@@ -99,9 +93,9 @@ const [rec, setRec] = useState<any>(null);
     setIsExporting(false);
   };
 
-  const { data: reg, refetch: refetchReg } = useQuery<any>({ queryKey: ['tdstcs', period], queryFn: async () => (await fetch(`/api/compliance/tds-tcs?period=${period}`, { headers: AUTH })).json() });
+  const { data: reg, refetch: refetchReg } = useQuery<any>({ queryKey: ['tdstcs', period], queryFn: async () => (await fetch(`/api/compliance/tds-tcs?period=${period}`, { credentials: 'include' })).json() });
   const [v, setV] = useState(''); const [sec, setSec] = useState('194J'); const [g, setG] = useState(''); const [t, setT] = useState('');
-  const addTds = useMutation({ mutationFn: async () => { const r = await fetch('/api/compliance/tds', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ vendorName: v, section: sec, code: sec === '194J' ? '1027' : sec === '194C' ? '1026' : '1028', grossAmount: Math.round(parseFloat(g || '0') * 100), tdsAmount: Math.round(parseFloat(t || '0') * 100), period }) }); if (!r.ok) throw new Error('TDS'); return r.json(); }, onSuccess: (d) => { flash(d.message || 'TDS recorded'); setV(''); setG(''); setT(''); refetchReg(); }, onError: (e: any) => flash(e.message, false) });
+  const addTds = useMutation({ mutationFn: async () => { const r = await fetch('/api/compliance/tds', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ vendorName: v, section: sec, code: sec === '194J' ? '1027' : sec === '194C' ? '1026' : '1028', grossAmount: Math.round(parseFloat(g || '0') * 100), tdsAmount: Math.round(parseFloat(t || '0') * 100), period }) }); if (!r.ok) throw new Error('TDS'); return r.json(); }, onSuccess: (d) => { flash(d.message || 'TDS recorded'); setV(''); setG(''); setT(''); refetchReg(); }, onError: (e: any) => flash(e.message, false) });
 
   return (
     <div ref={rootRef} className="space-y-6">

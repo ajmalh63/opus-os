@@ -2,12 +2,6 @@ import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 const rs = (n?: number) => `₹${((n || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const DIV_LABELS: Record<string, string> = {
@@ -57,7 +51,7 @@ export default function GrowthMetricsTab() {
   const { data, isLoading, isError, refetch } = useQuery<any>({
     queryKey: ['growthMetrics'],
     queryFn: async () => {
-      const r = await fetch('/api/analytics/growth', { headers: AUTH });
+      const r = await fetch('/api/analytics/growth', { credentials: 'include' });
       if (!r.ok) throw new Error('growth');
       return r.json();
     },

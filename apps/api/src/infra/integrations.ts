@@ -28,7 +28,25 @@ async function probeHttp(url: string, opts: { auth?: string; timeoutMs?: number 
   }
 }
 
-export async function integrationsStatus(env: Env): Promise<IntegrationStatus[]> {
+import { appSettings } from '../db/schema.js';
+import { getDb } from '../db/client.js';
+
+// Strict probe for cal.com cloud: 401 = INVALID API KEY (down), not "service
+// up but unauthenticated" like the lenient probeHttp treats it.
+async function probeCal(apiKey: string): Promise<{ ok: boolean; latencyMs?: number; status?: number }> {
+  const started = Date.now();
+  try {
+    const res = await fetch('https://api.cal.com/v2/event-types?limit=1', {
+      headers: { Authorization: `Bearer ${apiKey}`, 'cal-api-version': '2024-06-14', Accept: 'application/json' },
+      signal: AbortSignal.timeout(4000),
+    });
+    return { ok: res.ok, latencyMs: Date.now() - started, status: res.status };
+  } catch {
+    return { ok: false, latencyMs: Date.now() - started };
+  }
+}
+
+export async function integrationsStatus(env: Env, db?: any): Promise<IntegrationStatus[]> {
   const out: IntegrationStatus[] = [];
 
   // OpenWA (WhatsApp)
@@ -47,17 +65,43 @@ export async function integrationsStatus(env: Env): Promise<IntegrationStatus[]>
     out.push({ key: 'chatwoot', name: 'Chatwoot (Inbox)', kind: 'messaging', state: 'stub' });
   }
 
-  // Cal.diy (bookings)
-  if (env.CAL_BASE_URL) {
+  // Cal.com cloud (bookings) — status comes from the ACTUAL integration config
+  // (D1 app_settings: cal_api_key / cal_webhook_secret / cal_event_types), not
+  // a legacy self-hosted URL probe. Config is set in Consultations → Cal.com
+  // Configuration (super_admin/manager).
+  let calApiKey = '', calWebhookSecret = '', calEventTypes: Record<string, string> = {};
+  if (db) {
+    try {
+      // db may be the raw D1 binding (no .select) or a drizzle wrapper — normalize.
+      const client = (db as any).select ? db : getDb(db as any);
+      const rows = await client.select().from(appSettings).all();
+      const get = (k: string) => rows.find((r: any) => r.key === k)?.value || '';
+      calApiKey = get('cal_api_key');
+      calWebhookSecret = get('cal_webhook_secret');
+      try { calEventTypes = get('cal_event_types') ? JSON.parse(get('cal_event_types')) : {}; } catch { calEventTypes = {}; }
+    } catch { /* keep defaults */ }
+  }
+  if (calApiKey) {
+    const p = await probeCal(calApiKey);
+    const mapped = Object.keys(calEventTypes).length;
+    out.push({
+      key: 'calcom', name: 'Cal.com (Bookings)', kind: 'scheduling',
+      state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs,
+      detail: p.ok
+        ? `${mapped} event type(s) mapped · webhook secret ${calWebhookSecret ? 'set' : 'MISSING (dev mode)'}`
+        : p.status === 401 || p.status === 403 ? 'API key rejected by cal.com (invalid/expired)' : 'cal.com API unreachable',
+    });
+  } else if (env.CAL_BASE_URL) {
+    // Legacy self-hosted Cal.diy instance (tailnet) — kept only as a fallback probe
     const p = await probeHttp(`${env.CAL_BASE_URL.replace(/\/$/, '')}/`);
-    out.push({ key: 'caldiy', name: 'Cal.diy (Booking)', kind: 'scheduling', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
+    out.push({ key: 'calcom', name: 'Cal.com (Bookings)', kind: 'scheduling', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs, detail: 'legacy self-hosted probe — set cal_api_key for cloud status' });
   } else {
-    out.push({ key: 'caldiy', name: 'Cal.diy (Booking)', kind: 'scheduling', state: 'stub' });
+    out.push({ key: 'calcom', name: 'Cal.com (Bookings)', kind: 'scheduling', state: 'stub', detail: 'API key not set — Consultations → Cal.com Configuration' });
   }
 
   // ERPNext (books)
-  if (env.ERPNEXT_BASE_URL && env.ERPNEXT_API_KEY) {
-    const p = await probeHttp(`${env.ERPNEXT_BASE_URL.replace(/\/$/, '')}/api/method/ping`, { auth: `token ${env.ERPNEXT_API_KEY}:${env.ERPNEXT_API_SECRET}` });
+  if (env.ERPNEXT_BASE_URL) {
+    const p = await probeHttp(`${env.ERPNEXT_BASE_URL.replace(/\/$/, '')}/api/method/ping`, { auth: env.ERPNEXT_API_KEY ? `token ${env.ERPNEXT_API_KEY}:${env.ERPNEXT_API_SECRET}` : undefined });
     out.push({ key: 'erpnext', name: 'ERPNext (Books)', kind: 'books', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
   } else {
     out.push({ key: 'erpnext', name: 'ERPNext (Books)', kind: 'books', state: 'stub' });
@@ -111,7 +155,7 @@ export function configuredKeys(env: Env): string[] {
   return [
     env.OPENWA_BASE_URL && 'openwa',
     env.CHATWOOT_BASE_URL && 'chatwoot',
-    env.CAL_BASE_URL && 'caldiy',
+    'calcom',
     env.ERPNEXT_BASE_URL && 'erpnext',
     env.LISTMONK_BASE_URL && 'listmonk',
     env.UMAMI_BASE_URL && 'umami',

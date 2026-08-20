@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { webhookEvents } from '../db/schema.js';
-import { clients, engagements, agreements, interactionPoints, scoringEvents, segments, partners, referrals, commissionLedger, experiments, experimentAssignments, campaigns, campaignTouches, nurtureTouches } from '../db/schema.js';
+import { clients, engagements, agreements, consents, interactionPoints, scoringEvents, segments, partners, referrals, commissionLedger, experiments, experimentAssignments, campaigns, campaignTouches, nurtureTouches } from '../db/schema.js';
 import { eq, desc, and, gte } from 'drizzle-orm';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 
@@ -162,13 +162,63 @@ marketingRouter.get('/leads', async (c) => {
   const db = getDb(c.env.DB);
   try {
     const allClients = await db.select().from(clients).all();
+    const allEngagements = await db.select().from(engagements).all();
+    const allConsents = await db.select().from(consents).all();
+    const allScoring = await db.select().from(scoringEvents).all();
+    const allReferrals = await db.select().from(referrals).all();
+
     const rows = [];
     for (const cl of allClients) {
-      const ev = await db.select().from(scoringEvents).where(eq(scoringEvents.clientId, cl.id)).all();
+      const ev = allScoring.filter((e) => e.clientId === cl.id);
       const score = ev.reduce((a, b) => a + Math.max(0, b.points), 0);
       const band = score >= HOT ? 'hot' : score >= WARM ? 'warm' : 'cold';
-      rows.push({ clientId: cl.id, name: cl.name, phone: cl.phone, email: cl.email, score, band, interactions: ev.length });
+
+      const engs = allEngagements.filter((e) => e.clientId === cl.id);
+      const activeEng = engs.find((e) => e.status === 'active') || engs[0];
+      // "Client" = enrolled in a service (funnel stage beyond lead); "Lead" = inquiry only.
+      const isEnrolled = engs.some((e: any) =>
+        ['qualified', 'documents', 'processing', 'complete'].includes(e.stageKey));
+      const stage = activeEng?.stageKey || null;
+      const division = activeEng?.division || cl.primaryDivision || null;
+
+      // Submitted form data — the full intakeContext (dynamicContext) the
+      // client filled in on the public form (target country, package,
+      // departure, quoted fee, traveler count, etc.).
+      let formData: Record<string, unknown> | null = null;
+      try { formData = cl.intakeContext ? JSON.parse(cl.intakeContext) : null; } catch { formData = null; }
+
+      // Consents granted (DPDP evidence trail)
+      const clientConsents = allConsents.filter((c) => c.clientId === cl.id && c.status === 'granted');
+      const consentsMap = {
+        coreProcessing: clientConsents.some((c) => c.consentType === 'core-processing'),
+        whatsappUpdates: clientConsents.some((c) => c.consentType === 'whatsapp-updates'),
+        marketingCampaigns: clientConsents.some((c) => c.consentType === 'marketing-campaigns'),
+        universitySharing: clientConsents.some((c) => c.consentType === 'university-sharing'),
+      };
+
+      const referral = allReferrals.find((r) => r.clientId === cl.id);
+
+      rows.push({
+        clientId: cl.id,
+        name: cl.name,
+        phone: cl.phone,
+        email: cl.email,
+        score,
+        band,
+        interactions: ev.length,
+        isEnrolled,
+        stage,
+        division,
+        leadSource: cl.leadSource || 'website',
+        createdAt: cl.createdAt,
+        formData,
+        consents: consentsMap,
+        referralCode: referral ? `partner:${referral.partnerId}` : null,
+        // Link to the Client 360 workspace
+        detailUrl: `/clients/${cl.id}`,
+      });
     }
+    rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     return c.json({ leads: rows });
   } catch (error: any) {
     return c.json({ error: "Lead scoring fetch failed", details: error.message }, 500);
@@ -514,4 +564,89 @@ marketingRouter.get('/experiments', async (c) => {
   } catch (error: any) {
     return c.json({ error: "Experiment list failed", details: error.message }, 500);
   }
+});
+
+// GET /api/marketing/email-tracking — aggregated Listmonk event metrics
+marketingRouter.get('/email-tracking', async (c) => {
+  if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const allEvents = await db.select().from(webhookEvents).all();
+    const events = (allEvents as any[]).filter((ev) => (ev.event || '').startsWith('listmonk'));
+    const totals = { sent: 0, opens: 0, clicks: 0, bounces: 0, unsubs: 0 };
+    const emailMap = new Map<string, { email: string; opens: number; clicks: number; bounces: number; unsubs: number; last: number }>();
+
+    for (const ev of events) {
+      totals.sent++;
+      const email = (ev.entityId || 'unknown').toLowerCase();
+      const eventType = (ev.event || '').toLowerCase();
+
+      if (!emailMap.has(email) && email !== 'unknown') {
+        emailMap.set(email, { email, opens: 0, clicks: 0, bounces: 0, unsubs: 0, last: ev.receivedAt || Math.floor(Date.now() / 1000) });
+      }
+      const entry = emailMap.get(email);
+
+      if (eventType.includes('open')) {
+        totals.opens++;
+        if (entry) entry.opens++;
+      } else if (eventType.includes('click')) {
+        totals.clicks++;
+        if (entry) entry.clicks++;
+      } else if (eventType.includes('bounce')) {
+        totals.bounces++;
+        if (entry) entry.bounces++;
+      } else if (eventType.includes('unsub')) {
+        totals.unsubs++;
+        if (entry) entry.unsubs++;
+      }
+      if (entry && ev.receivedAt) {
+        entry.last = Math.max(entry.last, ev.receivedAt);
+      }
+    }
+
+    return c.json({
+      totals,
+      byEmail: Array.from(emailMap.values()).slice(0, 100),
+    });
+  } catch (error: any) {
+    return c.json({ error: "Failed to load email tracking", details: error.message }, 500);
+  }
+});
+
+// GET /api/marketing/whatsapp/templates — list all 11 operational & marketing templates
+marketingRouter.get('/whatsapp/templates', async (c) => {
+  const { WHATSAPP_TEMPLATES } = await import('../infra/whatsappTemplates.js');
+  const templates = Object.values(WHATSAPP_TEMPLATES).map((t) => ({
+    key: t.key,
+    name: t.name,
+    category: t.category,
+    division: t.division,
+    description: t.description,
+    sampleVariables: t.sampleVariables,
+    renderedSample: t.template(t.sampleVariables),
+  }));
+  return c.json({ success: true, templates });
+});
+
+// POST /api/marketing/whatsapp/test-send — test dispatch any template through Chatwoot & OpenWA
+marketingRouter.post('/whatsapp/test-send', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  if (!body.phone) {
+    return c.json({ error: 'Phone number is required' }, 400);
+  }
+  const { dispatchUnifiedWhatsApp } = await import('../infra/chatwootBridge.js');
+  const result = await dispatchUnifiedWhatsApp(c.env as any, {
+    phone: body.phone,
+    name: body.name || 'Test User',
+    email: body.email,
+    templateKey: body.templateKey,
+    variables: body.variables || {},
+    customText: body.customText,
+    division: body.division || 'general',
+    tags: ['test-dispatch', 'superadmin-test'],
+  });
+  return c.json({
+    success: result.ok,
+    result,
+  });
 });

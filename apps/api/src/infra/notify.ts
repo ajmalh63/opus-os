@@ -35,7 +35,10 @@ async function sendEmail(env: NotifyEnv, to: string, subject: string, body: stri
     // Escape text but auto-link URLs — OTP/reset links must be clickable
     // (transactional gold standard), receipts too.
     const safe = body.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/(https?:\/\/[^\s<]+)/g, (u) => `<a href="${u}" style="color:#C7A24B">${u}</a>`);
+      // SECURITY: URL class excludes quotes/angle brackets — otherwise attacker
+      // text like https://evil/x" onmouseover="... injects HTML attributes into
+      // transactional mail (phishing from the Opus domain).
+      .replace(/(https?:\/\/[^\s<"'>]+)/g, (u) => `<a href="${u}" style="color:#C7A24B">${u}</a>`);
     const res = await listmonkSendTransactional(env, to, subject, `<p style="font-family:sans-serif">${safe}</p>`);
     if (res.ok) return { ok: true, provider: 'listmonk', remoteId: res.id != null ? String(res.id) : undefined };
     return { ok: false, provider: 'listmonk', reason: res.reason || (mk.ok ? undefined : 'subscriber+send failed') };

@@ -1,10 +1,11 @@
 import { getDb } from './client.js';
 import {
-  pipelineStages, clauseLibrary, permissions, roles, businessProfile, campaigns, campaignTouches, visaProducts,
-  universities, jobPostings, attestationChains, groupDepartures, attestationRateCards
+  pipelineStages, clauseLibrary, agreementTemplates, permissions, roles, businessProfile, campaigns, campaignTouches, visaProducts,
+  universities, jobPostings, attestationChains, groupDepartures, attestationRateCards, partnerCreatives
 } from './schema.js';
 import { eq } from 'drizzle-orm';
 import { PERMISSION_SEED, ROLES_SEED } from '../routes/rbac.js';
+import { MASTER_VISA_PRODUCTS } from '../data/visaProducts.js';
 
 export type DbClient = ReturnType<typeof getDb>;
 
@@ -106,569 +107,7 @@ export async function seedDatabaseRest(db: DbClient): Promise<void> {
   // 29.2 Seed master visa products inventory (idempotently)
   const existingVisas = await db.select().from(visaProducts).all();
   if (existingVisas.length === 0) {
-    const defaultVisas = [
-  {
-    "id": "v1",
-    "country": "Dubai 🇦🇪",
-    "visaType": "UAE 30 Days Single Entry (Without Insurance)",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 720000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Return ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v2",
-    "country": "Dubai 🇦🇪",
-    "visaType": "UAE 30 Days Express Single Entry (Without Insurance)",
-    "entryType": "Single Entry",
-    "processingTime": "1 Day",
-    "feePaise": 820000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Return ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v3",
-    "country": "Dubai 🇦🇪",
-    "visaType": "UAE 30 Days Multiple Entry (Without Insurance)",
-    "entryType": "Multiple Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 1300000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Return ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v4",
-    "country": "Dubai 🇦🇪",
-    "visaType": "UAE 60 Days Single Entry (Without Insurance)",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 1100000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Return ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v5",
-    "country": "Dubai 🇦🇪",
-    "visaType": "UAE 60 Days Multiple Entry (Without Insurance)",
-    "entryType": "Multiple Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 1800000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Return ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v6",
-    "country": "Thailand 🇹🇭",
-    "visaType": "Thailand 15 Days Visa on Arrival (E-VOA)",
-    "entryType": "Single Entry",
-    "processingTime": "1-2 Days",
-    "feePaise": 550000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Confirmed hotel booking\", \"Return ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v7",
-    "country": "Thailand 🇹🇭",
-    "visaType": "Thailand 30 Days Single Entry Tourist",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 750000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Confirmed flight ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v8",
-    "country": "Thailand 🇹🇭",
-    "visaType": "Thailand 60 Days Single Entry Tourist",
-    "entryType": "Single Entry",
-    "processingTime": "3-5 Days",
-    "feePaise": 950000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Bank statement\", \"Flight booking\"]",
-    "status": "active"
-  },
-  {
-    "id": "v9",
-    "country": "Thailand 🇹🇭",
-    "visaType": "Thailand Multiple Entry Tourist (METV)",
-    "entryType": "Multiple Entry",
-    "processingTime": "5-7 Days",
-    "feePaise": 1800000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Bank statement 6 months\", \"Employment proof\"]",
-    "status": "active"
-  },
-  {
-    "id": "v10",
-    "country": "Malaysia 🇲🇾",
-    "visaType": "Malaysia 30 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "2-3 Days",
-    "feePaise": 380000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Flight booking\", \"Hotel voucher\"]",
-    "status": "active"
-  },
-  {
-    "id": "v11",
-    "country": "Malaysia 🇲🇾",
-    "visaType": "Malaysia 30 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "3 Days",
-    "feePaise": 650000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Flight ticket\", \"Hotel booking\"]",
-    "status": "active"
-  },
-  {
-    "id": "v12",
-    "country": "Malaysia 🇲🇾",
-    "visaType": "Malaysia 30 Days Single Entry Business",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 800000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Invitation letter\", \"Company proof\"]",
-    "status": "active"
-  },
-  {
-    "id": "v13",
-    "country": "Vietnam 🇻🇳",
-    "visaType": "Vietnam 30 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3 Days",
-    "feePaise": 420000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Entry/Exit port info\"]",
-    "status": "active"
-  },
-  {
-    "id": "v14",
-    "country": "Vietnam 🇻🇳",
-    "visaType": "Vietnam 30 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 750000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Entry/Exit port info\"]",
-    "status": "active"
-  },
-  {
-    "id": "v15",
-    "country": "Vietnam 🇻🇳",
-    "visaType": "Vietnam 90 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 680000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v16",
-    "country": "Vietnam 🇻🇳",
-    "visaType": "Vietnam 90 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 1100000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v17",
-    "country": "Sri Lanka 🇱🇰",
-    "visaType": "Sri Lanka 30 Days Tourist ETA (Double Entry)",
-    "entryType": "Double Entry",
-    "processingTime": "1-2 Days",
-    "feePaise": 450000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v18",
-    "country": "Sri Lanka 🇱🇰",
-    "visaType": "Sri Lanka 30 Days Business ETA (Multiple Entry)",
-    "entryType": "Multiple Entry",
-    "processingTime": "2 Days",
-    "feePaise": 680000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Company invitation\"]",
-    "status": "active"
-  },
-  {
-    "id": "v19",
-    "country": "Sri Lanka 🇱🇰",
-    "visaType": "Sri Lanka 2 Year Tourist Visa (Multiple Entry)",
-    "entryType": "Multiple Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 1850000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Bank balance proof\"]",
-    "status": "active"
-  },
-  {
-    "id": "v20",
-    "country": "Azerbaijan 🇦🇿",
-    "visaType": "Azerbaijan 30 Days Single Entry ASAN E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3 Days",
-    "feePaise": 350000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v21",
-    "country": "Azerbaijan 🇦🇿",
-    "visaType": "Azerbaijan 30 Days Urgent ASAN E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3 Hours",
-    "feePaise": 750000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v22",
-    "country": "Bahrain 🇧🇭",
-    "visaType": "Bahrain 14 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3-5 Days",
-    "feePaise": 450000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Hotel booking\", \"Return ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v23",
-    "country": "Bahrain 🇧🇭",
-    "visaType": "Bahrain 30 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "4 Days",
-    "feePaise": 780000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Hotel booking\", \"Return ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v24",
-    "country": "Bahrain 🇧🇭",
-    "visaType": "Bahrain 1 Year Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "4-5 Days",
-    "feePaise": 1650000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Bank statement 3 months\"]",
-    "status": "active"
-  },
-  {
-    "id": "v25",
-    "country": "Cambodia 🇰🇭",
-    "visaType": "Cambodia 30 Days Single Entry E-Visa (Tourist)",
-    "entryType": "Single Entry",
-    "processingTime": "3 Days",
-    "feePaise": 380000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v26",
-    "country": "Cambodia 🇰🇭",
-    "visaType": "Cambodia 30 Days Single Entry E-Visa (Business)",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 550000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Business invitation\"]",
-    "status": "active"
-  },
-  {
-    "id": "v27",
-    "country": "Egypt 🇪🇬",
-    "visaType": "Egypt 30 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "5 Days",
-    "feePaise": 320000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v28",
-    "country": "Egypt 🇪🇬",
-    "visaType": "Egypt 90 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "5-7 Days",
-    "feePaise": 750000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v29",
-    "country": "Ethiopia 🇪🇹",
-    "visaType": "Ethiopia 30 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 750000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v30",
-    "country": "Ethiopia 🇪🇹",
-    "visaType": "Ethiopia 90 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "4 Days",
-    "feePaise": 1250000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v31",
-    "country": "Georgia 🇬🇪",
-    "visaType": "Georgia 30 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "5 Days",
-    "feePaise": 280000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Travel insurance\", \"Hotel booking\"]",
-    "status": "active"
-  },
-  {
-    "id": "v32",
-    "country": "Georgia 🇬🇪",
-    "visaType": "Georgia 90 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "5-7 Days",
-    "feePaise": 550000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Travel insurance\", \"Hotel booking\"]",
-    "status": "active"
-  },
-  {
-    "id": "v33",
-    "country": "Hong Kong 🇭🇰",
-    "visaType": "Hong Kong 14 Days Pre-Arrival Registration (PAR)",
-    "entryType": "Multiple Entry",
-    "processingTime": "1 Day",
-    "feePaise": 120000,
-    "requiredDocsJson": "[\"Passport details\"]",
-    "status": "active"
-  },
-  {
-    "id": "v34",
-    "country": "Hong Kong 🇭🇰",
-    "visaType": "Hong Kong 30 Days Visit Visa (Tourist)",
-    "entryType": "Single Entry",
-    "processingTime": "4 Weeks",
-    "feePaise": 380000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Financial status proof\", \"Sponsor letter\"]",
-    "status": "active"
-  },
-  {
-    "id": "v35",
-    "country": "Indonesia 🇮🇩",
-    "visaType": "Indonesia 30 Days Visa on Arrival (E-VOA)",
-    "entryType": "Single Entry",
-    "processingTime": "1 Day",
-    "feePaise": 350000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Return flight\"]",
-    "status": "active"
-  },
-  {
-    "id": "v36",
-    "country": "Indonesia 🇮🇩",
-    "visaType": "Indonesia 60 Days Single Entry Tourist Visa (B211A)",
-    "entryType": "Single Entry",
-    "processingTime": "5-7 Days",
-    "feePaise": 1250000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Bank statement min $2000\", \"Sponsor details\"]",
-    "status": "active"
-  },
-  {
-    "id": "v37",
-    "country": "Kenya 🇰🇪",
-    "visaType": "Kenya 90 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3 Days",
-    "feePaise": 580000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Hotel booking\"]",
-    "status": "active"
-  },
-  {
-    "id": "v38",
-    "country": "Kenya 🇰🇪",
-    "visaType": "Kenya 90 Days Transit E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "2 Days",
-    "feePaise": 250000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Connecting flight ticket\"]",
-    "status": "active"
-  },
-  {
-    "id": "v39",
-    "country": "Morocco 🇲🇦",
-    "visaType": "Morocco 30 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 350000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Hotel voucher\"]",
-    "status": "active"
-  },
-  {
-    "id": "v40",
-    "country": "Morocco 🇲🇦",
-    "visaType": "Morocco 30 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "4 Days",
-    "feePaise": 680000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Hotel voucher\"]",
-    "status": "active"
-  },
-  {
-    "id": "v41",
-    "country": "Myanmar 🇲🇲",
-    "visaType": "Myanmar 28 Days Single Entry E-Visa (Tourist)",
-    "entryType": "Single Entry",
-    "processingTime": "3 Days",
-    "feePaise": 480000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Hotel voucher\"]",
-    "status": "active"
-  },
-  {
-    "id": "v42",
-    "country": "Myanmar 🇲🇲",
-    "visaType": "Myanmar 70 Days Single Entry E-Visa (Business)",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 680000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Invitation letter\", \"Company registration copy\"]",
-    "status": "active"
-  },
-  {
-    "id": "v43",
-    "country": "Oman 🇴🇲",
-    "visaType": "Oman 10 Days Single Entry E-Visa (26A)",
-    "entryType": "Single Entry",
-    "processingTime": "3 Days",
-    "feePaise": 250000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v44",
-    "country": "Oman 🇴🇲",
-    "visaType": "Oman 30 Days Single Entry E-Visa (26B)",
-    "entryType": "Single Entry",
-    "processingTime": "3 Days",
-    "feePaise": 550000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Hotel booking\"]",
-    "status": "active"
-  },
-  {
-    "id": "v45",
-    "country": "Oman 🇴🇲",
-    "visaType": "Oman 1 Year Multiple Entry E-Visa (36B)",
-    "entryType": "Multiple Entry",
-    "processingTime": "4 Days",
-    "feePaise": 1350000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Valid GCC visa/Entry status copy\"]",
-    "status": "active"
-  },
-  {
-    "id": "v46",
-    "country": "Qatar 🇶🇦",
-    "visaType": "Qatar 30 Days Visa on Arrival (Hayya)",
-    "entryType": "Single Entry",
-    "processingTime": "1 Day",
-    "feePaise": 250000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Hotel booking via Discover Qatar\"]",
-    "status": "active"
-  },
-  {
-    "id": "v47",
-    "country": "Qatar 🇶🇦",
-    "visaType": "Qatar 30 Days E-Visa (Tourist)",
-    "entryType": "Single Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 380000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Flight booking\"]",
-    "status": "active"
-  },
-  {
-    "id": "v48",
-    "country": "Russia 🇷🇺",
-    "visaType": "Russia 16 Days Unified E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "4 Days",
-    "feePaise": 480000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Medical insurance\"]",
-    "status": "active"
-  },
-  {
-    "id": "v49",
-    "country": "Russia 🇷🇺",
-    "visaType": "Russia 30 Days Single Entry Tourist Visa",
-    "entryType": "Single Entry",
-    "processingTime": "7-10 Days",
-    "feePaise": 950000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Tourist invitation voucher\"]",
-    "status": "active"
-  },
-  {
-    "id": "v50",
-    "country": "Turkey 🇹🇷",
-    "visaType": "Turkey 30 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "2 Days",
-    "feePaise": 420000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Valid US/UK/Schengen visa copy\"]",
-    "status": "active"
-  },
-  {
-    "id": "v51",
-    "country": "Turkey 🇹🇷",
-    "visaType": "Turkey 90 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "3-4 Days",
-    "feePaise": 950000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\", \"Travel insurance\"]",
-    "status": "active"
-  },
-  {
-    "id": "v52",
-    "country": "Uzbekistan 🇺🇿",
-    "visaType": "Uzbekistan 30 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3 Days",
-    "feePaise": 280000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v53",
-    "country": "Uzbekistan 🇺🇿",
-    "visaType": "Uzbekistan 30 Days Double Entry E-Visa",
-    "entryType": "Double Entry",
-    "processingTime": "3 Days",
-    "feePaise": 450000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v54",
-    "country": "Uzbekistan 🇺🇿",
-    "visaType": "Uzbekistan 30 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "3 Days",
-    "feePaise": 680000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v55",
-    "country": "Zambia 🇿🇲",
-    "visaType": "Zambia 30 Days Single Entry E-Visa",
-    "entryType": "Single Entry",
-    "processingTime": "3 Days",
-    "feePaise": 350000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  },
-  {
-    "id": "v56",
-    "country": "Zambia 🇿🇲",
-    "visaType": "Zambia 30 Days Multiple Entry E-Visa",
-    "entryType": "Multiple Entry",
-    "processingTime": "4 Days",
-    "feePaise": 650000,
-    "requiredDocsJson": "[\"Passport scan\", \"Photo\"]",
-    "status": "active"
-  }
-]
-    for (const v of defaultVisas) {
+    for (const v of MASTER_VISA_PRODUCTS) {
       await db.insert(visaProducts).values({ ...v, createdAt: now, updatedAt: now });
     }
   }
@@ -907,5 +346,251 @@ export async function seedAttestationRateCards(db: DbClient): Promise<void> {
       createdAt: now,
       updatedAt: now
     });
+  }
+}
+
+// 65. Partner creative library (Phase B, §4 design doc) — 4 default text
+// creatives partners can copy from the portal. Idempotent: skips when ANY row
+// exists (owner manages the library after bootstrap; never re-seed over it).
+const DEFAULT_PARTNER_CREATIVES: { title: string; url: string }[] = [
+  { title: 'Study Abroad — Free Counselling', url: '/study-abroad' },
+  { title: 'Visa Services — Expert Guidance', url: '/visa-services' },
+  { title: 'Umrah Packages — Group Departures', url: '/umrah-travel' },
+  { title: 'Manpower Recruitment — Global Jobs', url: '/recruitment' },
+];
+
+export async function seedPartnerCreatives(db: DbClient): Promise<void> {
+  const existing = await db.select().from(partnerCreatives).all();
+  if (existing.length > 0) return; // idempotent
+  const now = Math.floor(Date.now() / 1000);
+  for (const c of DEFAULT_PARTNER_CREATIVES) {
+    await db.insert(partnerCreatives).values({
+      id: crypto.randomUUID(),
+      title: c.title,
+      type: 'text',
+      size: null,
+      url: c.url,
+      imageKey: null,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+}
+
+// ============================================================
+// AGREEMENT TEMPLATE LIBRARY (design doc: agreement-templates-esign.md §2)
+// Clause library (~30 clauses: 8 general + per-division) + 10 templates
+// (2 per division). Every template bundles the 8 general clauseIds with its
+// division's clauseIds. Bodies are professional plain-language contract text
+// (Indian context, ₹/paise, GST 18%, DPDP 2023) — no placeholders.
+// Idempotent: clause pass skips when ANY clause exists; template pass skips
+// when ANY template exists (owner curates after bootstrap).
+// ============================================================
+
+interface AgreementClauseSeed {
+  clauseId: string;
+  title: string;
+  body: string;
+  division: string;
+  mandatory: boolean;
+}
+
+const AGREEMENT_GENERAL_CLAUSES: AgreementClauseSeed[] = [
+  {
+    clauseId: 'G1', title: 'Electronic Execution & Consent', division: 'general', mandatory: true,
+    body: 'The Client agrees to execute this service agreement electronically and consents to conduct business with Opus Overseas through electronic records under the Information Technology Act, 2000 and the Digital Personal Data Protection Act, 2023. An electronic signature applied by the Client — whether by typing their name, drawing a signature, or confirming a one-time password — carries the same legal effect as a wet-ink signature. The Client confirms they have read the full text of this agreement before signing.',
+  },
+  {
+    clauseId: 'G2', title: 'Payment Terms & GST', division: 'general', mandatory: false,
+    body: 'Service fees shall be payable as quoted at the time of engagement, in Indian Rupees, and are recorded in the Opus Overseas ledger. Goods and Services Tax at the applicable rate (18% for most services) will be shown separately on invoices issued with a valid GSTIN. All payments are due by the milestone dates specified in the payment plan.',
+  },
+  {
+    clauseId: 'G3', title: 'Refund & Cancellation', division: 'general', mandatory: false,
+    body: 'Refunds, if any, are governed by the specific refund policy applicable to the service division of this agreement. Amounts already paid to government authorities, universities, embassies, or other third parties are non-refundable once disbursed. Service fees already earned by Opus Overseas for completed work are not refundable.',
+  },
+  {
+    clauseId: 'G4', title: 'Force Majeure', division: 'general', mandatory: false,
+    body: 'Neither party shall be liable for failure or delay in performance caused by events beyond reasonable control, including natural calamities, government action, epidemics, or civil unrest. The affected party shall notify the other as soon as reasonably practicable, and performances shall resume once the event ceases.',
+  },
+  {
+    clauseId: 'G5', title: 'Confidentiality & DPDP', division: 'general', mandatory: false,
+    body: 'Both parties shall keep confidential all non-public information exchanged under this agreement. Opus Overseas shall process the Client\'s personal data only for the purposes of the services engaged, subject to the Digital Personal Data Protection Act, 2023, and in accordance with the Client\'s recorded consents.',
+  },
+  {
+    clauseId: 'G6', title: 'Dispute Resolution & Jurisdiction', division: 'general', mandatory: false,
+    body: 'This agreement shall be governed by the laws of India. Any dispute arising out of or in connection with this agreement shall first be referred to mutual good-faith negotiation and, failing that, shall be subject to the exclusive jurisdiction of the courts at Nizamabad, Telangana.',
+  },
+  {
+    clauseId: 'G7', title: 'Limitation of Liability', division: 'general', mandatory: false,
+    body: 'Opus Overseas shall not be liable for indirect, incidental, or consequential losses, including loss of opportunity, reputation, or anticipated profits. Total liability under this agreement shall not exceed the service fees actually paid by the Client to Opus Overseas.',
+  },
+  {
+    clauseId: 'G8', title: 'Entire Agreement & Amendments', division: 'general', mandatory: false,
+    body: 'This agreement, together with the documents referred to in it, constitutes the entire agreement between the parties and supersedes all prior discussions and written agreements. Amendments shall be valid only when made in writing and executed by an authorised representative of Opus Overseas and the Client.',
+  },
+];
+
+const AGREEMENT_DIVISION_CLAUSES: Record<string, AgreementClauseSeed[]> = {
+  'study-abroad': [
+    {
+      clauseId: 'SA1', title: 'Counselling & Application Processing', division: 'study-abroad', mandatory: false,
+      body: 'Opus Overseas shall provide counselling and end-to-end application processing for the study programmes selected by the Client. The scope includes profile review, course research, documentation guidance, and application submission support as per the engagement plan.',
+    },
+    {
+      clauseId: 'SA2', title: 'University Selection & Shortlisting', division: 'study-abroad', mandatory: false,
+      body: 'Opus Overseas shall shortlist universities matching the Client\'s profile, budget, and preferences, and present the shortlist for the Client\'s approval. Final selection shall be at the Client\'s discretion, and engagement with a university rests with the Client.',
+    },
+    {
+      clauseId: 'SA3', title: 'SOP & Document Preparation', division: 'study-abroad', mandatory: false,
+      body: 'Opus Overseas shall assist in preparing the Statement of Purpose and supporting documents based on information provided by the Client. The Client warrants that all information furnished is truthful, complete, and accurate.',
+    },
+    {
+      clauseId: 'SA4', title: 'Application Submission & Deadlines', division: 'study-abroad', mandatory: false,
+      body: 'Opus Overseas shall track application deadlines for the universities in scope and submit applications in a timely manner. Deadlines missed due to the Client\'s delay in providing required information or documents shall be at the Client\'s risk.',
+    },
+    {
+      clauseId: 'SA5', title: 'Offer Acceptance & Deposit Handling', division: 'study-abroad', mandatory: false,
+      body: 'Upon receiving an offer of admission, Opus Overseas shall assist the Client in reviewing its conditions and handling the deposit as instructed by the university. Deposits paid to the university are governed by the university\'s own policies and are non-refundable under this agreement once paid.',
+    },
+    {
+      clauseId: 'SA6', title: 'Study Visa Assistance', division: 'study-abroad', mandatory: false,
+      body: 'Opus Overseas shall assist the Client in preparing and submitting their study visa application, including documentation support and interview guidance. Issuance of the visa remains at the sole discretion of the relevant embassy or consulate.',
+    },
+    {
+      clauseId: 'SA7', title: 'Refund Policy (Study Abroad)', division: 'study-abroad', mandatory: false,
+      body: 'The study-abroad refund policy applies strictly as per the payment plan in the engagement letter. Fees paid to universities, courier charges, and third-party service charges are non-refundable once incurred. Refunds for unstarted Opus Overseas services may be claimed within seven days of payment, subject to a handling charge.',
+    },
+  ],
+  visa: [
+    {
+      clauseId: 'V1', title: 'Visa Processing Services', division: 'visa', mandatory: false,
+      body: 'Opus Overseas shall process the Client\'s visa application for the destination and visa category specified at engagement, including form filing and documentation preparation. Service timelines are indicative and depend on the processing times of the destination authority.',
+    },
+    {
+      clauseId: 'V2', title: 'Document Verification & Submission', division: 'visa', mandatory: false,
+      body: 'Opus Overseas shall verify the Client\'s documents against the requirements of the destination authority before submission. The Client warrants that all documents submitted are genuine; submission of forged documents will terminate this agreement immediately without refund.',
+    },
+    {
+      clauseId: 'V3', title: 'Appointment & Slot Booking', division: 'visa', mandatory: false,
+      body: 'Opus Overseas shall assist in booking the visa appointment or slot as available with the relevant authority. Appointment availability and dates are determined solely by the authority and cannot be guaranteed.',
+    },
+    {
+      clauseId: 'V4', title: 'Fee & Payment Terms', division: 'visa', mandatory: false,
+      body: 'Visa service fees payable to Opus Overseas are separate from government and consular fees, which are non-refundable once paid to the authority. Payments shall be made in Indian Rupees, with GST at the applicable rate (18% for most services) charged on the service component.',
+    },
+    {
+      clauseId: 'V5', title: 'Refund Policy (Visa)', division: 'visa', mandatory: false,
+      body: 'The visa refund policy applies only to Opus Overseas service charges for services not yet started. Government visa fees and consular charges are non-refundable, and no refund shall arise from a visa refusal, as outcomes rest with the authority.',
+    },
+  ],
+  umrah: [
+    {
+      clauseId: 'U1', title: 'Package Booking Terms', division: 'umrah', mandatory: false,
+      body: 'The Client books the Umrah package under the terms set out in this agreement and the package itinerary confirmed at booking. Prices are per person in Indian Rupees and include the components listed in the package inclusions; excluded items are payable separately.',
+    },
+    {
+      clauseId: 'U2', title: 'Advance & Balance Payment Schedule', division: 'umrah', mandatory: false,
+      body: 'A non-refundable advance (₹500 per person for standard bookings) is payable at the time of booking to reserve seats. The balance of the package price is payable in full not later than thirty days before the departure date, or as otherwise communicated at booking.',
+    },
+    {
+      clauseId: 'U3', title: 'Cancellation & Refund (Umrah)', division: 'umrah', mandatory: false,
+      body: 'Cancellation requests must be made in writing. Refunds, where applicable, are computed from the date of cancellation as per the package terms notified at booking; third-party costs (airfare, hotels, insurance) already incurred are non-refundable.',
+    },
+    {
+      clauseId: 'U4', title: 'Travel & Insurance Disclaimer', division: 'umrah', mandatory: false,
+      body: 'Travel arrangements, airline schedules, and hotel placements are subject to change by the respective providers. The Client is advised to obtain travel insurance; Opus Overseas acts as an organiser and is not liable for events of force majeure, flight disruptions, or acts of the travel providers.',
+    },
+  ],
+  attestation: [
+    {
+      clauseId: 'A1', title: 'Attestation Service Terms', division: 'attestation', mandatory: false,
+      body: 'Opus Overseas shall undertake the attestation or apostille of the Client\'s documents as per the destination requirements confirmed at engagement. Services follow the standard chain (State HRD, MEA, and the destination\'s Embassy or Apostille office) applicable to the document category.',
+    },
+    {
+      clauseId: 'A2', title: 'Document Handling & Courier Terms', division: 'attestation', mandatory: false,
+      body: 'Documents shall be handled with due care and couriered to the Client using a tracked courier service. The Client shall retain copies of originals submitted; Opus Overseas is not responsible for delays or loss caused by the courier or government authorities once dispatched.',
+    },
+    {
+      clauseId: 'A3', title: 'Fee & Timeline Disclaimer', division: 'attestation', mandatory: false,
+      body: 'Attestation pricing is indicative and is finalised when the complete document set and destination chain are confirmed. Processing timelines are estimates and depend on the State HRD, MEA, and Embassy or consular offices; neither pricing nor timelines are a guarantee.',
+    },
+    {
+      clauseId: 'A4', title: 'Refund Policy (Attestation)', division: 'attestation', mandatory: false,
+      body: 'Government, MEA, and embassy fees once paid are non-refundable. Opus Overseas service charges may be refunded, less a handling charge, only if the attestation service was not started; no refund arises if documents are withdrawn after processing has begun.',
+    },
+  ],
+  manpower: [
+    {
+      clauseId: 'M1', title: 'Recruitment & Placement Services', division: 'manpower', mandatory: false,
+      body: 'Opus Overseas shall provide recruitment and placement services, matching the Client\'s profile to verified overseas employer vacancies. Placement success depends on employer selection criteria, and no placement is guaranteed unless expressly recorded in writing.',
+    },
+    {
+      clauseId: 'M2', title: 'Medical & Visa Processing', division: 'manpower', mandatory: false,
+      body: 'The Client shall undergo medical and visa processing as required by the destination country, with Opus Overseas facilitating documentation and scheduling. Medical fitness and visa approval rest with the relevant authorities and are outside Opus Overseas\'s control.',
+    },
+    {
+      clauseId: 'M3', title: 'Deployment & Employment Terms', division: 'manpower', mandatory: false,
+      body: 'Employment terms, including salary, contract duration, and accommodation, are governed by the employer\'s offer letter and the destination country\'s labour laws. The Client shall report for deployment as per the schedule and shall comply with the employer\'s code of conduct.',
+    },
+    {
+      clauseId: 'M4', title: 'Fee & Refund Policy (Manpower)', division: 'manpower', mandatory: false,
+      body: 'Manpower service fees are payable as per the fee schedule at engagement. Fees once incurred for medical tests, police clearance, and visa processing are non-refundable; refund of service charges, if any, shall follow the policy communicated at booking, with no refund after deployment processing has commenced.',
+    },
+  ],
+};
+
+const AGREEMENT_TEMPLATES: { name: string; division: string }[] = [
+  { name: 'Study Abroad — Full Service Agreement', division: 'study-abroad' },
+  { name: 'Study Abroad — Application Processing Only', division: 'study-abroad' },
+  { name: 'Visa — Visa Processing Service Agreement', division: 'visa' },
+  { name: 'Visa — Document Assistance Agreement', division: 'visa' },
+  { name: 'Umrah — Package Booking Agreement', division: 'umrah' },
+  { name: 'Umrah — Group Departure Terms', division: 'umrah' },
+  { name: 'Attestation — Service Agreement', division: 'attestation' },
+  { name: 'Attestation — Document Handling Agreement', division: 'attestation' },
+  { name: 'Manpower — Recruitment Service Agreement', division: 'manpower' },
+  { name: 'Manpower — Deployment Processing Agreement', division: 'manpower' },
+];
+
+export async function seedAgreementLibrary(db: DbClient): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+
+  // Clause library — skip entirely if ANY clause exists (owner curates after bootstrap)
+  const existingClauses = await db.select().from(clauseLibrary).all();
+  if (existingClauses.length === 0) {
+    const all: AgreementClauseSeed[] = [
+      ...AGREEMENT_GENERAL_CLAUSES,
+      ...Object.values(AGREEMENT_DIVISION_CLAUSES).flat(),
+    ];
+    for (const cl of all) {
+      await db.insert(clauseLibrary).values({
+        id: crypto.randomUUID(),
+        clauseId: cl.clauseId,
+        title: cl.title,
+        body: cl.body,
+        division: cl.division,
+        mandatory: cl.mandatory,
+        version: 'v1.0',
+        createdAt: now,
+      });
+    }
+  }
+
+  // Templates — skip if ANY template exists (owner curates after bootstrap)
+  const existingTemplates = await db.select().from(agreementTemplates).all();
+  if (existingTemplates.length === 0) {
+    const generalIds = AGREEMENT_GENERAL_CLAUSES.map((c) => c.clauseId);
+    for (const t of AGREEMENT_TEMPLATES) {
+      const divisionIds = (AGREEMENT_DIVISION_CLAUSES[t.division] || []).map((c) => c.clauseId);
+      await db.insert(agreementTemplates).values({
+        id: crypto.randomUUID(),
+        name: t.name,
+        division: t.division,
+        clausesJson: JSON.stringify([...generalIds, ...divisionIds]),
+        version: 'v1.0',
+        createdAt: now,
+      });
+    }
   }
 }

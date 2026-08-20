@@ -28,7 +28,8 @@ describe('Client communications timeline (interconnect: Client360 send-message)'
   beforeAll(() => {
     mockD1 = new MockD1Database();
     mockD1.tables.clients.push({
-      id: 'OP-2026-7001', name: 'Timeline Client', phone: '1', email: 't@x.com',
+      id: 'OP-2026-7001',
+      portal_token: 'OP-2026-7001', name: 'Timeline Client', phone: '1', email: 't@x.com',
       created_at: 1, updated_at: 1,
     });
     mockD1.tables.engagements.push({

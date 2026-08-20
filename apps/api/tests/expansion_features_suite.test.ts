@@ -34,6 +34,7 @@ describe('Solutions Architecture Expansion Workflows Suite', () => {
     // Seed initial data
     mockD1.tables.clients.push({
       id: "OP-2026-9001",
+      portal_token: "OP-2026-9001",
       name: "Suresh Kumar",
       phone: "+91 99999 88888",
       email: "suresh@example.com",

@@ -16,17 +16,17 @@ await page.waitForTimeout(3500);
 check('Login via UI redirects into workspace', page.url().includes('/workspaces') || page.url().includes('/dashboard'));
 check('Dashboard tiles present', await has(page, 'Manage Campaigns') || await has(page, 'Staff Performance'));
 
-await page.goto(BASE + '/workspaces/performance', { waitUntil: 'domcontentloaded' });
+await page.goto(BASE + '/finance/performance', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(2500);
 check('Performance: BAN row', await has(page, 'Open tickets') && await has(page, 'On-time rate'));
 check('Performance: roster table', await has(page, 'Today') && await has(page, 'Window'));
 check('Performance: live queues', await has(page, 'Awaiting approval') && await has(page, 'Overdue'));
 
-await page.goto(BASE + '/workspaces/marketing', { waitUntil: 'domcontentloaded' });
+await page.goto(BASE + '/marketing/funnel', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(2200);
 check('Marketing Automation renders (control panel)', await has(page, 'Marketing Automation') && await has(page, 'Overview') && await has(page, 'Campaigns'));
 check('Tool status cards present', await has(page, 'Listmonk') && await has(page, 'Mautic') && await has(page, 'Chatwoot'));
-check('Legacy campaigns slug renders the marketing panel (alias)', (await page.goto(BASE + '/workspaces/campaigns', { waitUntil: 'domcontentloaded' })) && (await page.waitForTimeout(1500), await has(page, 'Campaigns') || await has(page, 'Marketing Automation')));
+check('Campaigns module renders', (await page.goto(BASE + '/marketing/campaigns', { waitUntil: 'domcontentloaded' })) && (await page.waitForTimeout(1500), await has(page, 'Campaigns') || await has(page, 'Marketing Automation')));
 
 await page.goto(BASE + '/workspaces/transactions', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(2500);
@@ -45,7 +45,7 @@ check('Kanban board renders stages', await has(page, 'Consult') || await has(pag
 await page.goto(BASE + '/inbox', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(2500);
 check('Inbox renders', await has(page, 'Inbox'));
-await page.goto(BASE + '/workspaces/infra', { waitUntil: 'domcontentloaded' });
+await page.goto(BASE + '/finance/infra', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(2000);
 check('InfraHealth renders', await has(page, 'Infrastructure'));
 

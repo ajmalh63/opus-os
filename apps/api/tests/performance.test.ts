@@ -33,12 +33,12 @@ describe('Staff performance scorecard (manager+)', () => {
     );
     // Ravi: 2 done in window (1 today, on-time; 1 late), 1 open overdue, 1 urgent open
     mockD1.tables.tasks.push(
-      { id: 't1', client_id: 'OP-2026-1001', engagement_id: null, assignee_id: 'u-1', title: 'Docs intake', description: null, priority: 'high', status: 'done', due_date: now, recurrence: 'none', created_at: now - 4 * 3600, updated_at: now, completed_at: now - 1 * 3600 },
+      { id: 't1', client_id: 'OP-2026-1001', engagement_id: null, assignee_id: 'u-1', title: 'Docs intake', description: null, priority: 'high', status: 'done', due_date: now, recurrence: 'none', created_at: now - 4 * 3600, updated_at: now, completed_at: now },
       { id: 't2', client_id: null, engagement_id: null, assignee_id: 'u-1', title: 'Call summary', description: null, priority: 'medium', status: 'done', due_date: now - 2 * day, recurrence: 'none', created_at: now - 3 * day, updated_at: now, completed_at: now - 1 * day }, // completed AFTER due — late
       { id: 't3', client_id: null, engagement_id: null, assignee_id: 'u-1', title: 'Passport copy', description: null, priority: 'high', status: 'open', due_date: now - day, recurrence: 'none', created_at: now - 2 * day, updated_at: now, completed_at: null }, // overdue open
       { id: 't4', client_id: null, engagement_id: null, assignee_id: 'u-1', title: 'Urgent escalation', description: null, priority: 'urgent', status: 'open', due_date: null, recurrence: 'none', created_at: now, updated_at: now, completed_at: null },
       // Sara: 1 done in window (on-time), 1 in_progress
-      { id: 't5', client_id: null, engagement_id: null, assignee_id: 'u-2', title: 'Visa checklist', description: null, priority: 'low', status: 'done', due_date: now, recurrence: 'none', created_at: now - 6 * 3600, updated_at: now, completed_at: now - 2 * 3600 },
+      { id: 't5', client_id: null, engagement_id: null, assignee_id: 'u-2', title: 'Visa checklist', description: null, priority: 'low', status: 'done', due_date: now, recurrence: 'none', created_at: now - 6 * 3600, updated_at: now, completed_at: now },
       { id: 't6', client_id: null, engagement_id: null, assignee_id: 'u-2', title: 'GCC docs', description: null, priority: 'medium', status: 'in_progress', due_date: now + day, recurrence: 'none', created_at: now - 3600, updated_at: now, completed_at: null },
     );
     // Approval queue: 1 draft invoice + 1 sent agreement

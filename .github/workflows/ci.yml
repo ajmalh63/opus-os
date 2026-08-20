@@ -9,6 +9,9 @@ jobs:
   unit:
     name: Typecheck · Tests · Hygiene
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
 
@@ -29,8 +32,14 @@ jobs:
       - name: Unit & integration tests
         run: pnpm test
 
+      - name: Secret guard (no keys in frontend source/bundle)
+        run: node scripts/secret-guard.mjs
+
       - name: Mojibake hygiene gate
         run: node scripts/mojibake-gate.mjs
+
+      - name: Audit chain verifier self-test (APTS-AR-012)
+        run: node scripts/audit-chain-verify.mjs --self-test
 
   e2e:
     name: E2E smoke (local stack)
@@ -59,9 +68,11 @@ jobs:
       - name: Start API dev (local D1)
         working-directory: apps/api
         env:
-          BETTER_AUTH_SECRET: ci-secret
+          BETTER_AUTH_SECRET: ${{ secrets.CI_BETTER_AUTH_SECRET || 'ci-secret' }}
           ADMIN_EMAIL: owner@opusoverseas.com
-          ADMIN_PASSWORD: OwnerPass2026!
+          # Throwaway CI-only credential — never a reusable password (the repo
+          # is public-ish; a committed admin password = owner account takeover).
+          ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD || format('ci-throwaway-{0}', github.run_id) }}
         run: |
           npx wrangler dev --port 8787 --local &
           for i in $(seq 1 30); do

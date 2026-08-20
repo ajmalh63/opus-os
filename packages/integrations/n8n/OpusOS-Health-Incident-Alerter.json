@@ -1,0 +1,120 @@
+{
+  "name": "OpusOS — Health Guard & Uptime Incident Alerter",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "name": "Schedule 5-Min Health Ping",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://opusoverseas.com/api/infrastructure/health",
+        "options": {}
+      },
+      "name": "OpusOS Health Probe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.status === 'ok'}}",
+              "value2": false
+            }
+          ]
+        }
+      },
+      "name": "Is Service Degraded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:8080/api/send-message",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "phone",
+              "value": "+919398848376"
+            },
+            {
+              "name": "message",
+              "value": "=🚨 *CRITICAL: OpusOS Infrastructure Alert*\n\nA service health probe reported degradation at {{new Date().toISOString()}}.\n\nHealth Status: {{$json.status}}\nDetails: {{$json.services}}\n\nPlease check status.opusoverseas.com or VPS services."
+            }
+          ]
+        }
+      },
+      "name": "Emergency Admin Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        980,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule 5-Min Health Ping": {
+      "main": [
+        [
+          {
+            "node": "OpusOS Health Probe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpusOS Health Probe": {
+      "main": [
+        [
+          {
+            "node": "Is Service Degraded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Service Degraded?": {
+      "main": [
+        [
+          {
+            "node": "Emergency Admin Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

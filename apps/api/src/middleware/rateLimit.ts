@@ -12,7 +12,7 @@
 
 import { getDb } from '../db/client.js';
 import { rateLimit as rateLimitTable } from '../db/schema.js';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 export interface RateLimitRule {
   bucket: string;
@@ -42,45 +42,59 @@ function hashKey(mat: string[]): string {
   return 'rl:' + h.toString(36);
 }
 
+/**
+ * Core counter: increments the sliding-window counter for (rule, identity) and
+ * returns { over, count }. Fail-open on infra errors (over=false).
+ * Used by the middleware below and by bounded audit writes (audit.ts).
+ */
+export async function isRateLimited(env: any, rule: RateLimitRule, identity: string): Promise<{ over: boolean; count: number }> {
+  if (!env?.DB) return { over: false, count: 0 };
+  const db = getDb(env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = Math.floor(now / rule.windowSeconds) * rule.windowSeconds;
+  const key = hashKey([rule.bucket, String(windowStart), identity]);
+  try {
+    // Upsert: insert 1, else increment count atomically (ON CONFLICT DO UPDATE).
+    await db.insert(rateLimitTable).values({ key, bucket: rule.bucket, windowStart, identity, count: 1 })
+      .onConflictDoUpdate({ target: rateLimitTable.key, set: { count: sql`${rateLimitTable.count} + 1` } })
+      .run();
+    const row = await db.select({ count: rateLimitTable.count }).from(rateLimitTable).where(eq(rateLimitTable.key, key)).get();
+    const count = Number(row?.count) || 1;
+    return { over: count > rule.limit, count };
+  } catch (e: any) {
+    // Fail-open on infra error — never block a user because a counter hiccupped.
+    console.error('rateLimit error', e?.message);
+    return { over: false, count: 0 };
+  }
+}
+
 /** Middleware factory: enforce a single rate-limit rule on this route. */
 export function rateLimit(rule: RateLimitRule) {
   return async (c: any, next: any) => {
     if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
 
-    const db = getDb(c.env.DB);
     const now = Math.floor(Date.now() / 1000);
     const windowStart = Math.floor(now / rule.windowSeconds) * rule.windowSeconds;
 
-    const authHdr = c.req.header('cookie') || '';
-    const userMatch = authHdr.match(/better-auth\.session_token=([^;]+)/);
+    // Identity for rate limiting: verified session user id (set by
+    // rbacMiddleware) OR the real client IP. NEVER a client-supplied cookie
+    // value — an attacker could mint unlimited fresh buckets by rotating it.
+    const sessionUser = (c.get('user') as any) || null;
     const ip = c.req.header('cf-connecting-ip') || 'anon';
-    const identity = userMatch ? (userMatch[1] || 'user') : ip;
+    const identity = sessionUser?.id ? `u:${sessionUser.id}` : `ip:${ip}`;
 
-    const key = hashKey([rule.bucket, String(windowStart), identity]);
+    const { over, count } = await isRateLimited(c.env, rule, identity);
 
-    try {
-      // Upsert: insert 1, else increment count atomically (ON CONFLICT DO UPDATE).
-      await db.insert(rateLimitTable).values({ key, bucket: rule.bucket, windowStart, identity, count: 1 })
-        .onConflictDoUpdate({ target: rateLimitTable.key, set: { count: sql`${rateLimitTable.count} + 1` } })
-        .run();
-
-      const row = await db.select({ count: rateLimitTable.count }).from(rateLimitTable).where(eq(rateLimitTable.key, key)).get();
-      const count = Number(row?.count) || 1;
-
-      if (count > rule.limit) {
-        const retryAfter = Math.max(1, windowStart + rule.windowSeconds - now);
-        c.header('Retry-After', String(retryAfter));
-        c.header('X-RateLimit-Limit', String(rule.limit));
-        c.header('X-RateLimit-Remaining', '0');
-        return c.json({ error: `Rate limit exceeded (${rule.bucket}). Try again in ${retryAfter}s.` }, 429);
-      }
-
+    if (over) {
+      const retryAfter = Math.max(1, windowStart + rule.windowSeconds - now);
+      c.header('Retry-After', String(retryAfter));
       c.header('X-RateLimit-Limit', String(rule.limit));
-      c.header('X-RateLimit-Remaining', String(Math.max(0, rule.limit - count)));
-    } catch (e: any) {
-      // Fail-open on infra error — never block a user because a counter hiccupped.
-      console.error('rateLimit error', e?.message);
+      c.header('X-RateLimit-Remaining', '0');
+      return c.json({ error: `Rate limit exceeded (${rule.bucket}). Try again in ${retryAfter}s.` }, 429);
     }
+
+    c.header('X-RateLimit-Limit', String(rule.limit));
+    c.header('X-RateLimit-Remaining', String(Math.max(0, rule.limit - count)));
 
     await next();
   };
@@ -89,4 +103,20 @@ export function rateLimit(rule: RateLimitRule) {
 /** Return all rules for a named group (router applies each). */
 export function rateLimitGroup(group: keyof typeof RULES): RateLimitRule[] {
   return RULES[group] || [];
+}
+
+/**
+ * Clear all counters for (bucket, identity) — used to reset the failed-login
+ * lockout counter on a successful sign-in. Fail-open.
+ */
+export async function clearRateLimit(env: any, bucket: string, identity: string): Promise<void> {
+  if (!env?.DB) return;
+  try {
+    const db = getDb(env.DB);
+    await db.delete(rateLimitTable)
+      .where(and(eq(rateLimitTable.bucket, bucket), eq(rateLimitTable.identity, identity)))
+      .run();
+  } catch (e: any) {
+    console.error('clearRateLimit error', e?.message);
+  }
 }

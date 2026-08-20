@@ -1,9 +1,11 @@
+import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
 import { clients, jobPostings, manpowerDeployments, membershipPlans, appSettings } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { isDivisionEnabled } from '../lib/divisions.js';
 import { manpowerFormSchema, missingManpowerSections } from '../validation/manpowerForm.js';
 
 // Client self-service Manpower surface (token = client.id).
@@ -76,13 +78,15 @@ function publicJob(j: any) {
 // GET /jobs — public jobs for everyone; secret jobs only for exclusive members
 portalManpowerRouter.get('/jobs', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  // Division availability (kill-switch): job board hidden when manpower is OFF.
+  if (!(await isDivisionEnabled(c.env, 'manpower'))) return c.json({ success: true, jobs: [] });
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
   try {
     const token = c.req.query('token');
     let member = false;
     if (token) {
-      const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+      const client = await resolveClientByToken(db, token);
       member = isMember(client, now);
     }
     const rows = await db.select().from(jobPostings)
@@ -103,7 +107,7 @@ portalManpowerRouter.get('/membership', async (c) => {
   const now = Math.floor(Date.now() / 1000);
   try {
     await seedMembershipPlans(db);
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     const plans = await db.select().from(membershipPlans).where(eq(membershipPlans.active, true)).all();
     plans.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
@@ -135,6 +139,10 @@ portalManpowerRouter.get('/membership', async (c) => {
 
 // POST /membership/order — create a Razorpay order for a membership plan
 portalManpowerRouter.post('/membership/order', async (c) => {
+  // Division availability: new membership purchase is intake — blocked when OFF.
+  if (!(await isDivisionEnabled(c.env, 'manpower'))) {
+    return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
+  }
   const body = await c.req.json().catch(() => ({})) as { token?: string; planKey?: string };
   const { token, planKey } = body;
   if (!token || !planKey) return c.json({ error: 'token and planKey are required' }, 400);
@@ -145,7 +153,7 @@ portalManpowerRouter.post('/membership/order', async (c) => {
   const db = getDb(c.env.DB);
   try {
     await seedMembershipPlans(db);
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     const plan = await db.select().from(membershipPlans).where(and(eq(membershipPlans.key, planKey), eq(membershipPlans.active, true))).get();
     if (!plan) return c.json({ error: 'Plan not found or inactive' }, 404);
@@ -174,6 +182,10 @@ portalManpowerRouter.post('/membership/order', async (c) => {
 
 // POST /membership/verify — verify Razorpay signature, then grant membership
 portalManpowerRouter.post('/membership/verify', async (c) => {
+  // Division availability: new membership purchase is intake — blocked when OFF.
+  if (!(await isDivisionEnabled(c.env, 'manpower'))) {
+    return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
+  }
   const body = await c.req.json().catch(() => ({})) as {
     token?: string; planKey?: string; razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string;
   };
@@ -190,7 +202,7 @@ portalManpowerRouter.post('/membership/verify', async (c) => {
     const ok = await verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature, secret);
     if (!ok) return c.json({ error: 'Signature mismatch — payment not confirmed' }, 403);
 
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     const plan = await db.select().from(membershipPlans).where(eq(membershipPlans.key, planKey)).get();
     if (!plan) return c.json({ error: 'Plan not found' }, 404);
@@ -205,7 +217,7 @@ portalManpowerRouter.post('/membership/verify', async (c) => {
       exclusivePlan: planKey,
       exclusiveSince: client.exclusiveSince || now,
       updatedAt: now,
-    }).where(eq(clients.id, token));
+    }).where(eq(clients.id, client.id));
 
     await auditEvent(c as any, {
       action: 'MEMBERSHIP_GRANTED', entityName: 'clients', entityId: token,
@@ -249,6 +261,10 @@ portalManpowerRouter.get('/applications', async (c) => {
 
 // POST /applications — apply to a public job (anyone) or a secret job (members only)
 portalManpowerRouter.post('/applications', async (c) => {
+  // Division availability: new job application is intake — blocked when OFF.
+  if (!(await isDivisionEnabled(c.env, 'manpower'))) {
+    return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
+  }
   const body = await c.req.json().catch(() => ({})) as {
     token?: string; jobId?: string; formJson?: unknown; resumeKey?: string | null;
   };
@@ -259,7 +275,7 @@ portalManpowerRouter.post('/applications', async (c) => {
   const now = Math.floor(Date.now() / 1000);
 
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
 
     const job = await db.select().from(jobPostings).where(eq(jobPostings.id, jobId)).get();

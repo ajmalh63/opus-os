@@ -24,7 +24,16 @@ import VisibilityHub from './components/VisibilityHub.js';
 import BookingsTab from './components/BookingsTab.js';
 import AgreementsTab from './components/AgreementsTab.js';
 import PublicHome from './pages/PublicHome.js';
-import PublicService from './pages/PublicService.js';
+import StudyAbroadPage from './pages/public/StudyAbroadPage.js';
+import VisaServicesPage from './pages/public/VisaServicesPage.js';
+import UmrahTravelPage from './pages/public/UmrahTravelPage.js';
+import AttestationPage from './pages/public/AttestationPage.js';
+import RecruitmentPage from './pages/public/RecruitmentPage.js';
+import ContactPage from './pages/public/ContactPage.js';
+import AboutUsPage from './pages/public/AboutUsPage.js';
+import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage.js';
+import TermsOfServicePage from './pages/public/TermsOfServicePage.js';
+import RefundPolicyPage from './pages/public/RefundPolicyPage.js';
 import Login from './pages/Login.js';
 import Signup from './pages/Signup.js';
 import DashboardHome from './pages/DashboardHome.js';
@@ -61,21 +70,16 @@ export default function App() {
         <Route path="/" component={PublicHome} />
         <Route path="/lead-form" component={PublicLeadForm} />
 
-        <Route path="/study-abroad">
-          {() => <PublicService params={{ division: 'study-abroad' }} />}
-        </Route>
-        <Route path="/visa-services">
-          {() => <PublicService params={{ division: 'visa-services' }} />}
-        </Route>
-        <Route path="/umrah-travel">
-          {() => <PublicService params={{ division: 'umrah-travel' }} />}
-        </Route>
-        <Route path="/attestation">
-          {() => <PublicService params={{ division: 'attestation' }} />}
-        </Route>
-        <Route path="/recruitment">
-          {() => <PublicService params={{ division: 'recruitment' }} />}
-        </Route>
+        <Route path="/study-abroad" component={StudyAbroadPage} />
+        <Route path="/visa-services" component={VisaServicesPage} />
+        <Route path="/umrah-travel" component={UmrahTravelPage} />
+        <Route path="/attestation" component={AttestationPage} />
+        <Route path="/recruitment" component={RecruitmentPage} />
+        <Route path="/contact" component={ContactPage} />
+        <Route path="/about" component={AboutUsPage} />
+        <Route path="/privacy" component={PrivacyPolicyPage} />
+        <Route path="/terms" component={TermsOfServicePage} />
+        <Route path="/refund-policy" component={RefundPolicyPage} />
 
         {/* Central auth gateway */}
         <Route path="/login" component={Login} />

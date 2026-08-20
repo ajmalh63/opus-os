@@ -47,4 +47,6 @@ export const EVENTS = {
   umrahView: 'umrah_departure_view',
   partnerRegister: 'partner_register',
   shareCopied: 'share_link_copied',
+  featureClick: 'feature_click',
+  calculatorUse: 'calculator_use',
 } as const;

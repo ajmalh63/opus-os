@@ -45,6 +45,7 @@ describe('Attestation Transit Courier Tracking Integration Tests', () => {
     // Seed mock client
     mockD1.tables.clients.push({
       id: "OP-2026-7001",
+      portal_token: "OP-2026-7001",
       name: "Attestation Client",
       phone: "+91 99999 66666",
       email: "attest@test.com",

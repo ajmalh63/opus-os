@@ -8,12 +8,6 @@ import { useStaffAlerts } from '../lib/useStaffAlerts';
 import { useTaskNotifications } from '../lib/useTaskNotifications';
 import { Panel, PanelHead, KpiTile, WorkButton, EmptyState } from '../components/WorkChrome';
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 interface Funnel {
   totalLeads: number;
@@ -97,14 +91,14 @@ export default function DashboardHome() {
 
   const { data: funnel } = useQuery<Funnel>({
     queryKey: ['dashFunnel'],
-    queryFn: async () => { const r = await fetch('/api/marketing/funnel', { headers: AUTH }); if (!r.ok) throw new Error('funnel'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/marketing/funnel', { credentials: 'include' }); if (!r.ok) throw new Error('funnel'); return r.json(); },
     enabled: canFunnel,
   });
 
   const { data: inbox } = useQuery<InboxSummary>({
     queryKey: ['dashInbox'],
     queryFn: async () => {
-      const r = await fetch('/api/inbox', { headers: AUTH });
+      const r = await fetch('/api/inbox', { credentials: 'include' });
       if (!r.ok) throw new Error('inbox');
       const j = await r.json();
       const convs = j.conversations || [];

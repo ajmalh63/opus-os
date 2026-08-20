@@ -36,5 +36,7 @@ goRouter.get('/:ref/:type/:id', async (c) => {
     } catch (e: any) { console.error('click tracking failed', e?.message); }
   }
 
-  return c.redirect(`${VALID[type]}${ref ? `?ref=${ref}` : ''}`, 302);
+  // Encode ref — raw interpolation could smuggle extra query params
+  const qs = ref ? `?${new URLSearchParams({ ref })}` : '';
+  return c.redirect(`${VALID[type]}${qs}`, 302);
 });

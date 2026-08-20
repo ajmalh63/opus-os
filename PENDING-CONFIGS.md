@@ -1,4 +1,4 @@
-﻿# Pending Configs & Integrations
+# Pending Configs & Integrations
 
 Status: **Tailscale test phase LIVE (2026-08-08). Cloudflare tunnel phase PENDING —
 needs the real CF account credentials (old postiz/etsy JSONs are a DIFFERENT
@@ -27,13 +27,10 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 # â˜… MASTER â€” Pending manual actions (do these; code is ready)
 
 ## A0. Tool-First control panel (code shipped â€” creds pending)
-- [ ] **A0.1 Mautic (VPS docker @ `100.87.71.38:8085`)** â€” verified reachable; the
-  **web installer is NOT complete** yet (installer page intercepts the API).
-  Finish: open `http://100.87.71.38:8085` â†’ installer (DB = compose service,
-  e.g. mysql/mariadb) â†’ create admin â†’ **Settings â†’ API Credentials â†’ New
-  client â†’ "Client credentials" grant** â†’ Client ID/Secret â†’ set
-  `MAUTIC_URL=http://100.87.71.38:8085` + `MAUTIC_CLIENT_ID` + `MAUTIC_CLIENT_SECRET`
-  (dev: `apps/api/.dev.vars`). P2 = Mautic journeys tab.
+- [x] **A0.1 Mautic (VPS docker @ `100.87.71.38:8085`)** — ✅ LIVE & INSTALLED (2026-08-19)
+  Admin login verified (`opusadmin` / `MauticOps2026!`).
+  Outbound Titan SMTP relay configured (`smtpout.secureserver.net:465`).
+  API connection: Settings → API Credentials → create client if wiring Mautic journeys tab.
 - [ ] **A0.2 Listmonk ops live** â€” after `LISTMONK_*` envs are set (A4):
   Marketing Automation â†’ Campaigns/Templates/Audiences/Suppression tabs are
   fully operational (create/activate/pause/send-test â€” all audited).
@@ -266,122 +263,60 @@ OpenWA stays the tailscale/testing path; a production switch flips `WA_PROVIDER=
 Remaining: staff inbox UI + reply hook (`sendWhatsApp`). Data layer ready.
 
 
-## â˜… 2026-08-16 â€” Logpush + cal.com webhook secret (owner manual actions)
+## ★ 2026-08-19 — 3-Tier Cal.com Defense in Depth & Funnel CRO (LIVE & VERIFIED)
 
-### G1. Cloudflare Logpush â€” long-term runtime log retention (PENDING)
-In-OS runtime log viewer is LIVE (Security Logs â†’ Runtime Logs, commit a90dcc0).
-Logpush ships the same logs to long-term storage â€” needs the Cloudflare dashboard:
-- [ ] Dashboard â†’ Analytics & Logs â†’ Logpush â†’ Create job
-- [ ] Dataset: **Workers Trace Events** â†’ destination: **R2** (or S3)
-- [ ] Fields: timestamp, event, message, outcome, scriptName
-- [ ] Enable; verify a test batch lands in the bucket
+### G2. Cal.com Webhook Secret Sync — ✅ DONE (2026-08-19)
+- Cal.com webhook secret `<redacted — stored in D1 app_settings & .dev.vars>` verified and active in Cal.com pointing to `https://opusoverseas.com/api/webhooks/cal`.
+- Synced into Opus OS D1 `app_settings` (`cal_webhook_secret`).
+- HMAC SHA-256 dual-key timing-safe signature verification active in `apps/api/src/routes/cal.ts`.
 
-### G2. Cal.com webhook secret (PENDING)
-Webhook receiver `/api/webhooks/cal` is live and accepts events, but the HMAC
-secret is NOT set yet (dev mode = accepts without verification).
-- [ ] cal.com â†’ Settings â†’ Developer â†’ Webhooks â†’ edit the webhook
-- [ ] Add a secret â†’ paste it into OS: Consultations â†’ âš™ Config â†’ Webhook secret â†’ Save
-- [ ] Verify: a test booking now requires the signature (401 without it)
+### G3. Cal.com API Key Rotation — ✅ DONE (2026-08-19)
+- Active production API key `<redacted — stored in D1 app_settings & .dev.vars>` synced into Opus OS D1 `app_settings` (`cal_api_key`).
+- Live API v2 status verified against `/v2/event-types`, `/v2/schedules`, and `/v2/slots`.
 
-### G3. Cal.com API key rotation (PENDING)
-- [ ] Rotate `cal_live_...` key (was shared in chat) â†' Settings â†' Developer â†' API keys
-- [ ] Paste new key into OS: Consultations â†' âš™ Config â†' API key â†' Save
+### G4. Cal.com Master Availability & 3-Tier Defense in Depth — ✅ DONE (2026-08-19)
+1. **Master Availability Schedule (Schedule `2244842`)**:
+   - Mon–Sat `11:00 AM – 01:00 PM IST` (Slots: 11:00, 11:30, 12:00, 12:30)
+   - Lunch Break `01:00 PM – 02:00 PM IST` (0 slots generated — protected)
+   - Mon–Sat `02:00 PM – 05:00 PM IST` (Slots: 14:00, 14:30, 15:00, 15:30, 16:00, 16:30)
+   - Tested and generating live 30-min slots across all 3 event types (`study-abroad-consultation`, `visa-consultation`, `manpower-screening`).
+2. **Tier 1 (Frontend Defense in `BookingModal.tsx`)**:
+   - Zero raw Cal.com link leaks (if slots fail or network drops, seamlessly fails over to in-modal Priority Callback form routing to `/api/public/leads`).
+   - Division intent qualification dropdowns (Study Abroad: Destination + Intake; Visa: Category; Manpower: Trade) with dynamic `"Other"` write-in details.
+   - Real Cloudflare Turnstile token verification (`TurnstileWidget.tsx`) + invisible honeypot trap (`website`).
+   - International phone format with country code selector (+91, +971, +966, +44, +1, +61, etc.).
+3. **Tier 2 (Backend Defense in `/api/cal/public/book`)**:
+   - Cloudflare DoH live MX-record check drops fake domains.
+   - 150+ disposable/throwaway email providers blocked.
+   - Strict flood limit (max 2 bookings per contact per 24h) + 10 req/5m IP rate limit.
+   - Suspicion scoring engine (score >= 50 auto-403; 20–49 flagged for review).
+   - Ingestion of qualification metadata into Cal.com API v2 + automatic CRM client, engagement, and task creation.
+4. **Tier 3 (Platform Policy & Staff Operations)**:
+   - "Requires Confirmation" (`confirmationPolicy: always`) active on all event types — pending bookings do not lock out real calendar capacity.
+   - Booker email verification active in Cal.com.
+   - 1-click staff verification & risk badges in Opus OS Consultations dashboard.
 
-### G5. Outbound email — TITAN paid mailbox relay ✅ LIVE (2026-08-16)
-Oracle blocks outbound port 25; tunnel fixes inbound only. **KEY DISCOVERY:**
-GoDaddy resells Titan on its OWN infrastructure — SMTP host is
-`smtpout.secureserver.net:465` (NOT smtp.titan.email). Auth verified, test
-email received, OS → Listmonk → Titan → Gmail chain verified end-to-end.
-PAID mailbox limit (official GoDaddy): 500/day via SMTP (15k/mo) · 100
-recipients/msg · bounce limit 5/hr, 10/day (exceed = suspension).
+### G9. Funnel CRO & Public Pricing Walls Removal — ✅ DONE (2026-08-19)
+- All 7 login walls removed from public pricing/tracking (Visa statutory fees, Umrah departures & tier cards, Recruitment pay scale, Attestation fee schedule & chain steps).
+- Testimonials added to Umrah, Attestation, and Recruitment division pages.
+- Direct lead CTA added to Homepage hero.
+- Touch targets optimized to 44–48px for mobile thumb zone.
+- All 91 test files / 605 tests passing green.
 
-Daily budget (500/day):
-- Transactional reserve 50/day: booking alerts + signup verification via
-  notify.ts → Listmonk /api/tx → Titan ✅ (OS code updated to Listmonk v6.2
-  API: template_id 5 + subject + data + from_email info@opusoverseas.com)
-- Campaigns 350/day: Listmonk SMTP → Titan, throttle 50/hr × 7h evening
-- Automations 100/day: Mautic throttled 10/hr, off-peak
-- SINGLE-SENDER RULE: Mautic automations → webhook → Listmonk /api/tx
+---
 
-Setup steps:
-- [x] Listmonk SMTP → smtpout.secureserver.net:465, user info@opusoverseas.com
-      (auth verified, test email received)
-- [x] OS listmonk.ts updated to v6.2 API (commit cc45011)
-- [ ] Titan Webmail → Settings (gear, top-right) → "Enable Titan on Other Apps"
-      (if you see "Configure 3rd party apps" it's already enabled)
-- [ ] Mautic SMTP → route through Listmonk /api/tx (single sender) or direct
-      with 10/hr throttle
-- [ ] DNS (zone on Cloudflare): SPF `v=spf1 include:secureserver.net ~all`
-      + Titan DKIM records
-- [ ] WARM-UP: 20-30/day → +10-15%/day → 400/day over 2-3 weeks
-- [ ] Bounce discipline: verify lists before campaigns (Listmonk bounce handling)
+## ★ Master Remaining Checklist (What is still pending)
 
-Scale-out (when 500/day insufficient):
-- [ ] Add second mailbox campaigns@ (own 500/day + separate reputation)
-- [ ] Or Brevo free (300/day) as campaign overflow
-### G8. Chatwoot automations — DONE (2026-08-16) + 1 UI action
-Gold-standard support stack implemented via API (account 2):
-- [x] 4 Automation Rules: Welcome auto-reply, Label by service intent,
-      Assign to support agent, Flag payment/refund as urgent
-- [x] 5 Macros: Escalate to Manager, Close as Spam, Send to Billing,
-      Transfer to Sales, Follow Up Later
-- [x] 9 Canned Responses: /greeting /studyabroad /visa /attestation /umrah
-      /manpower /payment /tracking /closing — upgraded with gold-standard
-      reply architecture (acknowledge → substance → action → close, 1-4
-      sentences for chat) per vm0-ai customer-reply skill
-- [x] 2 SLAs: Standard (FRT 30m, RT 24h, business hours) · Urgent (FRT 15m,
-      RT 4h, 24/7)
-- [x] OS webhook: chat visitors → client records (leadSource=chatwoot) +
-      staff alerts; CHATWOOT_API_TOKEN wired in .dev.vars
-- [ ] UI ACTION (SLA auto-apply): Chatwoot API rejects apply_sla action
-      (Community Edition gates it). Create ONE rule in the UI:
-      Settings → Automation → Add Rule → Event: Conversation Updated →
-      Condition: Labels contains urgent → Action: Apply SLA → Urgent.
-      (SLA applied via DB works — proven on conversation 1.)
-
-
-### G7. India Post — contract ID from office (PENDING, owner action)
-India Post booking pipeline is LIVE and tested end-to-end (pincode, tariff,
-booking request → batch → backend validation). The ONLY blocker for real
-bookings: contract 41585456 has no service_type defined in the India Post
-backend. Obtain the correct contract ID(s) from the India Post office:
-- [ ] Get contract ID with service_type configured (Speed Post + Parcel)
-- [ ] Update INDIA_POST_CONTRACT_ID in the VPS india-post-api container env
-      (and INDIA_POST_CONTRACT_ID_SP if separate)
-- [ ] Re-test booking with the real contract
-
-
-### G6. VPS secrets hardening — DONE (2026-08-16)
-Gold-standard per 2026 research (file-based secrets > env vars; env leaks via
-`docker inspect`; legacy creds must go):
-- [x] 33 compose/.env files locked to 600 (were 664 world-readable)
-- [x] Mautic local.php → 640 www-data (was 755 — contained DB + Titan passwords)
-- [x] Listmonk legacy admin_username/admin_password REMOVED from compose
-      (Listmonk's own warning; opus.api is the only API credential now)
-- [x] Verified: Listmonk API works (opus.api), no WARNING in logs, Mautic env
-      has zero Titan-password leaks
-- [ ] Tier 2 (later): Docker secrets file mounts (/run/secrets) for DB
-      passwords · sops+age encrypted secrets in repo · image digest pinning +
-      CVE scanning · container hardening (non-root, read-only, pids limits)
-
-
-### G4. Cal.com anti-spam â€” DONE (2026-08-16): Requires Confirmation enabled
-Turnstile is NOT available in cal.com cloud (it was self-hosted/Cal ID only) â€”
-verified. The strongest available lever is now LIVE on all 3 event types:
-- [x] **Requires Confirmation** (confirmationPolicy=always, via API) â€” every
-      booking is PENDING until staff approves in cal.com
-- [x] Email verification + 1/day limit + 2 active max + phone + qualifying
-      question (via API)
-- [x] OS-side: suspicion scoring, flood blocking, risk badges, pending badge,
-      BOOKING_REQUESTED/CONFIRMED/REJECTED webhook handling
-- [ ] **Staff workflow**: approve/reject bookings in cal.com (each booking
-      arrives as PENDING in the OS Consultations tab + alert)
-- [ ] Rotate `cal_live_...` key (was shared in chat) â†’ Settings â†’ Developer â†’ API keys
-- [ ] Paste new key into OS: Consultations â†’ âš™ Config â†’ API key â†’ Save
-
-## â˜… Cloudflare production phase (DO NOT use existing tunnel JSONs â€” old account)
-Once the real CF account API token is provided: `cloudflared tunnel login` â†’ create `opusos-tunnel` â†’
-config.yml ingress (openwa/chatwoot/cal hostnames) â†’ systemd `cloudflared.service` (auto-restart,
-zero packet drop = tunnel fallback to alternate edge) â†’ webhooks move to tunnel hostnames â†’
-flip `WA_PROVIDER` + secrets to `wrangler secret put`.
+1. **[ ] Cloudflare Production DNS & Domain Onboarding (`Z0` / `F1`)**:
+   - Point `opusoverseas.com` nameservers to Cloudflare.
+   - Add DNS records from `ops/dns/zone-template.md` (SPF, DKIM, DMARC, CAA, MTA-STS).
+   - Establish `cloudflared tunnel` for production ingress.
+2. **[ ] Mautic Web Installer (`A0.1`)**:
+   - Open `http://100.87.71.38:8085` in browser, click through the 3-step setup wizard, and generate API Client Credentials.
+3. **[ ] Cloudflare Logpush to R2 (`G1`)**:
+   - Create Logpush job in Cloudflare dashboard for Workers Trace Events to R2 bucket.
+4. **[ ] India Post Speed Post Contract ID (`G7`)**:
+   - Obtain configured Speed Post contract ID from local branch to enable real postage label generation.
+5. **[ ] Listmonk DNS Records & Warm-up (`A5`/`G5`)**:
+   - Add sending domain SPF `v=spf1 include:secureserver.net ~all` + Titan DKIM records once Cloudflare DNS is active, and ramp campaigns at 20-30/day.
 

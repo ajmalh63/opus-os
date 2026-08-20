@@ -15,7 +15,7 @@ describe('Guard contract (/api/automation/guard/check)', () => {
   beforeEach(() => {
     mockD1 = new MockD1Database();
     const now = Math.floor(Date.now() / 1000);
-    mockD1.tables.clients.push({ id: 'OP-2026-1001', name: 'Client One', phone: '+91 98765 12345', email: 'one@example.com', highest_qualification: 'undergrad', lead_source: 'website', intake_context: null, created_at: now, updated_at: now });
+    mockD1.tables.clients.push({ id: 'OP-2026-1001', portal_token: 'OP-2026-1001', name: 'Client One', phone: '+91 98765 12345', email: 'one@example.com', highest_qualification: 'undergrad', lead_source: 'website', intake_context: null, created_at: now, updated_at: now });
   });
 
   const env = () => ({ DB: mockD1, AUTOMATION_TOKEN: TOKEN });

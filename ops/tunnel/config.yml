@@ -1,0 +1,78 @@
+# Cloudflare Tunnel Configuration for Opus OS Infrastructure (opusos-tunnel)
+# Maps production subdomains under opusoverseas.com directly to local Docker ports.
+# Stalwart and Twenty CRM are excluded as they are not currently in active use.
+
+tunnel: opusos-tunnel
+credentials-file: /home/ubuntu/.cloudflared/opusos-tunnel.json
+
+ingress:
+  # 1. Chatwoot Live Support Desk
+  - hostname: chat.opusoverseas.com
+    service: http://localhost:3200
+    originRequest:
+      noTLSVerify: true
+
+  - hostname: chatwoot.opusoverseas.com
+    service: http://localhost:3200
+    originRequest:
+      noTLSVerify: true
+
+  # 2. Mautic Marketing Automation
+  - hostname: mautic.opusoverseas.com
+    service: http://localhost:8085
+    originRequest:
+      noTLSVerify: true
+
+  # 3. Listmonk Email Campaigns
+  - hostname: listmonk.opusoverseas.com
+    service: http://localhost:9009
+    originRequest:
+      noTLSVerify: true
+
+  - hostname: newsletter.opusoverseas.com
+    service: http://localhost:9009
+    originRequest:
+      noTLSVerify: true
+
+  # 4. OpenWA WhatsApp Gateway
+  - hostname: wa.opusoverseas.com
+    service: http://localhost:2785
+    originRequest:
+      noTLSVerify: true
+
+  # 5. Umami Privacy Analytics
+  - hostname: analytics.opusoverseas.com
+    service: http://localhost:3002
+    originRequest:
+      noTLSVerify: true
+
+  - hostname: umami.opusoverseas.com
+    service: http://localhost:3002
+    originRequest:
+      noTLSVerify: true
+
+  # 6. n8n Workflow Automation
+  - hostname: n8n.opusoverseas.com
+    service: http://localhost:5678
+    originRequest:
+      noTLSVerify: true
+
+  # 7. ERPNext Back-Office ERP
+  - hostname: erp.opusoverseas.com
+    service: http://localhost:8080
+    originRequest:
+      noTLSVerify: true
+
+  # 8. Uptime Kuma Status Monitor
+  - hostname: status.opusoverseas.com
+    service: http://localhost:3003
+    originRequest:
+      noTLSVerify: true
+
+  - hostname: kuma.opusoverseas.com
+    service: http://localhost:3003
+    originRequest:
+      noTLSVerify: true
+
+  # Catch-all fallback: 404
+  - service: http_status:404

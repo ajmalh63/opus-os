@@ -44,3 +44,10 @@ package-lock.json
 
 # Diagnostic screenshots
 probe-workspaces*.png
+
+# Service-account keys / local secrets dirs
+.secrets/
+
+# Deployment secrets (wrangler secret bulk input)
+apps/api/secrets.json
+*.secrets.json

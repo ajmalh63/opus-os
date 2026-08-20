@@ -60,13 +60,36 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'Operations',
     items: [
       { key: 'billing', label: 'Billing & GST', to: '/billing', icon: I.billing, roles: ALL, match: '/billing' },
-      { key: 'taxes', label: 'Taxes & Compliance', to: '/taxes', icon: I.compliance, roles: ['super_admin', 'manager'], match: '/taxes' },
       { key: 'analytics', label: 'Flow Analytics', to: '/analytics', icon: I.growth, roles: ['super_admin', 'manager'], match: '/analytics' },
       { key: 'visibility', label: 'Visibility Hub', to: '/visibility', icon: I.growth, roles: ['super_admin', 'manager'], match: '/visibility' },
       { key: 'bookings', label: 'Consultations', to: '/bookings', icon: I.calendar, roles: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], match: '/bookings' },
       { key: 'agreements', label: 'Agreements', to: '/agreements', icon: I.doc, roles: ['super_admin', 'manager', 'counselor'], match: '/agreements' },
+    ],
+  },
+  {
+    title: 'Marketing',
+    items: [
+      { key: 'funnel', label: 'Sales Funnel', to: '/workspaces/funnel', icon: I.funnel, roles: ['super_admin', 'manager'], match: '/workspaces/funnel' },
+      { key: 'marketing', label: 'Marketing', to: '/workspaces/marketing', icon: I.campaigns, roles: ['super_admin'], match: '/workspaces/marketing' },
+      { key: 'campaigns', label: 'Campaigns', to: '/workspaces/campaigns', icon: I.campaigns, roles: ['super_admin'], match: '/workspaces/campaigns' },
+      { key: 'growth', label: 'Leads & Growth', to: '/workspaces/growth', icon: I.growth, roles: ['super_admin', 'manager'], match: '/workspaces/growth' },
+    ],
+  },
+  {
+    title: 'Finance & Ops',
+    items: [
+      { key: 'compliance', label: 'Compliance', to: '/workspaces/compliance', icon: I.compliance, roles: ['super_admin', 'manager'], match: '/workspaces/compliance' },
+      { key: 'performance', label: 'Performance', to: '/workspaces/performance', icon: I.growth, roles: ['super_admin'], match: '/workspaces/performance' },
+      { key: 'growthmetrics', label: 'Growth Metrics', to: '/workspaces/growth', icon: I.growth, roles: ['super_admin'], match: '/workspaces/growth' },
+      { key: 'infra', label: 'Infra Health', to: '/workspaces/infra', icon: I.infra, roles: ['super_admin'], match: '/workspaces/infra' },
+    ],
+  },
+  {
+    title: 'Security & Program',
+    items: [
+      { key: 'audit', label: 'Security Logs', to: '/workspaces/audit', icon: I.audit, roles: ['super_admin'], match: '/workspaces/audit' },
+      { key: 'roles', label: 'Roles & Access', to: '/workspaces/roles', icon: I.roles, roles: ['super_admin'], match: '/workspaces/roles' },
       { key: 'control', label: 'Admin Desk', to: '/control', icon: I.admindesk, roles: ['super_admin'], match: '/control' },
-      { key: 'audit', label: 'Security Logs', to: '/audit', icon: I.audit, roles: ['super_admin'], match: '/audit' },
     ],
   },
 ];

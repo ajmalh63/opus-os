@@ -1,12 +1,16 @@
+import { newPortalToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { bookings, clients, engagements, tasks, communications, appSettings } from '../db/schema.js';
-import { eq, and, gte, lte, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, inArray } from 'drizzle-orm';
 import { createStaffAlert } from '../infra/staffAlerts.js';
 import { sendNotification } from '../infra/notify.js';
 import { notifications } from '../db/schema.js';
+import { auditBounded } from '../middleware/audit.js';
+import { calGetSlots, calCreateBooking } from '../lib/calApi.js';
+import { mauticSyncContact } from '../infra/mautic.js';
 
 // ============================================================
 // CAL.COM — consultation scheduling for the 3 consultation-led
@@ -38,7 +42,10 @@ async function getConfig(db: any) {
   let bookingLinks: Record<string, string> = {};
   try { if (get('cal_booking_links')) bookingLinks = JSON.parse(get('cal_booking_links')); } catch { /* ignore */ }
   return {
-    apiKey: get('cal_api_key'), webhookSecret: get('cal_webhook_secret'), eventMap, bookingLinks,
+    apiKey: get('cal_api_key'), webhookSecret: get('cal_webhook_secret'),
+    // Dual-key rotation: previous secret stays valid during the overlap window
+    // so a rotation never breaks webhook delivery (see cron/secretRotation.ts).
+    webhookSecretPrev: get('cal_webhook_secret_prev'), eventMap, bookingLinks,
     notifyEmail: get('cal_notify_email'), notifyWhatsapp: get('cal_notify_whatsapp'),
   };
 }
@@ -98,14 +105,27 @@ calWebhookRouter.post('/cal', async (c) => {
   const db = getDb(c.env.DB);
   const cfg = await getConfig(db);
 
-  // Secret verification (cal.com sends X-Cal-Signature-256 HMAC when configured)
+  // Secret verification (cal.com sends X-Cal-Signature-256 HMAC when configured).
+  // DUAL-KEY: accept the CURRENT secret or the PREVIOUS one (overlap window
+  // after rotation) — otherwise rotating the secret would break webhooks until
+  // cal.com's copy is updated.
   if (cfg.webhookSecret) {
     const sig = c.req.header('X-Cal-Signature-256') || '';
     const raw = await c.req.text();
     const cryptoObj = crypto as any;
-    const key = await cryptoObj.subtle.importKey('raw', new TextEncoder().encode(cfg.webhookSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    const mac = await cryptoObj.subtle.sign('HMAC', key, new TextEncoder().encode(raw));
-    const expected = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, '0')).join('');
+    const candidates = [cfg.webhookSecret, cfg.webhookSecretPrev].filter(Boolean);
+    let expected = '';
+    for (const secret of candidates) {
+      const key = await cryptoObj.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      const mac = await cryptoObj.subtle.sign('HMAC', key, new TextEncoder().encode(raw));
+      const hex = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, '0')).join('');
+      // timing-safe accumulate: if any candidate matches, expected = that hex
+      if (sig.length === hex.length) {
+        let diff = 0;
+        for (let i = 0; i < hex.length; i++) diff |= sig.charCodeAt(i) ^ hex.charCodeAt(i);
+        if (diff === 0) { expected = hex; break; }
+      }
+    }
     // Timing-safe comparison (Cloudflare gold standard): hash both to fixed size,
     // compare in constant time — never direct string equality on secrets.
     const [sigHash, expHash] = await Promise.all([
@@ -116,17 +136,33 @@ calWebhookRouter.post('/cal', async (c) => {
     const expBytes = new Uint8Array(expHash);
     let diff = sigBytes.length ^ expBytes.length;
     for (let i = 0; i < Math.min(sigBytes.length, expBytes.length); i++) diff |= sigBytes[i] ^ expBytes[i];
-    if (diff !== 0) return c.json({ error: 'Invalid signature' }, 401);
+    if (diff !== 0) {
+      await auditBounded(c, {
+        action: 'WEBHOOK_REJECTED',
+        entityName: 'webhooks',
+        entityId: 'cal',
+        result: 'error',
+        category: 'access',
+        actorType: 'service',
+        authMethod: 'hmac',
+        afterState: { source: 'cal' },
+      }, 'webhook');
+      return c.json({ error: 'Invalid signature' }, 401);
+    }
     const body = JSON.parse(raw);
     await handleEvent(c, db, cfg, body);
     return c.json({ success: true });
   }
 
-  // No secret configured yet — accept but log (dev mode; enable secret in cal.com)
-  const body = await c.req.json().catch(() => null);
-  if (!body) return c.json({ error: 'Bad payload' }, 400);
-  await handleEvent(c, db, cfg, body);
-  return c.json({ success: true });
+  // Fail-closed: without the webhook secret ANY caller could forge bookings,
+  // clients, tasks and staff alerts. Require it (set in Consultations → Cal.com
+  // Configuration → Webhook secret, matching the cal.com webhook settings).
+  await auditBounded(c, {
+    action: 'WEBHOOK_REJECTED', entityName: 'webhooks', entityId: 'cal',
+    result: 'denied', category: 'access', actorType: 'service', authMethod: 'none',
+    afterState: { source: 'cal', reason: 'secret_not_configured' },
+  }, 'webhook');
+  return c.json({ error: 'Webhook secret not configured — set cal_webhook_secret first' }, 503);
 });
 
 async function handleEvent(c: any, db: any, cfg: any, body: any) {
@@ -173,9 +209,10 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
         clientId = found.id;
         existingClient = true;
       } else if (email) {
-        const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`; // client ID is display-only, not security-sensitive
+        const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`; // display id
+        const portalToken = newPortalToken();
         await db.insert(clients).values({
-          id: cid, name: attendee?.name || 'Consultation lead', phone: phone || '0000000000',
+          id: cid, portalToken, name: attendee?.name || 'Consultation lead', phone: phone || '0000000000',
           email: email || 'pending@cal.com', leadSource: 'cal.com', primaryDivision: division,
           status: 'active', createdAt: now(), updatedAt: now(),
         });
@@ -303,11 +340,22 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
 // ============================================================
 // CONFIG (manager+)
 // ============================================================
+const CAL_CONFIG_KEYS = ['cal_api_key', 'cal_webhook_secret', 'cal_event_types', 'cal_booking_links', 'cal_notify_email', 'cal_notify_whatsapp'];
+
+const maskSecret = (s: string) => (s ? '••••••••' + s.slice(-4) : '');
+
+async function configUpdatedAt(db: any): Promise<number | null> {
+  const rows = await db.select({ updatedAt: appSettings.updatedAt }).from(appSettings).where(inArray(appSettings.key, CAL_CONFIG_KEYS)).all();
+  const ts = rows.map((r: any) => Number(r.updatedAt) || 0);
+  return ts.length ? Math.max(...ts) : null;
+}
+
 calRouter.get('/config', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   const cfg = await getConfig(db);
-  return c.json({ success: true, ...cfg, apiKey: cfg.apiKey ? '••••••••' + cfg.apiKey.slice(-4) : '' });
+  const updatedAt = await configUpdatedAt(db);
+  return c.json({ success: true, ...cfg, apiKey: maskSecret(cfg.apiKey), updatedAt });
 });
 
 const configSchema = z.object({
@@ -334,7 +382,23 @@ calRouter.post('/config', zValidator('json', configSchema), async (c) => {
   if (body.bookingLinks) await upsert('cal_booking_links', JSON.stringify(body.bookingLinks));
   if (body.notifyEmail) await upsert('cal_notify_email', body.notifyEmail);
   if (body.notifyWhatsapp) await upsert('cal_notify_whatsapp', body.notifyWhatsapp);
-  return c.json({ success: true, message: 'Cal.com config saved' });
+  // Server-authoritative confirmation: return exactly what is now stored
+  // (masked secrets + maps), so the UI can show the user a real saved summary.
+  const after = await getConfig(db);
+  const updatedAt = await configUpdatedAt(db);
+  return c.json({
+    success: true,
+    message: 'Cal.com config saved',
+    saved: {
+      apiKey: maskSecret(after.apiKey),
+      webhookSecret: maskSecret(after.webhookSecret),
+      eventTypes: after.eventMap,
+      bookingLinks: after.bookingLinks,
+      notifyEmail: after.notifyEmail,
+      notifyWhatsapp: after.notifyWhatsapp,
+    },
+    updatedAt,
+  });
 });
 
 // GET /api/cal/public/links — public booking links for the 3 consultation divisions
@@ -343,6 +407,226 @@ calPublicRouter.get('/links', async (c) => {
   const db = getDb(c.env.DB);
   const cfg = await getConfig(db);
   return c.json({ success: true, links: cfg.bookingLinks });
+});
+
+// ============================================================
+// PUBLIC BOOKING API (gold-standard anti-spam funnel)
+// ------------------------------------------------------------
+// The raw cal.com booking page is a spammer's dream: no bot gate, no rate
+// limit, no lead validation — they can book every slot. These endpoints keep
+// booking INSIDE the OS where Turnstile + rate limits + suspicion scoring +
+// flood limits apply BEFORE a slot is locked. When no cal.com API key is
+// configured they degrade gracefully (503 no_api_key) and the FE falls back
+// to the direct cal.com link.
+// ============================================================
+
+// GET /api/cal/public/slots?division=study-abroad&start=...&end=...&timeZone=...
+calPublicRouter.get('/slots', zValidator('query', z.object({
+  division: z.enum(['study-abroad', 'visa', 'manpower']),
+  start: z.string().min(1),
+  end: z.string().min(1),
+  timeZone: z.string().min(1).max(64).default('Asia/Kolkata'),
+})), async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const cfg = await getConfig(db);
+  const q = c.req.valid('query');
+  const eventTypeId = cfg.eventMap[q.division];
+  if (!eventTypeId) {
+    return c.json({ success: false, reason: 'no_event_type', message: 'No cal.com event type configured for this division yet' }, 503);
+  }
+  const res = await calGetSlots(cfg.apiKey, eventTypeId, q.start, q.end, q.timeZone);
+  if (!res.ok) {
+    return c.json({ success: false, reason: res.reason, message: res.message }, res.reason === 'no_api_key' ? 503 : 502);
+  }
+  return c.json({ success: true, slots: res.slots });
+});
+
+// POST /api/cal/public/book — server-side booking creation.
+// Gates (in order): honeypot → Turnstile (middleware) → rate limit (middleware)
+// → zod validation → suspicion score → flood limit → cal.com API.
+calPublicRouter.post('/book', zValidator('json', z.object({
+  division: z.enum(['study-abroad', 'visa', 'manpower']),
+  start: z.string().min(1), // ISO-8601 UTC
+  name: z.string().min(2).max(120),
+  email: z.string().email().max(200),
+  phone: z.string().regex(/^[0-9+\- ]{7,20}$/).optional().or(z.literal('')),
+  timeZone: z.string().min(1).max(64).default('Asia/Kolkata'),
+  // Qualification intent fields (with 'Other' write-in support)
+  destination: z.string().max(120).optional(),
+  intake: z.string().max(120).optional(),
+  visaCategory: z.string().max(120).optional(),
+  trade: z.string().max(120).optional(),
+  customDetail: z.string().max(300).optional(),
+  // Honeypot: hidden field bots fill; humans never see it. Silently accept.
+  website: z.string().max(500).optional(),
+})), async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const body = c.req.valid('json');
+
+  // 1. Honeypot — bots that fill the hidden field get a fake success.
+  if (body.website) {
+    await auditBounded(c, { action: 'BOT_TRAPPED', entityName: 'bookings', entityId: 'honeypot', result: 'denied', category: 'access', actorType: 'public', authMethod: 'none', afterState: { source: 'cal-book-honeypot' } }, 'webhook');
+    return c.json({ success: true, booking: { uid: 'trapped', status: 'scheduled' } });
+  }
+
+  const cfg = await getConfig(db);
+  const eventTypeId = cfg.eventMap[body.division];
+  if (!eventTypeId) {
+    return c.json({ success: false, reason: 'no_event_type', message: 'No cal.com event type configured for this division yet' }, 503);
+  }
+
+  // 2. Suspicion scoring (disposable email / MX check / no phone / suspicious name / new contact).
+  const startTs = Math.floor(new Date(body.start).getTime() / 1000);
+  if (!Number.isFinite(startTs) || startTs < Math.floor(Date.now() / 1000) - 3600) {
+    return c.json({ success: false, reason: 'invalid_slot', message: 'Invalid booking time' }, 400);
+  }
+  const existingClient = !!(await db.select().from(clients).where(eq(clients.email, body.email.toLowerCase())).get());
+  const { score, flags } = await scoreBooking(
+    { email: body.email, name: body.name, phone: body.phone || '' },
+    existingClient, startTs,
+  );
+  if (score >= 50) {
+    await auditBounded(c, { action: 'BOOKING_REJECTED', entityName: 'bookings', entityId: 'score', result: 'denied', category: 'access', actorType: 'public', authMethod: 'secret', afterState: { division: body.division, score, flags } }, 'webhook');
+    return c.json({ success: false, reason: 'suspicious', message: 'We could not verify your details. Please contact us directly to book.' }, 403);
+  }
+
+  // 3. Flood limit: max 2 bookings per email/phone per day (strict anti-flood).
+  const dayAgo = now() - 86400;
+  const recent = await db.select().from(bookings).where(gte(bookings.createdAt, dayAgo)).all();
+  const sameContact = recent.filter((b: any) =>
+    (body.email && b.attendeeEmail === body.email.toLowerCase()) ||
+    (body.phone && b.attendeePhone === body.phone));
+  if (sameContact.length >= 2) {
+    await createStaffAlert(c.env, {
+      division: body.division, type: 'cal_flood', title: `🚫 Booking flood blocked: ${body.email}`,
+      body: `${sameContact.length} bookings in 24h — rate limit hit via public API.`,
+      severity: 'urgent', link: '/bookings',
+    });
+    return c.json({ success: false, reason: 'flood_limit', message: 'A consultation is already registered for this contact. Our counselor will contact you shortly.' }, 429);
+  }
+
+  // 4. Qualification summary for CRM Context
+  const intentSummary = [
+    body.destination ? `Destination: ${body.destination}` : null,
+    body.intake ? `Intake: ${body.intake}` : null,
+    body.visaCategory ? `Visa: ${body.visaCategory}` : null,
+    body.trade ? `Trade: ${body.trade}` : null,
+    body.customDetail ? `Details: ${body.customDetail}` : null,
+  ].filter(Boolean).join(' | ');
+
+  // 5. Create the booking server-side via cal.com API v2.
+  const res = await calCreateBooking(cfg.apiKey, {
+    eventTypeId,
+    start: body.start,
+    attendee: {
+      name: body.name,
+      email: body.email.toLowerCase(),
+      timeZone: body.timeZone,
+      phoneNumber: body.phone || undefined,
+    },
+    metadata: {
+      source: 'opusos-public-api',
+      division: body.division,
+      riskScore: score,
+      qualification: intentSummary || undefined,
+      destination: body.destination,
+      intake: body.intake,
+      visaCategory: body.visaCategory,
+      trade: body.trade,
+      customDetail: body.customDetail,
+    },
+  });
+  if (!res.ok) {
+    return c.json({ success: false, reason: res.reason, message: res.message }, res.reason === 'no_api_key' ? 503 : 502);
+  }
+
+  // 6. Upsert CRM Client & Engagement immediately
+  let clientId: string | null = null;
+  const existing = await db.select().from(clients).where(eq(clients.email, body.email.toLowerCase())).get()
+    || (body.phone ? await db.select().from(clients).where(eq(clients.phone, body.phone)).get() : null);
+  if (existing) {
+    clientId = existing.id;
+  } else {
+    const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+    const portalToken = newPortalToken();
+    await db.insert(clients).values({
+      id: cid,
+      portalToken,
+      name: body.name,
+      phone: body.phone || '0000000000',
+      email: body.email.toLowerCase(),
+      leadSource: 'cal.com-public-api',
+      primaryDivision: body.division,
+      status: 'active',
+      createdAt: now(),
+      updatedAt: now(),
+    });
+    clientId = cid;
+  }
+
+  // 7. Create Task & Local Booking Row
+  const taskId = uid();
+  await db.insert(tasks).values({
+    id: taskId,
+    clientId,
+    title: `Consultation: ${body.division} with ${body.name}`,
+    description: `${body.name} · ${new Date(startTs * 1000).toLocaleString('en-IN')}${intentSummary ? ` · ${intentSummary}` : ''} · ${body.email} · ${body.phone || 'No phone'}`,
+    priority: score >= 20 ? 'high' : 'medium',
+    status: 'open',
+    dueDate: startTs,
+    createdAt: now(),
+    updatedAt: now(),
+  });
+
+  const endTs = res.end ? Math.floor(new Date(res.end).getTime() / 1000) : startTs + 1800;
+  const bookingId = uid();
+  await db.insert(bookings).values({
+    id: bookingId,
+    calUid: res.uid || bookingId,
+    eventTypeId,
+    division: body.division,
+    title: `${body.division} consultation`,
+    startTime: startTs,
+    endTime: endTs,
+    attendeeName: body.name,
+    attendeeEmail: body.email.toLowerCase(),
+    attendeePhone: body.phone || null,
+    status: res.status === 'pending' ? 'pending' : 'scheduled',
+    riskScore: score,
+    riskFlags: JSON.stringify(flags),
+    clientId,
+    taskId,
+    createdAt: now(),
+    updatedAt: now(),
+  });
+
+  await auditBounded(c, {
+    action: 'BOOKING_CREATED',
+    entityName: 'bookings',
+    entityId: bookingId,
+    result: 'success',
+    category: 'business',
+    actorType: 'public',
+    authMethod: 'secret',
+    afterState: { division: body.division, start: body.start, score, flags, qualification: intentSummary },
+  }, 'webhook');
+
+  // Sync to Mautic (Async / Fail-Open): Consultation bookings award 50 points -> Hot Tier VIP Journey
+  mauticSyncContact(c.env as any, {
+    email: body.email,
+    firstname: body.name,
+    phone: body.phone || undefined,
+    points: 50,
+    division: body.division,
+    tags: [body.division, 'consultation-booked', 'hot'],
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    booking: { id: bookingId, uid: res.uid, start: res.start, end: res.end, status: res.status || 'scheduled' },
+  });
 });
 
 // POST /api/cal/bookings/:id/verify — staff marks a booking as verified genuine

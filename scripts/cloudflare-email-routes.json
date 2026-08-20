@@ -1,0 +1,92 @@
+{
+  "domain": "opusoverseas.com",
+  "zoneId": "91c27022dc204b8aa30cb19c08fe3173",
+  "destination": "info@opusoverseas.com",
+  "rules": [
+    {
+      "name": "Customer Support & Invoices",
+      "address": "support@opusoverseas.com",
+      "description": "GST Tax Invoices, Shipping Policy, Customer Desk"
+    },
+    {
+      "name": "General Inquiries & Footer Desk",
+      "address": "hello@opusoverseas.com",
+      "description": "Site Footer, Homepage Header, Public Services Desk"
+    },
+    {
+      "name": "Official Contact & HQ Desk",
+      "address": "contact@opusoverseas.com",
+      "description": "Contact Page (/contact), Structured Schema, Headquarters Desk"
+    },
+    {
+      "name": "Study Abroad Division",
+      "address": "admissions@opusoverseas.com",
+      "description": "Study Abroad Application Desk (/study-abroad)"
+    },
+    {
+      "name": "Visa Services Division",
+      "address": "visas@opusoverseas.com",
+      "description": "Consular & Visa Assistance Desk (/visa-services)"
+    },
+    {
+      "name": "Umrah Travel Division",
+      "address": "umrah@opusoverseas.com",
+      "description": "Umrah & Hajj Services Desk (/umrah-travel)"
+    },
+    {
+      "name": "Document Attestation Division",
+      "address": "attestation@opusoverseas.com",
+      "description": "Certificate Attestation & MEA Chain (/attestation)"
+    },
+    {
+      "name": "Billing & Refund Desk",
+      "address": "billing@opusoverseas.com",
+      "description": "Refund Policy (/refund-policy), Payment Disputes"
+    },
+    {
+      "name": "Privacy & DPDP Officer",
+      "address": "privacy@opusoverseas.com",
+      "description": "Privacy Policy (/privacy), DPDP Grievance Officer"
+    },
+    {
+      "name": "Legal & Compliance Desk",
+      "address": "legal@opusoverseas.com",
+      "description": "Terms of Service (/terms), Statutory Legal Notices"
+    },
+    {
+      "name": "Logistics & Courier Desk",
+      "address": "logistics@opusoverseas.com",
+      "description": "Shipping Policy (/shipping), Courier & AWB Dispatch"
+    },
+    {
+      "name": "Operations & Booking Desk",
+      "address": "ops@opusoverseas.com",
+      "description": "Operational Desk, Cal.com & ERPNext Notifications"
+    },
+    {
+      "name": "Owner & Executive Alerts",
+      "address": "owner@opusoverseas.com",
+      "description": "Executive Admin Bootstrap & Owner Alerts"
+    },
+    {
+      "name": "System Admin Notifications",
+      "address": "admin@opusoverseas.com",
+      "description": "System Administration, Listmonk Transactional"
+    },
+    {
+      "name": "No-Reply Transactional Sender",
+      "address": "no-reply@opusoverseas.com",
+      "description": "Automated System Notifications & OTP Alerts"
+    },
+    {
+      "name": "DMARC Authentication Reports",
+      "address": "dmarc@opusoverseas.com",
+      "description": "DMARC SPF/DKIM Authentication Reports (rua)"
+    }
+  ],
+  "catchAll": {
+    "enabled": true,
+    "forwardTo": "info@opusoverseas.com"
+  },
+  "updatedAt": "2026-08-19T15:27:50.378Z"
+}

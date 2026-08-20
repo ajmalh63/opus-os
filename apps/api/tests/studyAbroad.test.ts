@@ -32,6 +32,7 @@ describe('Study Abroad Counseling & Shortlisting Workflow Tests', () => {
     // Seed mock client
     mockD1.tables.clients.push({
       id: "OP-2026-1001",
+      portal_token: "OP-2026-1001",
       name: "Aditya Roy",
       phone: "+91 98765 43210",
       email: "aditya.roy@example.com",

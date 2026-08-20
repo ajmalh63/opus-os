@@ -1,50 +1,37 @@
-# Zone Template — copy-paste records (placeholders: <DOMAIN>, <VPS_PUBLIC_IP>)
-# Paired with DOMAIN-ONBOARDING-PLAYBOOK.md — proxy column: P=proxied, D=DNS-only.
+# Zone Template — Opus Overseas Production DNS Records (`opusoverseas.com`)
+# Paired with DOMAIN-ONBOARDING-PLAYBOOK.md & ops/tunnel/config.yml
+# Proxy column: P = Proxied (Orange cloud), D = DNS-only (Grey cloud).
 
-## A — web (proxied)
-| Name | Type | Content | Proxy |
-|---|---|---|---|
-| @ | A | (CF Pages/Workers or <VPS_PUBLIC_IP>) | P |
-| www | CNAME | <DOMAIN> | P |
-| app | CNAME | <DOMAIN> | P |
-| api | CNAME | <DOMAIN> | P |
+## 1. Core Web & API (Cloudflare Pages & Workers)
+| Name | Type | Content | Proxy | Purpose |
+|---|---|---|---|---|
+| `@` | A | Cloudflare IP / Pages | P | Main Website (`opusoverseas.com`) |
+| `www` | CNAME | `opusoverseas.com` | P | WWW redirect to apex |
+| `app` | CNAME | `opusoverseas.com` | P | Client / Staff Portal SPA |
+| `api` | CNAME | `opusoverseas.com` | P | Cloudflare Worker Hono API |
 
-## A — mail (DNS-only; MX target + PTR must match)
-| Name | Type | Content | Proxy |
-|---|---|---|---|
-| mail | A | <VPS_PUBLIC_IP> | D |
-| imap | CNAME | mail.<DOMAIN> | D |
-| smtp | CNAME | mail.<DOMAIN> | D |
+## 2. Active Microservices (Cloudflare Tunnel: `opusos-tunnel`)
+| Name | Type | Content | Proxy | Target Service & Port |
+|---|---|---|---|---|
+| `chat` | CNAME | `<TUNNEL_ID>.cfargotunnel.com` | P | Chatwoot Support Desk (`:3200`) |
+| `mautic` | CNAME | `<TUNNEL_ID>.cfargotunnel.com` | P | Mautic Marketing (`:8085`) |
+| `newsletter` | CNAME | `<TUNNEL_ID>.cfargotunnel.com` | P | Listmonk Campaigns (`:9009`) |
+| `wa` | CNAME | `<TUNNEL_ID>.cfargotunnel.com` | P | OpenWA Gateway (`:2785`) |
+| `analytics` | CNAME | `<TUNNEL_ID>.cfargotunnel.com` | P | Umami Analytics (`:3002`) |
+| `status` | CNAME | `<TUNNEL_ID>.cfargotunnel.com` | P | Uptime Kuma Monitor (`:3003`) |
+| `n8n` | CNAME | `<TUNNEL_ID>.cfargotunnel.com` | P | n8n Automation Spine (`:5678`) |
+| `erp` | CNAME | `<TUNNEL_ID>.cfargotunnel.com` | P | ERPNext Back-Office (`:8080`) |
 
-## A — VPS tool subdomains (DNS-only; exposed ONLY via Cloudflare Tunnel)
-| Name | Type | Content | Proxy |
-|---|---|---|---|
-| mautic | A | <VPS_PUBLIC_IP> | D |
-| listmonk | A | <VPS_PUBLIC_IP> | D |
-| chatwoot | A | <VPS_PUBLIC_IP> | D |
-| umami | A | <VPS_PUBLIC_IP> | D |
-| kuma | A | <VPS_PUBLIC_IP> | D |
-| n8n | A | <VPS_PUBLIC_IP> | D |
-
-## MX
-| Name | Priority | Host |
+## 3. Email Authentication (Titan Relay via `smtpout.secureserver.net`)
+| Name | Type | Content |
 |---|---|---|
-| @ | 10 | mail.<DOMAIN>. |
+| `@` | TXT | `v=spf1 include:secureserver.net ~all` |
+| `default._domainkey` | TXT | `v=DKIM1; k=rsa; p=<TITAN_DKIM_PUBLIC_KEY>` |
+| `_dmarc` | TXT | `v=DMARC1; p=none; rua=mailto:dmarc@opusoverseas.com; fo=1` |
+| `_mta-sts` | TXT | `v=STSv1; id=20260819` |
 
-## TXT — email authentication (ONE SPF; selectors per sender)
-| Name | Value |
-|---|---|
-| @ | `v=spf1 mx include:senders.smtp2go.com ~all` |
-| mail._domainkey | `v=DKIM1; k=rsa; p=<STALWART_PUBLIC_KEY>` |
-| default._domainkey | `v=DKIM1; k=rsa; p=<LISTMONK_PUBLIC_KEY>` |
-| mautic._domainkey | `v=DKIM1; k=rsa; p=<MAUTIC_PUBLIC_KEY>` (if signing) |
-| _dmarc | `v=DMARC1; p=none; rua=mailto:dmarc@<DOMAIN>; fo=1` → quarantine → reject |
-| _mta-sts | `v=STSv1; id=20260801` |
-
-## TXT — security
-| Name | Value |
-|---|---|
-| @ CAA | `0 issue "letsencrypt.org"` |
-
-## PTR (set at Oracle, not CF)
-`<VPS_PUBLIC_IP>` reverse → `mail.<DOMAIN>`
+## 4. Security & Certificates
+| Name | Type | Content |
+|---|---|---|
+| `@` | CAA | `0 issue "letsencrypt.org"` |
+| `@` | CAA | `0 issue "comodoca.com"` |

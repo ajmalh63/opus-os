@@ -4,6 +4,7 @@ import { clients, partners, referrals, commissionLedger } from '../db/schema.js'
 import { eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { getAuth } from '../auth.js';
+import { auditEvent } from '../middleware/audit.js';
 
 export const partnerRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
 
@@ -123,7 +124,7 @@ partnerRouter.post('/', async (c) => {
       try {
         const auth = getAuth(c.env);
         await auth.api.signUpEmail({
-          body: { name: body.name, email: accountEmail, password: String(body.password), role: 'counselor', userDivisions: '[]' },
+          body: { name: body.name, email: accountEmail, password: String(body.password), role: 'partner', userDivisions: '[]' },
         });
         accountCreated = true;
       } catch (signupErr: any) {
@@ -173,6 +174,8 @@ partnerRouter.post('/', async (c) => {
       createdAt: Math.floor(Date.now() / 1000)
     });
 
+    await auditEvent(c, { action: 'PARTNER_REGISTERED', entityName: 'partners', entityId: partnerId, afterState: { name: body.name, email: accountEmail, maskedPan, accountCreated } });
+
     return c.json({
       success: true,
       partnerId,
@@ -186,7 +189,7 @@ partnerRouter.post('/', async (c) => {
     });
 
   } catch (error: any) {
-    return c.json({ error: "Partner registration failed", details: error.message }, 500);
+    return c.json({ error: "Partner registration failed",  }, 500);
   }
 });
 
@@ -218,13 +221,18 @@ partnerRouter.post('/referrals', async (c) => {
       id: referralId,
       partnerId: body.partnerId,
       clientId: body.clientId,
-      commissionRate: body.commissionRate || 5, // Default 5%
+      // SECURITY: commission rate is a server-side business constant — never
+      // accept it from the request body (a partner could set 99% and siphon
+      // nearly all realized revenue on agreement sign).
+      commissionRate: 5, // Default 5%
       createdAt: Math.floor(Date.now() / 1000)
     });
 
+    await auditEvent(c, { action: 'REFERRAL_LOGGED', entityName: 'referrals', entityId: referralId, actorType: 'partner', authMethod: 'partner_token', afterState: { partnerId: body.partnerId, clientId: body.clientId, commissionRate: body.commissionRate || 5 } });
+
     return c.json({ success: true, referralId, message: "Referral logged successfully." });
   } catch (error: any) {
-    return c.json({ error: "Referral processing failed", details: error.message }, 500);
+    return c.json({ error: "Referral processing failed",  }, 500);
   }
 });
 
@@ -259,7 +267,7 @@ partnerRouter.get('/session', async (c) => {
     const summary = await buildPartnerSummary(db, partner.id);
     return c.json({ success: true, authenticated: true, email: user.email, ...summary });
   } catch (error: any) {
-    return c.json({ error: "Partner session failed", details: error.message }, 500);
+    return c.json({ error: "Partner session failed",  }, 500);
   }
 });
 
@@ -289,7 +297,7 @@ partnerRouter.get('/:id/commissions', async (c) => {
 
     return c.json({ commissions: list });
   } catch (error: any) {
-    return c.json({ error: "Failed to fetch commissions", details: error.message }, 500);
+    return c.json({ error: "Failed to fetch commissions",  }, 500);
   }
 });
 
@@ -311,6 +319,6 @@ partnerRouter.get('/:id/summary', async (c) => {
 
     return c.json(summary);
   } catch (error: any) {
-    return c.json({ error: "Partner summary failed", details: error.message }, 500);
+    return c.json({ error: "Partner summary failed",  }, 500);
   }
 });

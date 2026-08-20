@@ -1,7 +1,7 @@
 // Visual background movement animation for Opus OS
 import { useEffect, useRef } from 'react';
 
-export default function LiveWallpaper() {
+export default function LiveWallpaper({ className = '' }: { className?: string } = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -148,7 +148,7 @@ export default function LiveWallpaper() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 pointer-events-none"
+      className={`absolute inset-0 pointer-events-none ${className}`}
       aria-hidden="true"
     />
   );

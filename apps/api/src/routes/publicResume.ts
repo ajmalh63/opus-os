@@ -1,3 +1,4 @@
+import { auditEvent } from '../middleware/audit.js';
 import { Hono } from 'hono';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { guardUpload } from '../infra/uploadGuard.js';
@@ -43,6 +44,6 @@ publicResumeRouter.post('/', async (c) => {
     await createStaffAlert(c.env as any, { division: 'manpower', type: 'resume_upload', title: 'Resume uploaded', body: token ? `Client ${token} uploaded a resume` : 'Public resume uploaded', clientId: token || null, payload: { resumeKey: key } });
     return c.json({ success: true, resumeKey: key, mimeType, size: bytes.byteLength, message: 'Resume uploaded. Include this key in your application.' });
   } catch (error: any) {
-    return c.json({ error: 'Resume upload failed', details: error.message }, 500);
+    return c.json({ error: 'Resume upload failed',  }, 500);
   }
 });

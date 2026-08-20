@@ -6,12 +6,6 @@ import { useRevealRoot } from '../lib/reveal';
 //  Partners (registry + approve/block) · Tiers (ladder editor) ·
 //  Commissions (per inventory type/item/partner rates) · Analytics (progress).
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 interface PartnerRow { id: string; name: string; panNumber: string; status: string; referralCode: string | null; }
 interface AnalyticsRow {
@@ -35,27 +29,27 @@ export default function PartnerAdminPanel() {
 
   const { data: registry } = useQuery<{ partners: PartnerRow[] }>({
     queryKey: ['adminPartners'],
-    queryFn: async () => { const r = await fetch('/api/admin/partners', { headers: AUTH }); if (!r.ok) throw new Error('registry'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/admin/partners', { credentials: 'include' }); if (!r.ok) throw new Error('registry'); return r.json(); },
   });
 
   const { data: analytics } = useQuery<{ analytics: AnalyticsRow[] }>({
     queryKey: ['adminPartnerAnalytics'],
-    queryFn: async () => { const r = await fetch('/api/admin/partners/analytics', { headers: AUTH }); if (!r.ok) throw new Error('analytics'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/admin/partners/analytics', { credentials: 'include' }); if (!r.ok) throw new Error('analytics'); return r.json(); },
   });
 
   const { data: tiers } = useQuery<{ tiers: TierRow[] }>({
     queryKey: ['adminPartnerTiers'],
-    queryFn: async () => { const r = await fetch('/api/admin/partners/tiers', { headers: AUTH }); if (!r.ok) throw new Error('tiers'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/admin/partners/tiers', { credentials: 'include' }); if (!r.ok) throw new Error('tiers'); return r.json(); },
   });
 
   const { data: plans } = useQuery<{ plans: PlanRow[]; partners: { id: string; name: string }[] }>({
     queryKey: ['adminCommissionPlans'],
-    queryFn: async () => { const r = await fetch('/api/admin/partners/plans', { headers: AUTH }); if (!r.ok) throw new Error('plans'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/admin/partners/plans', { credentials: 'include' }); if (!r.ok) throw new Error('plans'); return r.json(); },
   });
 
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const r = await fetch(`/api/admin/partners/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ status }) });
+      const r = await fetch(`/api/admin/partners/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ status }) });
       if (!r.ok) throw new Error('status');
       return r.json();
     },
@@ -66,7 +60,7 @@ export default function PartnerAdminPanel() {
   const [tierForm, setTierForm] = useState({ id: '', key: '', name: '', minPoints: 0, commissionBoostPct: 0, perksJson: '[]', color: '#d7a019', order: 1 });
   const saveTier = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/admin/partners/tiers', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify(tierForm) });
+      const r = await fetch('/api/admin/partners/tiers', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(tierForm) });
       if (!r.ok) throw new Error('tier');
       return r.json();
     },
@@ -78,7 +72,7 @@ export default function PartnerAdminPanel() {
   const [planForm, setPlanForm] = useState({ partnerId: '', catalogType: '*', catalogItemId: '', ratePct: 5 });
   const savePlan = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/admin/partners/plans', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ ...planForm, partnerId: planForm.partnerId || null, catalogItemId: planForm.catalogItemId || null }) });
+      const r = await fetch('/api/admin/partners/plans', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ ...planForm, partnerId: planForm.partnerId || null, catalogItemId: planForm.catalogItemId || null }) });
       if (!r.ok) throw new Error('plan');
       return r.json();
     },
@@ -86,18 +80,18 @@ export default function PartnerAdminPanel() {
     onError: (e: any) => flash((e as Error).message),
   });
   const delPlan = useMutation({
-    mutationFn: async (id: string) => { const r = await fetch(`/api/admin/partners/plans/${id}`, { method: 'DELETE', headers: AUTH }); if (!r.ok) throw new Error('del'); return r.json(); },
+    mutationFn: async (id: string) => { const r = await fetch(`/api/admin/partners/plans/${id}`, { method: 'DELETE', }); if (!r.ok) throw new Error('del'); return r.json(); },
     onSuccess: () => { flash('Plan removed'); queryClient.invalidateQueries({ queryKey: ['adminCommissionPlans'] }); },
   });
 
   const { data: payouts } = useQuery<{ payouts: PayoutRow[] }>({
     queryKey: ['adminPartnerPayouts'],
-    queryFn: async () => { const r = await fetch('/api/admin/partners/payouts', { headers: AUTH }); if (!r.ok) throw new Error('payouts'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/admin/partners/payouts', { credentials: 'include' }); if (!r.ok) throw new Error('payouts'); return r.json(); },
   });
 
   const resolvePayout = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const r = await fetch(`/api/admin/partners/payouts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ status }) });
+      const r = await fetch(`/api/admin/partners/payouts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ status }) });
       if (!r.ok) throw new Error('payout');
       return r.json();
     },

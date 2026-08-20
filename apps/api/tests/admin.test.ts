@@ -108,7 +108,9 @@ describe('Super User Administration & Staff Management Tests', () => {
     expect(res.status).toBe(200);
     const data = await res.json() as any;
     expect(data.logs.length).toBeGreaterThan(0);
-    expect(data.logs[0].action).toBe("BALANCE_OVERRIDE");
+    // Newest-first contract: real ACCESS_DENIED rows (from the 403 test above)
+    // sort above the seeded row — assert presence, not position.
+    expect(data.logs.some((l: any) => l.action === 'BALANCE_OVERRIDE' && l.id === 'log-1')).toBe(true);
   });
 
   it('POST /api/admin/register-staff should register employee with scopes under super_admin permissions', async () => {

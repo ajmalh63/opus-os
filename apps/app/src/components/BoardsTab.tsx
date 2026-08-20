@@ -9,9 +9,6 @@ import { useRevealRoot } from '../lib/reveal';
 // cycle time, explicit policies, aging signals, and a live flow strip — so
 // the board is a mirror of real flow, and reviews run on data.
 
-const AUTH = {
-  get Cookie() { return document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token=')) || ''; }
-} as Record<string, string>;
 
 interface TaskRow {
   id: string; title: string; priority: 'low' | 'medium' | 'high' | 'urgent';
@@ -152,7 +149,7 @@ export default function BoardsTab() {
   // Fetch Board Columns Data
   const { data, isLoading, isError, refetch } = useQuery<BoardData>({
     queryKey: ['boardSystem'],
-    queryFn: async () => { const r = await fetch('/api/tasks/board', { headers: AUTH }); if (!r.ok) throw new Error('board'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/tasks/board', { credentials: 'include' }); if (!r.ok) throw new Error('board'); return r.json(); },
   });
 
   // Derived selected task from query cache
@@ -172,14 +169,14 @@ export default function BoardsTab() {
   }, [selectedTask?.id, selectedTask?.title, selectedTask?.description, selectedTask?.dueDate]);
   const { data: directory } = useQuery<{ staff: { id: string; name: string; role: string }[]; total: number }>({
     queryKey: ['staffDirectory'],
-    queryFn: async () => { const r = await fetch('/api/tasks/staff-directory', { headers: AUTH }); if (!r.ok) throw new Error('staff'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/tasks/staff-directory', { credentials: 'include' }); if (!r.ok) throw new Error('staff'); return r.json(); },
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['boardSystem'] });
 
   const move = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Record<string, unknown> }) => {
-      const r = await fetch(`/api/tasks/${id}`, { method: 'PATCH', headers: { ...AUTH, 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
+      const r = await fetch(`/api/tasks/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'move failed');
       return d;
@@ -193,7 +190,7 @@ export default function BoardsTab() {
       const body: Record<string, unknown> = { title: form.title.trim(), priority: form.priority, cos: form.cos };
       if (form.assigneeId) body.assigneeId = form.assigneeId;
       if (form.due) body.dueDate = Math.floor(new Date(form.due).getTime() / 1000);
-      const r = await fetch('/api/tasks', { method: 'POST', headers: { ...AUTH, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const r = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'create failed');
       return d;
@@ -204,7 +201,7 @@ export default function BoardsTab() {
 
   const savePrefs = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/tasks/board/prefs', { method: 'PATCH', headers: { ...AUTH, 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
+      const r = await fetch('/api/tasks/board/prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'prefs failed');
       return d;
@@ -218,8 +215,7 @@ export default function BoardsTab() {
     mutationFn: async (payload: { taskId: string }) => {
       const res = await fetch(`/api/tasks/${payload.taskId}`, {
         method: 'DELETE',
-        headers: AUTH,
-      });
+        });
       if (!res.ok) {
         throw new Error(await res.text() || 'Failed to delete task');
       }

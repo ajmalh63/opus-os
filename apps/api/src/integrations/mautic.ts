@@ -9,18 +9,19 @@
 
 import type { ToolAdapter, ToolEnv, ToolFeedItem, ToolSnapshot } from './types.js';
 
-interface MauticToken { access_token: string; expires_in: number; }
+export interface MauticToken { access_token: string; expires_in: number; }
 
-async function mauticToken(env: ToolEnv): Promise<{ token: string | null; reason?: string }> {
+export async function mauticToken(env: ToolEnv): Promise<{ token: string | null; reason?: string; url?: string }> {
+  const url = env.MAUTIC_URL || env.MAUTIC_BASE_URL;
   // Basic Auth path (verified): MAUTIC_USER + MAUTIC_PASS — simplest, no OAuth dance.
-  if (env.MAUTIC_URL && env.MAUTIC_USER && env.MAUTIC_PASS) {
-    return { token: `basic:${btoa(`${env.MAUTIC_USER}:${env.MAUTIC_PASS}`)}` };
+  if (url && env.MAUTIC_USER && env.MAUTIC_PASS) {
+    return { token: `basic:${btoa(`${env.MAUTIC_USER}:${env.MAUTIC_PASS}`)}`, url };
   }
-  if (!env.MAUTIC_URL || !env.MAUTIC_CLIENT_ID || !env.MAUTIC_CLIENT_SECRET) {
+  if (!url || !env.MAUTIC_CLIENT_ID || !env.MAUTIC_CLIENT_SECRET) {
     return { token: null, reason: 'MAUTIC_URL / MAUTIC_CLIENT_ID / MAUTIC_CLIENT_SECRET not set' };
   }
   try {
-    const res = await fetch(`${env.MAUTIC_URL}/oauth/v2/token`, {
+    const res = await fetch(`${url}/oauth/v2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -31,7 +32,7 @@ async function mauticToken(env: ToolEnv): Promise<{ token: string | null; reason
     });
     const json = await res.json().catch(() => ({})) as MauticToken;
     if (!res.ok || !json.access_token) return { token: null, reason: `token ${res.status}: ${JSON.stringify(json).slice(0, 120)}` };
-    return { token: json.access_token };
+    return { token: json.access_token, url };
   } catch (e: any) {
     return { token: null, reason: `request failed: ${e?.message || 'unknown'}` };
   }

@@ -1,3 +1,4 @@
+import { newPortalToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
 import { clients, engagements } from '../db/schema.js';
@@ -58,7 +59,7 @@ importRouter.post('/leads', async (c) => {
     const emails = new Set(existing.map(x => (x.email || '').toLowerCase().trim()));
     const phones = new Set(existing.map(x => (x.phone || '').replace(/\s/g, '')));
 
-    const imported: { id: string; name: string; phone: string; email: string; division: string; highestQualification: string }[] = [];
+    const imported: { id: string; portalToken: string; name: string; phone: string; email: string; division: string; highestQualification: string }[] = [];
     const skipped: { row: number; reason: string }[] = [];
 
     rows.slice(1).forEach((r, idx) => {
@@ -78,16 +79,17 @@ importRouter.post('/leads', async (c) => {
       if (email && emails.has(email)) { skipped.push({ row: lineNo, reason: `duplicate email: ${email}` }); return; }
       if (phoneNorm && phones.has(phoneNorm)) { skipped.push({ row: lineNo, reason: `duplicate phone: ${phone}` }); return; }
 
-      const id = `OP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const id = `OP-2026-${Math.floor(1000 + Math.random() * 9000)}`; // display id
+      const portalToken = newPortalToken();
       if (email) emails.add(email);
       if (phoneNorm) phones.add(phoneNorm);
-      imported.push({ id, name, phone, email, division, highestQualification });
+      imported.push({ id, portalToken, name, phone, email, division, highestQualification });
     });
 
     let created = 0;
     for (const rec of imported) {
       await db.insert(clients).values({
-        id: rec.id, name: rec.name, phone: rec.phone || 'TBD', email: rec.email || '',
+        id: rec.id, portalToken: rec.portalToken, name: rec.name, phone: rec.phone || 'TBD', email: rec.email || '',
         highestQualification: rec.highestQualification, leadSource: 'import', createdAt: now, updatedAt: now,
       });
       await db.insert(engagements).values({

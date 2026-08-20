@@ -6,12 +6,14 @@ import { payments, engagements, milestones, clients, referrals, webhookEvents } 
 import { eq } from 'drizzle-orm';
 import { sendNotification } from '../infra/notify.js';
 import { accrueIncentives } from '../services/incentiveAccrual.js';
+import { auditBounded } from '../middleware/audit.js';
 import { accruePartnerPoints } from '../services/partnerLoyalty.js';
 import { auditEvent } from '../middleware/audit.js';
 import { recomputeBalance } from './transactions.js';
+import { dispatchWebhookEvent, safeExecutionCtx } from '../lib/webhookDispatcher.js';
 
 export const razorpayRouter = new Hono<{
-  Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }
+  Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string; N8N_WEBHOOK_URL?: string; N8N_WEBHOOK_SECRET?: string }
 }>();
 
 // Razorpay REST base (docs 2026): https://api.razorpay.com/v1
@@ -99,7 +101,7 @@ razorpayRouter.post('/order', zValidator('json', orderSchema), async (c) => {
       engagementId: data.engagementId,
     });
   } catch (error: any) {
-    return c.json({ error: "Razorpay order failed", details: error.message }, 500);
+    return c.json({ error: "Razorpay order failed",  }, 500);
   }
 });
 
@@ -134,6 +136,14 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
   try {
     const ok = await verifySignature(data.razorpay_order_id, data.razorpay_payment_id, data.razorpay_signature, secret);
     if (!ok) {
+      await auditBounded(c, {
+        action: 'PAYMENT_VERIFY_FAILED',
+        entityName: 'payments',
+        entityId: data.razorpay_order_id,
+        result: 'error',
+        category: 'money',
+        afterState: { orderId: data.razorpay_order_id, paymentId: data.razorpay_payment_id },
+      }, 'verify');
       return c.json({ error: "Signature mismatch - payment not confirmed" }, 403);
     }
 
@@ -223,6 +233,24 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       console.error('receipt email failed', emailErr?.message);
     }
 
+    // Dispatch payment.received event to n8n for ERPNext invoicing & accounting reconciliation
+    dispatchWebhookEvent(
+      c.env,
+      'payment.received',
+      {
+        paymentId,
+        clientId: data.clientId,
+        engagementId: data.engagementId,
+        amountPaise: invoiceAmount,
+        amountRupees: invoiceAmount / 100,
+        milestoneName: data.milestoneName?.trim() || 'Online payment',
+        method: 'upi',
+        referenceNumber: data.razorpay_payment_id,
+        receivedAt: now,
+      },
+      safeExecutionCtx(c)
+    );
+
     return c.json({
       success: true,
       id: paymentId,
@@ -231,7 +259,7 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       message: "Payment verified & recorded.",
     });
   } catch (error: any) {
-    return c.json({ error: "Verify failed", details: error.message }, 500);
+    return c.json({ error: "Verify failed",  }, 500);
   }
 });
 
@@ -259,6 +287,16 @@ razorpayWebhookRouter.post('/', async (c) => {
   const hexSig = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 
   if (!timingSafeEqualHex(hexSig, signature)) {
+    await auditBounded(c, {
+      action: 'WEBHOOK_REJECTED',
+      entityName: 'webhooks',
+      entityId: 'razorpay',
+      result: 'error',
+      category: 'access',
+      actorType: 'service',
+      authMethod: 'hmac',
+      afterState: { source: 'razorpay', event: (() => { try { return JSON.parse(rawBody)?.event; } catch { return null; } })() },
+    }, 'webhook');
     return c.json({ error: "Invalid webhook signature" }, 403);
   }
 
@@ -337,7 +375,9 @@ razorpayWebhookRouter.post('/', async (c) => {
 
     await db.insert(payments).values({
       id: crypto.randomUUID(), clientId: receipt.clientId, engagementId: receipt.engagementId,
-      amount: refund.amount || receipt.amount, type: 'refund', milestoneName: `Refund (${refund.id})`,
+      // Razorpay refund entities carry NEGATIVE amounts; store the absolute
+      // value so recomputeBalance (+refund) restores the balance correctly.
+      amount: Math.abs(refund.amount) || receipt.amount, type: 'refund', milestoneName: `Refund (${refund.id})`,
       referenceNumber: refund.id, status: 'synced', enteredBy: 'system', createdAt: nowS,
     });
     const bal = await recomputeBalance(db, receipt.engagementId);
@@ -379,8 +419,56 @@ razorpayWebhookRouter.post('/', async (c) => {
       if (eng) {
         await db.update(engagements).set({ outstandingBalance: eng.outstandingBalance - amount, updatedAt: nowS }).where(eq(engagements.id, engagementId));
       }
+      
+      // Dispatch payment.received to n8n for WhatsApp receipt & ERPNext invoice
+      const client = clientId ? await db.select().from(clients).where(eq(clients.id, clientId)).get() : null;
+      await dispatchWebhookEvent(
+        c.env,
+        'payment.received',
+        {
+          payment_id: entity.id,
+          amount_paise: amount,
+          amount_inr: amount / 100,
+          method: entity.method || 'upi',
+          client_id: clientId || '',
+          client_name: client?.name || notes.clientName || 'Candidate',
+          client_phone: client?.phone || notes.phone || '',
+          client_email: client?.email || notes.email || '',
+          engagement_id: engagementId,
+          timestamp: new Date(nowS * 1000).toISOString(),
+        },
+        safeExecutionCtx(c)
+      );
     }
     await markDone('receipt recorded');
+  }
+
+  // payment.failed: Autonomous drop-off recovery on WhatsApp
+  if (event.event === 'payment.failed' && event.payload?.payment?.entity?.id) {
+    const entity = event.payload.payment.entity;
+    const notes = entity.notes || {};
+    const clientId = notes.clientId;
+    const client = clientId ? await db.select().from(clients).where(eq(clients.id, clientId)).get() : null;
+
+    await dispatchWebhookEvent(
+      c.env,
+      'payment.failed',
+      {
+        payment_id: entity.id,
+        amount_paise: entity.amount || 0,
+        amount_inr: (entity.amount || 0) / 100,
+        method: entity.method || 'upi',
+        client_id: clientId || '',
+        client_name: client?.name || notes.clientName || 'Candidate',
+        client_phone: client?.phone || notes.phone || '',
+        error_code: entity.error_code || 'PAYMENT_FAILED',
+        error_description: entity.error_description || entity.error_reason || 'Transaction could not be processed by your bank',
+        retry_link: `https://opusoverseas.com/portal/payments?retry=${entity.id}`,
+        timestamp: new Date(nowS * 1000).toISOString(),
+      },
+      safeExecutionCtx(c)
+    );
+    await markDone('payment.failed dispatched for recovery');
   }
 
   // Always 200 on consume (at-least-once, idempotent via payment id / event id)

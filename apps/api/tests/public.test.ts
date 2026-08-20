@@ -7,6 +7,9 @@ describe('Public hero artifacts (Section 24.1.1)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
+    // This suite exercises the artifact mechanics — make every division
+    // available (division gating has its own suite: tests/divisions.test.ts).
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
     mockD1.tables.job_postings.push(
       { id: 'job-1', title: 'Staff Nurse', country: 'UAE', sector: 'healthcare', salary_text: '₹18-25 LPA', collar: 'white_collar', tier: 'public', status: 'open', created_at: 1 },
       { id: 'job-2', title: 'Site Engineer', country: 'Qatar', sector: 'construction', salary_text: '₹15-20 LPA', collar: 'blue_collar', tier: 'public', status: 'open', created_at: 1 },
@@ -42,7 +45,7 @@ describe('Public hero artifacts (Section 24.1.1)', () => {
     expect(data.jobs.length).toBe(2);
     expect(data.jobs.every((j: any) => j.title !== 'Filled Role')).toBe(true);
     expect(data.jobs.every((j: any) => j.title !== 'Secret Role')).toBe(true);
-    expect(data.jobs[0].salaryText).toBe('₹18-25 LPA');
+    expect(data.jobs[0].salaryText).toBeUndefined();
   });
 
   it('GET /api/public/umrah/departures computes live availability bands', async () => {

@@ -45,6 +45,7 @@ describe('Manpower Candidates Hub & Workers AI Resume Parser Tests', () => {
     // Seed mock clients and engagements for screening pool tests
     mockD1.tables.clients.push({
       id: "OP-2026-6001",
+      portal_token: "OP-2026-6001",
       name: "Priya Patel",
       phone: "+91 97979 54321",
       email: "priya.patel@example.com",

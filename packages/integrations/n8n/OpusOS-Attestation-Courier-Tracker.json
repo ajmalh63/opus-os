@@ -1,0 +1,117 @@
+{
+  "name": "OpusOS — Attestation & Courier Milestone Tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "opusos-events",
+        "options": {}
+      },
+      "name": "Attestation Webhook Ingest",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.event}}",
+              "value2": "attestation.status_updated"
+            }
+          ]
+        }
+      },
+      "name": "Filter Attestation Event",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:8080/api/send-message",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "phone",
+              "value": "={{$json.body.data.clientPhone || '+919398848376'}}"
+            },
+            {
+              "name": "message",
+              "value": "=📜 *Opus Overseas Attestation Milestone Update*\n\nYour certificate legalization file (ID: *{{$json.body.data.applicationId.slice(0,8)}}*) has advanced to: *{{$json.body.data.currentStage || $json.body.data.stepKey}}*.\n\nDestination: {{$json.body.data.destinationCountry}}\nLive Status: https://opusoverseas.com/portal?token={{$json.body.data.clientId}}\n\nNeed assistance? Reply directly to this WhatsApp message."
+            }
+          ]
+        }
+      },
+      "name": "WhatsApp Milestone Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        740,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:3200/api/v1/accounts/2/conversations",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "content",
+              "value": "=System Notification: Attestation application {{$json.body.data.applicationId}} status changed to {{$json.body.data.currentStage || $json.body.data.stepKey}} for client {{$json.body.data.clientId}}."
+            }
+          ]
+        }
+      },
+      "name": "Chatwoot Milestone Note",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        740,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Attestation Webhook Ingest": {
+      "main": [
+        [
+          {
+            "node": "Filter Attestation Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Attestation Event": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Milestone Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chatwoot Milestone Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

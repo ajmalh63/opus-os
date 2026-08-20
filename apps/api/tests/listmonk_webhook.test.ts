@@ -23,7 +23,7 @@ describe('Listmonk webhook consumer', () => {
 
   beforeEach(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-1001', name: 'Client One', phone: '+91 98765 12345', email: 'one@example.com', highest_qualification: 'undergrad', lead_source: 'website', intake_context: null, created_at: 0, updated_at: 0 });
+    mockD1.tables.clients.push({ id: 'OP-2026-1001', portal_token: 'OP-2026-1001', name: 'Client One', phone: '+91 98765 12345', email: 'one@example.com', highest_qualification: 'undergrad', lead_source: 'website', intake_context: null, created_at: 0, updated_at: 0 });
   });
 
   const env = () => ({ DB: mockD1, LISTMONK_WEBHOOK_SECRET: SECRET });

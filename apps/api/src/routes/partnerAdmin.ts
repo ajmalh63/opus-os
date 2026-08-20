@@ -2,9 +2,10 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { partners, commissionPlans, partnerTiers, partnerPoints, partnerLinks, referrals, commissionLedger, payoutRequests } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { partners, commissionPlans, partnerTiers, partnerPoints, partnerLinks, referrals, commissionLedger, payoutRequests, partnerCreatives } from '../db/schema.js';
+import { eq, desc } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
+import { sendNotification } from '../infra/notify.js';
 
 // Partner Command Center — owner ceiling (mounted under /api/admin/partners).
 // Thrive-equivalent controls: registry + status, commission plans per
@@ -281,8 +282,135 @@ partnerAdminRouter.patch('/payouts/:id', async (c) => {
       }
     }
     await auditEvent(c, { action: 'PARTNER_PAYOUT_' + String(body.status).toUpperCase(), entityName: 'payout_requests', entityId: id, afterState: { partnerId: req_.partnerId, amount: req_.amountPaise, status: body.status } });
+
+    // Payout lifecycle email (§4 design doc): notify the partner on
+    // approve/paid. Fail-open — an email hiccup never fails the mutation.
+    if (body.status === 'approved' || body.status === 'paid') {
+      try {
+        const partner = await db.select().from(partners).where(eq(partners.id, req_.partnerId)).get();
+        if (partner?.email) {
+          const amt = (Number(req_.amountPaise || 0) / 100).toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
+          await sendNotification(c.env as any, db, {
+            channel: 'email',
+            to: partner.email,
+            subject: body.status === 'approved' ? 'Payout approved' : 'Payout paid',
+            body: body.status === 'approved'
+              ? `Payout approved — ${amt} will be settled.`
+              : `Payout paid — ${amt} settled.`,
+            clientId: req_.partnerId,
+          });
+        }
+      } catch (e: any) {
+        console.error('payout notification failed', e?.message);
+      }
+    }
+
     return c.json({ success: true, message: `Payout marked ${body.status}.` });
   } catch (e: any) {
     return c.json({ error: 'Payout update failed', details: e.message }, 500);
+  }
+});
+
+// ---------- CREATIVE LIBRARY (owner-managed marketing materials, Phase B) ----------
+// Pre-approved banners/text links partners can copy. Compliance-controlled:
+// only the owner writes; the public portal reads active rows only.
+const creativeSchema = z.object({
+  title: z.string().min(1),
+  type: z.enum(['banner', 'text']).default('text'),
+  size: z.string().nullable().optional(), // e.g. "728x90" (banners)
+  url: z.string().min(1), // target path e.g. "/study-abroad"
+  imageKey: z.string().nullable().optional(), // R2 key for banners
+  active: z.boolean().optional(),
+});
+const creativePatchSchema = z.object({
+  title: z.string().min(1).optional(),
+  type: z.enum(['banner', 'text']).optional(),
+  size: z.string().nullable().optional(),
+  url: z.string().min(1).optional(),
+  imageKey: z.string().nullable().optional(),
+  active: z.boolean().optional(),
+});
+
+// GET /api/admin/partners/creatives — ALL rows (incl. inactive), newest first
+partnerAdminRouter.get('/creatives', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const rows = await db.select().from(partnerCreatives).orderBy(desc(partnerCreatives.createdAt)).all();
+    return c.json({ creatives: rows });
+  } catch (e: any) {
+    return c.json({ error: 'Creative library lookup failed', details: e.message }, 500);
+  }
+});
+
+// POST /api/admin/partners/creatives — add a creative
+partnerAdminRouter.post('/creatives', zValidator('json', creativeSchema), async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const data = c.req.valid('json');
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const id = crypto.randomUUID();
+    await db.insert(partnerCreatives).values({
+      id,
+      title: data.title,
+      type: data.type,
+      size: data.size ?? null,
+      url: data.url,
+      imageKey: data.imageKey ?? null,
+      active: data.active ?? true,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await auditEvent(c, {
+      action: 'CREATIVE_CREATED', entityName: 'partner_creatives', entityId: id, category: 'config',
+      afterState: { title: data.title, type: data.type, url: data.url, active: data.active ?? true },
+    });
+    return c.json({ success: true, id, message: 'Creative saved.' });
+  } catch (e: any) {
+    return c.json({ error: 'Creative save failed', details: e.message }, 500);
+  }
+});
+
+// PATCH /api/admin/partners/creatives/:id — partial update
+partnerAdminRouter.patch('/creatives/:id', zValidator('json', creativePatchSchema), async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const id = c.req.param('id');
+  const data = c.req.valid('json');
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const existing = await db.select().from(partnerCreatives).where(eq(partnerCreatives.id, id)).get();
+    if (!existing) return c.json({ error: 'Creative not found' }, 404);
+    const patch: Record<string, unknown> = { updatedAt: now };
+    if (data.title !== undefined) patch.title = data.title;
+    if (data.type !== undefined) patch.type = data.type;
+    if (data.size !== undefined) patch.size = data.size;
+    if (data.url !== undefined) patch.url = data.url;
+    if (data.imageKey !== undefined) patch.imageKey = data.imageKey;
+    if (data.active !== undefined) patch.active = data.active;
+    await db.update(partnerCreatives).set(patch as any).where(eq(partnerCreatives.id, id));
+    await auditEvent(c, {
+      action: 'CREATIVE_UPDATED', entityName: 'partner_creatives', entityId: id, category: 'config',
+      beforeState: { title: existing.title, active: existing.active },
+      afterState: patch,
+    });
+    return c.json({ success: true, id, message: 'Creative updated.' });
+  } catch (e: any) {
+    return c.json({ error: 'Creative update failed', details: e.message }, 500);
+  }
+});
+
+// DELETE /api/admin/partners/creatives/:id
+partnerAdminRouter.delete('/creatives/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const id = c.req.param('id');
+  try {
+    await db.delete(partnerCreatives).where(eq(partnerCreatives.id, id));
+    await auditEvent(c, { action: 'CREATIVE_DELETED', entityName: 'partner_creatives', entityId: id, category: 'config' });
+    return c.json({ success: true, message: 'Creative removed.' });
+  } catch (e: any) {
+    return c.json({ error: 'Creative delete failed', details: e.message }, 500);
   }
 });

@@ -11,6 +11,7 @@ import { getDb } from '../db/client.js';
 import { listmonkSuppressions, webhookEvents } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { timingSafeEqualHex } from '../services/paymentLinks.js';
+import { auditBounded } from '../middleware/audit.js';
 
 type WhEnv = { DB: D1Database; LISTMONK_WEBHOOK_SECRET?: string };
 
@@ -45,6 +46,16 @@ listmonkWebhookRouter.post('/', async (c) => {
 
   const provided = c.req.query('secret') || c.req.header('x-webhook-secret') || '';
   if (!provided || !timingSafeEqualHex(provided.toString(), secret)) {
+    await auditBounded(c, {
+      action: 'WEBHOOK_REJECTED',
+      entityName: 'webhooks',
+      entityId: 'listmonk',
+      result: 'error',
+      category: 'access',
+      actorType: 'service',
+      authMethod: 'secret',
+      afterState: { source: 'listmonk' },
+    }, 'webhook');
     return c.json({ error: 'Invalid webhook secret' }, 401);
   }
 

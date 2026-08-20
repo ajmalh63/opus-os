@@ -31,6 +31,7 @@ describe('Manpower Deployments Workflow Tests', () => {
     // Seed mock database tables
     mockD1.tables.clients.push({
       id: 'candidate-99',
+      portal_token: 'candidate-99',
       name: 'Zeeshan Ali',
       phone: '+91 88888 77777',
       email: 'zeeshan@example.com',

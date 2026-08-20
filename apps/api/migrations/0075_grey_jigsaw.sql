@@ -1,0 +1,1 @@
+ALTER TABLE `clients` ADD `portal_token` text;

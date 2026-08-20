@@ -1,10 +1,12 @@
+import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { clients, groupDepartures, seatBookings, bookingPassengers, umrahPackages, appSettings, engagements, payments } from '../db/schema.js';
 import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
-import { auditEvent } from '../middleware/audit.js';
+import { auditEvent, auditBounded } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { isDivisionEnabled } from '../lib/divisions.js';
 import { bookUmrahSlotSchema, verifyUmrahAdvanceSchema, payUmrahBalanceSchema } from '@opusos/shared';
 import { computePartyPrice, partyAdvancePaise, serializePassenger, type PartyPassenger } from '../lib/umrahParty.js';
 
@@ -95,7 +97,7 @@ portalUmrahRouter.get('/packages', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const enabled = await inventoryEnabled(db);
+    const enabled = (await isDivisionEnabled(c.env, 'umrah')) && (await inventoryEnabled(db));
     if (!enabled) return c.json({ success: true, comingSoon: true, enabled: false, packages: [] });
     const pkgs = await db.select().from(umrahPackages).where(eq(umrahPackages.status, 'open')).all();
     const deps = await db.select().from(groupDepartures).where(eq(groupDepartures.status, 'open')).all();
@@ -118,7 +120,7 @@ portalUmrahRouter.get('/packages/:id', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const enabled = await inventoryEnabled(db);
+    const enabled = (await isDivisionEnabled(c.env, 'umrah')) && (await inventoryEnabled(db));
     if (!enabled) return c.json({ success: true, comingSoon: true, enabled: false });
     const pkg = await db.select().from(umrahPackages).where(and(eq(umrahPackages.id, c.req.param('id')), eq(umrahPackages.status, 'open'))).get();
     if (!pkg) return c.json({ error: 'Package not found' }, 404);
@@ -138,7 +140,7 @@ portalUmrahRouter.get('/calendar', async (c) => {
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
   try {
-    const enabled = await inventoryEnabled(db);
+    const enabled = (await isDivisionEnabled(c.env, 'umrah')) && (await inventoryEnabled(db));
     if (!enabled) return c.json({ success: true, comingSoon: true, enabled: false, days: [] });
     await releaseExpiredHolds(db, now);
     const deps = await db.select().from(groupDepartures)
@@ -177,7 +179,16 @@ portalUmrahRouter.get('/calendar', async (c) => {
 // One booking = one party (N passengers). Creates a HELD booking + Razorpay
 // order for pax × ₹500 advance. Once paid (verify-advance) the party's seats
 // are RESERVED for 3 days (72h). Capacity & pricing scale by pax.
-portalUmrahRouter.post('/departures/:id/book', zValidator('json', bookUmrahSlotSchema), async (c) => {
+// Division-availability gate middleware: runs BEFORE zod validation so the
+// 409 fires even for malformed bodies (kill-switch semantics).
+const umrahIntakeGate = async (c: any, next: any) => {
+  if (!(await isDivisionEnabled(c.env, 'umrah'))) {
+    return c.json({ error: 'This service is not accepting bookings yet', code: 'DIVISION_DISABLED' }, 409);
+  }
+  await next();
+};
+
+portalUmrahRouter.post('/departures/:id/book', umrahIntakeGate, zValidator('json', bookUmrahSlotSchema), async (c) => {
   const body = c.req.valid('json');
   const token = c.req.query('token');
   if (!token) return c.json({ error: 'token is required' }, 400);
@@ -188,9 +199,9 @@ portalUmrahRouter.post('/departures/:id/book', zValidator('json', bookUmrahSlotS
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
   try {
-    const enabled = await inventoryEnabled(db);
+    const enabled = (await isDivisionEnabled(c.env, 'umrah')) && (await inventoryEnabled(db));
     if (!enabled) return c.json({ error: 'Umrah inventory is coming soon' }, 409);
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
 
     const dep = await db.select().from(groupDepartures).where(eq(groupDepartures.id, body.departureId)).get();
@@ -314,7 +325,17 @@ portalUmrahRouter.post('/bookings/:id/verify-advance', zValidator('json', verify
   const now = Math.floor(Date.now() / 1000);
   try {
     const ok = await verifySignature(body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature, secret);
-    if (!ok) return c.json({ error: 'Signature mismatch — payment not confirmed' }, 403);
+    if (!ok) {
+      await auditBounded(c, {
+        action: 'UMRAH_ADVANCE_VERIFY_FAILED',
+        entityName: 'seat_bookings',
+        entityId: body.bookingId,
+        result: 'error',
+        category: 'money',
+        afterState: { bookingId: body.bookingId, orderId: body.razorpay_order_id },
+      }, 'verify');
+      return c.json({ error: 'Signature mismatch — payment not confirmed' }, 403);
+    }
 
     const booking = await db.select().from(seatBookings).where(eq(seatBookings.id, body.bookingId)).get();
     if (!booking) return c.json({ error: 'Booking not found' }, 404);
@@ -431,7 +452,17 @@ portalUmrahRouter.post('/bookings/:id/verify-balance', zValidator('json', payUmr
   const now = Math.floor(Date.now() / 1000);
   try {
     const ok = await verifySignature(body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature, secret);
-    if (!ok) return c.json({ error: 'Signature mismatch — payment not confirmed' }, 403);
+    if (!ok) {
+      await auditBounded(c, {
+        action: 'UMRAH_BALANCE_VERIFY_FAILED',
+        entityName: 'seat_bookings',
+        entityId: body.bookingId,
+        result: 'error',
+        category: 'money',
+        afterState: { bookingId: body.bookingId, orderId: body.razorpay_order_id },
+      }, 'verify');
+      return c.json({ error: 'Signature mismatch — payment not confirmed' }, 403);
+    }
 
     const booking = await db.select().from(seatBookings).where(eq(seatBookings.id, body.bookingId)).get();
     if (!booking) return c.json({ error: 'Booking not found' }, 404);

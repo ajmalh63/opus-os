@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
 
-// ── Marketing Automation — CONTROL PANEL (Tool-First, Phase 1) ─────────────
-// Operations happen in the backend tools through their VPC APIs (Listmonk
-// email, Mautic journeys, Chatwoot conversations, OpenWA WhatsApp); this UI
-// is the unified control plane: every action routes via the OS command
-// envelope (RBAC + audit), every read via the adapter passthrough.
+// ── Marketing Automation — UNIFIED CONTROL PANEL ─────────────────────────────
+// Operations happen in the backend tools through their VPC APIs (Listmonk,
+// Mautic automation, Chatwoot, OpenWA); this UI is the unified Superadmin
+// control plane with full visibility into Journeys, Templates, Assets, Forms,
+// Pages, DWC, Audiences, WhatsApp Workflows, and Suppression.
 
 const AUTH = {
   get Cookie() {
@@ -16,12 +16,6 @@ const AUTH = {
 } as Record<string, string>;
 
 const getJson = async (url: string) => { const r = await fetch(url, { headers: AUTH }); if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); };
-const postCmd = async (tool: string, resource: string, action: string, body: any) => {
-  const r = await fetch(`/api/integrations/${tool}/${resource}/${action}`, { method: 'POST', headers: { ...AUTH, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok || d.ok === false) throw new Error(d.error || `HTTP ${r.status}`);
-  return d.result;
-};
 
 const STATE_STYLE: Record<string, string> = {
   ok: 'bg-emerald-500/15 text-emerald-700',
@@ -48,7 +42,21 @@ function ErrPanel({ what, onRetry }: { what: string; onRetry: any }) {
   );
 }
 
-// ── Overview: live board (tool status + event feed) ────────────────────────
+function asArray(d: any): any[] {
+  if (Array.isArray(d)) return d;
+  if (d && typeof d === 'object') {
+    if (Array.isArray(d.data)) return d.data;
+    if (Array.isArray(d.results)) return d.results;
+    if (Array.isArray(d.campaigns)) return d.campaigns;
+    if (Array.isArray(d.templates)) return d.templates;
+    if (Array.isArray(d.lists)) return d.lists;
+    if (Array.isArray(d.bounces)) return d.bounces;
+    if (d.data && Array.isArray(d.data.results)) return d.data.results;
+  }
+  return [];
+}
+
+// ── Overview ──────────────────────────────────────────────────────────────────
 function Overview({ live }: { live: LiveData }) {
   return (
     <div className="space-y-6">
@@ -86,160 +94,518 @@ function Overview({ live }: { live: LiveData }) {
   );
 }
 
-// ── Campaigns: list + create / activate / pause / test / delete ────────────
-function CampaignsView() {
-  const qc = useQueryClient();
-  const { data, isLoading, error, refetch } = useQuery({ queryKey: ['lm-campaigns'], queryFn: () => getJson('/api/integrations/listmonk/campaigns?perPage=50&page=1') });
-  const [show, setShow] = useState(false);
-  const [form, setForm] = useState({ name: '', subject: '', lists: '', body: '' });
-  const invalidate = () => { qc.invalidateQueries({ queryKey: ['lm-campaigns'] }); qc.invalidateQueries({ queryKey: ['integrationsLive'] }); };
-  const act = useMutation({ mutationFn: async ({ id, action, body }: { id: number; action: string; body?: any }) => postCmd('listmonk', 'campaigns', action, { id, ...body }), onSuccess: invalidate, onError: (e: any) => alert((e as Error).message) });
-  const create = useMutation({
-    mutationFn: () => postCmd('listmonk', 'campaigns', 'create', { name: form.name.trim(), subject: form.subject.trim(), lists: form.lists.split(',').map((s) => Number(s.trim())).filter((n) => n > 0), body: form.body, type: 'regular' }),
-    onSuccess: () => { invalidate(); setShow(false); setForm({ name: '', subject: '', lists: '', body: '' }); },
-    onError: (e: any) => alert((e as Error).message),
+// ── Mautic Journeys View ───────────────────────────────────────────────────────
+function JourneysView() {
+  const { data: mauticCamps, isLoading, isError, refetch } = useQuery<any>({
+    queryKey: ['mautic-campaigns'],
+    queryFn: () => getJson('/api/integrations/mautic/campaigns'),
   });
 
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading campaigns…</div>;
-  if (error) return <ErrPanel what="campaigns" onRetry={refetch} />;
+  const campaigns = mauticCamps?.campaigns ? Object.values(mauticCamps.campaigns) : [];
 
-  const rows: any[] = data?.data || [];
+  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading automated journeys…</div>;
+  if (isError) return <ErrPanel what="campaign journeys" onRetry={refetch} />;
+
+  const tierMeta: Record<string, { label: string; cls: string; border: string; badge: string; icon: string }> = {
+    hot: { label: 'Hot Tier — VIP Fast-Track (Score 50+)', cls: 'bg-rose-50/50', border: 'border-rose-200', badge: 'bg-rose-100 text-rose-800', icon: '🔥' },
+    warm: { label: 'Warm Tier — Authority Nurture (Score 20-49)', cls: 'bg-amber-50/50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-800', icon: '⭐' },
+    cold: { label: 'Cold Tier — Re-Engagement (Score < 20)', cls: 'bg-blue-50/50', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-800', icon: '❄️' },
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-rose-200 bg-white p-4">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-rose-600">🔥 Hot VIP Queue</div>
+          <div className="mt-1 font-display text-2xl font-extrabold text-brand-navy">Score 50+</div>
+          <div className="mt-1 text-[11px] text-brand-navy/50">Instant Counselor Strategy Session + 48h Waiver Window</div>
+        </div>
+        <div className="rounded-2xl border border-amber-200 bg-white p-4">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-amber-600">⭐ Warm Nurture Queue</div>
+          <div className="mt-1 font-display text-2xl font-extrabold text-brand-navy">Score 20–49</div>
+          <div className="mt-1 text-[11px] text-brand-navy/50">5-Step Strategic Blueprint + Case Studies & Proof</div>
+        </div>
+        <div className="rounded-2xl border border-blue-200 bg-white p-4">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600">❄️ Cold Re-Activation</div>
+          <div className="mt-1 font-display text-2xl font-extrabold text-brand-navy">Score &lt; 20</div>
+          <div className="mt-1 text-[11px] text-brand-navy/50">2026/2027 Policy Updates + 60s 1-Click Refresh</div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {campaigns.map((c: any) => {
+          const nameLower = (c.name || '').toLowerCase();
+          const tier = nameLower.includes('hot') ? 'hot' : nameLower.includes('warm') ? 'warm' : 'cold';
+          const meta = tierMeta[tier];
+          const events = c.events ? Object.values(c.events) : [];
+
+          return (
+            <div key={c.id} className={`rounded-2xl border p-5 transition-all shadow-sm ${meta.border} ${meta.cls}`}>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-brand-navy/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{meta.icon}</span>
+                  <div>
+                    <h3 className="font-display font-bold text-sm text-brand-navy">{c.name}</h3>
+                    <p className="text-[11px] text-brand-navy/50">{c.description || 'Automated multi-step lifecycle campaign'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase ${c.isPublished ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+                    {c.isPublished ? 'Live & Active' : 'Draft'}
+                  </span>
+                  <a href={`http://100.87.71.38:8085/s/campaigns/view/${c.id}`} target="_blank" rel="noreferrer" className="rounded-lg bg-brand-navy px-3 py-1 text-[10px] font-bold text-brand-gold hover:bg-brand-navy/90">
+                    Open in Mautic ↗
+                  </a>
+                </div>
+              </div>
+
+              {/* Steps timeline */}
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                {events.map((ev: any, idx: number) => (
+                  <div key={ev.id} className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-xs">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="font-bold text-brand-gold uppercase">Step {idx + 1} · {ev.triggerMode === 'immediate' ? 'Immediate' : `After ${ev.triggerInterval || '2'} ${ev.triggerIntervalUnit || 'days'}`}</span>
+                      <span className="font-mono text-brand-navy/40">{ev.type}</span>
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-brand-navy">{ev.name}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Mautic 12 HTML5 Templates View ─────────────────────────────────────────────
+function MauticTemplatesView() {
+  const { data, isLoading, isError, refetch } = useQuery<any>({
+    queryKey: ['mautic-emails'],
+    queryFn: () => getJson('/api/integrations/mautic/emails?limit=30'),
+  });
+
+  const [previewEmail, setPreviewEmail] = useState<any | null>(null);
+
+  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading HTML5 email suite…</div>;
+  if (isError) return <ErrPanel what="email templates" onRetry={refetch} />;
+
+  const emails: any[] = data?.emails ? Object.values(data.emails) : [];
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[11px] text-brand-navy/40">{rows.length} campaigns — live from Listmonk; every action is audited through the OS.</p>
-        <button onClick={() => setShow((v) => !v)} className="rounded-full bg-brand-gold px-4 py-2 text-[11px] font-extrabold uppercase text-brand-navy hover:bg-brand-gold/90">{show ? 'Close' : '+ New campaign'}</button>
+        <p className="text-[11px] text-brand-navy/50">
+          <strong>{emails.length} Responsive HTML5 Templates</strong> provisioned across Hot, Warm, and Cold tiers. All templates feature clean client-facing subjects and brand styling.
+        </p>
       </div>
-      {show && (
-        <div className="space-y-2 rounded-2xl border border-brand-navy/10 bg-white p-4">
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Campaign name" className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none" />
-          <input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="Email subject" className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none" />
-          <input value={form.lists} onChange={(e) => setForm({ ...form, lists: e.target.value })} placeholder="List IDs (comma-separated — see Audiences tab)" className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none" />
-          <textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder={'HTML body — {{ name }} placeholders supported'} rows={5} className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 font-mono text-xs text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none" />
-          <button onClick={() => create.mutate()} disabled={create.isPending || !form.name.trim() || !form.subject.trim()} className="rounded-full bg-brand-gold px-4 py-2 text-[11px] font-bold uppercase text-brand-navy hover:bg-brand-gold/90 disabled:opacity-40">
-            {create.isPending ? 'Creating…' : 'Create in Listmonk'}
-          </button>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        {emails.map((e: any) => {
+          const nameLower = (e.name || '').toLowerCase();
+          const badgeColor = nameLower.includes('hot') ? 'bg-rose-100 text-rose-800' : nameLower.includes('warm') ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
+
+          return (
+            <div key={e.id} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-3 flex flex-col justify-between hover:border-brand-gold/40 transition">
+              <div>
+                <div className="flex items-center justify-between gap-1">
+                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${badgeColor}`}>
+                    {nameLower.includes('hot') ? '🔥 Hot Tier' : nameLower.includes('warm') ? '⭐ Warm Tier' : '❄️ Cold Tier'}
+                  </span>
+                  <span className="font-mono text-[9px] text-brand-navy/40">ID: {e.id}</span>
+                </div>
+                <h4 className="mt-2 text-xs font-bold text-brand-navy leading-snug">{e.name}</h4>
+                <p className="mt-1 text-[11px] text-brand-navy/60 line-clamp-2 italic">
+                  &ldquo;{e.subject}&rdquo;
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-brand-navy/[0.06] pt-3">
+                <span className="text-[9px] text-brand-navy/40">From: {e.fromName || 'Opus Overseas'}</span>
+                <button onClick={() => setPreviewEmail(e)} className="rounded-lg bg-brand-navy/5 px-2.5 py-1 text-[10px] font-bold text-brand-navy hover:bg-brand-gold hover:text-brand-navy transition">
+                  Preview HTML5 ↗
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* HTML5 Preview Modal */}
+      {previewEmail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/60 p-4 backdrop-blur-xs">
+          <div className="relative flex h-[90vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-brand-navy/10 px-5 py-3.5 bg-brand-cream">
+              <div>
+                <div className="text-xs font-bold text-brand-navy">{previewEmail.name}</div>
+                <div className="text-[10px] text-brand-navy/50">Subject: {previewEmail.subject}</div>
+              </div>
+              <button onClick={() => setPreviewEmail(null)} className="rounded-full bg-brand-navy/10 px-3 py-1 text-xs font-bold text-brand-navy hover:bg-brand-navy hover:text-white">
+                ✕ Close
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden bg-[#FAF8F4] p-2">
+              <iframe title="Email Preview" srcDoc={previewEmail.customHtml} className="h-full w-full rounded-lg border border-brand-navy/10 bg-white" />
+            </div>
+          </div>
         </div>
       )}
-      <div className="space-y-2">
-        {rows.map((c: any) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-navy/10 bg-white px-3 py-2 transition-all duration-300 hover:border-brand-gold/40">
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-semibold text-brand-navy">{c.name || `Campaign ${c.id}`}</span>
-              <span className="block truncate text-[10px] text-brand-navy/50">{c.subject} · lists [{String(c.lists || []).slice(0, 40)}]</span>
-            </span>
-            <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${STATE_STYLE[c.status === 'running' ? 'ok' : c.status === 'paused' ? 'error' : 'unconfigured']}`}>{c.status}</span>
-            {c.status !== 'running' && <button onClick={() => act.mutate({ id: c.id, action: 'status', body: { status: 'running' } })} className="rounded-full border border-emerald-500/40 px-2 py-1 text-[9px] font-bold uppercase text-emerald-700 hover:bg-emerald-600 hover:text-white">Activate</button>}
-            {c.status === 'running' && <button onClick={() => act.mutate({ id: c.id, action: 'status', body: { status: 'paused' } })} className="rounded-full border border-rose-500/40 px-2 py-1 text-[9px] font-bold uppercase text-rose-700 hover:bg-rose-600 hover:text-white">Pause</button>}
-            <button onClick={() => { const e = prompt('Test emails (comma-separated):'); if (e) act.mutate({ id: c.id, action: 'test', body: { emails: e.split(',').map((s) => s.trim()).filter(Boolean) } }); }} className="rounded-full border border-brand-gold/50 px-2 py-1 text-[9px] font-bold uppercase text-brand-gold hover:bg-brand-gold hover:text-brand-navy">Send test</button>
-            <button onClick={() => { if (confirm('Delete campaign?')) act.mutate({ id: c.id, action: 'delete' }); }} className="rounded-full border border-brand-navy/15 px-2 py-1 text-[9px] font-bold uppercase text-brand-navy/50 hover:bg-rose-600 hover:text-white">Delete</button>
+    </div>
+  );
+}
+
+// ── WhatsApp & Chatwoot Workflows View ─────────────────────────────────────────
+function WhatsAppView() {
+  const { data, isLoading, isError, refetch } = useQuery<any>({
+    queryKey: ['wa-templates'],
+    queryFn: () => getJson('/api/marketing/whatsapp/templates'),
+  });
+
+  const [activeCategory, setActiveCategory] = useState<'all' | 'operational' | 'marketing'>('all');
+  const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
+  const [testPhone, setTestPhone] = useState('');
+  const [testName, setTestName] = useState('Test Applicant');
+  const [isSending, setIsSending] = useState(false);
+  const [sendResult, setSendResult] = useState<any | null>(null);
+
+  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading WhatsApp & Chatwoot automation suite…</div>;
+  if (isError) return <ErrPanel what="WhatsApp templates" onRetry={refetch} />;
+
+  const templates: any[] = data?.templates || [];
+  const filtered = activeCategory === 'all' ? templates : templates.filter((t: any) => t.category === activeCategory);
+
+  const handleTestSend = async () => {
+    if (!testPhone || !selectedTemplate) return;
+    setIsSending(true);
+    setSendResult(null);
+    try {
+      const res = await fetch('/api/marketing/whatsapp/test-send', {
+        method: 'POST',
+        headers: { ...AUTH, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: testPhone,
+          name: testName,
+          templateKey: selectedTemplate.key,
+          variables: { ...selectedTemplate.sampleVariables, name: testName },
+          division: selectedTemplate.division,
+        }),
+      });
+      const json = await res.json();
+      setSendResult(json);
+    } catch (e: any) {
+      setSendResult({ success: false, error: e.message });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Topology Header */}
+      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50/40 p-5 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📱</span>
+            <h3 className="font-display font-bold text-sm text-brand-navy">Chatwoot Brain + OpenWA Delivery Architecture</h3>
+          </div>
+          <span className="rounded-full bg-emerald-100 px-3 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
+            Live Gateway
+          </span>
+        </div>
+        <p className="text-[11px] leading-relaxed text-brand-navy/60">
+          Messages are created in <strong>Chatwoot</strong> (maintaining customer timeline, counselor notes, and SLA timers) and dispatched via <strong>OpenWA</strong>. If the client replies on WhatsApp, the message immediately illuminates in Chatwoot for human counselor handoff.
+        </p>
+      </div>
+
+      {/* Categories Filter */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex gap-1.5">
+          {[
+            { key: 'all', label: `All Workflows (${templates.length})` },
+            { key: 'operational', label: `Operational Triggers (${templates.filter((t: any) => t.category === 'operational').length})` },
+            { key: 'marketing', label: `Marketing Drips (${templates.filter((t: any) => t.category === 'marketing').length})` },
+          ].map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setActiveCategory(c.key as any)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeCategory === c.key ? 'bg-brand-navy text-white' : 'bg-brand-navy/5 text-brand-navy/60 hover:bg-brand-navy/10'}`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid of Templates */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {filtered.map((t: any) => (
+          <div key={t.key} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-3 flex flex-col justify-between hover:border-brand-gold/40 transition">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${t.category === 'operational' ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800'}`}>
+                  {t.category}
+                </span>
+                <span className="font-mono text-[9px] text-brand-navy/40">{t.division}</span>
+              </div>
+              <h4 className="text-xs font-bold text-brand-navy">{t.name}</h4>
+              <p className="text-[11px] text-brand-navy/50">{t.description}</p>
+              
+              <div className="rounded-lg bg-brand-cream border border-brand-navy/[0.06] p-3 text-[11px] text-brand-navy/80 whitespace-pre-wrap font-sans leading-relaxed">
+                {t.renderedSample}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-brand-navy/[0.06] flex items-center justify-between">
+              <span className="text-[9px] font-mono text-brand-navy/40">{t.key}</span>
+              <button
+                onClick={() => { setSelectedTemplate(t); setSendResult(null); }}
+                className="rounded-lg bg-brand-navy/5 px-3 py-1 text-[10px] font-bold text-brand-navy hover:bg-brand-gold hover:text-brand-navy transition"
+              >
+                Test Send 📱
+              </button>
+            </div>
           </div>
         ))}
-        {rows.length === 0 && <div className="py-8 text-center text-[11px] text-brand-navy/50">No campaigns in Listmonk yet — create one above.</div>}
+      </div>
+
+      {/* Live Test Modal */}
+      {selectedTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/60 p-4 backdrop-blur-xs">
+          <div className="relative flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl overflow-hidden p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-brand-navy/10 pb-3">
+              <div>
+                <h3 className="font-display font-bold text-sm text-brand-navy">Test WhatsApp Dispatch</h3>
+                <p className="text-[11px] text-brand-navy/50">{selectedTemplate.name}</p>
+              </div>
+              <button onClick={() => setSelectedTemplate(null)} className="rounded-full bg-brand-navy/10 px-3 py-1 text-xs font-bold text-brand-navy hover:bg-brand-navy hover:text-white">
+                ✕ Close
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-brand-navy/60">Recipient Phone (with country code)</label>
+                <input
+                  type="text"
+                  value={testPhone}
+                  onChange={(e) => setTestPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="mt-1 w-full rounded-lg border border-brand-navy/15 px-3 py-2 text-xs font-mono focus:border-brand-gold focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-brand-navy/60">Recipient Name</label>
+                <input
+                  type="text"
+                  value={testName}
+                  onChange={(e) => setTestName(e.target.value)}
+                  placeholder="Test Applicant"
+                  className="mt-1 w-full rounded-lg border border-brand-navy/15 px-3 py-2 text-xs focus:border-brand-gold focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-brand-navy/60">Message Preview</label>
+                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg bg-brand-cream p-3 text-[11px] text-brand-navy/80 whitespace-pre-wrap">
+                  {selectedTemplate.template({ ...selectedTemplate.sampleVariables, name: testName })}
+                </div>
+              </div>
+            </div>
+
+            {sendResult && (
+              <div className={`rounded-lg p-3 text-xs ${sendResult.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
+                {sendResult.success ? '✅ Message dispatched successfully through Chatwoot & OpenWA!' : `❌ Dispatch failed: ${sendResult.error || sendResult.result?.error || 'Unknown error'}`}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-brand-navy/10">
+              <button onClick={() => setSelectedTemplate(null)} className="rounded-lg px-4 py-2 text-xs font-semibold text-brand-navy/60 hover:bg-brand-navy/5">
+                Cancel
+              </button>
+              <button
+                disabled={!testPhone || isSending}
+                onClick={handleTestSend}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition"
+              >
+                {isSending ? 'Dispatching…' : 'Send WhatsApp Message 🚀'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Assets, Forms & Landing Pages View ─────────────────────────────────────────
+function AssetsAndFormsView() {
+  const { data: assetsData, isLoading: aLoading } = useQuery<any>({ queryKey: ['mautic-assets'], queryFn: () => getJson('/api/integrations/mautic/assets') });
+  const { data: formsData, isLoading: fLoading } = useQuery<any>({ queryKey: ['mautic-forms'], queryFn: () => getJson('/api/integrations/mautic/forms') });
+  const { data: pagesData, isLoading: pLoading } = useQuery<any>({ queryKey: ['mautic-pages'], queryFn: () => getJson('/api/integrations/mautic/pages') });
+
+  if (aLoading || fLoading || pLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading marketing assets & forms…</div>;
+
+  const assets = assetsData?.assets ? Object.values(assetsData.assets) : [];
+  const forms = formsData?.forms ? Object.values(formsData.forms) : [];
+  const pages = pagesData?.pages ? Object.values(pagesData.pages) : [];
+
+  return (
+    <div className="space-y-6">
+      {/* 1. Downloadable Lead Magnets */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-display font-bold text-sm text-brand-navy">📄 Downloadable Lead Magnet Assets ({assets.length})</h3>
+          <span className="text-[10px] text-brand-navy/40">Downloads auto-award +10 points in Mautic</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {assets.map((a: any) => (
+            <div key={a.id} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="rounded bg-brand-gold/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-brand-navy uppercase">{a.extension} Guide</span>
+                <span className="text-[10px] font-bold text-emerald-700">{a.downloadCount || 0} Downloads</span>
+              </div>
+              <h4 className="text-xs font-bold text-brand-navy leading-snug">{a.title}</h4>
+              <p className="text-[11px] text-brand-navy/50 line-clamp-2">{a.description}</p>
+              <div className="pt-2 border-t border-brand-navy/[0.06] text-[9px] font-mono text-brand-navy/40 truncate">
+                Alias: /{a.alias}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 2. Forms & Pages */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Forms */}
+        <div className="space-y-3">
+          <h3 className="font-display font-bold text-sm text-brand-navy">📋 Lead Intake & Evaluation Forms ({forms.length})</h3>
+          <div className="space-y-2">
+            {forms.map((f: any) => (
+              <div key={f.id} className="rounded-xl border border-brand-navy/10 bg-white p-3.5 shadow-xs flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-xs font-bold text-brand-navy">{f.name}</div>
+                  <div className="text-[10px] text-brand-navy/40">{f.description || 'Intake capture form'}</div>
+                </div>
+                <span className="rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 uppercase shrink-0">
+                  {f.postAction || 'Message'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Landing Pages */}
+        <div className="space-y-3">
+          <h3 className="font-display font-bold text-sm text-brand-navy">🌐 Standalone Landing Pages ({pages.length})</h3>
+          <div className="space-y-2">
+            {pages.map((p: any) => (
+              <div key={p.id} className="rounded-xl border border-brand-navy/10 bg-white p-3.5 shadow-xs flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-xs font-bold text-brand-navy">{p.title}</div>
+                  <div className="text-[10px] text-brand-gold font-mono">Alias: /{p.alias}</div>
+                </div>
+                <span className="rounded bg-blue-100 text-blue-800 text-[9px] font-bold px-2 py-0.5 uppercase shrink-0">
+                  {p.hits || 0} Hits
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Templates: list + create + delete ──────────────────────────────────────
-function TemplatesView() {
-  const qc = useQueryClient();
-  const { data, isLoading, error, refetch } = useQuery({ queryKey: ['lm-templates'], queryFn: () => getJson('/api/integrations/listmonk/templates?perPage=30&page=1') });
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['lm-templates'] });
-  const del = useMutation({ mutationFn: (id: number) => postCmd('listmonk', 'templates', 'delete', { id }), onSuccess: invalidate, onError: (e: any) => alert((e as Error).message) });
+// ── Dynamic Web Content (DWC) View ────────────────────────────────────────────
+function DWCView() {
+  const { data, isLoading, isError, refetch } = useQuery<any>({
+    queryKey: ['mautic-dwc'],
+    queryFn: () => getJson('/api/integrations/mautic/dwc'),
+  });
 
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading templates…</div>;
-  if (error) return <ErrPanel what="templates" onRetry={refetch} />;
+  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading dynamic web content slots…</div>;
+  if (isError) return <ErrPanel what="dynamic web content" onRetry={refetch} />;
 
-  const rows: any[] = data?.data || [];
+  const items = data?.dynamicContent ? Object.values(data.dynamicContent) : [];
+
   return (
     <div className="space-y-4">
-      <p className="text-[11px] text-brand-navy/40">{rows.length} templates — stored in Listmonk, rendered by the email engine.</p>
-      <div className="grid gap-2 md:grid-cols-2">
-        {rows.map((t: any) => (
-          <div key={t.id} className="flex items-center justify-between gap-2 rounded-xl border border-brand-navy/10 bg-white px-3 py-2 transition-all duration-300 hover:border-brand-gold/40">
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-semibold text-brand-navy">{t.name}</span>
-              <span className="block truncate text-[10px] text-brand-navy/50">{t.subject || 'no subject'} · default: {t.is_default ? 'yes' : 'no'}</span>
-            </span>
-            <button onClick={() => del.mutate(t.id)} className="rounded-full border border-brand-navy/15 px-2 py-1 text-[9px] font-bold uppercase text-brand-navy/50 hover:bg-rose-600 hover:text-white">Delete</button>
+      <p className="text-[11px] text-brand-navy/50">
+        Dynamic Web Content (DWC) slots dynamically personalize Opus OS website & portal banners based on the contact's lead score & tier.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {items.map((d: any) => (
+          <div key={d.id} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] font-bold text-brand-gold bg-brand-navy/5 px-2 py-0.5 rounded">
+                Slot: {d.slotName}
+              </span>
+              <span className="rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 uppercase">
+                Active
+              </span>
+            </div>
+            <h4 className="text-xs font-bold text-brand-navy">{d.name}</h4>
+            <p className="text-[11px] text-brand-navy/50">{d.description}</p>
+            <div className="rounded-lg bg-brand-cream border border-brand-navy/[0.06] p-2.5 text-[10px] text-brand-navy/70 overflow-hidden font-mono">
+              {d.content}
+            </div>
           </div>
         ))}
       </div>
-      {/*PART3*/}
     </div>
   );
 }
 
-// ── Audiences: Listmonk lists + subscriber creation ────────────────────────
+// ── Listmonk Audiences & Suppression Views ────────────────────────────────────
 function AudiencesView() {
-  const qc = useQueryClient();
-  const { data, isLoading, error, refetch } = useQuery({ queryKey: ['lm-lists'], queryFn: () => getJson('/api/integrations/listmonk/lists?perPage=30&page=1') });
-  const [form, setForm] = useState({ name: '', type: 'public' });
-  const invalidate = () => { qc.invalidateQueries({ queryKey: ['lm-lists'] }); qc.invalidateQueries({ queryKey: ['lm-campaigns'] }); };
-  const create = useMutation({ mutationFn: () => postCmd('listmonk', 'lists', 'create', { name: form.name.trim(), optin: 'single' }), onSuccess: () => { invalidate(); setForm({ name: '', type: 'public' }); }, onError: (e: any) => alert((e as Error).message) });
-  const del = useMutation({ mutationFn: (id: number) => postCmd('listmonk', 'lists', 'delete', { id }), onSuccess: invalidate, onError: (e: any) => alert((e as Error).message) });
-
+  const { data, isLoading, error, refetch } = useQuery({ queryKey: ['lm-audiences'], queryFn: () => getJson('/api/integrations/listmonk/lists?perPage=30&page=1') });
   if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading audiences…</div>;
   if (error) return <ErrPanel what="audiences" onRetry={refetch} />;
+  const rows: any[] = asArray(data);
 
-  const rows: any[] = data?.data || [];
   return (
-    <div className="space-y-4">
-      <p className="text-[11px] text-brand-navy/40">{rows.length} lists — these are the targeting audiences for campaigns (list IDs are used in the Campaigns tab).</p>
-      <div className="flex flex-wrap items-center gap-2">
-        <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="New list name" className="min-w-56 flex-1 rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none" />
-        <button onClick={() => create.mutate()} disabled={create.isPending || !form.name.trim()} className="rounded-full bg-brand-gold px-4 py-2 text-[11px] font-extrabold uppercase text-brand-navy hover:bg-brand-gold/90">Create list</button>
-      </div>
-      <div className="space-y-2">
-        {rows.map((l: any) => (
-          <div key={l.id} className="flex items-center gap-2 rounded-xl border border-brand-navy/10 bg-white px-3 py-2 transition-all duration-300 hover:border-brand-gold/40">
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-semibold text-brand-navy">{l.name}</span>
-              <span className="block text-[10px] text-brand-navy/50">{l.subscriber_count ?? '?'} subscribers · optin: {l.optin}</span>
-            </span>
-            <span className="rounded bg-brand-navy/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-brand-navy/40">id {l.id}</span>
-            <button onClick={() => del.mutate(l.id)} className="rounded-full border border-brand-navy/15 px-2 py-1 text-[9px] font-bold uppercase text-brand-navy/50 hover:bg-rose-600 hover:text-white">Delete</button>
+    <div className="space-y-3">
+      <p className="text-[11px] text-brand-navy/50">{rows.length} audience lists managed in Listmonk.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        {rows.map((r: any) => (
+          <div key={r.id} className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-xs flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-brand-navy">{r.name}</div>
+              <div className="text-[10px] text-brand-navy/40 capitalize">{r.type} · Opt-in: {r.optin}</div>
+            </div>
+            <div className="text-right font-display font-extrabold text-sm text-brand-gold">{r.subscribers_count ?? 0} subs</div>
           </div>
         ))}
-        {rows.length === 0 && <div className="py-8 text-center text-[11px] text-brand-navy/50">No lists yet — create your first audience above.</div>}
       </div>
     </div>
   );
 }
 
-// ── Suppression: bounce evidence from the tool (OS suppression remains authoritative) ──
 function SuppressionView() {
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['lm-bounces'], queryFn: () => getJson('/api/integrations/listmonk/bounces?perPage=30&page=1') });
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading bounces…</div>;
-  if (error) return <ErrPanel what="bounces" onRetry={refetch} />;
-  const rows: any[] = data?.data || [];
+  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading suppression ledger…</div>;
+  if (error) return <ErrPanel what="suppression ledger" onRetry={refetch} />;
+  const rows: any[] = asArray(data);
+
   return (
-    <div className="space-y-4">
-      <p className="text-[11px] text-brand-navy/40">
-        {rows.length} recent bounces from Listmonk — evidence for list hygiene. The OS suppression registry (hard/3×soft/unsub/complaint via the
-        Listmonk webhook) remains the authoritative send gate — this view is the proof layer.
-      </p>
+    <div className="space-y-3">
+      <p className="text-[11px] text-brand-navy/50">DPDP-compliant suppression ledger and bounce logs.</p>
       <div className="overflow-x-auto rounded-2xl border border-brand-navy/10 bg-white">
         <table className="w-full text-left text-xs">
-          <thead className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] uppercase tracking-wider text-brand-gold">
-            <tr>
-              <th className="px-3 py-2 font-bold">Email</th>
-              <th className="px-3 py-2 font-bold">Type</th>
-              <th className="px-3 py-2 font-bold">Status</th>
-              <th className="px-3 py-2 font-bold">Campaign</th>
-            </tr>
+          <thead className="border-b border-brand-navy/[0.08] text-[10px] uppercase font-bold tracking-wider text-brand-gold bg-brand-cream">
+            <tr><th className="px-4 py-2.5">Subscriber</th><th className="px-4 py-2.5">Type</th><th className="px-4 py-2.5">Source</th><th className="px-4 py-2.5">Date</th></tr>
           </thead>
-          <tbody>
-            {rows.map((b: any) => (
-              <tr key={b.id} className="border-b border-brand-navy/[0.08] last:border-0 hover:bg-brand-navy/[0.04]">
-                <td className="px-3 py-2 text-brand-navy/70">{b.email}</td>
-                <td className="px-3 py-2"><span className={`rounded px-1 py-0.5 text-[9px] font-bold uppercase ${String(b.type).toLowerCase().includes('hard') ? 'bg-rose-500/15 text-rose-700' : 'bg-amber-500/15 text-amber-700'}`}>{b.type}</span></td>
-                <td className="px-3 py-2 text-brand-navy/40">{b.status}</td>
-                <td className="px-3 py-2 text-brand-navy/40">{b.campaign_id ?? '—'}</td>
+          <tbody className="divide-y divide-brand-navy/[0.06]">
+            {rows.map((b: any, i: number) => (
+              <tr key={b.id || i} className="hover:bg-brand-navy/[0.02]">
+                <td className="px-4 py-2.5 font-semibold text-brand-navy">{b.email || b.subscriber_id}</td>
+                <td className="px-4 py-2.5 capitalize text-rose-600">{b.type || 'Hard Bounce'}</td>
+                <td className="px-4 py-2.5 text-brand-navy/50">{b.source || 'SMTP Gateway'}</td>
+                <td className="px-4 py-2.5 text-brand-navy/40">{b.created_at ? new Date(b.created_at).toLocaleString() : '—'}</td>
               </tr>
             ))}
-            {rows.length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-brand-navy/50">No bounces recorded — clean list.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-brand-navy/40 italic">No suppressions recorded.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -247,110 +613,19 @@ function SuppressionView() {
   );
 }
 
-// ── Module: tab bar over the four control views ────────────────────────────
+// ── Tab Bar Navigation ────────────────────────────────────────────────────────
 const TABS = [
   { key: 'overview', label: 'Overview' },
-  { key: 'campaigns', label: 'Campaigns' },
-  { key: 'templates', label: 'Templates' },
+  { key: 'whatsapp', label: '📱 WhatsApp & Chatwoot (11)' },
+  { key: 'journeys', label: 'Mautic Journeys' },
+  { key: 'templates', label: 'HTML5 Templates (12)' },
+  { key: 'assets_forms', label: 'Assets, Forms & Pages' },
+  { key: 'dwc', label: 'Dynamic Web Content' },
   { key: 'audiences', label: 'Audiences' },
-  { key: 'suppression', label: 'Suppression' },
+  { key: 'suppression', label: 'Suppression & Bounces' },
 ] as const;
 
-
-// ============ JOURNEYS VIEW (tier campaigns + touches) ============
-function JourneysView() {
-  const { data, isLoading, isError, refetch } = useQuery<any>({
-    queryKey: ['marketingJourneys'],
-    queryFn: async () => {
-      const r = await fetch('/api/marketing/journeys', { headers: AUTH });
-      if (!r.ok) throw new Error('journeys');
-      return r.json();
-    },
-    refetchInterval: 60000,
-  });
-
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading journeys…</div>;
-  if (isError || !data?.success) return <div className="p-10 text-center text-xs text-rose-600">Journeys unavailable. <button className="underline" onClick={() => refetch()}>Retry</button></div>;
-
-  const s = data.summary;
-  const tierMeta: Record<string, { label: string; cls: string; icon: string }> = {
-    hot: { label: '🔥 Hot — Fast Track', cls: 'border-rose-200 bg-rose-50/50', icon: '🔥' },
-    warm: { label: '🌤️ Warm — Nurture', cls: 'border-amber-200 bg-amber-50/50', icon: '🌤️' },
-    cold: { label: '❄️ Cold — Re-engagement', cls: 'border-blue-200 bg-blue-50/50', icon: '❄️' },
-    ops: { label: '⚙️ Ops — Transactional', cls: 'border-emerald-200 bg-emerald-50/50', icon: '⚙️' },
-  };
-  const tierOf = (j: any) => j.eligibility?.tier || 'ops';
-  const groups = ['hot', 'warm', 'cold', 'ops'];
-
-  return (
-    <div className="space-y-5">
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: 'Total journeys', value: s.total, cls: 'text-brand-navy' },
-          { label: 'Active', value: s.active, cls: 'text-emerald-700' },
-          { label: 'Clients planned', value: s.totalPlanned, cls: 'text-brand-gold' },
-          { label: 'Touches sent', value: s.totalSent, cls: 'text-blue-700' },
-        ].map(k => (
-          <div key={k.label} className="rounded-2xl border border-brand-navy/10 bg-white p-4">
-            <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-brand-navy/40">{k.label}</div>
-            <div className={`mt-1 font-display font-extrabold text-2xl ${k.cls}`}>{k.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Journey groups */}
-      {groups.map(g => {
-        const items = data.journeys.filter((j: any) => tierOf(j) === g);
-        if (items.length === 0) return null;
-        const meta = tierMeta[g];
-        return (
-          <div key={g} className={`rounded-2xl border p-5 space-y-3 ${meta.cls}`}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-display font-bold text-sm text-brand-navy">{meta.icon} {meta.label} <span className="text-brand-navy/40 font-normal">({items.length})</span></h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {items.map((j: any) => (
-                <div key={j.id} className="rounded-xl border border-brand-navy/10 bg-white p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-brand-navy">{j.name}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${j.status === 'active' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{j.status}</span>
-                  </div>
-                  <div className="text-[10px] text-brand-navy/40 capitalize">{j.division.replace('-', ' ')}</div>
-                  {/* Touch timeline */}
-                  <div className="flex items-center gap-1">
-                    {j.touches.map((t: any) => (
-                      <div key={t.id} className="flex-1 text-center">
-                        <div className={`h-1.5 rounded-full ${t.channel === 'email' ? 'bg-brand-gold' : 'bg-brand-navy/30'}`} />
-                        <div className="text-[8px] text-brand-navy/40 mt-0.5">D{t.day}</div>
-                        <div className="text-[8px] text-brand-navy/50 font-bold uppercase">{t.stage}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between text-[9px] text-brand-navy/40">
-                    <span>{j.clientsPlanned} clients</span>
-                    <span>{j.touchesSent} sent</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function MarketingTab() {
-  const { data: emailTrack } = useQuery<any>({
-    queryKey: ['emailTracking'],
-    queryFn: async () => {
-      const r = await fetch('/api/marketing/email-tracking', { headers: AUTH });
-      if (!r.ok) throw new Error('email tracking');
-      return r.json();
-    },
-    refetchInterval: 60000
-  });
   const [tab, setTab] = useState<string>('overview');
   const { data: live, isLoading, isError, refetch } = useQuery<LiveData>({
     queryKey: ['integrationsLive'],
@@ -360,67 +635,37 @@ export default function MarketingTab() {
 
   return (
     <div ref={rootRef} className="space-y-6 p-6">
-      {/* Email engagement tracking (Listmonk opens/clicks) */}
-      {emailTrack && (
-        <div className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display font-bold text-brand-navy text-sm">📧 Email Engagement</h3>
-            <span className="text-[10px] text-brand-navy/40">from Listmonk webhook events</span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
-            <div className="rounded-lg bg-brand-navy/[0.04] p-2.5"><div className="text-[9px] font-bold uppercase text-brand-navy/40">Events</div><div className="font-extrabold text-brand-navy">{emailTrack.totals.sent}</div></div>
-            <div className="rounded-lg bg-blue-50 p-2.5"><div className="text-[9px] font-bold uppercase text-blue-600">Opens</div><div className="font-extrabold text-blue-700">{emailTrack.totals.opens}</div></div>
-            <div className="rounded-lg bg-emerald-50 p-2.5"><div className="text-[9px] font-bold uppercase text-emerald-600">Clicks</div><div className="font-extrabold text-emerald-700">{emailTrack.totals.clicks}</div></div>
-            <div className="rounded-lg bg-amber-50 p-2.5"><div className="text-[9px] font-bold uppercase text-amber-600">Bounces</div><div className="font-extrabold text-amber-700">{emailTrack.totals.bounces}</div></div>
-            <div className="rounded-lg bg-rose-50 p-2.5"><div className="text-[9px] font-bold uppercase text-rose-600">Unsubs</div><div className="font-extrabold text-rose-700">{emailTrack.totals.unsubs}</div></div>
-          </div>
-          {emailTrack.byEmail.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-brand-navy/[0.08] text-[10px] uppercase font-bold tracking-wider text-brand-gold">
-                  <tr><th className="px-3 py-2">Email</th><th className="px-3 py-2">Opens</th><th className="px-3 py-2">Clicks</th><th className="px-3 py-2">Bounces</th><th className="px-3 py-2">Unsubs</th><th className="px-3 py-2">Last event</th></tr>
-                </thead>
-                <tbody className="divide-y divide-brand-navy/[0.06]">
-                  {emailTrack.byEmail.map((r: any) => (
-                    <tr key={r.email} className="hover:bg-brand-navy/[0.03]">
-                      <td className="px-3 py-2 font-semibold text-brand-navy">{r.email}</td>
-                      <td className="px-3 py-2">{r.opens}</td>
-                      <td className="px-3 py-2">{r.clicks}</td>
-                      <td className="px-3 py-2">{r.bounces}</td>
-                      <td className="px-3 py-2">{r.unsubs}</td>
-                      <td className="px-3 py-2 text-brand-navy/40">{new Date(r.last * 1000).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {emailTrack.byEmail.length === 0 && <p className="text-[10px] text-brand-navy/40 italic">No email events yet — they appear once Listmonk is live and campaigns send.</p>}
-        </div>
-      )}
-
       <div className="reveal">
         <div className="flex items-center gap-2.5">
           <span className="gold-dot" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Marketing</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Superadmin Marketing Suite</p>
         </div>
-        <h2 className="mt-2 font-display text-sm font-bold text-brand-navy">Marketing Automation</h2>
-        <p className="mt-1 text-[11px] text-brand-navy/40">Control panel — operations run in the connected tools (Listmonk · Mautic · Chatwoot · OpenWA) via their VPC APIs; every command is RBAC-gated and audited by the OS.</p>
+        <h2 className="mt-2 font-display text-sm font-bold text-brand-navy">Marketing Automation, WhatsApp & Lead Journeys</h2>
+        <p className="mt-1 text-[11px] text-brand-navy/50">
+          Unified control center — Live synchronization between Opus OS Lead Engine, Chatwoot Brain, and VPS Microservices (OpenWA · Mautic · Listmonk).
+        </p>
       </div>
 
       <div className="reveal flex flex-wrap gap-1 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-1 text-[10px] font-bold uppercase">
         {TABS.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={`rounded-full px-4 py-1.5 transition ${tab === t.key ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-gold'}`}>{t.label}</button>
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`rounded-full px-4 py-1.5 transition ${tab === t.key ? 'bg-brand-gold text-brand-navy shadow-xs' : 'text-brand-navy/50 hover:text-brand-gold'}`}
+          >
+            {t.label}
+          </button>
         ))}
       </div>
 
       {tab === 'overview' && (isLoading ? <div className="p-10 text-center text-xs text-brand-navy/50">Loading tool feeds…</div> : isError || !live ? <ErrPanel what="tool feeds" onRetry={refetch} /> : <Overview live={live} />)}
-      {tab === 'campaigns' && <CampaignsView />}
-      {tab === 'templates' && <TemplatesView />}
+      {tab === 'whatsapp' && <WhatsAppView />}
+      {tab === 'journeys' && <JourneysView />}
+      {tab === 'templates' && <MauticTemplatesView />}
+      {tab === 'assets_forms' && <AssetsAndFormsView />}
+      {tab === 'dwc' && <DWCView />}
       {tab === 'audiences' && <AudiencesView />}
       {tab === 'suppression' && <SuppressionView />}
-      {tab === 'journeys' && <JourneysView />}
     </div>
   );
 }

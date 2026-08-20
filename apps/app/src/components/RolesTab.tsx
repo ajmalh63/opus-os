@@ -6,12 +6,7 @@ interface Permission { code: string; family: string; label: string; ownerOnly: b
 interface Role { id: string; name: string; code: string; description: string | null; permissionsJson: string; system: boolean; editable: boolean; color: string; }
 
 // A-5: session-driven auth €â‚¬- read the live better-auth cookie; no forged admin token.
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
+
 
 export default function RolesTab() {
   const rootRef = useRevealRoot<HTMLDivElement>();
@@ -28,7 +23,7 @@ export default function RolesTab() {
   const { data: permData } = useQuery<{ permissions: Permission[] }>({
     queryKey: ['rbacPermissions'],
     queryFn: async () => {
-      const r = await fetch('/api/admin/rbac/permissions', { headers: AUTH });
+      const r = await fetch('/api/admin/rbac/permissions', { credentials: 'include' });
       if (!r.ok) throw new Error('Failed to load permissions');
       return r.json();
     }
@@ -39,7 +34,7 @@ export default function RolesTab() {
   const { data: roleData, refetch: refetchRoles } = useQuery<{ roles: Role[] }>({
     queryKey: ['rbacRoles'],
     queryFn: async () => {
-      const r = await fetch('/api/admin/rbac/roles', { headers: AUTH });
+      const r = await fetch('/api/admin/rbac/roles', { credentials: 'include' });
       if (!r.ok) throw new Error('Failed to load roles');
       return r.json();
     }
@@ -50,7 +45,7 @@ export default function RolesTab() {
     mutationFn: async () => {
       const r = await fetch('/api/admin/rbac/roles', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...AUTH },
+        headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ name, code: code.toLowerCase().replace(/\s+/g, '_'), description: desc, permissions: selectedPerms })
       });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Failed to create role'); }

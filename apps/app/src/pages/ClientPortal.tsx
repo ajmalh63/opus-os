@@ -184,10 +184,21 @@ export default function ClientPortal() {
   };
 
   // ====== Authenticated "My Journey" (Section 25.4) ======
-  const [loginState, setLoginState] = useState<{ email: string; password: string }>({ email: '', password: '' });
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [claimToken, setClaimToken] = useState('');
   const [claimPhone, setClaimPhone] = useState('');
+
+  // Check existing session on mount
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((me) => {
+        if (me?.authenticated && me?.user?.email) {
+          setAuthEmail(me.user.email);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Fetch authenticated journeys once logged in
   const { data: sessionData, isFetching: sessionFetching, refetch: refetchSession, error: sessionError, isError: sessionIsError } =
@@ -207,35 +218,9 @@ export default function ClientPortal() {
       retry: false,
     });
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loginState.email || !loginState.password) {
-      showToast('Enter your email and password.');
-      return;
-    }
-    try {
-      const res = await fetch('/api/auth/sign-in/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email: loginState.email, password: loginState.password }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.message || 'Sign-in failed. Check your credentials.');
-      }
-      setAuthEmail(loginState.email);
-      setLoginState({ email: loginState.email, password: '' });
-      showToast('Signed in successfully.');
-    } catch (err: any) {
-      showToast(`Sign-in error: ${err.message}`);
-    }
-  };
-
   const handleSignOut = () => {
     fetch('/api/auth/sign-out', { method: 'POST', credentials: 'include' }).catch(() => {});
     setAuthEmail(null);
-    setLoginState({ email: '', password: '' });
     showToast('Signed out.');
   };
 
@@ -315,40 +300,36 @@ export default function ClientPortal() {
           </div>
 
           <div className="w-full max-w-md bg-brand-navy p-6 rounded-xl border border-brand-navyLight/60 shadow-xl flex flex-col gap-4">
-            {/* ====== Sign In (My Journey, Section 25.4) ====== */}
+            {/* ====== Unified Sign In Reference ====== */}
             {!authEmail ? (
-              <form onSubmit={handleSignIn} className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-brand-gold font-bold block mb-1">
-                    My Journey Sign In
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="you@email.com"
-                    value={loginState.email}
-                    onChange={(e) => setLoginState({ ...loginState, email: e.target.value })}
-                    className="w-full text-xs p-3 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
-                  />
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-brand-gold">
+                    🔒 Client Account Vault
+                  </span>
+                  <h3 className="font-display font-bold text-white text-base mt-2">
+                    Registered Client?
+                  </h3>
+                  <p className="text-xs text-brand-cream/70 mt-1 leading-relaxed">
+                    Sign in to access your confidential document vault, verified payment receipts, and direct counselor WhatsApp desk.
+                  </p>
                 </div>
-                <input
-                  type="password"
-                  required
-                  placeholder="Password"
-                  value={loginState.password}
-                  onChange={(e) => setLoginState({ ...loginState, password: e.target.value })}
-                  className="w-full text-xs p-3 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
-                />
-                <button
-                  type="submit"
-                  className="w-full bg-brand-gold hover:bg-brand-goldHover text-brand-navy py-2.5 rounded text-xs font-bold uppercase tracking-wider transition"
+
+                <Link
+                  href="/login"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-brand-gold hover:bg-brand-goldHover text-brand-navy py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition shadow-md tactile-btn"
                 >
-                  Sign In to My Journey
-                </button>
-                <p className="text-[10px] text-brand-cream/50 text-center leading-relaxed">
-                  New to the portal? Use the token lookup below first, then link your journey from your dashboard.
-                </p>
-              </form>
+                  <span>Sign In with Email / OTP</span>
+                  <span>→</span>
+                </Link>
+
+                <div className="flex items-center justify-between text-[10px] text-brand-cream/50 pt-1 border-t border-brand-navyLight/60">
+                  <span>Don't have an account?</span>
+                  <Link href="/signup" className="text-brand-gold font-bold hover:underline">
+                    Create Client Account
+                  </Link>
+                </div>
+              </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">

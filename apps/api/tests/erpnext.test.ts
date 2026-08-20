@@ -30,7 +30,7 @@ describe('ERPNext back-office integration', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-8001', name: 'Erp Client', email: 'e@x.com', phone: '+91 99999 00000', created_at: 1, updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-8001', portal_token: 'OP-2026-8001', name: 'Erp Client', email: 'e@x.com', phone: '+91 99999 00000', created_at: 1, updated_at: 1 });
     mockD1.tables.engagements.push({ id: 'eng-8001', client_id: 'OP-2026-8001', division: 'study-abroad', title: 'US', stage_key: 'qualified', status: 'active', created_at: 1, updated_at: 1, outstanding_balance: 0 });
     mockD1.tables.payments.push({ id: 'pay-8001', client_id: 'OP-2026-8001', engagement_id: 'eng-8001', amount: 1180000, type: 'invoice', milestone_name: 'Fees', method: 'bank_transfer', created_at: 1 });
   });
@@ -118,6 +118,37 @@ describe('ERPNext back-office integration', () => {
     const log = (mockD1.tables.erpnext_sync_log as any[]).find((l) => l.entity_id === 'pay-8001' && l.status === 'failed');
     expect(log).toBeTruthy();
     expect(log.attempts).toBe(1);
+  });
+
+  it('GET /api/erpnext/invoices returns unified invoice ledger with sync telemetry', async () => {
+    const res = await app.request('/api/erpnext/invoices', {
+      headers: { 'Cookie': 'better-auth.session_token=token-admin' },
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(Array.isArray(data.invoices)).toBe(true);
+    expect(data.totalCount).toBeGreaterThan(0);
+    expect(data.invoices[0]).toHaveProperty('invoiceNo');
+    expect(data.invoices[0]).toHaveProperty('erpSyncStatus');
+  });
+
+  it('POST /api/erpnext/invoices/sync-all batch syncs all pending invoices', async () => {
+    fetchMock = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('Customer/')) return new Response('{}', { status: 404 });
+      if (url.includes('Customer')) return new Response(JSON.stringify({ data: { name: 'Batch Client' } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ data: { name: 'SINV-BATCH-01' } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('/api/erpnext/invoices/sync-all', {
+      method: 'POST',
+      headers: { 'Cookie': 'better-auth.session_token=token-admin' },
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x', ERPNEXT_BASE_URL: 'http://erp:8000' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(data).toHaveProperty('attempted');
   });
 
   it('rbac: non-owner is denied ERPNext access', async () => {

@@ -42,7 +42,8 @@ describe('Study Abroad Applications (snapshot model)', () => {
   beforeAll(() => {
     mockD1 = new MockD1Database();
     mockD1.tables.clients.push({
-      id: 'OP-2026-9201', name: 'Saurabh Sen', phone: '+91 99999 33333', email: 'saurabh@test.com',
+      id: 'OP-2026-9201',
+      portal_token: 'OP-2026-9201', name: 'Saurabh Sen', phone: '+91 99999 33333', email: 'saurabh@test.com',
       highest_qualification: 'undergrad', intake_context: JSON.stringify({
         cgpa: 8.2, englishTest: 'IELTS', englishScore: 7.0, targetIntake: 'Fall 2027',
         targetCountry: 'Canada', tuitionBudget: 25, preferredCourse: 'Computer Science'

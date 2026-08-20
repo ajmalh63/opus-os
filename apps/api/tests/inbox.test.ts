@@ -42,9 +42,11 @@ mockD1.tables.communications.push(
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
     expect(res.status).toBe(200);
     const data = await res.json() as any;
-    expect(data.conversations.length).toBe(2);
+expect(data.conversations.length).toBe(2);
     expect(data.unreadTotal).toBe(2);
-    expect(data.conversations[0].contactName).toBe('Ayesha');
+    // Route contract: newest last-message first (lastMessageAt DESC).
+    expect(data.conversations[0].contactName).toBe('Web Visitor');
+    expect(data.conversations[1].contactName).toBe('Ayesha');
   });
 
   it('GET /api/inbox/:id/thread returns messages and clears unread', async () => {

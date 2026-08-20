@@ -3,12 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import gsap from 'gsap';
 
 // A-5: session-driven auth — read the live better-auth cookie; no forged admin token.
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
+
 
 interface FunnelStage { stage: string; count: number; reachedStage: number; conversionRate: number; }
 interface StaleLead { clientId: string; name: string; phone: string; division: string; stageKey: string; ageDays: number; lastTouchAt: number | null; outstandingBalance: number; }
@@ -38,17 +33,17 @@ export default function FunnelTab() {
 
   const { data, isLoading, isError } = useQuery<FunnelData>({
     queryKey: ['funnelOverview'],
-    queryFn: async () => { const r = await fetch('/api/marketing/funnel', { headers: AUTH }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch('/api/marketing/funnel', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   const { data: partnerData } = useQuery<{ partners: PartnerRow[] }>({
     queryKey: ['affiliateLeaderboard'],
-    queryFn: async () => { const r = await fetch('/api/marketing/partners', { headers: AUTH }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch('/api/marketing/partners', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   const reactivate = useMutation({
     mutationFn: async (clientId: string) => {
-      const r = await fetch(`/api/marketing/stale/${clientId}/reactivate`, { method: 'POST', headers: AUTH });
+      const r = await fetch(`/api/marketing/stale/${clientId}/reactivate`, { method: 'POST', });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Reactivation failed'); }
       return r.json();
     },
@@ -58,7 +53,7 @@ export default function FunnelTab() {
 
   const { data: expData } = useQuery<{ experiments?: ExperimentRow[] }>({
     queryKey: ['experiments'],
-    queryFn: async () => { const r = await fetch('/api/marketing/experiments', { headers: AUTH }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch('/api/marketing/experiments', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   useEffect(() => {

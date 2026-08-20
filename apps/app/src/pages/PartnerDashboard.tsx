@@ -1,51 +1,439 @@
-import { useVisibilityTracking } from '../lib/visibilityTracking';
-import React, { useState, useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import LiveWallpaper from '../components/LiveWallpaper';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
-import PartnerThrive from '../components/PartnerThrive';
+import { QRCodeSVG } from 'qrcode.react';
 import Logo from '../components/Logo';
+import Nav from '../components/Nav';
+import Footer from '../components/Footer';
+import LiveWallpaper from '../components/LiveWallpaper';
 import { track, EVENTS } from '../lib/umami';
+import { fadeUp, staggerReveal, countUp, prefersReducedMotion, makeContext, whenFontsReady } from '../lib/motion';
+import { useVisibilityTracking } from '../lib/visibilityTracking';
 
-// Partner / Affiliate Portal — gold-standard patterns (research 2026):
-//  1. Share-link generator one click from dashboard (Track360, Voucherify)
-//  2. Real-time rupee balances + referral breakdown (Impact/ShareASale model)
-//  3. Payout transparency (schedule, status chips, ledger math)
-//  4. Activation shell: email+password account (KYC merged into registration)
-//     with the legacy Partner ID + Access Key flow kept as a fallback.
+// ============================================================================
+// OPUS OVERSEAS — PARTNER & AFFILIATE COMMAND CENTER (GOLD STANDARD ARCHITECTURE)
+// Inspired by Stripe Atlas, FirstPromoter, and Rewardful.
+// 1. Session-first & token-safe auth with seamless KYC onboarding.
+// 2. 5-Division 1-Click Link Hub (Study Abroad, Visa, Umrah, Attestation, Manpower).
+// 3. Telemetry ribbon with live rupee rollups & count-up animations.
+// 4. Transparent milestone ledger (Lead → Agreement → Payment → Matured → Payout).
+// 5. Payout station with masked bank/UPI preferences & 1-click settlement requests.
+// 6. VIP Loyalty Tier ladder (Thrive points, commission boosts, perks).
+// 7. Dynamic creative kit, copy swipe library, & instant QR code studio.
+// ============================================================================
 
-interface CommissionRow { referralId: string; referredClientId: string; ratePct: number; amountPaise: number; status: 'unmatured' | 'matured' | 'paid' | 'held'; }
+type TabKey = 'overview' | 'links' | 'referrals' | 'payouts' | 'tiers';
+
+interface CommissionRow {
+  referralId: string;
+  referredClientId: string;
+  ratePct: number;
+  amountPaise: number;
+  status: 'unmatured' | 'matured' | 'paid' | 'held' | string;
+}
+
 interface PartnerSummary {
-  partner: { id?: string; name: string; referralCode: string | null; status: string; joinedAt: number };
-  totals: { matured: number; pending: number; paid: number; total: number };
+  partner: {
+    id?: string;
+    name: string;
+    referralCode: string | null;
+    status: string;
+    joinedAt: number;
+  };
+  totals: {
+    matured: number;
+    pending: number;
+    paid: number;
+    total: number;
+  };
   referrals: CommissionRow[];
 }
+
 interface PartnerSessionPayload {
   success: boolean;
   authenticated: boolean;
   email?: string | null;
-  partner?: { id: string; name: string; referralCode: string | null; status: string; joinedAt: number } | null;
-  totals?: { matured: number; pending: number; paid: number; total: number };
+  partner?: {
+    id: string;
+    name: string;
+    referralCode: string | null;
+    status: string;
+    joinedAt: number;
+  } | null;
+  totals?: {
+    matured: number;
+    pending: number;
+    paid: number;
+    total: number;
+  };
   referrals?: CommissionRow[];
 }
 
+interface OnboardingStep {
+  key: string;
+  done: boolean;
+  label: string;
+  hint: string;
+}
+
+interface OnboardingPayload {
+  steps: OnboardingStep[];
+  doneCount: number;
+  totalCount: number;
+}
+
+interface ClickLinkRow {
+  id: string;
+  title: string;
+  catalogType: string;
+  catalogItemId: string;
+  clicks: number;
+  lastClickedAt: number | null;
+  createdAt: number;
+}
+
+interface ClicksPayload {
+  totalClicks: number;
+  links: ClickLinkRow[];
+}
+
+interface TimelineEvent {
+  label: string;
+  at: number | null;
+  state?: string;
+}
+
+interface ReferralDetailRow {
+  referralId: string;
+  clientId: string;
+  clientName?: string | null;
+  commissionRate: number;
+  amountPaise: number;
+  status: string;
+  createdAt: number;
+  timeline: TimelineEvent[];
+}
+
+interface ReferralDetailPayload {
+  referrals: ReferralDetailRow[];
+}
+
+interface Creative {
+  id: string;
+  title: string;
+  type: string;
+  size: string | null;
+  url: string;
+  imageKey: string | null;
+  active: boolean;
+}
+
+interface CreativesPayload {
+  creatives: Creative[];
+}
+
+interface PayoutConfig {
+  payoutMethod: 'bank' | 'upi' | null;
+  payoutDetail: string;
+  payoutThresholdPaise: number;
+}
+
+interface PayoutRow {
+  id: string;
+  partnerId: string;
+  amountPaise: number;
+  status: 'requested' | 'approved' | 'paid' | 'rejected';
+  note: string | null;
+  requestedAt: number;
+  resolvedAt: number | null;
+}
+
+interface ThriveSummary {
+  ref: string | null;
+  tier: {
+    key: string;
+    name: string;
+    minPoints: number;
+    boostPct: number;
+    perks: string[];
+    color: string;
+  } | null;
+  nextTier: {
+    key: string;
+    name: string;
+    minPoints: number;
+  } | null;
+  totalPoints: number;
+  progressPct: number;
+  totalClicks: number;
+  linkCount: number;
+}
+
+interface CatalogItem {
+  type: string;
+  id: string;
+  title: string;
+  pricePaise: number;
+  meta?: any;
+}
+
+interface PartnerLink {
+  id: string;
+  catalogType: string;
+  catalogItemId: string;
+  title: string;
+  pricePaise: number;
+  clicks: number;
+  createdAt: number;
+  lastClickedAt: number | null;
+}
+
+interface LedgerRow {
+  referralId: string;
+  clientId: string;
+  clientName?: string | null;
+  ratePct: number;
+  amountPaise: number;
+  status: string;
+  createdAt: number | null;
+  timeline: TimelineEvent[];
+}
+
+// Currency & Date formatters
 const rs = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+const rsExact = (paise: number) => `₹${(paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const d = (ts: number) => new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+const ago = (ts: number | null): string => {
+  if (!ts) return '—';
+  const s = Math.floor(Date.now() / 1000) - ts;
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d ago`;
+  return d(ts);
+};
+
+// 5 Divisions definition
+interface DivisionConfig {
+  id: string;
+  name: string;
+  badge: string;
+  path: string;
+  tagline: string;
+  avgCommission: string;
+  typicalFee: number; // in rupees
+  estRate: number; // percentage
+  color: string;
+  whatsappText: (url: string) => string;
+}
+
+const DIVISIONS: DivisionConfig[] = [
+  {
+    id: 'study-abroad',
+    name: 'Study Abroad & Admissions',
+    badge: 'Education',
+    path: '/study-abroad',
+    tagline: '500+ Top Global Universities across UK, USA, Canada, Australia, Germany & Ireland.',
+    avgCommission: '₹15,000 – ₹35,000 / student',
+    typicalFee: 150000,
+    estRate: 12,
+    color: '#235a96',
+    whatsappText: (url) => `Planning to study in the UK, USA, Canada, or Australia? Connect with Opus Overseas for 100% free study abroad counselling and verified visa guidance: ${url}`,
+  },
+  {
+    id: 'visa-services',
+    name: 'Global Visas & Immigration',
+    badge: 'Immigration',
+    path: '/visa-services',
+    tagline: 'Tourist, Business, Work Permits & PR for 40+ countries with 99% approval.',
+    avgCommission: '₹3,000 – ₹12,000 / case',
+    typicalFee: 45000,
+    estRate: 10,
+    color: '#0d9488',
+    whatsappText: (url) => `Fast-track visa processing with 99% document compliance for 40+ countries via Opus Overseas: ${url}`,
+  },
+  {
+    id: 'umrah-travel',
+    name: 'Umrah & Hajj Pilgrimage',
+    badge: 'Pilgrimage',
+    path: '/umrah-travel',
+    tagline: '5-Star luxury packages, economy group departures, and direct flights.',
+    avgCommission: '₹5,000 – ₹10,000 / pilgrim',
+    typicalFee: 85000,
+    estRate: 8,
+    color: '#16a34a',
+    whatsappText: (url) => `Book all-inclusive, luxury Umrah packages with verified group departures via Opus Overseas: ${url}`,
+  },
+  {
+    id: 'attestation',
+    name: 'Document Attestation & Apostille',
+    badge: 'Compliance',
+    path: '/attestation',
+    tagline: 'MEA, HRD, Embassy attestation, Apostille & door-to-door courier tracking across India.',
+    avgCommission: '₹1,500 – ₹4,500 / certificate',
+    typicalFee: 20000,
+    estRate: 15,
+    color: '#7c3aed',
+    whatsappText: (url) => `Verified MEA / Embassy certificate attestation and Apostille services across India with Opus Overseas: ${url}`,
+  },
+  {
+    id: 'recruitment',
+    name: 'International Manpower & Careers',
+    badge: 'Recruitment',
+    path: '/recruitment',
+    tagline: 'Overseas manpower recruitment for Gulf, Europe, and Asia across verified employers.',
+    avgCommission: '₹10,000 – ₹25,000 / placement',
+    typicalFee: 120000,
+    estRate: 10,
+    color: '#d97706',
+    whatsappText: (url) => `Explore verified overseas career openings in Gulf and Europe with Opus Overseas: ${url}`,
+  },
+];
+
+// Pre-approved Marketing Swipe Copies
+const SWIPE_TEMPLATES = [
+  {
+    id: 'whatsapp-blast',
+    title: 'WhatsApp Broadcast Message',
+    channel: 'WhatsApp & SMS',
+    hint: 'Best for direct 1-to-1 contacts or broadcasting to client groups.',
+    body: (url: string) =>
+      `Hi there! 👋 If you or anyone in your family is planning for Study Abroad (UK/US/Canada/Australia), Global Visas, Umrah Pilgrimages, Certificate Attestation, or Overseas Jobs, I highly recommend Opus Overseas.\n\nThey offer transparent guidance with exceptional success rates. Connect directly with their senior advisors here:\n👉 ${url}`,
+  },
+  {
+    id: 'email-warm',
+    title: 'Warm Email Introduction',
+    channel: 'Email Newsletter / Client Note',
+    hint: 'Use when emailing your existing client list or student alumni.',
+    body: (url: string) =>
+      `Subject: Trusted Partner for Global Visas, Study Abroad & Pilgrimages\n\nDear Client,\n\nNavigating international admissions, visa procedures, or pilgrimage travel requires verified, professional handling. I am pleased to partner with Opus Overseas — India's premier global mobility consultancy.\n\nWhether you require:\n• Direct University Admissions (UK, USA, Canada, Australia)\n• Fast-track Tourist, Business or Work Visas (40+ countries)\n• All-inclusive Umrah & Hajj Group Departures\n• MEA & Embassy Document Attestation / Apostille\n\nYou can book a priority consultation with their team here:\n${url}\n\nWarm regards,\nYour Trusted Partner`,
+  },
+  {
+    id: 'social-linkedin',
+    title: 'LinkedIn / Professional Post',
+    channel: 'LinkedIn & Facebook',
+    hint: 'High-trust copy for professional networks, HRs, and educators.',
+    body: (url: string) =>
+      `Global ambitions require seamless execution. ✈️🎓\n\nI am proud to partner with Opus Overseas to provide end-to-end pathways for:\n1. Global Higher Education & Scholarships\n2. Compliant Visa & Immigration Services\n3. Embassy Attestation & Apostille Logistics\n4. Verified Overseas Recruitment & Umrah Departures\n\nExplore official offerings or schedule an expert consultation:\n👉 ${url}\n\n#GlobalMobility #StudyAbroad #Immigration #OpusOverseas`,
+  },
+  {
+    id: 'instagram-bio',
+    title: 'Instagram Bio & Story Snippet',
+    channel: 'Instagram Bio / Status',
+    hint: 'Short & punchy format for bio links or swipe-up stories.',
+    body: (url: string) =>
+      `✈️ Official Partner @ Opus Overseas | Study Abroad • Fast-Track Visas • Umrah Packages • MEA Attestation\n🔗 Priority Consultation Link: ${url}`,
+  },
+];
+
+// Visual Status Configs
+const statusStyles: Record<string, string> = {
+  matured: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
+  pending: 'bg-amber-500/15 text-amber-700 border-amber-500/30',
+  paid: 'bg-sky-500/15 text-sky-700 border-sky-500/30',
+  held: 'bg-rose-500/15 text-rose-700 border-rose-500/30',
+  unmatured: 'bg-slate-500/15 text-slate-700 border-slate-500/30',
+};
+
+const statusLabel: Record<string, string> = {
+  matured: 'Earned (Payout Ready)',
+  pending: 'Awaiting Agreement Sign',
+  paid: 'Paid Out to Bank',
+  held: 'Held (Under Review)',
+  unmatured: 'Referral Tracked',
+};
+
+const payoutStatusStyles: Record<string, string> = {
+  paid: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
+  approved: 'bg-sky-500/15 text-sky-700 border-sky-500/30',
+  requested: 'bg-amber-500/15 text-amber-700 border-amber-500/30',
+  rejected: 'bg-rose-500/15 text-rose-700 border-rose-500/30',
+};
+
+// Sub-components
+function AnimatedNumber({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const prev = useRef<number | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (prev.current === null) {
+      countUp(el, value, { prefix, suffix });
+    } else if (prev.current !== value) {
+      el.textContent = `${prefix}${value.toLocaleString('en-IN')}${suffix}`;
+    }
+    prev.current = value;
+  }, [value, prefix, suffix]);
+  return <span ref={ref}>{prefix}0{suffix}</span>;
+}
+
+function StatusChip({ status }: { status: string }) {
+  const cls = statusStyles[status] || statusStyles.unmatured;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cls}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${status === 'matured' || status === 'paid' ? 'bg-emerald-500' : status === 'pending' ? 'bg-amber-500' : 'bg-slate-400'}`} />
+      {statusLabel[status] || status}
+    </span>
+  );
+}
+
+function MilestoneTimeline({ events }: { events: TimelineEvent[] }) {
+  const isDone = (st?: string) => !st || !['pending', 'upcoming', 'todo', 'future'].includes(st);
+  return (
+    <div className="relative pl-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-brand-navy/10 space-y-4">
+      {events.map((e, idx) => (
+        <div key={idx} className="relative flex items-start gap-3">
+          <span className={`absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2 border-white shadow-sm ${isDone(e.state) ? 'bg-brand-gold' : 'bg-slate-300'}`} />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-bold text-brand-navy">{e.label}</div>
+            <div className="text-[10px] text-brand-navy/50">{e.at ? ago(e.at) : 'Pending next stage'}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function PartnerDashboard() {
   useVisibilityTracking('/partner');
   const panelRef = useRef<HTMLDivElement>(null);
-
+  const heroTitleRef = useRef<HTMLHeadingElement>(null);
   const queryClient = useQueryClient();
-  const [toast, setToast] = useState<{ show: boolean; msg: string }>({ show: false, msg: '' });
-  const showToast = (msg: string) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 4000); };
-  const [copied, setCopied] = useState(false);
 
-  // Legacy access-key partner (localStorage) — kept as a fallback path.
+  // Toast system
+  const [toast, setToast] = useState<{ show: boolean; msg: string; type?: 'gold' | 'success' | 'error' }>({ show: false, msg: '', type: 'gold' });
+  const showToast = (msg: string, type: 'gold' | 'success' | 'error' = 'gold') => {
+    setToast({ show: true, msg, type });
+    setTimeout(() => setToast({ show: false, msg: '', type: 'gold' }), 4000);
+  };
+
+  // State management
+  const [tab, setTab] = useState<TabKey>('overview');
+  const [copiedLinkKey, setCopiedLinkKey] = useState<string | null>(null);
+  const [openReferral, setOpenReferral] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // QR Code Modal State
+  const [qrModal, setQrModal] = useState<{ open: boolean; title: string; url: string }>({ open: false, title: '', url: '' });
+
+  // Catalog browser state
+  const [catalogType, setCatalogType] = useState<string>('university');
+  const [catalogSearch, setCatalogSearch] = useState<string>('');
+
+  // Landing page Calculator State
+  const [calcStudy, setCalcStudy] = useState(3);
+  const [calcVisas, setCalcVisas] = useState(6);
+  const [calcUmrah, setCalcUmrah] = useState(2);
+  const [calcAttest, setCalcAttest] = useState(4);
+  const [calcManpower, setCalcManpower] = useState(1);
+
+  // Legacy Partner auth fallback
   const [partnerId, setPartnerId] = useState(() => localStorage.getItem('opus_partner_id') || '');
-  const [partnerName, setPartnerName] = useState(() => localStorage.getItem('opus_partner_name') || '');
+  const [, setPartnerName] = useState(() => localStorage.getItem('opus_partner_name') || '');
   const [partnerToken, setPartnerToken] = useState(() => localStorage.getItem('opus_partner_token') || '');
 
+  // Sign In inputs
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [authError, setAuthError] = useState('');
@@ -53,6 +441,7 @@ export default function PartnerDashboard() {
   const [partnerIdInput, setPartnerIdInput] = useState('');
   const [tokenInput, setTokenInput] = useState('');
 
+  // Registration KYC inputs
   const [kycName, setKycName] = useState('');
   const [kycEmail, setKycEmail] = useState('');
   const [kycPassword, setKycPassword] = useState('');
@@ -60,67 +449,236 @@ export default function PartnerDashboard() {
   const [kycBankAccount, setKycBankAccount] = useState('');
   const [kycIfsc, setKycIfsc] = useState('');
 
-  const [clientId, setClientId] = useState('');
-  const [commissionRate, setCommissionRate] = useState(5);
+  // Manual Referral Log Inputs
+  const [manualClientId, setManualClientId] = useState('');
+  const [manualCommissionRate, setManualCommissionRate] = useState(10);
 
-  // Session-first auth (mirrors the client portal): the Better Auth session
-  // resolves to the partner row by email. 401 → anonymous; authenticated:false
-  // → logged in but not a partner (staff visit, legacy token still applies).
+  // Payout Configuration State
+  const [payoutMethod, setPayoutMethod] = useState<'bank' | 'upi'>('bank');
+  const [payoutDetail, setPayoutDetail] = useState('');
+  const [payoutThreshold, setPayoutThreshold] = useState(3000);
+  const [editPayoutConfig, setEditPayoutConfig] = useState(false);
+
+  // --------------------------------------------------------------------------
+  // AUTH & SESSION DATA FETCHING
+  // --------------------------------------------------------------------------
   const { data: session, isLoading: sessionLoading } = useQuery<PartnerSessionPayload>({
     queryKey: ['partnerSession'],
     queryFn: async () => {
-      const res = await fetch('/api/public/partners/session', { credentials: 'include' });
-      if (res.status === 401) return { success: true, authenticated: false, email: null };
-      if (!res.ok) throw new Error(await res.text() || 'Failed to load your partner session.');
-      return res.json();
+      try {
+        const res = await fetch('/api/public/partners/session', { credentials: 'include' });
+        if (res.status === 401 || res.status === 404) return { success: true, authenticated: false, email: null };
+        if (!res.ok) return { success: true, authenticated: false, email: null };
+        return res.json();
+      } catch {
+        return { success: true, authenticated: false, email: null };
+      }
     },
     retry: false,
     refetchOnWindowFocus: false,
   });
 
   const sessionActive = session?.authenticated === true && !!session?.partner;
+  const activePartnerId = sessionActive && session?.partner
+    ? session.partner.id
+    : partnerId && partnerToken ? partnerId : null;
 
-  const { data: summary, isFetching, isError } = useQuery<PartnerSummary>({
+  const authHeaders = (json = false): Record<string, string> => {
+    const h: Record<string, string> = {};
+    if (!sessionActive && partnerToken) h['Authorization'] = `Bearer ${partnerToken}`;
+    if (json) h['Content-Type'] = 'application/json';
+    return h;
+  };
+
+  // --------------------------------------------------------------------------
+  // PARTNER DATA QUERIES
+  // --------------------------------------------------------------------------
+  const { data: summary } = useQuery<PartnerSummary>({
     queryKey: ['partnerSummary', partnerId],
     queryFn: async () => {
-      if (!partnerId) return null as any;
-      const res = await fetch(`/api/public/partners/${partnerId}/summary`, { headers: { 'Authorization': `Bearer ${partnerToken}` } });
+      if (!partnerId) return null as unknown as PartnerSummary;
+      const res = await fetch(`/api/public/partners/${partnerId}/summary`, { headers: authHeaders() });
       if (!res.ok) {
         setAuthError('Access failed — check your Partner ID and Access Key.');
         throw new Error(await res.text() || 'summary failed');
       }
       return res.json();
     },
-    enabled: !!partnerId && !!partnerToken && !sessionActive,
+    enabled: !!partnerId,
+    retry: false,
   });
 
-  useEffect(() => {
-    if (panelRef.current) {
-      gsap.fromTo(panelRef.current.querySelectorAll('.partner-fade'),
-        { y: 15, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.7, stagger: 0.06, ease: 'power2.out' }
-      );
-    }
-  }, [sessionActive, summary]);
+  const { data: thrive } = useQuery<ThriveSummary>({
+    queryKey: ['partnerThrive', activePartnerId],
+    queryFn: async () => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/thrive`, { headers: authHeaders() });
+      if (!r.ok) throw new Error('thrive');
+      return r.json();
+    },
+    enabled: !!activePartnerId,
+    retry: false,
+  });
 
-  // Effective dashboard view: session (email+password) wins over legacy token.
+  const { data: onboarding } = useQuery<OnboardingPayload>({
+    queryKey: ['partnerOnboarding', activePartnerId],
+    queryFn: async () => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/onboarding`, { headers: authHeaders() });
+      if (r.status === 404) return { steps: [], doneCount: 0, totalCount: 0 };
+      if (!r.ok) throw new Error(await r.text() || 'onboarding failed');
+      return r.json();
+    },
+    enabled: !!activePartnerId,
+    retry: false,
+  });
+
+  const { data: clicks } = useQuery<ClicksPayload>({
+    queryKey: ['partnerClicks', activePartnerId],
+    queryFn: async () => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/clicks`, { headers: authHeaders() });
+      if (r.status === 404) return { totalClicks: 0, links: [] };
+      if (!r.ok) throw new Error(await r.text() || 'clicks failed');
+      return r.json();
+    },
+    enabled: !!activePartnerId,
+    retry: false,
+  });
+
+  const { data: referralDetail } = useQuery<ReferralDetailPayload>({
+    queryKey: ['partnerReferralDetail', activePartnerId],
+    queryFn: async () => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/referrals/detail`, { headers: authHeaders() });
+      if (r.status === 404) return { referrals: [] };
+      if (!r.ok) throw new Error(await r.text() || 'referral detail failed');
+      return r.json();
+    },
+    enabled: !!activePartnerId,
+    retry: false,
+    refetchInterval: 45000,
+  });
+
+  const { data: creativesData } = useQuery<CreativesPayload>({
+    queryKey: ['partnerCreatives', activePartnerId],
+    queryFn: async () => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/creatives`, { headers: authHeaders() });
+      if (r.status === 404) return { creatives: [] };
+      if (!r.ok) throw new Error(await r.text() || 'creatives failed');
+      return r.json();
+    },
+    enabled: !!activePartnerId,
+    retry: false,
+  });
+
+  const { data: linksData } = useQuery<{ links: PartnerLink[] }>({
+    queryKey: ['partnerLinks', activePartnerId],
+    queryFn: async () => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/links`, { headers: authHeaders() });
+      if (!r.ok) throw new Error('links');
+      return r.json();
+    },
+    enabled: !!activePartnerId,
+  });
+
+  const { data: payoutsData } = useQuery<{ payouts: PayoutRow[] }>({
+    queryKey: ['partnerPayouts', activePartnerId],
+    queryFn: async () => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/payouts`, { headers: authHeaders() });
+      if (!r.ok) throw new Error('payouts');
+      return r.json();
+    },
+    enabled: !!activePartnerId,
+  });
+
+  const { data: catalog } = useQuery<{ items: CatalogItem[] }>({
+    queryKey: ['partnerCatalog'],
+    queryFn: async () => {
+      const r = await fetch('/api/public/partners/catalog', { headers: authHeaders() });
+      if (!r.ok) throw new Error('catalog');
+      return r.json();
+    },
+    enabled: !!activePartnerId && tab === 'links',
+  });
+
+  // Effective partner state
   const effectiveSummary: PartnerSummary | undefined = sessionActive && session
     ? {
-        partner: { id: session.partner!.id, name: session.partner!.name, referralCode: session.partner!.referralCode, status: session.partner!.status, joinedAt: session.partner!.joinedAt },
+        partner: {
+          id: session.partner!.id,
+          name: session.partner!.name,
+          referralCode: session.partner!.referralCode,
+          status: session.partner!.status,
+          joinedAt: session.partner!.joinedAt,
+        },
         totals: session.totals || { matured: 0, pending: 0, paid: 0, total: 0 },
         referrals: session.referrals || [],
       }
     : summary;
-  const activePartner = sessionActive && session?.partner
-    ? { id: session.partner.id, name: session.partner.name }
-    : partnerId && partnerToken ? { id: partnerId, name: partnerName } : null;
 
   const totals = effectiveSummary?.totals || { matured: 0, pending: 0, paid: 0, total: 0 };
   const referrals = effectiveSummary?.referrals || [];
+  const rawRefCode = (effectiveSummary?.partner?.referralCode || '').replace(/^\?ref=/i, '');
+  const refCode = rawRefCode || 'OPUS-PARTNER';
+  const universalReferralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/lead-form?ref=${refCode}`;
 
+  // Ledger calculation with detail merge
+  const detailByRef = useMemo(() => new Map((referralDetail?.referrals || []).map((r) => [r.referralId, r])), [referralDetail]);
+  const ledgerRows: LedgerRow[] = useMemo(() => {
+    return referrals.map((r) => {
+      const dt = detailByRef.get(r.referralId);
+      return {
+        referralId: r.referralId,
+        clientId: r.referredClientId,
+        clientName: dt?.clientName ?? null,
+        ratePct: dt ? dt.commissionRate : r.ratePct,
+        amountPaise: dt ? dt.amountPaise : r.amountPaise,
+        status: dt?.status || r.status,
+        createdAt: dt?.createdAt ?? null,
+        timeline: dt?.timeline || [],
+      };
+    });
+  }, [referrals, detailByRef]);
+
+  // Filtered referrals
+  const filteredLedger = useMemo(() => {
+    return ledgerRows.filter((row) => {
+      const matchesStatus = filterStatus === 'all' || row.status === filterStatus;
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch = !q || row.clientId.toLowerCase().includes(q) || (row.clientName && row.clientName.toLowerCase().includes(q));
+      return matchesStatus && matchesSearch;
+    });
+  }, [ledgerRows, filterStatus, searchQuery]);
+
+  // Status counts
+  const maturedCount = useMemo(() => ledgerRows.filter((r) => r.status === 'matured').length, [ledgerRows]);
+  const pendingCount = useMemo(() => ledgerRows.filter((r) => r.status === 'pending' || r.status === 'unmatured').length, [ledgerRows]);
+  const paidCount = useMemo(() => ledgerRows.filter((r) => r.status === 'paid').length, [ledgerRows]);
+  const heldCount = useMemo(() => ledgerRows.filter((r) => r.status === 'held').length, [ledgerRows]);
+
+  // Conversion metrics
+  const totalReferredCount = ledgerRows.length;
+  const maturedOrPaidCount = maturedCount + paidCount;
+  const conversionRate = totalReferredCount > 0 ? Math.round((maturedOrPaidCount / totalReferredCount) * 100) : 0;
+
+  // Onboarding Checklist
+  const fallbackSteps: OnboardingStep[] = [
+    { key: 'account', done: true, label: 'Partner Hub Activated', hint: 'Your KYC and referral account are approved and live.' },
+    { key: 'link', done: (linksData?.links?.length || 0) > 0, label: 'Create 1st Division Link', hint: 'Generate your personal link for Study Abroad or Visas.' },
+    { key: 'click', done: (clicks?.totalClicks || 0) > 0, label: 'Attract First Link Click', hint: 'Share on WhatsApp, social media, or with clients.' },
+    { key: 'referral', done: totalReferredCount > 0, label: 'Land 1st Converted Client', hint: 'Commissions mature immediately upon client service agreement.' },
+  ];
+  const onboardingSteps = onboarding?.steps?.length ? onboarding.steps : fallbackSteps;
+  const doneCount = onboarding?.steps?.length ? onboarding.doneCount : fallbackSteps.filter((s) => s.done).length;
+  const totalCount = onboarding?.steps?.length ? onboarding.totalCount : fallbackSteps.length;
+
+  // --------------------------------------------------------------------------
+  // MUTATIONS
+  // --------------------------------------------------------------------------
   const registerMutation = useMutation({
     mutationFn: async (payload: { name: string; email: string; password: string; panNumber: string; bankAccount: string; ifscCode: string }) => {
-      const res = await fetch('/api/public/partners', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const res = await fetch('/api/public/partners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
       if (!res.ok) {
         const d = await res.json().catch(() => null);
         throw new Error(d?.error || await res.text());
@@ -131,23 +689,24 @@ export default function PartnerDashboard() {
       if (d.success && d.partnerId) {
         track(EVENTS.partnerRegister);
         if (d.accountCreated) {
-          // Email+password account — session (or inbox verification) takes over.
           setKycName(''); setKycPan(''); setKycBankAccount(''); setKycIfsc(''); setKycEmail(''); setKycPassword('');
           queryClient.invalidateQueries({ queryKey: ['partnerSession'] });
-          showToast(d.message || 'Partner account created — verify your email, then sign in.');
+          showToast(d.message || 'Partner account created! Sign in to access your Command Center.', 'success');
         } else {
-          // Legacy KYC-only registration → token access.
           localStorage.setItem('opus_partner_id', d.partnerId);
           localStorage.setItem('opus_partner_name', kycName);
-          if (d.apiToken) { localStorage.setItem('opus_partner_token', d.apiToken); setPartnerToken(d.apiToken); }
+          if (d.apiToken) {
+            localStorage.setItem('opus_partner_token', d.apiToken);
+            setPartnerToken(d.apiToken);
+          }
           setPartnerId(d.partnerId);
           setPartnerName(kycName);
           setKycName(''); setKycPan(''); setKycBankAccount(''); setKycIfsc('');
-          showToast('Partner account created — welcome!');
+          showToast('Welcome to Opus Partner Hub!', 'success');
         }
       }
     },
-    onError: (e: any) => showToast(`Registration: ${e.message}`),
+    onError: (e: any) => showToast(`Registration: ${e.message}`, 'error'),
   });
 
   const logReferralMutation = useMutation({
@@ -155,42 +714,150 @@ export default function PartnerDashboard() {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (!sessionActive) headers['Authorization'] = `Bearer ${partnerToken}`;
       const res = await fetch('/api/public/partners/referrals', { method: 'POST', headers, body: JSON.stringify(payload) });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || await res.text());
+      }
       return res.json();
     },
-    onSuccess: () => { showToast('Referral logged — it will appear in earnings when the client signs.'); setClientId(''); setCommissionRate(5); queryClient.invalidateQueries({ queryKey: ['partnerSummary', partnerId] }); queryClient.invalidateQueries({ queryKey: ['partnerSession'] }); },
-    onError: (e: any) => showToast(`Referral: ${e.message}`),
+    onSuccess: () => {
+      showToast('Referral logged successfully! It will mature once the client signs an agreement.', 'success');
+      setManualClientId('');
+      setManualCommissionRate(10);
+      queryClient.invalidateQueries({ queryKey: ['partnerSummary', partnerId] });
+      queryClient.invalidateQueries({ queryKey: ['partnerReferralDetail', activePartnerId] });
+      queryClient.invalidateQueries({ queryKey: ['partnerSession'] });
+    },
+    onError: (e: any) => showToast(`Referral Log: ${e.message}`, 'error'),
   });
 
+  const requestPayout = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/payouts`, { method: 'POST', headers: authHeaders(true) });
+      if (!r.ok) {
+        const e = await r.json().catch(() => null);
+        throw new Error(e?.error || 'Payout request failed');
+      }
+      return r.json();
+    },
+    onSuccess: (d) => {
+      queryClient.invalidateQueries({ queryKey: ['partnerPayouts', activePartnerId] });
+      showToast(d.message || 'Payout request submitted — finance team will review and transfer.', 'success');
+    },
+    onError: (e: any) => showToast(`Payout: ${e.message}`, 'error'),
+  });
+
+  const savePayoutConfig = useMutation({
+    mutationFn: async (payload: { payoutMethod: string; payoutDetail: string; payoutThresholdPaise: number }) => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/payout-config`, {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        const e = await r.json().catch(() => null);
+        throw new Error(e?.error || 'Failed to save payout preferences.');
+      }
+      return r.json();
+    },
+    onSuccess: (d: PayoutConfig) => {
+      setPayoutMethod(d.payoutMethod || 'bank');
+      setPayoutDetail(d.payoutDetail || '');
+      setPayoutThreshold(d.payoutThresholdPaise ? d.payoutThresholdPaise / 100 : 3000);
+      setEditPayoutConfig(false);
+      showToast('Payout preferences securely saved.', 'success');
+    },
+    onError: (e: any) => showToast(`Payout Config: ${e.message}`, 'error'),
+  });
+
+  const createLinkMutation = useMutation({
+    mutationFn: async (item: CatalogItem) => {
+      const r = await fetch(`/api/public/partners/${activePartnerId}/links`, {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify({
+          catalogType: item.type,
+          catalogItemId: item.id,
+          title: item.title,
+          pricePaise: item.pricePaise || 0,
+        }),
+      });
+      if (!r.ok) throw new Error('Failed to create link');
+      return r.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partnerLinks', activePartnerId] });
+      queryClient.invalidateQueries({ queryKey: ['partnerThrive', activePartnerId] });
+      queryClient.invalidateQueries({ queryKey: ['partnerClicks', activePartnerId] });
+      showToast('Custom inventory link generated & added to your kit!', 'success');
+    },
+  });
+
+  // --------------------------------------------------------------------------
+  // HANDLERS
+  // --------------------------------------------------------------------------
   const handleKyc = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!kycName || !kycPan || !kycBankAccount || !kycIfsc) { showToast('Fill in all KYC fields.'); return; }
+    if (!kycName.trim() || !kycPan.trim() || !kycBankAccount.trim() || !kycIfsc.trim()) {
+      showToast('Please fill all mandatory KYC fields.', 'error');
+      return;
+    }
+    const cleanPan = kycPan.trim().toUpperCase();
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(cleanPan)) {
+      showToast('PAN must follow standard 10-char format: ABCDE1234F', 'error');
+      return;
+    }
+    const cleanIfsc = kycIfsc.trim().toUpperCase();
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(cleanIfsc)) {
+      showToast('IFSC must match format HDFC0000001 (4 letters, 0, 6 chars)', 'error');
+      return;
+    }
     if (kycEmail) {
-      if (kycPassword.length < 8) { showToast('Password must be at least 8 characters.'); return; }
-      registerMutation.mutate({ name: kycName, email: kycEmail, password: kycPassword, panNumber: kycPan, bankAccount: kycBankAccount, ifscCode: kycIfsc });
+      if (kycPassword.length < 8) {
+        showToast('Password must be at least 8 characters.', 'error');
+        return;
+      }
+      registerMutation.mutate({
+        name: kycName.trim(),
+        email: kycEmail.trim(),
+        password: kycPassword,
+        panNumber: cleanPan,
+        bankAccount: kycBankAccount.trim(),
+        ifscCode: cleanIfsc,
+      });
     } else {
-      registerMutation.mutate({ name: kycName, email: '', password: '', panNumber: kycPan, bankAccount: kycBankAccount, ifscCode: kycIfsc });
+      registerMutation.mutate({
+        name: kycName.trim(),
+        email: '',
+        password: '',
+        panNumber: cleanPan,
+        bankAccount: kycBankAccount.trim(),
+        ifscCode: cleanIfsc,
+      });
     }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail || !loginPassword) { setAuthError('Enter both your email and password.'); return; }
+    if (!loginEmail.trim() || !loginPassword) {
+      setAuthError('Enter both your registered email and password.');
+      return;
+    }
     setAuthError('');
     try {
       const res = await fetch('/api/auth/sign-in/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        throw new Error(err?.message || err?.error || 'Sign-in failed. Check your credentials.');
+        throw new Error(err?.message || err?.error || 'Sign-in failed. Please verify credentials.');
       }
       setLoginEmail(''); setLoginPassword('');
       queryClient.invalidateQueries({ queryKey: ['partnerSession'] });
-      showToast('Signed in successfully.');
+      showToast('Signed in successfully — welcome back!', 'success');
     } catch (err: any) {
       setAuthError(err.message);
     }
@@ -198,7 +865,10 @@ export default function PartnerDashboard() {
 
   const handleLegacyLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!partnerIdInput || !tokenInput) { setAuthError('Enter both your Partner ID and the Access Key from your welcome message.'); return; }
+    if (!partnerIdInput.trim() || !tokenInput.trim()) {
+      setAuthError('Enter both your Partner ID and Access Key.');
+      return;
+    }
     setAuthError('');
     localStorage.setItem('opus_partner_id', partnerIdInput.trim());
     localStorage.setItem('opus_partner_token', tokenInput.trim());
@@ -206,319 +876,1518 @@ export default function PartnerDashboard() {
     setPartnerToken(tokenInput.trim());
     setPartnerName('Partner');
     setPartnerIdInput(''); setTokenInput('');
+    showToast('Signed in with Access Key.', 'success');
   };
 
   const handleLogout = () => {
     fetch('/api/auth/sign-out', { method: 'POST', credentials: 'include' }).catch(() => {});
-    localStorage.removeItem('opus_partner_id'); localStorage.removeItem('opus_partner_token'); localStorage.removeItem('opus_partner_name');
+    localStorage.removeItem('opus_partner_id');
+    localStorage.removeItem('opus_partner_token');
+    localStorage.removeItem('opus_partner_name');
     setPartnerId(''); setPartnerToken(''); setPartnerName('');
     queryClient.invalidateQueries({ queryKey: ['partnerSession'] });
-    showToast('Signed out.');
+    showToast('Signed out of Partner Command Center.', 'gold');
   };
 
-  const handleReferral = (e: React.FormEvent) => {
+  const handleManualReferral = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientId.trim()) { showToast('Enter the client token you referred.'); return; }
-    logReferralMutation.mutate({ partnerId: activePartner?.id || '', clientId: clientId.trim(), commissionRate });
+    if (!manualClientId.trim()) {
+      showToast('Enter the client token to attribute (e.g. OP-2026-XXXX).', 'error');
+      return;
+    }
+    logReferralMutation.mutate({
+      partnerId: activePartnerId || '',
+      clientId: manualClientId.trim().toUpperCase(),
+      commissionRate: manualCommissionRate,
+    });
   };
 
-  const referralLink = effectiveSummary?.partner?.referralCode
-    ? `${location.origin}/lead-form?${effectiveSummary.partner.referralCode.replace(/^ref=/i, 'ref=')}`
-    : null;
-
-  const copyLink = async () => {
-    if (!referralLink) return;
-    try { await navigator.clipboard.writeText(referralLink); } catch { /* fallback */ }
-    setCopied(true); setTimeout(() => setCopied(false), 2500);
-    showToast('Referral link copied — share it anywhere.');
-  };
-  const waShare = () => {
-    if (!referralLink) return;
-    const txt = encodeURIComponent(`Opus Overseas — earn commission when your referrals sign up. Use my link: ${referralLink}`);
-    window.open(`https://wa.me/?text=${txt}`, '_blank');
+  const copyToClipboard = async (text: string, keyName: string, label = 'Link') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      track(EVENTS.shareCopied);
+      setCopiedLinkKey(keyName);
+      setTimeout(() => setCopiedLinkKey(null), 2500);
+      showToast(`${label} copied to clipboard!`, 'success');
+    } catch {
+      showToast('Unable to copy to clipboard', 'error');
+    }
   };
 
-  const statusStyles: Record<string, string> = {
-    matured: 'bg-emerald-500/15 text-emerald-700',
-    pending: 'bg-amber-500/15 text-amber-700',
-    paid: 'bg-sky-500/15 text-sky-700',
-    held: 'bg-rose-500/15 text-rose-700',
-    unmatured: 'bg-slate-500/15 text-slate-600',
+  const openWhatsApp = (msg: string) => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
-  const statusLabel: Record<string, string> = {
-    matured: 'Earned — payout queue',
-    pending: 'Awaiting sign',
-    paid: 'Paid to you',
-    held: 'Held (review)',
-    unmatured: 'Referral linked',
+
+  const handleSaveConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payoutDetail.trim()) {
+      showToast('Please enter your Bank Account/IFSC or UPI ID.', 'error');
+      return;
+    }
+    savePayoutConfig.mutate({
+      payoutMethod,
+      payoutDetail: payoutDetail.trim(),
+      payoutThresholdPaise: Math.max(0, Math.round(payoutThreshold * 100)),
+    });
   };
+
+  // Pending payout request
+  const pendingPayout = (payoutsData?.payouts || []).find((p) => p.status === 'requested');
+
+  // GSAP Entrance Animations
+  const reveal = () => staggerReveal('.partner-fade', { y: 20, duration: 0.65, stagger: 0.06 });
+
+  useEffect(() => {
+    const ctx = makeContext(panelRef.current);
+    ctx.add(() => {
+      whenFontsReady().then(reveal);
+    });
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    if (heroTitleRef.current) fadeUp(heroTitleRef.current, { y: 24, duration: 0.8, delay: 0.15 });
+  }, [sessionActive]);
+
+  useEffect(() => {
+    if (!prefersReducedMotion()) window.scrollTo({ top: 0, behavior: 'smooth' });
+    const t = setTimeout(reveal, 60);
+    return () => clearTimeout(t);
+  }, [tab, sessionActive]);
+
+  // Projected Commission calculation for Landing Simulator
+  const simulatedMonthlyEarnings = useMemo(() => {
+    return (calcStudy * 20000) + (calcVisas * 5000) + (calcUmrah * 8000) + (calcAttest * 2500) + (calcManpower * 15000);
+  }, [calcStudy, calcVisas, calcUmrah, calcAttest, calcManpower]);
+
+  const baseInput = 'w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 focus:outline-none transition';
+  const goldBtn = 'tactile-btn rounded-full bg-brand-gold px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white active:scale-[0.97] disabled:opacity-40 shadow-sm inline-flex items-center justify-center gap-1.5 cursor-pointer';
+  const navyBtn = 'tactile-btn rounded-full bg-brand-navy px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy active:scale-[0.97] disabled:opacity-40 shadow-sm inline-flex items-center justify-center gap-1.5 cursor-pointer';
 
   return (
-    <div ref={panelRef} className="relative min-h-screen bg-[#FAF8F4] font-sans text-brand-navy overflow-hidden">
-      <LiveWallpaper />
-      <header className="sticky top-0 z-30 border-b border-brand-navy/10 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 md:px-8">
-          <div className="flex items-center gap-3">
-            <Logo className="h-7 w-auto" />
-            <div>
-              <div className="font-display text-sm font-bold tracking-wide text-brand-navy">Opus Overseas</div>
-              <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-gold">Affiliate Portal</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/portal" className="text-xs font-medium text-brand-navy/70 hover:text-brand-gold transition">Client tracker</Link>
-            {activePartner && (
-              <button onClick={handleLogout} className="rounded-full border border-brand-navy/15 px-3 py-1.5 text-[11px] font-semibold text-brand-navy/70 transition hover:border-brand-gold hover:text-brand-gold">
-                Sign out
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
+    <div ref={panelRef} className="relative min-h-screen overflow-hidden bg-brand-cream font-sans text-brand-navy">
+      <div className="film-grain" aria-hidden="true" />
+      <Nav />
 
-      <main className="mx-auto max-w-6xl px-5 py-10 space-y-10 md:px-8">
-        {sessionLoading && !activePartner ? (
-          <div className="flex min-h-[40vh] items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-gold border-t-transparent" />
+      <main className="relative min-h-screen">
+        {sessionLoading && !activePartnerId ? (
+          <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-3 border-brand-gold border-t-transparent" />
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/60">Loading Partner Hub…</p>
           </div>
-        ) : !activePartner ? (
-          <div className="space-y-10">
-            <section className="partner-fade relative overflow-hidden rounded-[2rem] border border-brand-navy/10 bg-white p-8 md:p-10 shadow-[0_24px_60px_-30px_rgba(10,45,80,0.25)]">
-              <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-brand-gold/10 blur-3xl" aria-hidden="true" />
-              <div className="relative z-10 max-w-2xl">
-                <span className="inline-block rounded-full border border-brand-gold/40 bg-brand-gold/10 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Partner Program</span>
-                <h1 className="mt-3 font-display text-3xl font-extrabold tracking-tight md:text-4xl">Earn a commission every time your referral signs.</h1>
-                <p className="mt-3 text-sm leading-relaxed text-brand-navy/60">
-                  Recommend Opus Overseas for study abroad, visas, Umrah, attestation and manpower — and earn a percentage of the client's paid fees once they engage. Transparent ledger, instant referral linking, bank payouts.
-                </p>
-                <div className="mt-6 grid max-w-md grid-cols-3 gap-3 text-center">
-                  {[['Refer →', 'link clients in seconds'], ['Sign →', 'commission matures on agreement'], ['Earn →', 'paid out to your bank']].map(([a, b]) => (
-                    <div key={a} className="rounded-xl border border-brand-navy/10 bg-[#FAF8F4] p-3">
-                      <div className="text-xs font-bold text-brand-navy">{a}</div>
-                      <div className="mt-0.5 text-[9px] text-brand-navy/50">{b}</div>
+        ) : !activePartnerId ? (
+          /* ================================================================ */
+          /* LANDING & KYC ONBOARDING VIEW (UNAUTHENTICATED)                   */
+          /* ================================================================ */
+          <div className="relative min-h-screen pb-20">
+            {/* LiveWallpaper strictly behind cards */}
+            <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+              <LiveWallpaper />
+              <div className="hero-orb -left-20 top-20 h-96 w-96 bg-brand-gold/15 blur-3xl" />
+              <div className="hero-orb -right-20 top-1/3 h-[32rem] w-[32rem] bg-brand-blue/20 blur-3xl" />
+            </div>
+
+            <div className="relative z-20 mx-auto max-w-6xl px-5 pt-28 md:px-8">
+              {/* Portal Header Pill */}
+              <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold shadow-sm backdrop-blur">
+                  <Logo className="h-4 w-auto" /> Opus Overseas · Growth & Affiliate Network
+                </span>
+                <Link href="/portal" className="rounded-full border border-brand-navy/15 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-brand-navy/70 transition hover:border-brand-gold hover:text-brand-gold backdrop-blur">
+                  Looking for Client Portal? →
+                </Link>
+              </div>
+
+              {/* Hero Banner Card */}
+              <section className="partner-fade relative z-20 overflow-hidden rounded-[2rem] border border-brand-navy/10 bg-white p-8 shadow-[0_24px_60px_-30px_rgba(10,45,80,0.25)] md:p-12">
+                <div className="pointer-events-none absolute -right-16 -top-20 h-80 w-80 rounded-full bg-brand-gold/10 blur-3xl" aria-hidden="true" />
+                <div className="relative z-10 max-w-3xl">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-brand-gold/10 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold">
+                    <span className="live-pulse-dot text-brand-gold" /> Institutional Affiliate Program
+                  </div>
+                  <h1 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-brand-navy md:text-5xl lg:leading-[1.1]">
+                    Turn your client network into substantial recurring commission.
+                  </h1>
+                  <p className="mt-4 text-sm leading-relaxed text-brand-navy/70 md:text-base">
+                    Partner with Opus Overseas — India’s trusted global mobility platform. Monetize your referrals across Study Abroad, Global Visas, Umrah Pilgrimages, Attestation, and International Recruitment with real-time attribution and direct bank settlement.
+                  </p>
+
+                  {/* Program Highlights Ribbon */}
+                  <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {[
+                      { label: '5 High-Yield Verticals', sub: 'Education, Visa, Umrah & Jobs' },
+                      { label: 'Up to 15% Payout', sub: 'Calculated on gross service fees' },
+                      { label: 'Sub-Minute Tracking', sub: 'No lost cookies or attribution gap' },
+                      { label: 'Automated Clearance', sub: 'Direct NEFT/RTGS/UPI transfers' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="rounded-xl border border-brand-navy/10 bg-brand-cream/70 p-3.5">
+                        <div className="text-xs font-extrabold text-brand-navy">{item.label}</div>
+                        <div className="mt-0.5 text-[10px] text-brand-navy/50">{item.sub}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* Interactive Commission Simulator (CRO Tool) */}
+              <section className="partner-fade relative z-20 mt-10 rounded-[2rem] border border-brand-gold/30 bg-gradient-to-br from-white via-white to-brand-gold/5 p-8 shadow-md md:p-10">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-6">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Interactive Partner Yield Calculator</span>
+                    <h2 className="mt-1 font-display text-xl font-extrabold text-brand-navy md:text-2xl">
+                      Estimate your monthly affiliate revenue
+                    </h2>
+                  </div>
+                  <div className="rounded-2xl border border-brand-gold/40 bg-brand-gold/10 px-5 py-3 text-right">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Estimated Monthly Earnings</div>
+                    <div className="font-display text-2xl font-black text-brand-gold md:text-3xl">
+                      ₹{simulatedMonthlyEarnings.toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-[10px] font-semibold text-emerald-700">
+                      ≈ ₹{(simulatedMonthlyEarnings * 12).toLocaleString('en-IN')}/year
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+                  {[
+                    { label: 'Study Abroad Clients', val: calcStudy, set: setCalcStudy, rate: '₹20,000 avg', min: 0, max: 20 },
+                    { label: 'Global Visa Cases', val: calcVisas, set: setCalcVisas, rate: '₹5,000 avg', min: 0, max: 30 },
+                    { label: 'Umrah Pilgrims', val: calcUmrah, set: setCalcUmrah, rate: '₹8,000 avg', min: 0, max: 25 },
+                    { label: 'Attestation Chains', val: calcAttest, set: setCalcAttest, rate: '₹2,500 avg', min: 0, max: 30 },
+                    { label: 'Manpower Placements', val: calcManpower, set: setCalcManpower, rate: '₹15,000 avg', min: 0, max: 15 },
+                  ].map((ctrl) => (
+                    <div key={ctrl.label} className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between text-xs font-bold text-brand-navy">
+                        <span>{ctrl.label}</span>
+                        <span className="font-display text-brand-gold">{ctrl.val}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={ctrl.min}
+                        max={ctrl.max}
+                        value={ctrl.val}
+                        onChange={(e) => ctrl.set(parseInt(e.target.value) || 0)}
+                        className="mt-3 w-full accent-brand-gold cursor-pointer"
+                      />
+                      <div className="mt-2 text-[10px] text-slate-500">{ctrl.rate}</div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </section>
+              </section>
 
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              <section className="partner-fade rounded-2xl border border-brand-navy/10 bg-white p-6 md:p-8">
-                <h2 className="font-display text-lg font-bold">Become a partner</h2>
-                <p className="mt-1 text-xs text-brand-navy/50">One-minute application: your account plus KYC. Your PAN is masked at rest (DPDP notice below).</p>
-                <form onSubmit={handleKyc} className="mt-6 space-y-4">
-                  {[
-                    { label: 'Email', type: 'email' as const, ph: 'you@example.com', val: kycEmail, set: setKycEmail, upper: false },
-                    { label: 'Password (min 8)', type: 'password' as const, ph: 'Create a password', val: kycPassword, set: setKycPassword, upper: false },
-                    { label: 'Name / Agency', type: 'text' as const, ph: 'e.g. Hyderabad Consultants', val: kycName, set: setKycName, upper: false },
-                    { label: 'PAN (10 chars)', type: 'text' as const, ph: 'ABCDE1234F', val: kycPan, set: setKycPan, upper: true },
-                    { label: 'Bank account', type: 'text' as const, ph: '50100123456789', val: kycBankAccount, set: setKycBankAccount, upper: false },
-                    { label: 'IFSC', type: 'text' as const, ph: 'HDFC0000001', val: kycIfsc, set: setKycIfsc, upper: true },
-                  ].map((f) => (
-                    <div key={f.label}>
-                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">{f.label}</label>
+              {/* 2-Column Auth and Registration Grid */}
+              <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2 relative z-20">
+                {/* Column 1: KYC Registration Form */}
+                <section className="partner-fade relative z-20 rounded-2xl border border-brand-navy/10 bg-white p-6 md:p-8 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="font-display text-xl font-bold text-brand-navy">Become an Opus Partner</h2>
+                      <p className="mt-1 text-xs text-brand-navy/60">One-minute onboarding with direct KYC encryption.</p>
+                    </div>
+                    <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700">Instant Approval</span>
+                  </div>
+
+                  <form onSubmit={handleKyc} className="lead-form-wrap mt-6 space-y-4">
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Full Name / Agency Name</label>
                       <input
-                        type={f.type}
-                        value={f.val} onChange={(e) => f.set(f.upper ? e.target.value.toUpperCase() : e.target.value)}
-                        placeholder={f.ph}
-                        className="w-full rounded-xl border border-brand-navy/15 bg-slate-50 px-3.5 py-2.5 text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-gold focus:outline-none"
+                        type="text"
+                        value={kycName}
+                        onChange={(e) => setKycName(e.target.value)}
+                        placeholder="e.g. Skyline Educational Consultancy"
+                        className={baseInput}
+                        required
                       />
                     </div>
-                  ))}
-                  <div className="rounded-xl bg-brand-gold/10 p-3 text-[10px] leading-relaxed text-brand-navy/70">
-                    DPDP-2023 notice: your PAN is encrypted at rest (masked on every screen); bank details are used solely for commission payouts. A verification link is emailed after registration (dev: see the API log).
-                  </div>
-                  <button type="submit" disabled={registerMutation.isPending} className="w-full rounded-full bg-brand-navy py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy disabled:opacity-50">
-                    {registerMutation.isPending ? 'Registering…' : 'Register & get my link'}
-                  </button>
-                </form>
-              </section>
 
-              <section className="flex flex-col gap-6">
-                <div className="partner-fade rounded-2xl border border-brand-navy/10 bg-white p-6 md:p-8">
-                  <h2 className="font-display text-lg font-bold">Already a partner?</h2>
-                  <p className="mt-1 text-xs text-brand-navy/50">Sign in with the email and password you registered with on the login portal.</p>
-                  <form onSubmit={handleLogin} className="mt-6 space-y-4">
-                    <div>
-                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Email</label>
-                      <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-xl border border-brand-navy/15 bg-slate-50 px-3.5 py-2.5 text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Official Email</label>
+                        <input
+                          type="email"
+                          value={kycEmail}
+                          onChange={(e) => setKycEmail(e.target.value)}
+                          placeholder="partner@agency.com"
+                          className={baseInput}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Password (Min 8 chars)</label>
+                        <input
+                          type="password"
+                          value={kycPassword}
+                          onChange={(e) => setKycPassword(e.target.value)}
+                          placeholder="Create password"
+                          className={baseInput}
+                          required
+                        />
+                      </div>
                     </div>
+
                     <div>
-                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Password</label>
-                      <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Your password" className="w-full rounded-xl border border-brand-navy/15 bg-slate-50 px-3.5 py-2.5 text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
+                      <div className="flex items-center justify-between">
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">PAN Number (10 Chars)</label>
+                        <span className="text-[9px] text-slate-400">Format: ABCDE1234F</span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={10}
+                        value={kycPan}
+                        onChange={(e) => setKycPan(e.target.value.toUpperCase())}
+                        placeholder="ABCDE1234F"
+                        className={`${baseInput} font-mono tracking-wider`}
+                        required
+                      />
                     </div>
-                    {authError && <div className="rounded-lg bg-rose-50 p-2.5 text-[11px] text-rose-700">{authError}</div>}
-                    <button type="submit" className="w-full rounded-full bg-brand-gold py-3 text-xs font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-navy hover:text-white">
-                      Sign in
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Bank Account Number</label>
+                        <input
+                          type="text"
+                          value={kycBankAccount}
+                          onChange={(e) => setKycBankAccount(e.target.value)}
+                          placeholder="50100123456789"
+                          className={`${baseInput} font-mono`}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Bank IFSC Code</label>
+                          <span className="text-[9px] text-slate-400">e.g. HDFC0000001</span>
+                        </div>
+                        <input
+                          type="text"
+                          maxLength={11}
+                          value={kycIfsc}
+                          onChange={(e) => setKycIfsc(e.target.value.toUpperCase())}
+                          placeholder="HDFC0000001"
+                          className={`${baseInput} font-mono tracking-wider`}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-3 text-[10px] leading-relaxed text-brand-navy/70 flex items-start gap-2">
+                      <span className="text-brand-gold font-bold">🔒</span>
+                      <span>
+                        <strong>DPDP-2023 Compliant:</strong> Your PAN and banking credentials are AES-GCM encrypted at rest. PII is strictly masked across all portal surfaces.
+                      </span>
+                    </div>
+
+                    <button type="submit" disabled={registerMutation.isPending} className={`${navyBtn} w-full py-3.5`}>
+                      {registerMutation.isPending ? 'Validating KYC…' : 'Complete KYC & Get Referral Kit'}
                     </button>
                   </form>
+                </section>
 
-                  <div className="mt-5 border-t border-brand-navy/10 pt-4">
-                    <button onClick={() => setShowAccessKey((v) => !v)} className="text-[11px] font-semibold text-brand-navy/60 hover:text-brand-gold transition">
-                      {showAccessKey ? '← Sign in with email instead' : 'Using the legacy Partner ID + Access Key? Sign in here'}
-                    </button>
-                    {showAccessKey && (
-                      <form onSubmit={handleLegacyLogin} className="mt-4 space-y-4">
-                        <div>
-                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Partner ID</label>
-                          <input value={partnerIdInput} onChange={(e) => setPartnerIdInput(e.target.value)} placeholder="e.g. a8b9c0d1-…" className="w-full rounded-xl border border-brand-navy/15 bg-slate-50 px-3.5 py-2.5 font-mono text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
+                {/* Column 2: Sign In & Partner Guarantees */}
+                <section className="flex flex-col gap-6 relative z-20">
+                  <div className="partner-fade relative z-20 rounded-2xl border border-brand-navy/10 bg-white p-6 md:p-8 shadow-sm">
+                    <h2 className="font-display text-xl font-bold text-brand-navy">Sign In to Partner Hub</h2>
+                    <p className="mt-1 text-xs text-brand-navy/60">Access your live telemetry, commission ledger, and custom links.</p>
+
+                    <form onSubmit={handleLogin} className="lead-form-wrap mt-6 space-y-4">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Registered Email</label>
+                        <input
+                          type="email"
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          placeholder="partner@agency.com"
+                          className={baseInput}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Password</label>
+                        <input
+                          type="password"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          placeholder="Enter your password"
+                          className={baseInput}
+                        />
+                      </div>
+
+                      {authError && (
+                        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-[11px] font-medium text-rose-700">
+                          {authError}
                         </div>
-                        <div>
-                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Access Key (token)</label>
-                          <input value={tokenInput} onChange={(e) => setTokenInput(e.target.value)} placeholder="Paste the long key from your welcome message" className="w-full rounded-xl border border-brand-navy/15 bg-slate-50 px-3.5 py-2.5 font-mono text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
-                        </div>
-                        {authError && <div className="rounded-lg bg-rose-50 p-2.5 text-[11px] text-rose-700">{authError}</div>}
-                        <button type="submit" className="w-full rounded-full border border-brand-navy/20 py-3 text-xs font-bold uppercase tracking-wider text-brand-navy transition hover:border-brand-gold hover:text-brand-gold">
-                          Sign in with access key
-                        </button>
-                      </form>
-                    )}
+                      )}
+
+                      <button type="submit" className={`${goldBtn} w-full py-3.5`}>
+                        Sign In to Partner Hub
+                      </button>
+                    </form>
+
+                    <div className="mt-6 border-t border-brand-navy/10 pt-4">
+                      <button
+                        onClick={() => setShowAccessKey((v) => !v)}
+                        className="text-[11px] font-semibold text-brand-navy/70 transition hover:text-brand-gold cursor-pointer"
+                      >
+                        {showAccessKey ? '← Return to standard Email Sign In' : 'Have a Legacy Partner ID & Access Key? Click here'}
+                      </button>
+
+                      {showAccessKey && (
+                        <form onSubmit={handleLegacyLogin} className="lead-form-wrap mt-4 space-y-3">
+                          <div>
+                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Partner ID (UUID)</label>
+                            <input
+                              value={partnerIdInput}
+                              onChange={(e) => setPartnerIdInput(e.target.value)}
+                              placeholder="e.g. a8b9c0d1-…"
+                              className={`${baseInput} font-mono text-[11px]`}
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Access Key Token</label>
+                            <input
+                              value={tokenInput}
+                              onChange={(e) => setTokenInput(e.target.value)}
+                              placeholder="Paste bearer token"
+                              className={`${baseInput} font-mono text-[11px]`}
+                            />
+                          </div>
+                          <button type="submit" className={`${navyBtn} w-full py-2.5`}>
+                            Authenticate with Token
+                          </button>
+                        </form>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="rounded-2xl border border-dashed border-brand-gold/50 bg-brand-gold/5 p-5 text-[11px] leading-relaxed text-brand-navy/70">
-                  <span className="font-bold text-brand-gold">Demo access:</span> register a partner above (any PAN works locally, e.g. ABCDE1234F) and your dashboard appears once the account is verified and signed in — with a share link, a zero balance and a blank ledger to try.
-                </div>
-              </section>
+
+                  {/* Sandbox / Trust Card */}
+                  <div className="rounded-2xl border border-brand-gold/40 bg-brand-gold/10 p-6 text-xs leading-relaxed text-brand-navy/80 space-y-2 shadow-sm">
+                    <div className="font-display font-bold text-brand-navy flex items-center gap-2">
+                      <span className="gold-dot" /> Institutional Growth Commitment
+                    </div>
+                    <p className="text-[11px] text-brand-navy/70">
+                      Opus Overseas guarantees 100% transparent milestone tracking. Every client referred via your link is permanently attributed, with real-time status updates as they advance from document review to visa stamping.
+                    </p>
+                  </div>
+                </section>
+              </div>
             </div>
           </div>
         ) : (
-          /* ACTIVE PARTNER WORKSPACE */
-          <div className="space-y-8">
-            {/* Zoho Thrive-style workspace: tier card, performance, my inventory */}
-            <PartnerThrive partnerId={activePartner?.id || ''} token={sessionActive ? '' : partnerToken} maturedPaise={totals.matured} onNotice={(m, ok = true) => ok ? showToast(m) : showToast(m)} />
-
-            {/* Welcome + join-link generator — one click from the dashboard */}
-            <section className="relative overflow-hidden rounded-[2rem] border border-brand-navy/10 bg-white p-8 shadow-[0_24px_60px_-30px_rgba(10,45,80,0.25)]">
-              <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-brand-gold/10 blur-3xl" aria-hidden="true" />
-              <div className="relative z-10 flex flex-wrap items-end justify-between gap-6">
-                <div>
-                  <span className={`inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${effectiveSummary?.partner?.status === 'blocked' ? 'bg-rose-500/10 text-rose-700' : 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-700'}`}>
-                    {effectiveSummary?.partner?.status === 'blocked' ? 'Account reviewed' : 'Active partner'}
-                  </span>
-                  <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight">Welcome back, {activePartner?.name || effectiveSummary?.partner?.name || 'Partner'}</h1>
-                  <p className="mt-1 text-xs text-brand-navy/50">Share your link — earnings appear the moment a referred client signs an agreement.</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={waShare} className="rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-emerald-500 active:scale-[0.97]">Share on WhatsApp</button>
-                  <button onClick={copyLink} className="rounded-full bg-brand-gold px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-1 active:scale-[0.97]">{copied ? 'Copied!' : 'Copy my link'}</button>
-                </div>
+          /* ================================================================ */
+          /* AUTHENTICATED PARTNER COMMAND CENTER                             */
+          /* ================================================================ */
+          <div className="relative min-h-screen pb-20">
+            {/* HERO TELEMETRY RIBBON (LUXURY BRAND NAVY) */}
+            <section className="relative overflow-hidden bg-gradient-to-br from-brand-navy-900 via-brand-navy to-brand-navy-800 text-white shadow-xl">
+              <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+                <LiveWallpaper />
+                <div className="hero-orb -left-20 top-1/4 h-[30rem] w-[30rem] bg-brand-gold/15 blur-3xl" />
+                <div className="hero-orb -right-20 bottom-0 h-96 w-96 bg-brand-blue/30 blur-3xl" />
               </div>
-              <div className="relative z-10 mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-brand-gold/40 bg-brand-gold/5 p-4">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">Your link</span>
-                <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-brand-navy">{referralLink || '…'}</code>
-                <span className="hidden rounded-full bg-brand-navy/5 px-2 py-1 text-[9px] text-brand-navy/60 sm:inline">
-                  {effectiveSummary?.partner?.status || 'active'} · joined {effectiveSummary?.partner?.joinedAt ? new Date(effectiveSummary.partner.joinedAt * 1000).toLocaleDateString() : ''}
-                </span>
+
+              <div className="relative z-10 mx-auto max-w-6xl px-5 pt-28 pb-10 md:px-8">
+                {/* Top Telemetry Header */}
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold">
+                      <Logo className="h-5 w-auto" /> Partner Command Center
+                    </span>
+                    <span className="hidden sm:inline-block text-white/30">|</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+                      <span className="live-pulse-dot text-emerald-400" /> Active & Verified
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Link href="/portal" className="text-xs font-semibold text-white/70 transition hover:text-brand-gold">
+                      Client Tracker
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold text-white/80 transition hover:border-brand-gold hover:text-brand-gold cursor-pointer"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+
+                {/* Partner Identity Strip */}
+                <div className="mt-6 flex flex-wrap items-end justify-between gap-6">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm"
+                        style={{ backgroundColor: thrive?.tier?.color || '#b87333' }}
+                      >
+                        ★ {thrive?.tier?.name || 'Bronze Partner'}
+                      </span>
+                      {thrive?.tier?.boostPct ? (
+                        <span className="rounded-full border border-brand-gold/50 bg-brand-gold/20 px-2.5 py-0.5 text-[9px] font-extrabold text-brand-gold">
+                          +{thrive.tier.boostPct}% Boost Active
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <h1 ref={heroTitleRef} className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-4xl text-white">
+                      {effectiveSummary?.partner?.name || 'Partner Executive'}
+                    </h1>
+                    <p className="mt-1 text-xs text-white/60">
+                      Partner ID: <code className="font-mono text-brand-gold">{activePartnerId?.slice(0, 12)}…</code> · Joined {effectiveSummary?.partner?.joinedAt ? d(effectiveSummary.partner.joinedAt) : 'Recently'}
+                    </p>
+                  </div>
+
+                  {/* Hero Quick Actions */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setQrModal({ open: true, title: 'Universal Referral QR Code', url: universalReferralLink })}
+                      className="tactile-btn rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:border-brand-gold hover:text-brand-gold active:scale-[0.97] cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <span>▦</span> QR Studio
+                    </button>
+                    <button
+                      onClick={() => openWhatsApp(`Opus Overseas — premium study abroad, visas, Umrah packages and attestation: ${universalReferralLink}`)}
+                      className="tactile-btn rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-emerald-500 active:scale-[0.97] cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <span>💬</span> WhatsApp Share
+                    </button>
+                    <button
+                      onClick={() => copyToClipboard(universalReferralLink, 'hero-link', 'Universal Link')}
+                      className={goldBtn}
+                    >
+                      {copiedLinkKey === 'hero-link' ? '✓ Copied Link' : 'Copy Main Link'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* KPI TELEMETRY GRID (6 Telemetry Cards) */}
+                <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                  {[
+                    { label: 'Total Earnings', val: totals.total, prefix: '₹', highlight: 'text-brand-gold', sub: `${rsExact(totals.total)} lifetime` },
+                    { label: 'Available Balance', val: totals.matured, prefix: '₹', highlight: 'text-emerald-400', sub: 'Ready for payout' },
+                    { label: 'Pending Pipeline', val: totals.pending, prefix: '₹', highlight: 'text-sky-300', sub: 'Awaiting client sign' },
+                    { label: 'Paid Out', val: totals.paid, prefix: '₹', highlight: 'text-white', sub: 'Disbursed to bank' },
+                    { label: 'Referred Clients', val: totalReferredCount, prefix: '', highlight: 'text-white', sub: `${maturedOrPaidCount} converted` },
+                    { label: 'Conversion Rate', val: conversionRate, suffix: '%', highlight: 'text-brand-gold', sub: 'Sign-to-lead ratio' },
+                  ].map((card, idx) => (
+                    <div key={idx} className="partner-fade rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition hover:border-brand-gold/40">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-white/50">{card.label}</div>
+                      <div className={`mt-2 font-display text-xl font-black ${card.highlight}`}>
+                        <AnimatedNumber value={card.val} prefix={card.prefix || ''} suffix={card.suffix || ''} />
+                      </div>
+                      <div className="mt-1 text-[10px] text-white/40">{card.sub}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
 
-            {/* Earnings overview — real-time, rupee, self-evident */}
-            <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {[
-                { label: 'Earned (payout queue)', v: totals.matured, cls: 'text-emerald-700' },
-                { label: 'Awaiting sign', v: totals.pending, cls: 'text-brand-navy' },
-                { label: 'Paid to you', v: totals.paid, cls: 'text-sky-700' },
-                { label: 'Lifetime', v: totals.total, cls: 'text-brand-gold' },
-              ].map((k) => (
-                <div key={k.label} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-[0_16px_40px_-20px_rgba(10,45,80,0.14)]">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{k.label}</p>
-                  <p className={`mt-2 font-display text-2xl font-extrabold ${k.cls || ''}`}>{rs(k.v)}</p>
-                  <p className="mt-1 font-mono text-[10px] text-slate-400">{k.v.toLocaleString()} paise</p>
+            {/* STICKY LUXURY NAVIGATION TAB BAR */}
+            <div className="sticky top-20 z-40 px-5 pt-4 md:px-8">
+              <nav className="glass-light mx-auto flex max-w-6xl items-center justify-between gap-1 overflow-x-auto rounded-full px-2.5 py-2 shadow-lg">
+                <div className="flex items-center gap-1">
+                  {[
+                    { key: 'overview', label: 'Command Cockpit' },
+                    { key: 'links', label: '1-Click Links & Creative Kit' },
+                    { key: 'referrals', label: `Commission Ledger (${totalReferredCount})` },
+                    { key: 'payouts', label: 'Payout Station' },
+                    { key: 'tiers', label: `VIP Loyalty Tier (${thrive?.totalPoints || 0} pts)` },
+                  ].map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => setTab(t.key as TabKey)}
+                      className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                        tab === t.key
+                          ? 'bg-brand-navy text-white shadow-sm'
+                          : 'text-brand-navy/60 hover:text-brand-gold hover:bg-brand-gold/10'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </section>
 
-            {/* Refer + ledger */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-              <section className="self-start rounded-2xl border border-brand-navy/10 bg-white p-6 lg:col-span-4">
-                <h3 className="font-display text-sm font-bold">Refer a client</h3>
-                <p className="mt-1 text-[10px] text-brand-navy/50">Log a client token you brought into Opus. Commission matures when they sign their service agreement.</p>
-                <form onSubmit={handleReferral} className="mt-5 space-y-4">
-                  <div>
-                    <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Client token</label>
-                    <input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="e.g. OP-2026-5555" className="w-full rounded-xl border border-brand-navy/15 bg-slate-50 px-3.5 py-2.5 font-mono text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Commission rate (%)</label>
-                    <input type="number" min={1} max={25} value={commissionRate} onChange={(e) => setCommissionRate(parseInt(e.target.value) || 5)} className="w-full rounded-xl border border-brand-navy/15 bg-slate-50 px-3.5 py-2.5 text-xs text-brand-navy focus:border-brand-gold focus:outline-none" />
-                  </div>
-                  <button type="submit" disabled={logReferralMutation.isPending} className="w-full rounded-full bg-brand-navy py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy disabled:opacity-50">
-                    {logReferralMutation.isPending ? 'Logging…' : 'Log referral'}
-                  </button>
-                </form>
-                <div className="mt-5 rounded-xl bg-slate-50 p-3 text-[10px] leading-relaxed text-brand-navy/60">
-                  <span className="font-bold text-brand-navy">Payout schedule:</span> earned commissions are settled on the monthly payout run to the bank in your KYC. Held entries are reviewed by finance.
+                <div className="hidden items-center gap-2 pr-3 text-[10px] font-bold uppercase tracking-wider text-brand-gold lg:flex">
+                  <span className="live-pulse-dot text-brand-gold" /> Real-Time Telemetry
                 </div>
-              </section>
-
-              {/* Ledger with breakdowns */}
-              <section className="overflow-hidden rounded-2xl border border-brand-navy/10 bg-white lg:col-span-8">
-                <div className="flex items-center justify-between border-b border-brand-navy/10 px-6 py-4">
-                  <div>
-                    <h3 className="font-display text-sm font-bold">Earnings ledger</h3>
-                    <p className="text-[10px] text-brand-navy/50">Every referral, its rate, its status, and exactly how it was calculated — no black box.</p>
-                  </div>
-                  {isFetching && <span className="text-[10px] animate-pulse text-brand-gold">Syncing…</span>}
-                </div>
-                {isError && <div className="m-6 rounded-lg bg-rose-50 p-3 text-[11px] text-rose-700">{authError || 'Failed to load ledger.'}</div>}
-                {!isError && referrals.length === 0 && (
-                  <div className="p-12 text-center">
-                    <p className="text-xs text-brand-navy/50">No referrals yet.</p>
-                    <p className="mt-1 text-[10px] text-brand-navy/40">Use your copy-link or log a client above to start earning.</p>
-                  </div>
-                )}
-                {referrals.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-brand-navy/10 bg-[#FAF8F4] text-[10px] uppercase tracking-wider text-slate-500">
-                          <th className="px-6 py-3">Referred client</th>
-                          <th className="px-6 py-3">Rate</th>
-                          <th className="px-6 py-3">Commission</th>
-                          <th className="px-6 py-3">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {referrals.map((r, i) => (
-                          <tr key={r.referralId || i} className="border-b border-brand-navy/5 transition-colors last:border-0 hover:bg-brand-gold/5">
-                            <td className="px-6 py-4 font-mono text-brand-navy">{r.referredClientId}</td>
-                            <td className="px-6 py-4 text-slate-600">{r.ratePct}%</td>
-                            <td className="px-6 py-4 font-bold text-brand-gold">{rs(r.amountPaise)}</td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${statusStyles[r.status] || statusStyles.unmatured}`}>
-                                <span className={`h-1.5 w-1.5 rounded-full ${r.status === 'matured' || r.status === 'paid' ? 'bg-current' : 'bg-slate-400'}`} />
-                                {statusLabel[r.status] || r.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </section>
+              </nav>
             </div>
 
-            {/* How it works + trust */}
-            <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              {[
-                { t: '1 · Share', d: 'Copy your personal link or WhatsApp-share it — the client is auto-attributed to you through the lead form.' },
-                { t: '2 · Client signs', d: 'When the referred client signs a service agreement, your commission for that referral matures automatically.' },
-                { t: '3 · Get paid', d: 'Earned amounts are bank-transferred on the monthly payout cycle; every entry stays visible in this ledger.' },
-              ].map((s) => (
-                <div key={s.t} className="rounded-2xl border border-brand-navy/10 bg-white p-5">
-                  <div className="text-xs font-bold uppercase tracking-wider text-brand-gold">{s.t}</div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-brand-navy/60">{s.d}</p>
+            {/* TAB CONTENT PANELS */}
+            <div className="mx-auto max-w-6xl space-y-8 px-5 py-8 md:px-8">
+              {/* ============================================================ */}
+              {/* TAB 1: OVERVIEW COCKPIT                                      */}
+              {/* ============================================================ */}
+              {tab === 'overview' && (
+                <div className="space-y-8">
+                  {/* 5-DIVISION 1-CLICK LAUNCHPAD */}
+                  <section className="partner-fade clay-card p-6 md:p-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Fast-Track Attribution</span>
+                        <h2 className="mt-0.5 font-display text-lg font-bold text-brand-navy">
+                          1-Click Division Referral Links
+                        </h2>
+                        <p className="text-xs text-brand-navy/60">Share directly with clients — your partner code is auto-embedded.</p>
+                      </div>
+                      <span className="rounded-full bg-brand-gold/10 px-3 py-1 font-mono text-xs font-extrabold text-brand-gold">
+                        ref={refCode}
+                      </span>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {DIVISIONS.map((div) => {
+                        const targetUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${div.path}?ref=${refCode}`;
+                        return (
+                          <div key={div.id} className="flex flex-col justify-between rounded-2xl border border-brand-navy/10 bg-slate-50/60 p-5 transition hover:border-brand-gold/40 hover:bg-white hover:shadow-sm">
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white" style={{ backgroundColor: div.color }}>
+                                  {div.badge}
+                                </span>
+                                <span className="text-[10px] font-bold text-emerald-700">{div.avgCommission}</span>
+                              </div>
+                              <h3 className="mt-3 font-display text-sm font-bold text-brand-navy">{div.name}</h3>
+                              <p className="mt-1 text-[11px] leading-relaxed text-brand-navy/60">{div.tagline}</p>
+                            </div>
+
+                            <div className="mt-5 flex items-center gap-2 pt-3 border-t border-brand-navy/10">
+                              <button
+                                onClick={() => copyToClipboard(targetUrl, `div-${div.id}`, div.name)}
+                                className="tactile-btn flex-1 rounded-full bg-brand-navy py-2 text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy cursor-pointer"
+                              >
+                                {copiedLinkKey === `div-${div.id}` ? '✓ Copied' : 'Copy Link'}
+                              </button>
+                              <button
+                                onClick={() => openWhatsApp(div.whatsappText(targetUrl))}
+                                className="tactile-btn rounded-full bg-emerald-600 px-3 py-2 text-[10px] font-bold text-white transition hover:bg-emerald-500 cursor-pointer"
+                                title="Share on WhatsApp"
+                              >
+                                💬
+                              </button>
+                              <button
+                                onClick={() => setQrModal({ open: true, title: `${div.name} QR Code`, url: targetUrl })}
+                                className="tactile-btn rounded-full border border-brand-navy/20 bg-white px-3 py-2 text-[10px] font-bold text-brand-navy transition hover:border-brand-gold hover:text-brand-gold cursor-pointer"
+                                title="View QR Code"
+                              >
+                                ▦
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Universal Lead Form Card */}
+                      <div className="flex flex-col justify-between rounded-2xl border border-brand-gold/50 bg-brand-gold/5 p-5">
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="rounded-full bg-brand-gold px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-navy">
+                              Universal
+                            </span>
+                            <span className="text-[10px] font-bold text-brand-gold">General Consultation</span>
+                          </div>
+                          <h3 className="mt-3 font-display text-sm font-bold text-brand-navy">Universal Lead & Evaluation Form</h3>
+                          <p className="mt-1 text-[11px] leading-relaxed text-brand-navy/60">
+                            Directs client to Opus comprehensive multi-service inquiry form. Perfect for general campaigns.
+                          </p>
+                        </div>
+
+                        <div className="mt-5 flex items-center gap-2 pt-3 border-t border-brand-navy/10">
+                          <button
+                            onClick={() => copyToClipboard(universalReferralLink, 'div-universal', 'Universal Form')}
+                            className="tactile-btn flex-1 rounded-full bg-brand-gold py-2 text-[10px] font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white cursor-pointer"
+                          >
+                            {copiedLinkKey === 'div-universal' ? '✓ Copied' : 'Copy Main Form'}
+                          </button>
+                          <button
+                            onClick={() => openWhatsApp(`Opus Overseas — consultation & evaluation form: ${universalReferralLink}`)}
+                            className="tactile-btn rounded-full bg-emerald-600 px-3 py-2 text-[10px] font-bold text-white transition hover:bg-emerald-500 cursor-pointer"
+                          >
+                            💬
+                          </button>
+                          <button
+                            onClick={() => setQrModal({ open: true, title: 'Universal Form QR Code', url: universalReferralLink })}
+                            className="tactile-btn rounded-full border border-brand-gold/40 bg-white px-3 py-2 text-[10px] font-bold text-brand-navy transition hover:border-brand-gold hover:text-brand-gold cursor-pointer"
+                          >
+                            ▦
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* ACTIVATION CHECKLIST & LOYALTY PROGRESS ROW */}
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                    {/* Activation Roadmap */}
+                    <section className="partner-fade clay-card p-6 lg:col-span-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <h3 className="font-display text-sm font-bold text-brand-navy">Activation Checklist</h3>
+                          <p className="mt-0.5 text-[10px] text-brand-navy/50">Your roadmap to first commission payout.</p>
+                        </div>
+                        <span className="rounded-full bg-brand-gold/10 px-3 py-1 font-display text-xs font-extrabold text-brand-gold">
+                          {doneCount}/{totalCount}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-brand-navy/5">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-brand-navy via-brand-blue to-brand-gold transition-all duration-700"
+                          style={{ width: `${totalCount ? Math.round((doneCount / totalCount) * 100) : 0}%` }}
+                        />
+                      </div>
+
+                      <ul className="mt-5 space-y-4">
+                        {onboardingSteps.map((s, i) => (
+                          <li key={s.key} className="flex items-start gap-3">
+                            <span
+                              className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-bold ${
+                                s.done ? 'bg-emerald-500 text-white shadow-sm' : 'border border-brand-navy/20 text-brand-navy/40'
+                              }`}
+                            >
+                              {s.done ? '✓' : i + 1}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className={`text-xs font-bold ${s.done ? 'text-brand-navy' : 'text-brand-navy/70'}`}>
+                                {s.label}
+                              </div>
+                              {s.hint && <div className="mt-0.5 text-[10px] leading-relaxed text-brand-navy/50">{s.hint}</div>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+
+                    {/* VIP Loyalty Tier Summary (Thrive) */}
+                    <section className="partner-fade clay-card p-6 lg:col-span-7 flex flex-col justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <span
+                              className="grid h-14 w-14 place-items-center rounded-2xl font-display text-xl font-extrabold uppercase text-white shadow-md"
+                              style={{ background: thrive?.tier?.color || '#b87333' }}
+                            >
+                              {thrive?.tier?.key?.[0] || 'B'}
+                            </span>
+                            <div>
+                              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">VIP Loyalty Status</div>
+                              <h3 className="mt-0.5 font-display text-xl font-extrabold text-brand-navy">{thrive?.tier?.name || 'Bronze Partner'}</h3>
+                              <div className="mt-1 flex flex-wrap gap-1.5">
+                                {(thrive?.tier?.perks || ['Standard Commission', 'Attribution Tracking', 'Monthly Payouts']).map((p) => (
+                                  <span key={p} className="rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2 py-0.5 text-[9px] font-bold text-brand-navy/70">
+                                    {p}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Loyalty Points</div>
+                            <div className="font-display text-3xl font-extrabold text-brand-gold">
+                              <AnimatedNumber value={thrive?.totalPoints || 0} />
+                            </div>
+                            <div className="mt-0.5 text-[10px] font-semibold text-emerald-700">
+                              {thrive?.tier?.boostPct ? `+${thrive.tier.boostPct}% Commission Boost Unlocked` : 'Base Tier Rate'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-6">
+                          <div className="mb-1.5 flex justify-between text-[11px]">
+                            <span className="font-semibold text-slate-600">{thrive?.tier?.name || 'Bronze'}</span>
+                            <span className="text-slate-500">
+                              {thrive?.nextTier
+                                ? `Next: ${thrive.nextTier.name} (${(thrive.nextTier.minPoints / 100).toLocaleString('en-IN')} pts)`
+                                : 'Highest VIP Tier Reached'}
+                            </span>
+                          </div>
+                          <div className="h-3 overflow-hidden rounded-full bg-brand-navy/5">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-brand-navy via-brand-blue to-brand-gold transition-all duration-700"
+                              style={{ width: `${thrive?.progressPct || 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-navy/10 bg-slate-50 p-3.5">
+                        <span className="text-xs text-brand-navy/70">Want to explore all VIP perks & tier requirements?</span>
+                        <button onClick={() => setTab('tiers')} className="text-xs font-bold text-brand-gold hover:underline cursor-pointer">
+                          View VIP Ladder →
+                        </button>
+                      </div>
+                    </section>
+                  </div>
+
+                  {/* HOW OPUS PARTNER NETWORK WORKS */}
+                  <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    {[
+                      { step: '01 · Distribute Link', title: 'Permanent Attribution', desc: 'Share your 1-click links or QR codes. The client is cookied and permanently bound to your partner record.' },
+                      { step: '02 · Client Engages', title: 'Automatic Maturation', desc: 'When the referred client engages and signs a service agreement, your commission matures immediately in the ledger.' },
+                      { step: '03 · Receive Settlement', title: 'Direct Bank Clearance', desc: 'Request your matured balance via 1-click payout or receive automated settlements to your bank / UPI.' },
+                    ].map((item) => (
+                      <div key={item.step} className="partner-fade clay-card p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-brand-gold">{item.step}</div>
+                        <h4 className="mt-2 font-display text-base font-bold text-brand-navy">{item.title}</h4>
+                        <p className="mt-2 text-xs leading-relaxed text-brand-navy/60">{item.desc}</p>
+                      </div>
+                    ))}
+                  </section>
                 </div>
-              ))}
-            </section>
+              )}
+
+              {/* ============================================================ */}
+              {/* TAB 2: 1-CLICK LINKS & CREATIVE KIT                          */}
+              {/* ============================================================ */}
+              {tab === 'links' && (
+                <div className="space-y-8">
+                  {/* Division Link Hub */}
+                  <section className="partner-fade clay-card p-6 md:p-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
+                      <div>
+                        <h3 className="font-display text-lg font-bold text-brand-navy">5-Division Link & QR Kit</h3>
+                        <p className="text-xs text-brand-navy/60">Generate targeted referral links and marketing assets for each business line.</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+                      {DIVISIONS.map((div) => {
+                        const targetUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${div.path}?ref=${refCode}`;
+                        return (
+                          <div key={div.id} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-white" style={{ backgroundColor: div.color }}>
+                                {div.badge}
+                              </span>
+                              <span className="text-xs font-bold text-emerald-700">{div.avgCommission}</span>
+                            </div>
+                            <div>
+                              <h4 className="font-display text-sm font-bold text-brand-navy">{div.name}</h4>
+                              <p className="mt-1 text-xs text-brand-navy/60">{div.tagline}</p>
+                            </div>
+                            <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-2.5 font-mono text-[11px] text-brand-navy/80 truncate">
+                              {targetUrl}
+                            </div>
+                            <div className="flex items-center gap-2 pt-2">
+                              <button
+                                onClick={() => copyToClipboard(targetUrl, `tab2-${div.id}`, div.name)}
+                                className="tactile-btn flex-1 rounded-full bg-brand-navy py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy cursor-pointer"
+                              >
+                                {copiedLinkKey === `tab2-${div.id}` ? '✓ Copied Link' : 'Copy Link'}
+                              </button>
+                              <button
+                                onClick={() => openWhatsApp(div.whatsappText(targetUrl))}
+                                className="tactile-btn rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 cursor-pointer"
+                              >
+                                💬 WhatsApp
+                              </button>
+                              <button
+                                onClick={() => setQrModal({ open: true, title: `${div.name} QR Code`, url: targetUrl })}
+                                className="tactile-btn rounded-full border border-brand-navy/20 bg-white px-4 py-2 text-xs font-bold text-brand-navy transition hover:border-brand-gold hover:text-brand-gold cursor-pointer"
+                              >
+                                ▦ QR
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* PRE-APPROVED COPY SWIPES */}
+                  <section className="partner-fade clay-card p-6 md:p-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Ready-to-Use Copy</span>
+                        <h3 className="mt-0.5 font-display text-lg font-bold text-brand-navy">High-Converting Swipe Files</h3>
+                        <p className="text-xs text-brand-navy/60">Pre-approved compliance text with your referral link auto-inserted.</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+                      {SWIPE_TEMPLATES.map((swipe) => {
+                        const swipeText = swipe.body(universalReferralLink);
+                        return (
+                          <div key={swipe.id} className="flex flex-col justify-between rounded-2xl border border-brand-navy/10 bg-slate-50 p-5">
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-display text-sm font-bold text-brand-navy">{swipe.title}</h4>
+                                <span className="rounded-full bg-brand-gold/15 px-2.5 py-0.5 text-[9px] font-bold uppercase text-brand-gold">
+                                  {swipe.channel}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-[10px] text-brand-navy/50">{swipe.hint}</p>
+                              <div className="mt-3 max-h-36 overflow-y-auto whitespace-pre-wrap rounded-xl border border-brand-navy/10 bg-white p-3 font-sans text-xs leading-relaxed text-brand-navy/80">
+                                {swipeText}
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => copyToClipboard(swipeText, `swipe-${swipe.id}`, swipe.title)}
+                              className="tactile-btn mt-4 w-full rounded-full bg-brand-navy py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy cursor-pointer"
+                            >
+                              {copiedLinkKey === `swipe-${swipe.id}` ? '✓ Copied Full Swipe Text' : 'Copy Message'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* DYNAMIC CREATIVES FROM SERVER */}
+                  {(creativesData?.creatives || []).length > 0 && (
+                    <section className="partner-fade clay-card p-6 md:p-8">
+                      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Brand Assets</span>
+                          <h3 className="mt-0.5 font-display text-lg font-bold text-brand-navy">Pre-Approved Display Creatives</h3>
+                          <p className="text-xs text-brand-navy/60">Official banners and visual assets with your referral code auto-embedded.</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {(creativesData?.creatives || []).map((c: Creative) => {
+                          const sep = c.url.includes('?') ? '&' : '?';
+                          const fullCreativeUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${c.url}${sep}ref=${encodeURIComponent(refCode)}`;
+                          return (
+                            <div key={c.id} className="flex flex-col justify-between rounded-2xl border border-brand-navy/10 bg-slate-50 p-5 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="truncate font-display text-sm font-bold text-brand-navy">{c.title}</span>
+                                <span className="rounded-full bg-brand-gold/15 px-2 py-0.5 text-[9px] font-bold uppercase text-brand-gold">
+                                  {c.type} {c.size ? `· ${c.size}` : ''}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-center rounded-xl border border-dashed border-brand-navy/20 bg-white p-6 text-center text-xs text-brand-navy/60">
+                                {c.size ? `Banner Asset (${c.size})` : 'Marketing Creative'}
+                              </div>
+                              <button
+                                onClick={() => copyToClipboard(fullCreativeUrl, `creative-${c.id}`, c.title)}
+                                className="tactile-btn w-full rounded-full bg-brand-navy py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy cursor-pointer"
+                              >
+                                {copiedLinkKey === `creative-${c.id}` ? '✓ Copied Creative Link' : 'Copy Asset Link'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* ITEM-LEVEL INVENTORY / CATALOG BROWSER */}
+                  <section className="partner-fade clay-card p-6 md:p-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
+                      <div>
+                        <h3 className="font-display text-lg font-bold text-brand-navy">Deep-Link Inventory Catalog</h3>
+                        <p className="text-xs text-brand-navy/60">Generate targeted referral links for specific universities, packages, and visas.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { key: 'university', label: 'Universities' },
+                          { key: 'umrah_package', label: 'Umrah Packages' },
+                          { key: 'departure', label: 'Departures' },
+                          { key: 'visa', label: 'Visa Products' },
+                          { key: 'job', label: 'Jobs' },
+                        ].map((btn) => (
+                          <button
+                            key={btn.key}
+                            onClick={() => setCatalogType(btn.key)}
+                            className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                              catalogType === btn.key
+                                ? 'bg-brand-navy text-white'
+                                : 'border border-brand-navy/15 text-slate-600 hover:border-brand-gold hover:text-brand-gold'
+                            }`}
+                          >
+                            {btn.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <input
+                        type="text"
+                        placeholder={`Search ${catalogType} catalog…`}
+                        value={catalogSearch}
+                        onChange={(e) => setCatalogSearch(e.target.value)}
+                        className={baseInput}
+                      />
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {(catalog?.items || [])
+                        .filter((i) => i.type === catalogType && (!catalogSearch || i.title.toLowerCase().includes(catalogSearch.toLowerCase())))
+                        .slice(0, 10)
+                        .map((item) => {
+                          const existingLink = (linksData?.links || []).find((l) => l.catalogType === item.type && l.catalogItemId === item.id);
+                          const directUrl = existingLink ? `${typeof window !== 'undefined' ? window.location.origin : ''}/go/${refCode}/${item.type}/${item.id}` : null;
+                          return (
+                            <div key={`${item.type}-${item.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-brand-navy/10 bg-slate-50 p-4">
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-xs font-bold text-brand-navy">{item.title}</div>
+                                <div className="text-[10px] text-slate-500">
+                                  {item.meta?.country || item.meta?.date || ''} {item.pricePaise > 0 ? `· ${rs(item.pricePaise)}` : ''} {existingLink ? `· ${existingLink.clicks} clicks` : ''}
+                                </div>
+                              </div>
+
+                              {existingLink && directUrl ? (
+                                <button
+                                  onClick={() => copyToClipboard(directUrl, `cat-${item.id}`, item.title)}
+                                  className="shrink-0 rounded-full border border-brand-gold/50 bg-brand-gold/10 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-gold transition hover:bg-brand-gold hover:text-brand-navy cursor-pointer"
+                                >
+                                  {copiedLinkKey === `cat-${item.id}` ? '✓ Copied' : 'Copy'}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => createLinkMutation.mutate(item)}
+                                  disabled={createLinkMutation.isPending}
+                                  className="shrink-0 rounded-full bg-brand-navy px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy disabled:opacity-40 cursor-pointer"
+                                >
+                                  {createLinkMutation.isPending ? '…' : '+ Link'}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {/* ============================================================ */}
+              {/* TAB 3: REFERRALS & COMMISSION LEDGER                         */}
+              {/* ============================================================ */}
+              {tab === 'referrals' && (
+                <div className="space-y-8">
+                  {/* Manual Log Referral Drawer */}
+                  <section className="partner-fade clay-card p-6 md:p-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Manual Attribution Station</span>
+                        <h3 className="mt-0.5 font-display text-lg font-bold text-brand-navy">Attribute Client Referral</h3>
+                        <p className="text-xs text-brand-navy/60">If a client visited directly or applied offline, link their unique Client Token here.</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleManualReferral} className="lead-form-wrap mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Client Token</label>
+                        <input
+                          type="text"
+                          value={manualClientId}
+                          onChange={(e) => setManualClientId(e.target.value.toUpperCase())}
+                          placeholder="e.g. OP-2026-9041"
+                          className={`${baseInput} font-mono`}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Agreed Commission Rate (%)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={25}
+                          value={manualCommissionRate}
+                          onChange={(e) => setManualCommissionRate(parseInt(e.target.value) || 10)}
+                          className={baseInput}
+                        />
+                      </div>
+
+                      <div className="flex items-end">
+                        <button type="submit" disabled={logReferralMutation.isPending} className={`${navyBtn} w-full py-2.5`}>
+                          {logReferralMutation.isPending ? 'Logging…' : '+ Attribute Client'}
+                        </button>
+                      </div>
+                    </form>
+                  </section>
+
+                  {/* Filterable & Searchable Commission Ledger */}
+                  <section className="partner-fade clay-card overflow-hidden">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 px-6 py-4">
+                      <div>
+                        <h3 className="font-display text-base font-bold text-brand-navy">Referral & Commission Ledger</h3>
+                        <p className="text-xs text-brand-navy/50">Immutable audit log of all referred leads, agreement statuses, and matured earnings.</p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {[
+                          { key: 'all', label: `All (${ledgerRows.length})` },
+                          { key: 'matured', label: `Matured (${maturedCount})` },
+                          { key: 'pending', label: `Pending Sign (${pendingCount})` },
+                          { key: 'paid', label: `Paid (${paidCount})` },
+                          { key: 'held', label: `Held (${heldCount})` },
+                        ].map((st) => (
+                          <button
+                            key={st.key}
+                            onClick={() => setFilterStatus(st.key)}
+                            className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+                              filterStatus === st.key
+                                ? 'bg-brand-navy text-white'
+                                : 'border border-brand-navy/10 text-brand-navy/60 hover:border-brand-gold'
+                            }`}
+                          >
+                            {st.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="border-b border-brand-navy/10 bg-slate-50 px-6 py-3">
+                      <input
+                        type="text"
+                        placeholder="Search by Client Token or Client Name…"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className={baseInput}
+                      />
+                    </div>
+
+                    {filteredLedger.length === 0 ? (
+                      <div className="p-12 text-center">
+                        <p className="text-sm font-bold text-brand-navy">No matching referrals found</p>
+                        <p className="mt-1 text-xs text-brand-navy/50">Share your referral link to begin attributing clients to your ledger.</p>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Desktop Table */}
+                        <div className="hidden overflow-x-auto md:block">
+                          <table className="w-full text-left text-xs">
+                            <thead>
+                              <tr className="border-b border-brand-navy/10 bg-brand-cream/80 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                <th className="px-6 py-3.5">Client Token & Name</th>
+                                <th className="px-6 py-3.5">Commission Rate</th>
+                                <th className="px-6 py-3.5">Earned Amount</th>
+                                <th className="px-6 py-3.5">Lifecycle Status</th>
+                                <th className="px-6 py-3.5">Referral Date</th>
+                                <th className="px-6 py-3.5 text-right">Audit Timeline</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-brand-navy/5">
+                              {filteredLedger.map((r) => (
+                                <React.Fragment key={r.referralId}>
+                                  <tr className="transition hover:bg-brand-gold/5">
+                                    <td className="px-6 py-4">
+                                      <button
+                                        onClick={() => setOpenReferral((cur) => (cur === r.referralId ? null : r.referralId))}
+                                        className="flex items-center gap-2.5 text-left cursor-pointer"
+                                      >
+                                        <span className={`text-[10px] text-brand-gold transition-transform duration-200 ${openReferral === r.referralId ? 'rotate-90' : ''}`}>
+                                          ▶
+                                        </span>
+                                        <div>
+                                          <div className="font-bold text-brand-navy">{r.clientName || r.clientId}</div>
+                                          <div className="font-mono text-[10px] text-brand-navy/50">{r.clientId}</div>
+                                        </div>
+                                      </button>
+                                    </td>
+                                    <td className="px-6 py-4 font-semibold text-slate-600">{r.ratePct}%</td>
+                                    <td className="px-6 py-4 font-display font-bold text-brand-gold">{rs(r.amountPaise)}</td>
+                                    <td className="px-6 py-4">
+                                      <StatusChip status={r.status} />
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-500">{r.createdAt ? d(r.createdAt) : '—'}</td>
+                                    <td className="px-6 py-4 text-right">
+                                      <button
+                                        onClick={() => setOpenReferral((cur) => (cur === r.referralId ? null : r.referralId))}
+                                        className="rounded-full border border-brand-navy/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 transition hover:border-brand-gold hover:text-brand-gold cursor-pointer"
+                                      >
+                                        {openReferral === r.referralId ? 'Hide History' : 'View Stage'}
+                                      </button>
+                                    </td>
+                                  </tr>
+
+                                  {/* Expanded Milestone Timeline */}
+                                  {openReferral === r.referralId && (
+                                    <tr className="bg-brand-cream/50 border-b border-brand-navy/10">
+                                      <td colSpan={6} className="px-8 py-5">
+                                        <div className="max-w-xl">
+                                          <div className="mb-3 text-[10px] font-bold uppercase tracking-wider text-brand-gold">
+                                            Referral Lifecycle Milestones
+                                          </div>
+                                          {r.timeline.length > 0 ? (
+                                            <MilestoneTimeline events={r.timeline} />
+                                          ) : (
+                                            <p className="text-xs text-brand-navy/50">
+                                              Referral tracked. Next stages (Agreement Signed → Payment Confirmed → Commission Matured) will appear automatically.
+                                            </p>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Mobile Cards */}
+                        <div className="divide-y divide-brand-navy/5 md:hidden">
+                          {filteredLedger.map((r) => (
+                            <div key={r.referralId} className="p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="text-xs font-bold text-brand-navy">{r.clientName || r.clientId}</div>
+                                  <div className="font-mono text-[10px] text-brand-navy/50">{r.clientId}</div>
+                                </div>
+                                <StatusChip status={r.status} />
+                              </div>
+
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-slate-500">Commission Rate: {r.ratePct}%</span>
+                                <span className="font-display font-bold text-brand-gold">{rs(r.amountPaise)}</span>
+                              </div>
+
+                              <button
+                                onClick={() => setOpenReferral((cur) => (cur === r.referralId ? null : r.referralId))}
+                                className="w-full rounded-xl border border-brand-navy/15 py-1.5 text-center text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 cursor-pointer"
+                              >
+                                {openReferral === r.referralId ? 'Hide Timeline' : 'View Milestones'}
+                              </button>
+
+                              {openReferral === r.referralId && (
+                                <div className="rounded-xl bg-white p-4 border border-brand-navy/10">
+                                  {r.timeline.length > 0 ? (
+                                    <MilestoneTimeline events={r.timeline} />
+                                  ) : (
+                                    <p className="text-[11px] text-brand-navy/50">Stages will update as the client progresses.</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </section>
+                </div>
+              )}
+
+              {/* ============================================================ */}
+              {/* TAB 4: PAYOUTS & BANK SETTLEMENT                             */}
+              {/* ============================================================ */}
+              {tab === 'payouts' && (
+                <div className="space-y-8">
+                  {/* Settlement Request Card */}
+                  <section className="partner-fade clay-card p-6 md:p-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-6">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Settlement Station</span>
+                        <h3 className="mt-0.5 font-display text-xl font-bold text-brand-navy">Request Earnings Disbursement</h3>
+                        <p className="text-xs text-brand-navy/60">Disburse your matured commissions directly to your registered bank account or UPI.</p>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Matured Payout Balance</div>
+                        <div className="font-display text-3xl font-black text-emerald-700">{rs(totals.matured)}</div>
+                        <div className="text-[10px] text-slate-400">Available to withdraw now</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-navy/10 bg-slate-50 p-5">
+                      <div className="space-y-1">
+                        <div className="text-xs font-bold text-brand-navy">Payout Threshold & Readiness</div>
+                        <p className="text-[11px] text-brand-navy/60">
+                          Configured threshold: <strong>₹{payoutThreshold.toLocaleString('en-IN')}</strong> · Minimum clearance requirement.
+                        </p>
+                      </div>
+
+                      <div>
+                        {pendingPayout ? (
+                          <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/50 bg-amber-500/10 px-5 py-2 text-xs font-bold uppercase tracking-wider text-amber-700">
+                            <span className="live-pulse-dot text-amber-600" /> Payout Pending Finance Approval
+                          </span>
+                        ) : totals.matured > 0 && (totals.matured / 100) >= payoutThreshold ? (
+                          <button
+                            onClick={() => requestPayout.mutate()}
+                            disabled={requestPayout.isPending}
+                            className="tactile-btn rounded-full bg-emerald-600 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-emerald-500 active:scale-[0.97] cursor-pointer shadow-md"
+                          >
+                            {requestPayout.isPending ? 'Processing Request…' : `Withdraw ${rs(totals.matured)} Now`}
+                          </button>
+                        ) : (
+                          <div className="text-right">
+                            <button disabled className="rounded-full bg-slate-200 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-500 cursor-not-allowed">
+                              Threshold Not Met
+                            </button>
+                            <div className="mt-1 text-[10px] text-slate-400">
+                              Requires ₹{Math.max(0, payoutThreshold - Math.round(totals.matured / 100)).toLocaleString('en-IN')} more to unlock withdrawal.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Payout Preferences Form */}
+                  <section className="partner-fade clay-card p-6 md:p-8">
+                    <div className="flex items-center justify-between border-b border-brand-navy/10 pb-4">
+                      <div>
+                        <h3 className="font-display text-base font-bold text-brand-navy">Payout Method & Routing Details</h3>
+                        <p className="text-xs text-brand-navy/50">Manage your settlement destination (Bank Transfer or UPI).</p>
+                      </div>
+                      {!editPayoutConfig && (
+                        <button
+                          onClick={() => setEditPayoutConfig(true)}
+                          className="rounded-full border border-brand-navy/15 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-brand-navy/70 hover:border-brand-gold hover:text-brand-gold cursor-pointer"
+                        >
+                          Edit Settings
+                        </button>
+                      )}
+                    </div>
+
+                    {editPayoutConfig ? (
+                      <form onSubmit={handleSaveConfig} className="lead-form-wrap mt-6 max-w-xl space-y-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Disbursement Channel</label>
+                            <select
+                              value={payoutMethod}
+                              onChange={(e) => setPayoutMethod(e.target.value as 'bank' | 'upi')}
+                              className="w-full rounded-xl border border-brand-navy/15 bg-white p-2.5 text-xs text-brand-navy"
+                            >
+                              <option value="bank">Bank Transfer (NEFT / RTGS)</option>
+                              <option value="upi">Instant UPI Transfer</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Withdrawal Threshold (₹)</label>
+                            <input
+                              type="number"
+                              min={500}
+                              step={500}
+                              value={payoutThreshold}
+                              onChange={(e) => setPayoutThreshold(parseInt(e.target.value) || 1000)}
+                              className={baseInput}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">
+                            {payoutMethod === 'upi' ? 'UPI ID / VPA' : 'Bank Account Number + IFSC Code'}
+                          </label>
+                          <input
+                            type="text"
+                            value={payoutDetail}
+                            onChange={(e) => setPayoutDetail(e.target.value)}
+                            placeholder={payoutMethod === 'upi' ? 'partner@okaxis' : '50100123456789 · HDFC0000001'}
+                            className={baseInput}
+                            required
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-2">
+                          <button type="submit" disabled={savePayoutConfig.isPending} className={goldBtn}>
+                            {savePayoutConfig.isPending ? 'Saving…' : 'Save Preferences'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditPayoutConfig(false)}
+                            className="rounded-full border border-brand-navy/20 px-4 py-2.5 text-xs font-bold uppercase text-brand-navy/70 hover:bg-slate-100 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-4">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Method</div>
+                          <div className="mt-1 text-xs font-bold text-brand-navy uppercase">{payoutMethod} Transfer</div>
+                        </div>
+                        <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-4">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Destination Detail</div>
+                          <div className="mt-1 font-mono text-xs font-bold text-brand-navy truncate">
+                            {payoutDetail || 'Using KYC Bank Credentials'}
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-4">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Minimum Threshold</div>
+                          <div className="mt-1 text-xs font-bold text-brand-navy">₹{payoutThreshold.toLocaleString('en-IN')}</div>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* Payout History Ledger */}
+                  <section className="partner-fade clay-card overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-brand-navy/10 px-6 py-4">
+                      <div>
+                        <h3 className="font-display text-base font-bold text-brand-navy">Settlement History</h3>
+                        <p className="text-xs text-brand-navy/50">All past disbursement requests, UTR transaction references, and notes.</p>
+                      </div>
+                    </div>
+
+                    {(payoutsData?.payouts || []).length === 0 ? (
+                      <div className="p-12 text-center">
+                        <p className="text-sm font-bold text-brand-navy">No disbursement history</p>
+                        <p className="mt-1 text-xs text-brand-navy/50">Requests will be listed here once submitted.</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="border-b border-brand-navy/10 bg-brand-cream/80 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                              <th className="px-6 py-3.5">Requested Date</th>
+                              <th className="px-6 py-3.5">Disbursed Amount</th>
+                              <th className="px-6 py-3.5">Status</th>
+                              <th className="px-6 py-3.5">Reference / Note</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-brand-navy/5">
+                            {(payoutsData?.payouts || []).map((p) => (
+                              <tr key={p.id} className="hover:bg-brand-gold/5 transition">
+                                <td className="px-6 py-4 text-slate-600">{d(p.requestedAt)}</td>
+                                <td className="px-6 py-4 font-display font-bold text-brand-navy">{rs(p.amountPaise)}</td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${payoutStatusStyles[p.status] || 'bg-slate-100 text-slate-700'}`}>
+                                    {p.status}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-slate-500 font-mono text-[11px]">{p.note || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </section>
+                </div>
+              )}
+
+              {/* ============================================================ */}
+              {/* TAB 5: VIP LOYALTY TIER LADDER                               */}
+              {/* ============================================================ */}
+              {tab === 'tiers' && (
+                <div className="space-y-8">
+                  <section className="partner-fade clay-card p-6 md:p-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-6">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">VIP Ladder</span>
+                        <h3 className="mt-0.5 font-display text-xl font-bold text-brand-navy">Partner Loyalty Tiers</h3>
+                        <p className="text-xs text-brand-navy/60">Unlock higher recurring commission boosts and institutional privileges.</p>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Your Lifetime Points</div>
+                        <div className="font-display text-3xl font-black text-brand-gold">{(thrive?.totalPoints || 0).toLocaleString()}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-4">
+                      {[
+                        { name: 'Bronze Partner', min: 0, boost: 'Base 0%', color: '#b87333', perks: ['Standard 5-15% commission', 'Real-time ledger access', 'Monthly payout runs'] },
+                        { name: 'Silver Partner', min: 5000, boost: '+2% Boost', color: '#94a3b8', perks: ['+2% additional commission', 'Bi-weekly payout runs', 'Custom marketing kit'] },
+                        { name: 'Gold Partner', min: 15000, boost: '+5% Boost', color: '#d97706', perks: ['+5% additional commission', 'Weekly instant payouts', 'Dedicated Partner Manager', 'Co-branded landing pages'] },
+                        { name: 'Platinum VIP', min: 50000, boost: '+8% Boost', color: '#0a2d50', perks: ['+8% additional commission', 'Instant on-demand payouts', 'Executive Luncheon invite', 'Sponsored student events'] },
+                      ].map((tierCard) => {
+                        const isCurrent = (thrive?.tier?.name || 'Bronze Partner').toLowerCase().includes(tierCard.name.split(' ')[0].toLowerCase());
+                        return (
+                          <div
+                            key={tierCard.name}
+                            className={`relative rounded-2xl border p-6 flex flex-col justify-between transition ${
+                              isCurrent
+                                ? 'border-brand-gold bg-brand-gold/5 shadow-md ring-2 ring-brand-gold/30'
+                                : 'border-brand-navy/10 bg-white shadow-sm'
+                            }`}
+                          >
+                            <div>
+                              {isCurrent && (
+                                <span className="absolute -top-3 right-4 rounded-full bg-brand-gold px-3 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-brand-navy shadow-sm">
+                                  Current Tier
+                                </span>
+                              )}
+                              <span
+                                className="inline-block rounded-xl px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+                                style={{ backgroundColor: tierCard.color }}
+                              >
+                                {tierCard.name}
+                              </span>
+                              <div className="mt-4 font-display text-2xl font-black text-brand-navy">{tierCard.boost}</div>
+                              <div className="text-[10px] text-slate-500">Requires {tierCard.min.toLocaleString()} points</div>
+
+                              <ul className="mt-5 space-y-2 text-xs text-brand-navy/70">
+                                {tierCard.perks.map((prk, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-brand-gold font-bold">✓</span>
+                                    <span>{prk}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
 
-      {/* Toast */}
-      <div className={`fixed right-6 bottom-6 z-50 flex items-center gap-2 rounded-xl border-l-4 border-brand-gold bg-brand-navy px-4 py-3 text-xs text-white shadow-2xl transition duration-300 ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'}`}>
-        <span className="font-bold text-brand-gold">PARTNER:</span>
+      <Footer />
+
+      {/* ==================================================================== */}
+      {/* QR CODE MODAL POPUP                                                 */}
+      {/* ==================================================================== */}
+      {qrModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/80 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md rounded-3xl border border-brand-navy/10 bg-white p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-brand-navy/10 pb-3">
+              <div>
+                <h3 className="font-display text-base font-bold text-brand-navy">{qrModal.title}</h3>
+                <p className="text-[10px] text-brand-navy/50">Print or present this QR code for instant client attribution.</p>
+              </div>
+              <button
+                onClick={() => setQrModal({ open: false, title: '', url: '' })}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-brand-navy/10">
+              <div className="p-3 bg-white rounded-xl shadow-sm">
+                <QRCodeSVG
+                  value={qrModal.url}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <div className="mt-3 w-full max-w-xs text-center font-mono text-[10px] text-brand-navy/60 truncate">
+                {qrModal.url}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => copyToClipboard(qrModal.url, 'modal-qr', 'QR URL')}
+                className={`${navyBtn} flex-1 py-2.5`}
+              >
+                {copiedLinkKey === 'modal-qr' ? '✓ Copied Link' : 'Copy Destination URL'}
+              </button>
+              <button
+                onClick={() => setQrModal({ open: false, title: '', url: '' })}
+                className="rounded-full border border-brand-navy/20 px-5 py-2.5 text-xs font-bold uppercase text-brand-navy/70 hover:bg-slate-100 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING LUXURY TOAST */}
+      <div
+        className={`fixed right-6 bottom-6 z-50 flex items-center gap-3 rounded-2xl border bg-brand-navy px-5 py-3.5 text-xs font-semibold text-white shadow-2xl transition-all duration-300 ${
+          toast.show ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'
+        } ${toast.type === 'error' ? 'border-rose-500' : 'border-brand-gold'}`}
+      >
+        <span className={toast.type === 'error' ? 'text-rose-400' : 'text-brand-gold'}>●</span>
         <span>{toast.msg}</span>
       </div>
     </div>

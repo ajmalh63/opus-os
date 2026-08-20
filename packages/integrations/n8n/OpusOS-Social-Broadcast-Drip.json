@@ -1,0 +1,95 @@
+{
+  "name": "OpusOS — Social Media Multi-Post & Marketing Drip Trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "opusos-broadcast",
+        "options": {}
+      },
+      "name": "Broadcast Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:4200/api/posts",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "content",
+              "value": "={{$json.body.message}}\n\nApply now: {{$json.body.link || 'https://opusoverseas.com'}}\n#StudyAbroad #VisaGuidance #OpusOverseas #HyderabadConsultancy"
+            },
+            {
+              "name": "platforms",
+              "value": "[\"linkedin\", \"facebook\", \"x\", \"instagram\"]"
+            }
+          ]
+        }
+      },
+      "name": "Postiz Multi-Platform Publish",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        520,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:8000/api/campaigns/broadcast",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "subject",
+              "value": "={{$json.body.title || 'Latest Update from Opus Overseas'}}"
+            },
+            {
+              "name": "content",
+              "value": "={{$json.body.message}}"
+            },
+            {
+              "name": "target_segment",
+              "value": "={{$json.body.division || 'all'}}"
+            }
+          ]
+        }
+      },
+      "name": "Mautic Segment Nurture Push",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        520,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Broadcast Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postiz Multi-Platform Publish",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mautic Segment Nurture Push",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

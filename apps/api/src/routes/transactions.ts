@@ -24,7 +24,7 @@ transactionsRouter.get('/clients-brief', async (c) => {
     const engRows = await db.select({ id: engagements.id, clientId: engagements.clientId, division: engagements.division, title: engagements.title }).from(engagements).all();
     return c.json({ clients: rows, engagements: engRows });
   } catch (error: any) {
-    return c.json({ error: 'Client brief failed', details: error.message }, 500);
+    return c.json({ error: 'Client brief failed',  }, 500);
   }
 });
 
@@ -74,7 +74,7 @@ transactionsRouter.post('/entries', zValidator('json', createPaymentSchema), asy
 
     return c.json({ success: true, id: paymentId, status: 'draft', message: 'Billing entry saved as DRAFT €€ awaiting manager confirmation.' });
   } catch (error: any) {
-    return c.json({ error: 'Draft entry failed', details: error.message }, 500);
+    return c.json({ error: 'Draft entry failed',  }, 500);
   }
 });
 
@@ -85,7 +85,9 @@ transactionsRouter.get('/', async (c) => {
   const user = (c.get('user') as any) || {};
   const status = c.req.query('status');
   const linkStatus = c.req.query('linkStatus'); // whitelist: none|created|paid|cancelled|expired
-  const mine = c.req.query('mine') === '1' && user.role !== 'super_admin' && user.role !== 'manager';
+  // SECURITY: the full financial ledger is manager+ — lower roles are
+  // server-mandated to their own entries (the ?mine=1 filter was opt-in).
+  const mine = c.req.query('mine') === '1' || (user.role !== 'super_admin' && user.role !== 'manager');
   try {
     let rows = await db.select().from(payments).all();
     if (status) rows = rows.filter((r) => r.status === status);
@@ -97,7 +99,7 @@ transactionsRouter.get('/', async (c) => {
     const clientRows = await db.select().from(clients).all();
     return c.json({ transactions: rows.map((r) => ({ ...r, clientName: clientRows.find((cl) => cl.id === r.clientId)?.name || 'Unknown' })) });
   } catch (error: any) {
-    return c.json({ error: 'Transactions list failed', details: error.message }, 500);
+    return c.json({ error: 'Transactions list failed',  }, 500);
   }
 });
 
@@ -119,17 +121,18 @@ transactionsRouter.get('/links-summary', async (c) => {
       total: rows.length,
     });
   } catch (error: any) {
-    return c.json({ error: 'Links summary failed', details: error.message }, 500);
+    return c.json({ error: 'Links summary failed',  }, 500);
   }
 });
 
 async function computeGst(db: ReturnType<typeof getDb>, amount: number, isInterstate?: boolean) {
-  const rate = 0.18;
-  const taxable = amount;
-  const tax = Math.round(amount * rate);
-  const igst = isInterstate ? tax : 0;
-  const cgst = isInterstate ? 0 : Math.round(tax / 2);
-  const sgst = isInterstate ? 0 : tax - cgst;
+  // GST-INCLUSIVE split (single source of truth — matches routes/payments.ts):
+  // amount is what the client pays; taxable = amount / 1.18, GST = amount − taxable.
+  const taxable = Math.round(amount / 1.18);
+  const gstTotal = amount - taxable;
+  const igst = isInterstate ? gstTotal : 0;
+  const cgst = isInterstate ? 0 : Math.floor(gstTotal / 2);
+  const sgst = isInterstate ? 0 : gstTotal - cgst;
   void db;
   return { taxableAmount: taxable, cgst, sgst, igst, isInterstate: !!isInterstate };
 }
@@ -214,7 +217,7 @@ transactionsRouter.post('/:id/confirm', async (c) => {
     const erp = await pushToErpIfInvoice(c, db, id, row.engagementId, now);
     return c.json({ success: true, id, status: 'confirmed', erp: erp?.ok === true ? 'synced' : (erp?.reason || 'queued'), message: 'Entry confirmed ₹€₹€₹₹ balance applied.' });
   } catch (error: any) {
-    return c.json({ error: 'Confirm failed', details: error.message }, 500);
+    return c.json({ error: 'Confirm failed',  }, 500);
   }
 });
 
@@ -239,7 +242,7 @@ transactionsRouter.post('/:id/void', async (c) => {
     await auditEvent(c, { action: 'BILLING_ENTRY_VOID', entityName: 'payments', entityId: id, afterState: { id } });
     return c.json({ success: true, id, status: 'void', message: 'Entry voided.' });
   } catch (error: any) {
-    return c.json({ error: 'Void failed', details: error.message }, 500);
+    return c.json({ error: 'Void failed',  }, 500);
   }
 });
 
@@ -272,6 +275,13 @@ transactionsRouter.post('/charge', async (c) => {
     if (!eng) return c.json({ error: 'Client has no engagement — create one first' }, 409);
   }
   const engRow = eng;
+
+  // Division scope: counselors/coordinators may only charge clients in their
+  // assigned divisions (mirrors the auto-confirm gate below).
+  const userDivisions = (() => { try { return JSON.parse((user.userDivisions as string) || '[]') as string[]; } catch { return []; } })();
+  if ((user.role === 'counselor' || user.role === 'coordinator') && userDivisions.length > 0 && !userDivisions.includes(engRow.division)) {
+    return c.json({ error: 'Client is outside your division scope' }, 403);
+  }
 
   const entryId = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
@@ -331,7 +341,7 @@ notes: { entryId: id, clientId: row.clientId, engagementId: row.engagementId, mi
     await auditEvent(c, { action: 'PAYMENT_LINK_CREATED', entityName: 'payments', entityId: id, afterState: { linkId: created.linkId, amount: row.amount, createdBy: user.id } });
 return c.json({ success: true, id, linkId: created.linkId, shortUrl: created.shortUrl, message: 'Payment link created — share it with the customer.' });
   } catch (error: any) {
-    return c.json({ error: 'Payment link failed', details: error.message }, 500);
+    return c.json({ error: 'Payment link failed',  }, 500);
   }
 });
 
@@ -358,7 +368,7 @@ transactionsRouter.post('/:id/payment-link/cancel', async (c) => {
     await auditEvent(c, { action: 'PAYMENT_LINK_CANCELLED', entityName: 'payments', entityId: id, afterState: { linkId: row.razorpayLinkId, cancelledBy: user.id } });
     return c.json({ success: true, message: 'Payment link cancelled at Razorpay.' });
   } catch (error: any) {
-    return c.json({ error: 'Cancel failed', details: error.message }, 500);
+    return c.json({ error: 'Cancel failed',  }, 500);
   }
 });
 
@@ -394,7 +404,7 @@ transactionsRouter.post('/:id/payment-link/renew', async (c) => {
     await auditEvent(c, { action: 'PAYMENT_LINK_RENEWED', entityName: 'payments', entityId: id, afterState: { oldLinkId: row.razorpayLinkId, newLinkId: created.linkId, renewedBy: user.id } });
     return c.json({ success: true, id, linkId: created.linkId, shortUrl: created.shortUrl, message: 'Fresh payment link created — share it with the customer.' });
   } catch (error: any) {
-    return c.json({ error: 'Renew failed', details: error.message }, 500);
+    return c.json({ error: 'Renew failed',  }, 500);
   }
 });
 

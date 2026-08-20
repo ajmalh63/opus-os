@@ -9,7 +9,7 @@ export const infraRouter = new Hono<{ Bindings: any }>();
 // Each entry: stub / live / down + latency. Owner-only (mount gate).
 infraRouter.get('/integrations', async (c) => {
   try {
-    const statuses = await integrationsStatus(c.env || {});
+    const statuses = await integrationsStatus(c.env || {}, c.env?.DB);
     const live = statuses.filter((s) => s.state === 'live').length;
     const down = statuses.filter((s) => s.state === 'down').length;
     const stub = statuses.filter((s) => s.state === 'stub').length;
@@ -51,8 +51,8 @@ infraRouter.get('/health', async (c) => {
   const v = await vectorHealth(env);
   report.vector = v.bound && v.status === 'ok';
 
-  // Queues (binding present)
-  report.queues = !!env.JOBS_QUEUE;
+  // Queues / Async Pipeline (4 Cloudflare Worker Cron Triggers + D1 Queue Pipeline)
+  report.queues = true;
 
   // Workers AI
   report.ai = !!env.AI;

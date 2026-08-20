@@ -3,11 +3,25 @@ import { getAuth } from '../auth.js';
 import { getDb } from '../db/client.js';
 import { engagements, roles, userRoles } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { auditBounded } from './audit.js';
 
 type RbacEnv = {
   Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string };
   Variables: { user: any; session: any };
 };
+
+// SOC 2 CC6.1: failed/denied access IS logged — bounded at 20/hr per
+// (identity, action) so scanner floods never bloat the audit log. Fail-open.
+async function auditDenied(c: any, reason: string) {
+  await auditBounded(c, {
+    action: 'ACCESS_DENIED',
+    entityName: 'rbac',
+    entityId: c.req?.path || 'unknown',
+    result: 'denied',
+    category: 'access',
+    afterState: { reason, method: c.req?.method },
+  }, 'denial');
+}
 
 // Custom-role permissions (permission tables now actually ENFORCE, plan §5.3).
 // Semantics (additive, preserves legacy):
@@ -67,6 +81,7 @@ export const rbacMiddleware = (
     const sessionResult = await auth.api.getSession({ headers: c.req.raw.headers });
 
     if (!sessionResult) {
+      await auditDenied(c, 'Unauthorized: Invalid or expired session');
       return c.json({ error: "Unauthorized: Invalid or expired session" }, 401);
     }
 
@@ -76,6 +91,7 @@ export const rbacMiddleware = (
     const roleMatch = allowedRoles.includes(user.role);
     const permMatch = roleMatch || (await userHasPermission(c.env, user.id, user.role, requiredPermissions));
     if (!roleMatch && !permMatch) {
+      await auditDenied(c, 'Forbidden: Insufficient role privileges');
       return c.json({ error: "Forbidden: Insufficient role privileges" }, 403);
     }
 
@@ -90,6 +106,13 @@ export const rbacMiddleware = (
       const db = getDb(c.env.DB);
 
       if (idParam && c.req.path.includes('/api/clients/')) {
+        // FAIL-CLOSED: a counselor/coordinator with NO divisions configured gets
+        // nothing (previously empty userDivisions skipped the check entirely —
+        // full PII directory exposure).
+        if (allowedDivisions.length === 0) {
+          await auditDenied(c, 'Forbidden: No divisions assigned to your account');
+          return c.json({ error: "Forbidden: No divisions assigned to your account" }, 403);
+        }
         const clientEngagements = await db
           .select({ division: engagements.division })
           .from(engagements)
@@ -98,6 +121,7 @@ export const rbacMiddleware = (
         if (clientEngagements.length > 0) {
           const hasAccess = clientEngagements.some(eng => allowedDivisions.includes(eng.division));
           if (!hasAccess) {
+            await auditDenied(c, 'Forbidden: Client belongs to a division outside your permitted scope');
             return c.json({ error: "Forbidden: Client belongs to a division outside your permitted scope" }, 403);
           }
         }
@@ -116,6 +140,7 @@ export const rbacMiddleware = (
               .where(eq(engagements.id, cardId))
               .get();
             if (cardEngagement && !allowedDivisions.includes(cardEngagement.division)) {
+              await auditDenied(c, 'Forbidden: Engagement card division outside your permitted scope');
               return c.json({ error: "Forbidden: Engagement card division outside your permitted scope" }, 403);
             }
           }

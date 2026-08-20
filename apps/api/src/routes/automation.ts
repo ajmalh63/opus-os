@@ -126,7 +126,7 @@ automationRouter.post('/nurture/:id/send', async (c) => {
     body,
     createdAt: now,
   }).catch(() => {});
-  await auditEvent(c, { action: 'NURTURE_DISPATCHED', entityName: 'nurture_touches', entityId: id, afterState: { clientId: client.id, stage: touch.stage, provider: res.provider, remoteId: res.remoteId } });
+  await auditEvent(c, { action: 'NURTURE_DISPATCHED', entityName: 'nurture_touches', entityId: id, actorType: 'service', authMethod: 'service_token', afterState: { clientId: client.id, stage: touch.stage, provider: res.provider, remoteId: res.remoteId } });
   await db.update(nurtureTouches).set({ status: 'sent', sentAt: now }).where(eq(nurtureTouches.id, id)).run();
   return c.json({ id, status: 'sent', provider: res.provider, remoteId: res.remoteId });
 });

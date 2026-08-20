@@ -33,7 +33,7 @@ describe('Resume upload (public manpower → R2)', () => {
   it('rejects without BUCKET binding → 503', async () => {
     const res = await app.request('/api/public/manpower/resume', {
       method: 'POST', headers: { 'Content-Type': 'multipart/form-data' },
-    }, { DB: mock, TURNSTILE_SECRET_KEY: '1x' });
+    }, { DB: mock, TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA' });
     expect(res.status).toBe(503);
   });
 });

@@ -5,12 +5,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 interface ServiceRow {
   name: string;
@@ -88,7 +82,7 @@ export default function InfraHealth() {
   const { data, isLoading, isError, refetch } = useQuery<HealthReport>({
     queryKey: ['infraHealth'],
     queryFn: async () => {
-      const r = await fetch('/api/infrastructure/health', { headers: AUTH });
+      const r = await fetch('/api/infrastructure/health', { credentials: 'include' });
       if (!r.ok) throw new Error('infra');
       return r.json();
     },
@@ -99,7 +93,7 @@ export default function InfraHealth() {
   const { data: intData } = useQuery<{ integrations: IntegrationRow[]; summary: { live: number; down: number; stub: number; total: number } }>({
     queryKey: ['infraIntegrations'],
     queryFn: async () => {
-      const r = await fetch('/api/infrastructure/integrations', { headers: AUTH });
+      const r = await fetch('/api/infrastructure/integrations', { credentials: 'include' });
       if (!r.ok) throw new Error('integrations');
       return r.json();
     },

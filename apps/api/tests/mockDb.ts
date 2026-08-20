@@ -18,6 +18,7 @@ export class MockD1Database {
     milestones: [] as any[],
     group_departures: [] as any[],
     seat_bookings: [] as any[],
+    bookings: [] as any[],
     transit_shipments: [] as any[],
     partners: [] as any[],
     statutory_registers: [] as any[],
@@ -78,6 +79,8 @@ export class MockD1Database {
     attestation_rate_cards: [] as any[],
     manpower_deployments: [] as any[],
     membership_plans: [] as any[],
+    utm_events: [] as any[],
+    ga_events: [] as any[],
   };
 
   private getTableName(sql: string): string {
@@ -314,6 +317,45 @@ export class MockD1Database {
               clients: client || null
             };
           });
+      }
+
+      // ORDER BY <col> ASC|DESC [, <col2> ASC|DESC] — stable sort; `rowid` maps
+      // to the array index (insertion order), matching SQLite semantics.
+      const orderMatch = sql.match(/order\s+by\s+(.+?)(?:limit|$)/i);
+      if (orderMatch) {
+        const terms = orderMatch[1].split(',').map(t => t.trim()).filter(Boolean);
+        const keyOf = (row: any, col: string) => {
+          const camel = col.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+          const snake = col.replace(/([A-Z])/g, "_$1").toLowerCase();
+          return row[col] ?? row[camel] ?? row[snake];
+        };
+        results = results
+          .map((row, idx) => ({ row, idx }))
+          .sort((a, b) => {
+            for (const term of terms) {
+              const m = term.match(/^([\w.]+)\s+(asc|desc)$/i) || term.match(/^([\w.]+)$/i);
+              if (!m) continue;
+              const col = m[1].replace(/[`"]/g, '').replace(/\b\w+\./g, '');
+              const dir = (m[2] || 'asc').toLowerCase();
+              const av = col.toLowerCase() === 'rowid' ? a.idx : keyOf(a.row, col);
+              const bv = col.toLowerCase() === 'rowid' ? b.idx : keyOf(b.row, col);
+              if (av === undefined && bv === undefined) continue;
+              if (av === undefined) return dir === 'asc' ? -1 : 1;
+              if (bv === undefined) return dir === 'asc' ? 1 : -1;
+              let cmp = 0;
+              if (typeof av === 'number' && typeof bv === 'number') cmp = av - bv;
+              else cmp = String(av) < String(bv) ? -1 : String(av) > String(bv) ? 1 : 0;
+              if (cmp !== 0) return dir === 'asc' ? cmp : -cmp;
+            }
+            return a.idx - b.idx; // stable tiebreak = insertion order
+          })
+          .map(({ row }) => row);
+      }
+
+      // LIMIT n
+      const limitMatch = sql.match(/limit\s+(\d+)/i);
+      if (limitMatch) {
+        results = results.slice(0, Number(limitMatch[1]));
       }
 
       // Filter columns based on SELECT clause to prevent index mismatch mapping in Drizzle .raw() execution

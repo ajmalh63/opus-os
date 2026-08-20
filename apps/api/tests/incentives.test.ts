@@ -100,4 +100,62 @@ describe('Staff Incentive Engine (Sections 29/31)', () => {
     expect(mockD1.tables.payout_statements[0].status).toBe('approved');
     expect(mockD1.tables.payout_statements[0].approved_by).toBe('owner');
   });
+
+  // ============ Audit trail for incentive money events ============
+  it('rule create writes an INCENTIVE_RULE_CREATED audit row with the session actor', async () => {
+    const res = await app.request('/api/incentives/rules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Cookie': 'better-auth.session_token=token-admin' },
+      body: JSON.stringify({ division: 'umrah', trigger: 'milestone_paid', amount: 50000 })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const logs = mockD1.tables.audit_log as any[];
+    const row = logs.find((l: any) => l.action === 'INCENTIVE_RULE_CREATED');
+    expect(row).toBeTruthy();
+    expect(row.actor_id).toBe('admin-1');
+    expect(row.entity_name).toBe('incentive_rules');
+    expect(JSON.parse(row.after_state).amount).toBe(50000);
+  });
+
+  it('rule patch writes an INCENTIVE_RULE_UPDATED audit row', async () => {
+    mockD1.tables.incentive_rules.push({ id: 'r-x', division: 'umrah', trigger: 'milestone_paid', amount: 50000, is_percent: false, active: true, created_at: 0 } as any);
+    const res = await app.request('/api/incentives/rules/r-x', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Cookie': 'better-auth.session_token=token-admin' },
+      body: JSON.stringify({ amount: 75000 })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const row = (mockD1.tables.audit_log as any[]).find((l: any) => l.action === 'INCENTIVE_RULE_UPDATED');
+    expect(row).toBeTruthy();
+    expect(row.actor_id).toBe('admin-1');
+    expect(JSON.parse(row.after_state).amount).toBe(75000);
+  });
+
+  it('period close writes an INCENTIVE_PERIOD_CLOSED audit row', async () => {
+    mockD1.tables.users.push({ id: 'admin-1', name: 'Admin', email: 'a@x.com', role: 'super_admin' } as any);
+    mockD1.tables.incentive_entries.push({ id: 'a2', employee_id: 'admin-1', rule_id: 'r', engagement_id: null, trigger_ref: null, amount: 100000, status: 'accrued', period: null, created_at: 0 });
+    const res = await app.request('/api/incentives/close', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Cookie': 'better-auth.session_token=token-admin' },
+      body: JSON.stringify({ period: '2026-09' })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const row = (mockD1.tables.audit_log as any[]).find((l: any) => l.action === 'INCENTIVE_PERIOD_CLOSED');
+    expect(row).toBeTruthy();
+    expect(JSON.parse(row.after_state).period).toBe('2026-09');
+    expect(JSON.parse(row.after_state).statementCount).toBe(1);
+  });
+
+  it('statement approve writes a PAYOUT_APPROVED audit row', async () => {
+    mockD1.tables.payout_statements.push({ id: 'st2', employee_id: 'admin-1', period: '2026-08', gross: 100000, tds: 10000, net: 90000, status: 'draft', approved_by: null, created_at: 0 } as any);
+    const res = await app.request('/api/incentives/statements/st2/approve', {
+      method: 'POST',
+      headers: { 'Cookie': 'better-auth.session_token=token-admin' }
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const row = (mockD1.tables.audit_log as any[]).find((l: any) => l.action === 'PAYOUT_APPROVED');
+    expect(row).toBeTruthy();
+    expect(row.actor_id).toBe('admin-1');
+    expect(JSON.parse(row.after_state).net).toBe(90000);
+  });
 });

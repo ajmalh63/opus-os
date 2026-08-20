@@ -1,0 +1,203 @@
+{
+  "name": "OpusOS — Inbound Lead & Omnichannel Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "opusos-events",
+        "options": {}
+      },
+      "name": "OpusOS Webhook Ingest",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.event}}",
+              "value2": "lead.created"
+            }
+          ]
+        }
+      },
+      "name": "Filter Lead Created Event",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.body.data.division}}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "study-abroad"
+            },
+            {
+              "value2": "visa"
+            },
+            {
+              "value2": "umrah"
+            },
+            {
+              "value2": "attestation"
+            },
+            {
+              "value2": "manpower"
+            }
+          ]
+        }
+      },
+      "name": "Route by Division",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:3200/api/v1/accounts/2/contacts",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "name",
+              "value": "={{$json.body.data.name}}"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{$json.body.data.phone}}"
+            },
+            {
+              "name": "email",
+              "value": "={{$json.body.data.email}}"
+            }
+          ]
+        }
+      },
+      "name": "Chatwoot Create Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        980,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:8080/api/send-message",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "phone",
+              "value": "={{$json.body.data.phone}}"
+            },
+            {
+              "name": "message",
+              "value": "=Assalamu Alaikum / Greetings {{$json.body.data.name}},\n\nThank you for connecting with Opus Overseas. Your inquiry for {{$json.body.data.division}} has been received.\n\nYour Live Tracking Token is: *{{$json.body.data.clientId}}*.\nTrack your application 24/7 on our portal: https://opusoverseas.com/portal?token={{$json.body.data.clientId}}\n\nOur senior counseling desk will reach out shortly."
+            }
+          ]
+        }
+      },
+      "name": "WhatsApp Confirmation Trigger",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        980,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:9000/api/subscribers",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "email",
+              "value": "={{$json.body.data.email}}"
+            },
+            {
+              "name": "name",
+              "value": "={{$json.body.data.name}}"
+            },
+            {
+              "name": "status",
+              "value": "enabled"
+            }
+          ]
+        }
+      },
+      "name": "Listmonk Tag & Campaign Ingest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1220,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "OpusOS Webhook Ingest": {
+      "main": [
+        [
+          {
+            "node": "Filter Lead Created Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Lead Created Event": {
+      "main": [
+        [
+          {
+            "node": "Route by Division",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Division": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot Create Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WhatsApp Confirmation Trigger",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Listmonk Tag & Campaign Ingest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

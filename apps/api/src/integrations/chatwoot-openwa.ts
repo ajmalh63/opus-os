@@ -1,4 +1,4 @@
-﻿// Chatwoot & OpenWA — read feeds (near-real-time pull). Both tools run on the
+// Chatwoot & OpenWA — read feeds (near-real-time pull). Both tools run on the
 // VPS; status is informational until their read endpoints are exercised.
 // Chatwoot: REST API with account scoped conversations/agent-less reads.
 // OpenWA: nightly uploads via REST (files API) — represented as status only.
@@ -42,11 +42,12 @@ export const openwaAdapter: ToolAdapter = {
   label: 'OpenWA — WhatsApp gateway',
   async snapshot(env: ToolEnv): Promise<ToolSnapshot> {
     const base = { tool: 'openwa', label: this.label, fetchedAt: Math.floor(Date.now() / 1000) };
-    if (!env.OPENWA_API_URL) {
+    const url = env.OPENWA_BASE_URL || env.OPENWA_API_URL;
+    if (!url) {
       return { ...base, status: { state: 'unconfigured', label: this.label, summary: 'OPENWA_API_URL not set — production lane = Meta Cloud API later' }, metrics: {}, items: [] };
     }
     try {
-      const res = await fetch(`${env.OPENWA_API_URL}/api/status/health`, { signal: AbortSignal.timeout(4000) });
+      const res = await fetch(`${url.replace(/\/$/, '')}/api/health`, { signal: AbortSignal.timeout(4000) });
       const ok = res.ok;
       return {
         ...base,

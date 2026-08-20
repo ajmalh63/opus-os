@@ -82,15 +82,17 @@ expect(res.status).toBe(200);
 
     // Audit trail: LEAD_CREATED + CONSENT_GRANTED recorded at intake
     const audits = mockD1.tables.audit_log as any[];
-    expect(audits.some((l) => l.action === 'LEAD_CREATED' && l.entity_id === data.token && l.actor_id === null)).toBe(true);
-    expect(audits.filter((l) => l.action === 'CONSENT_GRANTED' && l.entity_id === data.token).length).toBe(2);
+    const createdClient = mockD1.tables.clients.find((cl: any) => cl.portal_token === data.token);
+    expect(createdClient).toBeTruthy();
+    expect(audits.some((l) => l.action === 'LEAD_CREATED' && l.entity_id === createdClient.id && l.actor_id === null)).toBe(true);
+    expect(audits.filter((l) => l.action === 'CONSENT_GRANTED' && l.entity_id === createdClient.id).length).toBe(2);
 
-    const client = mockD1.tables.clients.find((cl: any) => cl.id === data.token);
+    const client = createdClient;
     expect(client).toBeTruthy();
     expect(client.lead_source).toBe('website');
     expect(JSON.parse(client.intake_context).targetCountry).toBe('Germany');
 
-    const codes = mockD1.tables.scoring_events.filter((e: any) => e.client_id === data.token).map((e: any) => e.interaction_code);
+    const codes = mockD1.tables.scoring_events.filter((e: any) => e.client_id === createdClient.id).map((e: any) => e.interaction_code);
     expect(codes).toContain('website_lead_form');
     expect(codes).toContain('destination_specified');
     expect(codes).toContain('budget_given');
@@ -118,7 +120,9 @@ expect(res.status).toBe(200);
     expect(ledger.status).toBe('unmatured');
     expect(ledger.amount).toBe(0);
 
-    const codes = mockD1.tables.scoring_events.filter((e: any) => e.client_id === data.token).map((e: any) => e.interaction_code);
+    const refClient = (mockD1.tables.clients as any[]).find((c: any) => c.portal_token === data.token);
+    const refClientId = (refClient && refClient.id) || data.token;
+    const codes = mockD1.tables.scoring_events.filter((e: any) => e.client_id === refClientId).map((e: any) => e.interaction_code);
     expect(codes).toContain('partner_referral');
   });
 
@@ -142,8 +146,8 @@ expect(res.status).toBe(200);
       // stale lead (>7 days, untouched)
       { id: 'eng-4', clientId: 'C-4', division: 'study-abroad', title: 'Stale', stageKey: 'lead', status: 'active', createdAt: 1, updatedAt: 1, outstandingBalance: 0 }
     );
-    mockD1.tables.clients.push({ id: 'C-1', name: 'One', phone: '1', email: 'a@b.c', createdAt: 1, updatedAt: 1 });
-    mockD1.tables.clients.push({ id: 'C-4', name: 'Stale Guy', phone: '4', email: 's@b.c', createdAt: 1, updatedAt: 1 });
+    mockD1.tables.clients.push({ id: 'C-1', portal_token: 'C-1', name: 'One', phone: '1', email: 'a@b.c', createdAt: 1, updatedAt: 1 });
+    mockD1.tables.clients.push({ id: 'C-4', portal_token: 'C-4', name: 'Stale Guy', phone: '4', email: 's@b.c', createdAt: 1, updatedAt: 1 });
     mockD1.tables.agreements.push({ id: 'ag-1', clientId: 'C-3', templateId: 't1', status: 'signed', content: 'x', createdAt: 3 });
     mockD1.tables.referrals.push({ id: 'ref-1', partnerId: 'p-100', clientId: 'C-3', commissionRate: 5, createdAt: 3 });
     mockD1.tables.commission_ledger.push({ id: 'led-1', referralId: 'ref-1', amount: 25000, status: 'matured', createdAt: 3 });
@@ -188,12 +192,12 @@ expect(res.status).toBe(200);
   });
 
   it('signing a referred agreement matures commission at rate% of realized payments', async () => {
-    mockD1.tables.clients.push({ id: 'C-5', name: 'Referred Five', phone: '5', email: 'r5@b.c', createdAt: 1, updatedAt: 1 });
+    mockD1.tables.clients.push({ id: 'C-5', portal_token: 'C-5', name: 'Referred Five', phone: '5', email: 'r5@b.c', createdAt: 1, updatedAt: 1 });
     mockD1.tables.engagements.push({ id: 'eng-5', clientId: 'C-5', division: 'attestation', title: 'Attest', stageKey: 'qualified', status: 'active', createdAt: 1, updatedAt: 1, outstandingBalance: 0 });
     mockD1.tables.agreements.push({ id: 'ag-5', clientId: 'C-5', templateId: 't1', status: 'draft', content: 'PAID CLIENT AGREEMENT', createdAt: 1 });
     mockD1.tables.referrals.push({ id: 'ref-5', partnerId: 'p-100', clientId: 'C-5', commissionRate: 5, createdAt: 1 });
     mockD1.tables.commission_ledger.push({ id: 'led-5', referralId: 'ref-5', amount: 0, status: 'unmatured', createdAt: 1 });
-    mockD1.tables.payments.push({ id: 'pay-5', clientId: 'C-5', engagementId: 'eng-5', amount: 100000, type: 'receipt', milestoneName: 'm1', createdAt: 1 });
+    mockD1.tables.payments.push({ id: 'pay-5', clientId: 'C-5', engagementId: 'eng-5', amount: 100000, type: 'receipt', milestoneName: 'm1', status: 'synced', createdAt: 1 });
 
     const res = await app.request('/api/agreements/ag-5/sign', {
       method: 'POST',
@@ -249,7 +253,7 @@ expect(res.status).toBe(200);
     mock3.tables.users.push(
       { id: 'counc-a', name: 'A', email: 'a@o.com', role: 'counselor', userDivisions: '["study-abroad"]', email_verified: 1, created_at: 1, updated_at: 1 }
     );
-    mock3.tables.clients.push({ id: 'C-STALE', name: 'Stale Sam', phone: '999', email: 's@b.c', createdAt: 1, updatedAt: 1 });
+    mock3.tables.clients.push({ id: 'C-STALE', portal_token: 'C-STALE', name: 'Stale Sam', phone: '999', email: 's@b.c', createdAt: 1, updatedAt: 1 });
     mock3.tables.engagements.push({ id: 'eng-stale', clientId: 'C-STALE', division: 'study-abroad', title: 'US', stageKey: 'lead', status: 'active', createdAt: 1, updatedAt: 1, outstandingBalance: 0 });
 
     const res = await app.request('/api/marketing/stale/C-STALE/reactivate', {
@@ -289,7 +293,7 @@ expect(res.status).toBe(200);
     mock5.tables.users.push(
       { id: 'counc-a', name: 'A', email: 'a@o.com', role: 'counselor', userDivisions: '[]', email_verified: 1, created_at: 1, updated_at: 1 }
     );
-    mock5.tables.clients.push({ id: 'C-STALE2', name: 'Stale Two', phone: '888', email: 's2@b.c', createdAt: 1, updatedAt: 1 });
+    mock5.tables.clients.push({ id: 'C-STALE2', portal_token: 'C-STALE2', name: 'Stale Two', phone: '888', email: 's2@b.c', createdAt: 1, updatedAt: 1 });
     mock5.tables.engagements.push({ id: 'eng-stale2', clientId: 'C-STALE2', division: 'visa', title: 'Visa', stageKey: 'lead', status: 'active', createdAt: 1, updatedAt: 1, outstandingBalance: 0 });
 
     await app.request('/api/marketing/stale/C-STALE2/reactivate', {
@@ -306,7 +310,7 @@ expect(res.status).toBe(200);
 
   it('nurture plan creates a 4-stage WhatsApp sequence only when consent granted', async () => {
     let mock6 = new MockD1Database();
-    mock6.tables.clients.push({ id: 'C-N1', name: 'Nurture One', phone: '1', email: 'n1@b.c', createdAt: 1, updatedAt: 1, primaryDivision: 'study-abroad' });
+    mock6.tables.clients.push({ id: 'C-N1', portal_token: 'C-N1', name: 'Nurture One', phone: '1', email: 'n1@b.c', createdAt: 1, updatedAt: 1, primaryDivision: 'study-abroad' });
     mock6.tables.consents.push({ id: 'c1', clientId: 'C-N1', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
 
     const res = await app.request('/api/marketing/nurture/plan', {
@@ -340,7 +344,7 @@ const due = await app.request('/api/marketing/nurture/due?now=' + (Math.floor(Da
 
   it('nurture plan is skipped without WhatsApp consent (DPDP-safe)', async () => {
     let mock7 = new MockD1Database();
-    mock7.tables.clients.push({ id: 'C-N2', name: 'No Consent', phone: '2', email: 'n2@b.c', createdAt: 1, updatedAt: 1 });
+    mock7.tables.clients.push({ id: 'C-N2', portal_token: 'C-N2', name: 'No Consent', phone: '2', email: 'n2@b.c', createdAt: 1, updatedAt: 1 });
     const res = await app.request('/api/marketing/nurture/plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'cookie': 'better-auth.session_token=token-manager' },
@@ -364,7 +368,7 @@ const data = await res.json() as any;
     );
 
     // lead with US context in the same division
-    mock9.tables.clients.push({ id: 'C-C1', name: 'Camp Lead', phone: '3', email: 'c1@b.c', createdAt: 1, updatedAt: 1, intakeContext: JSON.stringify({ targetCountry: 'US' }) });
+    mock9.tables.clients.push({ id: 'C-C1', portal_token: 'C-C1', name: 'Camp Lead', phone: '3', email: 'c1@b.c', createdAt: 1, updatedAt: 1, intakeContext: JSON.stringify({ targetCountry: 'US' }) });
     mock9.tables.consents.push({ id: 'ck1', clientId: 'C-C1', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
 
     const plan = await app.request('/api/marketing/nurture/plan', {
@@ -385,7 +389,7 @@ const data = await res.json() as any;
 
   it('campaign eligibility: non-matching context falls back to default sequence', async () => {
     let mock10 = new MockD1Database();
-    mock10.tables.clients.push({ id: 'C-C2', name: 'No Match', phone: '4', email: 'n@b.c', createdAt: 1, updatedAt: 1, intakeContext: JSON.stringify({ targetCountry: 'Australia' }) });
+    mock10.tables.clients.push({ id: 'C-C2', portal_token: 'C-C2', name: 'No Match', phone: '4', email: 'n@b.c', createdAt: 1, updatedAt: 1, intakeContext: JSON.stringify({ targetCountry: 'Australia' }) });
     mock10.tables.consents.push({ id: 'ck2', clientId: 'C-C2', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
     // read back any persisted campaigns in this mock (none were created here) => default sequence
     const res = await app.request('/api/marketing/nurture/plan', {
@@ -444,7 +448,7 @@ const inactive = await app.request('/api/public/portal/experiments/nope/variant?
     // marketing — cross-division spam burns list health. Counselor assigns
     // the division first; then planning works.
     let mock12 = new MockD1Database();
-    mock12.tables.clients.push({ id: 'C-UNK', name: 'Mystery Lead', phone: '1', email: 'unk@b.c', createdAt: 1, updatedAt: 1 });
+    mock12.tables.clients.push({ id: 'C-UNK', portal_token: 'C-UNK', name: 'Mystery Lead', phone: '1', email: 'unk@b.c', createdAt: 1, updatedAt: 1 });
     mock12.tables.consents.push({ id: 'ck-unk', clientId: 'C-UNK', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
 
     const plan = await app.request('/api/marketing/nurture/plan', {

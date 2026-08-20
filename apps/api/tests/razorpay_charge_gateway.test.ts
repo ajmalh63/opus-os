@@ -31,7 +31,7 @@ describe('Free-form Razorpay charge gateway', () => {
 
   beforeEach(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-1001', name: 'Client One', phone: '+91 98765 12345', email: 'client1@example.com', highest_qualification: 'undergrad', lead_source: 'website', intake_context: null, created_at: 0, updated_at: 0 });
+    mockD1.tables.clients.push({ id: 'OP-2026-1001', portal_token: 'OP-2026-1001', name: 'Client One', phone: '+91 98765 12345', email: 'client1@example.com', highest_qualification: 'undergrad', lead_source: 'website', intake_context: null, created_at: 0, updated_at: 0 });
     mockD1.tables.engagements.push({
       id: 'eng-rzp-1', client_id: 'OP-2026-1001', division: 'study-abroad', title: 'Consulting',
       stage_key: 'documents', outstanding_balance: 5900000, status: 'active', created_at: 0, updated_at: 0
@@ -83,7 +83,7 @@ describe('Free-form Razorpay charge gateway', () => {
   });
 
   it('rejects a client with no engagement (409)', async () => {
-    mockD1.tables.clients.push({ id: 'OP-2026-2002', name: 'No Eng Client', phone: '+91 90000 00000', email: 'x@x.com', highest_qualification: null, lead_source: null, intake_context: null, created_at: 0, updated_at: 0 });
+    mockD1.tables.clients.push({ id: 'OP-2026-2002', portal_token: 'OP-2026-2002', name: 'No Eng Client', phone: '+91 90000 00000', email: 'x@x.com', highest_qualification: null, lead_source: null, intake_context: null, created_at: 0, updated_at: 0 });
     global.fetch = vi.fn(async () => new Response('{}', { status: 404 })) as any;
     const res = await app.request('/api/transactions/charge', {
       method: 'POST',

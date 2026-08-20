@@ -1,0 +1,200 @@
+{
+  "name": "OpusOS — WhatsApp Smart Nurture & Drop-off Recovery",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "opusos-nurture-trigger",
+        "options": {}
+      },
+      "name": "Lead Intake Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "hours"
+      },
+      "name": "Wait 2 Hours",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        420,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "=https://opusoverseas.com/api/leads/{{$node[\"Lead Intake Trigger\"].json.body.lead_id || $node[\"Lead Intake Trigger\"].json.body.id}}",
+        "options": {}
+      },
+      "name": "Check D1 Lead Progress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        640,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.stage || 'new'}}",
+              "value2": "new"
+            }
+          ]
+        }
+      },
+      "name": "Is Still Unbooked?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:2785/api/send-message",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "phone",
+              "value": "={{$node[\"Lead Intake Trigger\"].json.body.phone}}"
+            },
+            {
+              "name": "message",
+              "value": "=Hello {{$node[\"Lead Intake Trigger\"].json.body.name || 'there'}}, 👋\n\nThank you for checking your eligibility with *Opus Overseas* (British Council Certified Counselor #115050).\n\nWe have prepared your personalized roadmap for *{{$node[\"Lead Intake Trigger\"].json.body.division || 'Study Abroad & Visa'}}*.\n\n📅 You can book a direct 1-on-1 counseling slot with our senior counselor here:\n{{$node[\"Lead Intake Trigger\"].json.body.booking_url || 'https://opusoverseas.com/study-abroad#consultation'}}\n\nReply directly to this message if you have any questions!"
+            }
+          ]
+        }
+      },
+      "name": "Send Step 1 Nurture WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1100,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 24,
+        "unit": "hours"
+      },
+      "name": "Wait 24 Hours",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:2785/api/send-message",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "phone",
+              "value": "={{$node[\"Lead Intake Trigger\"].json.body.phone}}"
+            },
+            {
+              "name": "message",
+              "value": "=Hi {{$node[\"Lead Intake Trigger\"].json.body.name || 'there'}}, 🎓\n\nQuick heads up: Upcoming intake deadlines and scholarship allocations are currently open for your profile.\n\nOur counseling sessions are 100% free and include university shortlisting and visa risk assessment.\n\n👉 Pick a convenient time today: {{$node[\"Lead Intake Trigger\"].json.body.booking_url || 'https://opusoverseas.com/study-abroad#consultation'}}"
+            }
+          ]
+        }
+      },
+      "name": "Send Step 2 Scholarship Alert WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1560,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Lead Intake Trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait 2 Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 Hours": {
+      "main": [
+        [
+          {
+            "node": "Check D1 Lead Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check D1 Lead Progress": {
+      "main": [
+        [
+          {
+            "node": "Is Still Unbooked?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Still Unbooked?": {
+      "main": [
+        [
+          {
+            "node": "Send Step 1 Nurture WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Step 1 Nurture WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Wait 24 Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 24 Hours": {
+      "main": [
+        [
+          {
+            "node": "Send Step 2 Scholarship Alert WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

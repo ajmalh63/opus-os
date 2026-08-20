@@ -1,3 +1,4 @@
+import { auditBounded, auditEvent } from '../middleware/audit.js';
 import { DurableObject } from 'cloudflare:workers';
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
@@ -20,8 +21,16 @@ export interface TeamHubMessage {
 
 export class TeamHubRoom extends DurableObject<Env> {
   async fetch(request: Request): Promise<Response> {
+    // Authenticate: every call must carry HMAC(BETTER_AUTH_SECRET, roomName).
+    // DOs are reachable via their own workers.dev URL in prod — never trust
+    // unauthenticated callers or caller-supplied senderId.
     const url = new URL(request.url);
     const method = request.method;
+    const expected = await doVerify(this.env, this.ctx.id.name || 'room');
+    const provided = request.headers.get('X-TeamHub-Auth') || '';
+    if (!expected || provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
+      return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: HEADERS });
+    }
 
     // POST /messages { senderId, senderName, body }
     if (method === 'POST' && url.pathname.endsWith('/messages')) {
@@ -65,6 +74,20 @@ export class TeamHubRoom extends DurableObject<Env> {
   }
 }
 
+async function doVerify(env: Env, roomId: string): Promise<string> {
+  const secret = env.BETTER_AUTH_SECRET || '';
+  const data = new TextEncoder().encode(`${secret}:${roomId}`);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 const HEADERS = { 'Content-Type': 'application/json' };
 
 type Env = { DB: D1Database; TEAM_HUB: DurableObjectNamespace<TeamHubRoom>; BUCKET?: R2Bucket; BETTER_AUTH_SECRET: string };
@@ -77,12 +100,24 @@ function roomStub(env: Env, roomId: string) {
   return env.TEAM_HUB.get(id);
 }
 
+// Shared-secret auth between the worker and the DO: HMAC(BETTER_AUTH_SECRET,
+// roomId). The DO verifies it — nobody can hit the DO's workers.dev URL
+// directly and read/spoof room messages without the secret.
+async function doAuthHeaders(env: Env, roomId: string): Promise<Record<string, string>> {
+  const secret = env.BETTER_AUTH_SECRET || '';
+  const data = new TextEncoder().encode(`${secret}:${roomId}`);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  return { 'X-TeamHub-Auth': hex };
+}
+
 // GET /api/teamhub/rooms/:id/messages?after= — poll chat history
 teamHubRouter.get('/rooms/:id/messages', async (c) => {
   if (!c.env?.TEAM_HUB) return c.json({ error: 'Team Hub not configured (Durable Object binding)' }, 503);
   const after = c.req.query('after') || '0';
   try {
-    const res = await roomStub(c.env, c.req.param('id')).fetch(`http://room/messages?after=${after}`);
+    const headers = await doAuthHeaders(c.env, c.req.param('id'));
+    const res = await roomStub(c.env, c.req.param('id')).fetch(`http://room/messages?after=${after}`, { headers });
     return new Response(res.body, { status: res.status, headers: { 'Content-Type': 'application/json' } });
   } catch (e: any) {
     return c.json({ error: 'Room fetch failed', details: e.message }, 500);
@@ -95,9 +130,10 @@ teamHubRouter.post('/rooms/:id/messages', async (c) => {
   const user = (c.get('user') as any) || {};
   const body = await c.req.json().catch(() => ({})) as { body?: string };
   try {
+    const authHeaders = await doAuthHeaders(c.env, c.req.param('id'));
     const res = await roomStub(c.env, c.req.param('id')).fetch('http://room/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
       body: JSON.stringify({ senderId: user.id, senderName: user.name || 'Staff', body: body.body }),
     });
     return new Response(res.body, { status: res.status, headers: { 'Content-Type': 'application/json' } });
@@ -136,6 +172,7 @@ teamHubRouter.post('/rooms/:id/files', async (c) => {
     if (file.size > MAX) return c.json({ error: 'File too large (max 10MB)' }, 413);
     const key = `team/${roomId}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     await c.env.BUCKET.put(key, file.stream(), { httpMetadata: { contentType: file.type || 'application/octet-stream' } });
+      await auditEvent(c, { action: 'FILE_UPLOADED', entityName: 'teamhub-files', entityId: key, afterState: { roomId: c.req.param('id'), key }, category: 'access' }).catch(() => {});
     // Post as attachment message
     const res = await roomStub(c.env, roomId).fetch('http://room/messages', {
       method: 'POST',
@@ -157,11 +194,16 @@ teamHubRouter.get('/files/:key', async (c) => {
   if (!c.env?.BUCKET) return c.json({ error: 'File drive not configured' }, 503);
   try {
     const key = c.req.param('key');
+    // SECURITY: only team-drive keys (team/<room>/...) are servable — the vault
+    // bucket also holds client resumes + audit archives. Force octet-stream +
+    // nosniff + attachment so uploaded HTML/SVG can never execute inline.
+    if (!key.startsWith('team/')) return c.json({ error: 'Forbidden' }, 403);
     const obj = await c.env.BUCKET.get(key);
     if (!obj) return c.json({ error: 'File not found' }, 404);
     const headers = new Headers();
-    headers.set('Content-Type', obj.httpMetadata?.contentType || 'application/octet-stream');
-    headers.set('Content-Disposition', `attachment; filename="${key.split('/').pop()}"`);
+    headers.set('Content-Type', 'application/octet-stream');
+    headers.set('X-Content-Type-Options', 'nosniff');
+    headers.set('Content-Disposition', `attachment; filename="${String(key.split('/').pop() || 'file').replace(/"/g, '')}"`);
     return new Response(obj.body, { headers });
   } catch (e: any) {
     return c.json({ error: 'Download failed', details: e.message }, 500);

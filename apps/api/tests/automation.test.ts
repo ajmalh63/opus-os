@@ -14,7 +14,7 @@ describe('Automation lane (n8n spine, /api/automation)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-8001', name: 'X', phone: '+91 98765 43210', email: 'x@b.c', intake_context: JSON.stringify({ targetCountry: 'US' }), created_at: 1, updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-8001', portal_token: 'OP-2026-8001', name: 'X', phone: '+91 98765 43210', email: 'x@b.c', intake_context: JSON.stringify({ targetCountry: 'US' }), created_at: 1, updated_at: 1 });
     mockD1.tables.consents.push({ id: 'cons-1', client_id: 'OP-2026-8001', consent_type: 'whatsapp-updates', status: 'granted', ip_address: '1.1.1.1', sha256_hash: 'h', granted_at: 1, withdrawn_at: null });
     mockD1.tables.nurture_touches.push({
       id: 'nt-1', client_id: 'OP-2026-8001', engagement_id: 'eng-8001', channel: 'whatsapp',
@@ -24,7 +24,7 @@ describe('Automation lane (n8n spine, /api/automation)', () => {
       id: 'nt-2', client_id: 'OP-2026-8001', engagement_id: 'eng-8001', channel: 'whatsapp',
       stage: 'case_study', body: 'A recent case...', due_at: 999999999, status: 'scheduled', created_at: 1, sent_at: null,
     });
-    mockD1.tables.clients.push({ id: 'OP-2026-8002', name: 'Y', phone: '+91 99999 88888', email: 'y@b.c', intake_context: null, created_at: 1, updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-8002', portal_token: 'OP-2026-8002', name: 'Y', phone: '+91 99999 88888', email: 'y@b.c', intake_context: null, created_at: 1, updated_at: 1 });
     mockD1.tables.nurture_touches.push({
       id: 'nt-3', client_id: 'OP-2026-8002', engagement_id: 'eng-8002', channel: 'whatsapp',
       stage: 'final', body: 'Last check-in.', due_at: 1000, status: 'scheduled', created_at: 1, sent_at: null,
@@ -117,5 +117,23 @@ describe('Automation lane (n8n spine, /api/automation)', () => {
   it('nurture/:id/send on missing row → 404', async () => {
     const res = await app.request('/api/automation/nurture/nt-nope/send', { method: 'POST', headers: { 'X-Service-Token': TOKEN } }, { DB: mockD1, AUTOMATION_TOKEN: TOKEN });
     expect(res.status).toBe(404);
+  });
+
+  it('scheduled cron dispatch writes a NURTURE_DISPATCHED audit row (system actor)', async () => {
+    mockD1.tables.nurture_touches.push({
+      id: 'nt-cron', client_id: 'OP-2026-8001', engagement_id: 'eng-8001', channel: 'whatsapp',
+      stage: 'value', body: 'Hi {{name}}! Cron dispatch.', due_at: 1, status: 'scheduled', created_at: 1, sent_at: null,
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ messageId: 'WA-CRON' }), { status: 200, headers: { 'Content-Type': 'application/json' } })));
+    const env = { DB: mockD1, OPENWA_BASE_URL: 'http://wa:2785', OPENWA_API_KEY: 'k', OPENWA_SESSION_ID: 'main' };
+    await (app as any).scheduled(null, env, {});
+
+    const touch = (mockD1.tables.nurture_touches as any[]).find(t => t.id === 'nt-cron');
+    expect(touch.status).toBe('sent');
+
+    const row = (mockD1.tables.audit_log as any[]).find((l: any) => l.action === 'NURTURE_DISPATCHED' && l.entity_id === 'nt-cron');
+    expect(row).toBeTruthy();
+    expect(row.actor_id).toBeNull(); // cron has no session actor
+    expect(row.entity_name).toBe('nurture_touches');
   });
 });

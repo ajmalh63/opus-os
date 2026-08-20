@@ -28,7 +28,7 @@ describe('Marketing - Interaction Scoring Engine (Section 26)', () => {
 
   beforeEach(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-2001', name: 'Scoring Test', phone: '+91 99999 00001', email: 'score@test.com', created_at: 0, updated_at: 0 } as any);
+    mockD1.tables.clients.push({ id: 'OP-2026-2001', portal_token: 'OP-2026-2001', name: 'Scoring Test', phone: '+91 99999 00001', email: 'score@test.com', created_at: 0, updated_at: 0 } as any);
   });
 
   it('POST /api/marketing/interactions rejects counselor (403)', async () => {
@@ -112,5 +112,50 @@ describe('Marketing - Interaction Scoring Engine (Section 26)', () => {
     const data = await res.json() as any;
     expect(data.leads.length).toBeGreaterThan(0);
     expect(data.leads[0].band).toBeDefined();
+  });
+
+  it('GET /api/marketing/leads returns the FULL submitted form data + lead/client classification', async () => {
+    // Lead A: inquiry only (stage lead) with rich form data + consents
+    mockD1.tables.clients.push({
+      id: 'OP-2026-9001',
+      portal_token: 'OP-2026-9001', name: 'Form Filler', phone: '+91 98765 00001', email: 'filler@example.com',
+      lead_source: 'website-umrah-travel', primary_division: 'umrah',
+      intake_context: JSON.stringify({ packageTier: '5-Star Executive Haram View', travelersCount: 4, roomType: 'Quad', departureDate: 'Sep 2026' }),
+      created_at: 1000, updated_at: 1000,
+    } as any);
+    mockD1.tables.engagements.push({ id: 'eng-1', client_id: 'OP-2026-9001', division: 'umrah', stage_key: 'lead', status: 'active', created_at: 1000, updated_at: 1000 } as any);
+    mockD1.tables.consents.push({ id: 'c1', client_id: 'OP-2026-9001', consent_type: 'core-processing', status: 'granted', ip_address: 'x', sha256_hash: 'h', granted_at: 1000 } as any);
+    // Lead B: enrolled (stage qualified) — must be classified as Client
+    mockD1.tables.clients.push({
+      id: 'OP-2026-9002',
+      portal_token: 'OP-2026-9002', name: 'Enrolled Person', phone: '+91 98765 00002', email: 'enrolled@example.com',
+      lead_source: 'website-study-abroad', primary_division: 'study-abroad',
+      intake_context: JSON.stringify({ studyCountry: 'Germany', studyDegree: 'postgrad', studyGpa: 8.2 }),
+      created_at: 2000, updated_at: 2000,
+    } as any);
+    mockD1.tables.engagements.push({ id: 'eng-2', client_id: 'OP-2026-9002', division: 'study-abroad', stage_key: 'qualified', status: 'active', created_at: 2000, updated_at: 2000 } as any);
+
+    const res = await app.request('/api/marketing/leads', {
+      headers: { 'Cookie': 'better-auth.session_token=token-manager' }
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+
+    const leadA = data.leads.find((l: any) => l.clientId === 'OP-2026-9001');
+    expect(leadA).toBeTruthy();
+    // Full submitted form data surfaced
+    expect(leadA.formData).toEqual({ packageTier: '5-Star Executive Haram View', travelersCount: 4, roomType: 'Quad', departureDate: 'Sep 2026' });
+    expect(leadA.leadSource).toBe('website-umrah-travel');
+    expect(leadA.division).toBe('umrah');
+    expect(leadA.stage).toBe('lead');
+    expect(leadA.isEnrolled).toBe(false); // inquiry only → LEAD
+    expect(leadA.consents.coreProcessing).toBe(true);
+    expect(leadA.consents.whatsappUpdates).toBe(false);
+    expect(leadA.createdAt).toBe(1000);
+    expect(leadA.detailUrl).toBe('/clients/OP-2026-9001');
+
+    const leadB = data.leads.find((l: any) => l.clientId === 'OP-2026-9002');
+    expect(leadB.isEnrolled).toBe(true); // stage qualified → CLIENT
+    expect(leadB.formData.studyCountry).toBe('Germany');
   });
 });

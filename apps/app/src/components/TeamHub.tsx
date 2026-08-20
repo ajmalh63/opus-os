@@ -6,12 +6,6 @@ import { useRevealRoot } from '../lib/reveal';
 // Polling-safe free-tier design: DO history is capped at 500 msgs; the panel
 // polls `after` timestamps every 4s when focused.
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 interface Msg { id: string; senderId: string; senderName: string; body: string; ts: number; }
 
@@ -32,7 +26,7 @@ export default function TeamHub() {
   const rootRef = useRevealRoot<HTMLDivElement>();
 
   useEffect(() => {
-    fetch('/api/auth/me', { headers: AUTH })
+    fetch('/api/auth/me', { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => { if (d?.user?.name) setMeName(d.user.name); })
       .catch(() => {});
@@ -41,7 +35,7 @@ export default function TeamHub() {
   const { data: msgs } = useQuery<{ messages: Msg[] }>({
     queryKey: ['teamMessages', roomId, after],
     queryFn: async () => {
-      const r = await fetch(`/api/teamhub/rooms/${roomId}/messages?after=${after}`, { headers: AUTH });
+      const r = await fetch(`/api/teamhub/rooms/${roomId}/messages?after=${after}`, { credentials: 'include' });
       if (!r.ok) throw new Error('hub');
       return r.json();
     },
@@ -50,13 +44,13 @@ export default function TeamHub() {
 
   const { data: files } = useQuery<{ files: any[] }>({
     queryKey: ['teamFiles'],
-    queryFn: async () => { const r = await fetch('/api/teamhub/files', { headers: AUTH }); if (!r.ok) throw new Error('files'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/teamhub/files', { credentials: 'include' }); if (!r.ok) throw new Error('files'); return r.json(); },
   });
 
   const send = useMutation({
     mutationFn: async () => {
       const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH },
+        method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ body: draft }),
       });
       if (!r.ok) throw new Error('send');

@@ -333,25 +333,46 @@ kanbanRouter.patch('/board/:cardId/metadata', async (c) => {
   };
 
   try {
+    const me = (c.get('user') as any) || {};
+    const isManager = ['super_admin', 'manager'].includes(me.role);
+    // Division scope: counselors/coordinators may only touch cards in their divisions
+    const card = await db.select().from(engagements).where(eq(engagements.id, cardId)).get();
+    if (!card) return c.json({ error: 'Card not found' }, 404);
+    let divisions: string[] = [];
+    try { divisions = JSON.parse(me.userDivisions || '[]'); } catch { divisions = []; }
+    if (!isManager && divisions.length > 0 && !divisions.includes(card.division)) {
+      return c.json({ error: 'Card is outside your division scope' }, 403);
+    }
+
     const updatePayload: any = { updatedAt: Math.floor(Date.now() / 1000) };
     if (body.title !== undefined) updatePayload.title = body.title;
-    if (body.outstandingBalance !== undefined) updatePayload.outstandingBalance = body.outstandingBalance;
+    // SECURITY: outstandingBalance is money — manager+ only (counselors could
+    // zero a rival's balance or game WIP analytics otherwise).
+    if (body.outstandingBalance !== undefined) {
+      if (!isManager) return c.json({ error: 'Only managers can edit balances' }, 403);
+      updatePayload.outstandingBalance = body.outstandingBalance;
+    }
     if (body.status !== undefined) updatePayload.status = body.status;
 
     await db.update(engagements)
       .set(updatePayload)
       .where(eq(engagements.id, cardId));
 
-    return c.json({ success: true, id: cardId, ...body });
+    return c.json({ success: true, id: cardId, ...updatePayload });
   } catch (error: any) {
     return c.json({ error: 'Failed to update card metadata', details: error.message }, 500);
   }
 });
 
-// DELETE /api/kanban/board/:cardId - delete/purge card
+// DELETE /api/kanban/board/:cardId - delete/purge card (manager+ only —
+// deletion also removes division-scoping rows and can bypass RBAC fail-open)
 kanbanRouter.delete('/board/:cardId', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
+  const me = (c.get('user') as any) || {};
+  if (!['super_admin', 'manager'].includes(me.role)) {
+    return c.json({ error: 'Only managers can delete cards' }, 403);
+  }
   const cardId = c.req.param('cardId');
 
   try {

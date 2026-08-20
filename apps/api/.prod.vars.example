@@ -1,0 +1,20 @@
+# Production Environment Variables for Cloudflare Workers (apps/api)
+# Set via `wrangler secret put <KEY>` in production
+
+ENVIRONMENT=production
+BETTER_AUTH_URL=https://opusoverseas.com
+
+# Microservices (Routed via Cloudflare Tunnel / DNS)
+ERPNEXT_BASE_URL=https://erp.opusoverseas.com
+LISTMONK_BASE_URL=https://newsletter.opusoverseas.com
+MAUTIC_BASE_URL=https://mautic.opusoverseas.com
+CHATWOOT_BASE_URL=https://chat.opusoverseas.com
+OPENWA_BASE_URL=https://wa.opusoverseas.com
+UMAMI_BASE_URL=https://analytics.opusoverseas.com
+N8N_BASE_URL=https://n8n.opusoverseas.com
+KUMA_BASE_URL=https://status.opusoverseas.com
+
+# Service Credentials & Tokens
+LISTMONK_API_USER=opus.api
+CHATWOOT_ACCOUNT_ID=2
+OPENWA_SESSION_ID=main

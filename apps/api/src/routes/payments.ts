@@ -21,7 +21,7 @@ paymentsRouter.get('/client/:clientId', async (c) => {
     const list = await db.select().from(payments).where(eq(payments.clientId, clientId)).all();
     return c.json({ payments: list });
   } catch (error: any) {
-    return c.json({ error: "Failed to fetch payments", details: error.message }, 500);
+    return c.json({ error: "Failed to fetch payments",  }, 500);
   }
 });
 
@@ -38,7 +38,7 @@ paymentsRouter.get('/engagement/:engagementId', async (c) => {
     const list = await db.select().from(payments).where(eq(payments.engagementId, engagementId)).all();
     return c.json({ payments: list });
   } catch (error: any) {
-    return c.json({ error: "Failed to fetch payments", details: error.message }, 500);
+    return c.json({ error: "Failed to fetch payments",  }, 500);
   }
 });
 
@@ -105,6 +105,10 @@ paymentsRouter.post('/', zValidator('json', createPaymentSchema), async (c) => {
       milestoneName: data.milestoneName,
       method: data.method,
       referenceNumber: data.referenceNumber,
+      // Manual staff ledger entries are money immediately — 'confirmed' keeps
+      // outstandingBalance and recomputeBalance consistent (draft rows are
+      // excluded from recompute, which silently snapped the balance back).
+      status: 'confirmed',
       taxableAmount: gstInfo.taxableAmount,
       cgst: gstInfo.cgst,
       sgst: gstInfo.sgst,
@@ -147,6 +151,46 @@ paymentsRouter.post('/', zValidator('json', createPaymentSchema), async (c) => {
       },
     });
 
+    // Dispatch instant WhatsApp Invoice / Receipt via Chatwoot & OpenWA (Async / Fail-open)
+    try {
+      const client = await db.select().from(clients).where(eq(clients.id, data.clientId)).get();
+      if (client?.phone) {
+        const { dispatchUnifiedWhatsApp } = await import('../infra/chatwootBridge.js');
+        dispatchUnifiedWhatsApp(c.env as any, {
+          phone: client.phone,
+          name: client.name,
+          email: client.email || undefined,
+          templateKey: 'INVOICE_GENERATED',
+          variables: {
+            name: client.name,
+            invoiceNo: `INV-${paymentId.slice(0, 8).toUpperCase()}`,
+            amountPaise: data.amount,
+            division: eng.division || 'Opus Overseas Services',
+            receiptUrl: `https://opusoverseas.com/portal`,
+          },
+          division: eng.division || 'general',
+          tags: ['payment-receipt', 'invoice-sent'],
+        }).catch(() => {});
+      }
+    } catch { /* fail-open */ }
+
+    // Conversion Goal Exit Engine: Immediately suppress prospecting drips and promote in Mautic + Chatwoot
+    try {
+      const { handleLeadConversionGoal } = await import('../services/conversionGoals.js');
+      handleLeadConversionGoal(c.env, {
+        clientId: data.clientId,
+        division: eng.division || 'study-abroad',
+        goalType: 'PAYMENT_CONFIRMED',
+        amountPaise: data.amount,
+      }, c).catch(() => {});
+    } catch { /* fail-open */ }
+
+    // ERPNext Official Books Sync: Automatically sync invoice to ERPNext (Fail-open)
+    try {
+      const { syncSinglePaymentToErp } = await import('./erpnext.js');
+      syncSinglePaymentToErp(c.env as any, db, paymentId).catch(() => {});
+    } catch { /* fail-open */ }
+
     return c.json({
       success: true,
       id: paymentId,
@@ -155,7 +199,7 @@ paymentsRouter.post('/', zValidator('json', createPaymentSchema), async (c) => {
     });
 
   } catch (error: any) {
-    return c.json({ error: "Payment processing transaction failed", details: error.message }, 500);
+    return c.json({ error: "Payment processing transaction failed",  }, 500);
   }
 });
 
@@ -170,7 +214,7 @@ paymentsRouter.get('/milestones', async (c) => {
     const list = await db.select().from(milestones).all();
     return c.json({ milestones: list });
   } catch (error: any) {
-    return c.json({ error: "Failed to fetch milestones", details: error.message }, 500);
+    return c.json({ error: "Failed to fetch milestones",  }, 500);
   }
 });
 
@@ -235,7 +279,7 @@ paymentsRouter.post('/milestones/evaluate-escalations', async (c) => {
     });
 
   } catch (error: any) {
-    return c.json({ error: "Escalation evaluation transaction failed", details: error.message }, 500);
+    return c.json({ error: "Escalation evaluation transaction failed",  }, 500);
   }
 });
 

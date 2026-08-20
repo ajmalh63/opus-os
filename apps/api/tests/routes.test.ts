@@ -129,18 +129,19 @@ describe('API Route Shell Integration & Validation Tests', () => {
     const json = await res.json() as any;
     expect(json.success).toBe(true);
     expect(json.token).toBeDefined();
-    expect(json.token.startsWith("OP-2026-")).toBe(true);
+    // Portal credential is now a 128-bit CSPRNG token (never the display id)
+    expect(json.token).toMatch(/^[0-9a-f]{32}$/);
 
     // Verify insertion in mock database
-    const clientRow = mockD1.tables.clients.find(c => c.id === json.token);
+    const clientRow = mockD1.tables.clients.find(c => c.portal_token === json.token);
     expect(clientRow).toBeDefined();
     expect(clientRow.name).toBe("Rahul Sharma");
     expect(clientRow.highest_qualification).toBe("undergrad");
 
-    const consentRow = mockD1.tables.consents.find(c => c.client_id === json.token && c.consent_type === 'core-processing');
+    const consentRow = mockD1.tables.consents.find(c => c.client_id === clientRow.id && c.consent_type === 'core-processing');
     expect(consentRow).toBeDefined();
 
-    const engagementRow = mockD1.tables.engagements.find(e => e.client_id === json.token);
+    const engagementRow = mockD1.tables.engagements.find(e => e.client_id === clientRow.id);
     expect(engagementRow).toBeDefined();
     expect(engagementRow.division).toBe("study-abroad");
   });
@@ -214,7 +215,7 @@ describe('API Route Shell Integration & Validation Tests', () => {
     // 3. Create a second client and engagement card, and try to move it to "processing".
     //    The stage has WIP limit 1 and is already occupied → F1 now ENFORCES the limit.
     const client2Token = "OP-2026-9999";
-    mockD1.tables.clients.push({ id: client2Token, name: 'Test Client 2', phone: '+91 99999 99999', email: 'test2@example.com', created_at: 0, updated_at: 0 });
+    mockD1.tables.clients.push({ id: client2Token, portal_token: client2Token, name: 'Test Client 2', phone: '+91 99999 99999', email: 'test2@example.com', created_at: 0, updated_at: 0 });
     const card2Id = "card-2-uuid";
     mockD1.tables.engagements.push({ id: card2Id, client_id: client2Token, division: 'visa', title: 'Visa App', stage_key: 'qualified', outstanding_balance: 0, status: 'active', created_at: 0, updated_at: 0 });
 

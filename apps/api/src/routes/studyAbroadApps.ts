@@ -1,3 +1,4 @@
+import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
@@ -377,7 +378,7 @@ portalStudyAbroadRouter.get('/profile', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     let ctx: any = {};
     if (client.intakeContext) { try { ctx = JSON.parse(client.intakeContext); } catch { /* tolerate */ } }
@@ -403,7 +404,7 @@ portalStudyAbroadRouter.put('/profile', zValidator('json', studentProfileSchema)
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
 
     let ctx: any = {};
@@ -507,7 +508,7 @@ portalStudyAbroadRouter.post('/applications/:id/docs/:key/presigned', async (c) 
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     const app = await db.select().from(studyAbroadApplications).where(eq(studyAbroadApplications.id, appId)).get();
     if (!app || app.clientId !== token) return c.json({ error: 'Application not found' }, 404);
@@ -635,7 +636,7 @@ portalStudyAbroadRouter.get('/applications', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     const rows = await db.select().from(studyAbroadApplications).where(eq(studyAbroadApplications.clientId, token)).all();
     rows.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));

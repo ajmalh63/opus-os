@@ -31,7 +31,7 @@ describe('Transactions module (all internal accounts)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-TX1', name: 'Billing Client', phone: '999', email: 'tx@example.com', created_at: 1, updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-TX1', portal_token: 'OP-2026-TX1', name: 'Billing Client', phone: '999', email: 'tx@example.com', created_at: 1, updated_at: 1 });
     mockD1.tables.engagements.push({ id: 'eng-tx', client_id: 'OP-2026-TX1', division: 'study-abroad', title: 'E', stage_key: 'lead', outstanding_balance: 0, status: 'active', created_at: 1, updated_at: 1 });
   });
 
@@ -72,7 +72,7 @@ describe('Transactions module (all internal accounts)', () => {
     expect(res.status).toBe(403);
   });
 
-  it('manager confirms â†’ balance applied + status confirmed', async () => {
+  it('manager confirms → balance applied + status confirmed', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ data: { name: 'ACC-M1' } }), { status: 200, headers: { 'Content-Type': 'application/json' } }))));
     const draft = (mockD1.tables.payments as any[]).find((p) => p.status === 'draft' && p.type === 'invoice');
     const res = await app.request(`/api/transactions/${draft.id}/confirm`, {
@@ -91,7 +91,13 @@ describe('Transactions module (all internal accounts)', () => {
     expect(eng.outstanding_balance).toBe(1180000);
   });
 
-  it('ledger lists entries with client names for staff', async () => {
+  it('ledger lists entries with client names for staff (counselor sees own only — server-mandated mine)', async () => {
+    // Seed entries entered by this counselor so the server-side mine filter returns them
+    const now = Math.floor(Date.now() / 1000);
+    (mockD1.tables.payments as any[]).push(
+      { id: 'mine-1', client_id: 'OP-2026-TX1', engagement_id: 'eng-tx', amount: 100000, type: 'invoice', milestone_name: 'Mine A', status: 'confirmed', entered_by: 'u-counselor', created_at: now },
+      { id: 'mine-2', client_id: 'OP-2026-TX1', engagement_id: 'eng-tx', amount: 50000, type: 'receipt', milestone_name: 'Mine B', status: 'confirmed', entered_by: 'u-counselor', created_at: now },
+    );
     const res = await app.request('/api/transactions', {
       headers: { cookie: 'better-auth.session_token=token-counselor' },
     }, ENV(mockD1));
@@ -110,7 +116,7 @@ describe('Transactions module (all internal accounts)', () => {
 
   describe('counselor auto-confirm + instant ERP (Wave-1/2 end-to-end)', () => {
     it('auto-confirms an invoice within scope + under threshold and syncs to ERP', async () => {
-      // enable policy: threshold ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹25,000 (2500000 paise)
+      // enable policy: threshold ₹25,000 (2500000 paise)
       mockD1.tables.business_profile.push({ id: 'main', auto_confirm_enabled: 1, auto_confirm_threshold_paise: 2500000, gst_rate_json: '{}', hsn_json: '{}', updated_at: 0 });
       // ERP reachable (mocked fetch)
       vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => {

@@ -85,6 +85,7 @@ describe('Service Agreement & Ledger Payments Integration Tests', () => {
     // 2. Seed clients and engagements
     mockD1.tables.clients.push({
       id: "OP-2026-9001",
+      portal_token: "OP-2026-9001",
       name: "Ramesh Kumar",
       phone: "+91 98765 43210",
       email: "ramesh@example.com",
@@ -233,7 +234,7 @@ describe('Service Agreement & Ledger Payments Integration Tests', () => {
           'Cookie': 'better-auth.session_token=token-counselor'
         },
         body: JSON.stringify({
-          esignMethod: "aadhaar"
+          esignMethod: "typed"
         })
       }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
 

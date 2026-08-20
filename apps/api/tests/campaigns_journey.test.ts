@@ -57,7 +57,7 @@ describe('Campaign catalog (informational) + intent override', () => {
       { seq: 1, day: 0, stage: 'value', channel: 'email', body: 'Hi {{name}}' },
       { seq: 2, day: 3, stage: 'offer', channel: 'whatsapp', body: 'checklist' },
     ]);
-    mockD1.tables.clients.push({ id: 'OP-2026-1001', name: 'Via', phone: '1', email: 'a@b.c', createdAt: 1, updatedAt: 1, primaryDivision: 'visa', intakeContext: JSON.stringify({ visaCategory: 'work visa' }) });
+    mockD1.tables.clients.push({ id: 'OP-2026-1001', portal_token: 'OP-2026-1001', name: 'Via', phone: '1', email: 'a@b.c', createdAt: 1, updatedAt: 1, primaryDivision: 'visa', intakeContext: JSON.stringify({ visaCategory: 'work visa' }) });
     mockD1.tables.consents.push({ id: 'ck', clientId: 'OP-2026-1001', consentType: 'whatsapp-updates', status: 'granted', ipAddress: 'x', sha256Hash: 'h', grantedAt: 1 });
 
     const plan = await app.request('/api/marketing/nurture/plan', {
@@ -70,7 +70,7 @@ describe('Campaign catalog (informational) + intent override', () => {
   });
 
   it('intent override: manager sets primary interest; counselor is denied; invalid division rejected', async () => {
-    mockD1.tables.clients.push({ id: 'OP-2026-1001', name: 'C', phone: '1', email: 'a@b.c', createdAt: 1, updatedAt: 1, primaryDivision: null });
+    mockD1.tables.clients.push({ id: 'OP-2026-1001', portal_token: 'OP-2026-1001', name: 'C', phone: '1', email: 'a@b.c', createdAt: 1, updatedAt: 1, primaryDivision: null });
 
     const mgr = await app.request('/api/clients/OP-2026-1001/intent', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json', cookie: 'better-auth.session_token=token-manager' },

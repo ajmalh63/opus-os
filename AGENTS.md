@@ -128,7 +128,9 @@ cd apps/api && pnpm run db:generate   # incremental Drizzle migration
 - Env: ERPNEXT_BASE_URL/API_KEY/API_SECRET.
 
 ### Compliance / audit
-- `auditLog` written everywhere critical: PAYMENT_ENTER, AGREEMENT_SIGNED, DOC_UPLOAD, STAFF_SCOPE_UPDATE, LEAD_CREATED, CONSENT_GRANTED, STAGE_CHANGE. Use `middleware/audit.ts` helpers (fail-open).
+- `audit_log` **v1.1 tamper-evident**: SHA-256 hash chain in `middleware/audit.ts` (`record_hash = SHA-256(prev_hash + canonicalize(event))`, genesis `'GENESIS'`); columns `category` (11: auth/access/money/compliance/document/lead/partner/config/communication/workflow/system), `actor_type` (user/system/partner/service/public), `result` (success/denied/error), `auth_method`, `data_classification`, `request_id`, `schema_version`; PII redacted at write boundary (`redactPayload`). Action strings unchanged (PAYMENT_ENTER, AGREEMENT_SIGNED, DOC_UPLOAD, STAFF_SCOPE_UPDATE, LEAD_CREATED, CONSENT_GRANTED, STAGE_CHANGE...); writes fail-open via `middleware/audit.ts` helpers.
+- **Bounded failure logging**: RBAC 401/403 → `ACCESS_DENIED` (20/hr/identity+action); webhook HMAC/secret failure → `WEBHOOK_REJECTED`; failed payment verify → `PAYMENT_VERIFY_FAILED` / `UMRAH_ADVANCE_VERIFY_FAILED` / `UMRAH_BALANCE_VERIFY_FAILED` (10/hr/bucket) — reuses `isRateLimited` core.
+- Tooling: `scripts/audit-chain-verify.mjs` (CLI + `--self-test`, CI gate), `scripts/backfill-audit-chain.mjs` (idempotent, pre-0071 rows); `GET /api/admin/audit/export` (evidence package + chain-verify report) + admin "Verify chain" action; crons being wired: monthly R2 JSONL archive (`cron/auditArchive.ts`, WORM bucket `opusos-audit`) + weekly chain verify + anomaly alerts.
 - Oracle VPS: everything bound to loopback/Tailscale only; DOCKER-USER chain drops public except SSH + tailscale0.
 
 ### Retro-Funnel front-end
@@ -144,6 +146,7 @@ cd apps/api && pnpm run db:generate   # incremental Drizzle migration
 - **Ownership/owner ceiling:** owner-only for `/api/admin/*` and `/api/infrastructure/*`; counselor blocked from payments/marketing/compliance/incentives. Don't loosen.
 - **Public surfaces:** `/api/public/*` unrestricted; webhooks need secret/HMAC (403 if missing) — never plaintext compare.
 - **Money:** amounts integer paise; GST split helper returns paise.
+- **Audit integrity:** `audit_log` is append-only + hash-chained — never UPDATE/DELETE rows; verify with `scripts/audit-chain-verify.mjs`.
 - **BELOW ALL:** if a change contradicts this file, the file wins until partner updates it.
 
 ---

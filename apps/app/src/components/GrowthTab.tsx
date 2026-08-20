@@ -3,12 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
 
 // A-5: session-driven auth €â‚¬- read the live better-auth cookie; no forged admin token.
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
+
 
 interface LeadScore { clientId: string; name: string; phone: string; email: string; score: number; band: string; interactions: number; }
 interface RuleRow { id: string; division: string; serviceId: string | null; trigger: string; amount: number; isPercent: boolean; active: boolean; }
@@ -21,25 +16,25 @@ export default function GrowthTab() {
   // ---- Marketing: lead scores / bands (Section 26.2) ----
   const { data: leadsData, isLoading: leadsLoading } = useQuery<{ leads: LeadScore[] }>({
     queryKey: ['marketingLeads'],
-    queryFn: async () => { const r = await fetch('/api/marketing/leads', { headers: AUTH }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch('/api/marketing/leads', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   // ---- Marketing: segments (Section 26.3) ----
   const { data: segData } = useQuery<{ segments: any[]; derived?: boolean }>({
     queryKey: ['marketingSegments'],
-    queryFn: async () => { const r = await fetch('/api/marketing/segments', { headers: AUTH }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch('/api/marketing/segments', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   // ---- Incentives: rules (Section 29/31) ----
   const { data: rulesData, refetch: refetchRules } = useQuery<{ rules: RuleRow[] }>({
     queryKey: ['incentiveRules'],
-    queryFn: async () => { const r = await fetch('/api/incentives/rules', { headers: AUTH }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch('/api/incentives/rules', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   // ---- Incentives: statements ----
   const { data: stmtData, refetch: refetchStmts } = useQuery<{ statements: any[] }>({
     queryKey: ['incentiveStatements'],
-    queryFn: async () => { const r = await fetch('/api/incentives/statements', { headers: AUTH }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch('/api/incentives/statements', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   // New rule form
@@ -56,7 +51,7 @@ export default function GrowthTab() {
       if (!amountPaise) throw new Error('Enter an amount');
       const r = await fetch('/api/incentives/rules', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...AUTH },
+        headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ division, trigger, amount: amountPaise, isPercent: false })
       });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Create failed'); }
@@ -69,7 +64,7 @@ export default function GrowthTab() {
   const closePeriod = useMutation({
     mutationFn: async () => {
       const r = await fetch('/api/incentives/close', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH },
+        method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ period })
       });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Close failed'); }

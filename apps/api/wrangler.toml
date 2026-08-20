@@ -1,36 +1,39 @@
-﻿name = "opusos-api"
+name = "opusos-api"
 main = "src/index.ts"
-compatibility_date = "2026-08-06"
+compatibility_date = "2026-08-18" # keep current per Cloudflare Workers best practices
 compatibility_flags = [ "nodejs_compat" ]
 workers_dev = true
 
 # ============================================================
-# Wave 1 â€” Uptime Kuma push heartbeat producer (cron).
+# Cloudflare Workers Smart Placement (100% Free)
+# Automatically runs worker execution in optimal data centers
+# closest to D1 database to minimize multi-roundtrip network hops.
+# ============================================================
+[placement]
+mode = "smart"
+
+# ============================================================
+# Wave 1 — Uptime Kuma push heartbeat producer (cron).
 # Every 6h the scheduled handler pings KUMA_PUSH_URL with status
 # up/down (D1 reachability). Set the URL after creating the push
-# monitor: prod â†’ `wrangler secret put KUMA_PUSH_URL`.
+# monitor: prod → `wrangler secret put KUMA_PUSH_URL`.
 # ============================================================
 [triggers]
-crons = [ "0 */6 * * *" ]
+crons = [ "0 */6 * * *", "0 3 1 * *", "30 3 1 * *", "0 4 * * 1" ]
 
+# NOTE — credential-bearing vars are NOT in [vars] (they would ship to any
+# deploy verbatim). Local dev values live in .dev.vars (gitignored); production
+# MUST use `wrangler secret put` for: ENVIRONMENT, TURNSTILE_SECRET_KEY,
+# MANPOWER_AI, AUTOMATION_TOKEN, ADMIN_PASSWORD, OPENWA_API_KEY, WA_WEBHOOK_SECRET.
 [vars]
-ENVIRONMENT = "development"
-TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA" # Local Turnstile mock test key
-# Resume parser mode (B-3). Dev/local default = "mock" (explicitly labeled demo data).
-# Production MUST set MANPOWER_AI = "real" and implement the Workers AI path.
-MANPOWER_AI = "mock"
 
-# n8n automation lane (Wave 2) â€” service token, fail-closed. DEV ONLY value;
-# production MUST use `wrangler secret put AUTOMATION_TOKEN` (never in [vars]).
-AUTOMATION_TOKEN = "dev-automation-token-change-me"
-
-# Wave 1 â€” Uptime Kuma push monitor URL (heartbeat cron). DEV placeholder;
+# Wave 1 — Uptime Kuma push monitor URL (heartbeat cron). DEV placeholder;
 # production MUST use `wrangler secret put KUMA_PUSH_URL` (never in [vars]).
 KUMA_PUSH_URL = ""
 
-# First-run owner bootstrap (auth gateway). Dev defaults; production uses secrets.
+# First-run owner bootstrap (auth gateway). ADMIN_EMAIL is public-safe;
+# ADMIN_PASSWORD lives in .dev.vars (local) / `wrangler secret put ADMIN_PASSWORD` (prod).
 ADMIN_EMAIL = "owner@opusoverseas.com"
-ADMIN_PASSWORD = "OwnerPass2026!"
 
 # NOTE — BETTER_AUTH_SECRET is intentionally NOT in [vars] (it is a secret):
 #   local dev  → put it in `.dev.vars` (gitignored)
@@ -39,34 +42,40 @@ ADMIN_PASSWORD = "OwnerPass2026!"
 # makes auth + document uploads fail-closed with a clear error.
 
 # ============================================================
-# Unified messaging â€” TAILSCALE TEST PHASE (PENDING-CONFIGS #1)
+# Unified messaging — TAILSCALE TEST PHASE (PENDING-CONFIGS #1)
 # VPS services reachable only on the tailnet (100.87.71.38); ports
 # are closed from the public internet (DOCKER-USER firewall).
 # Replace with tunnel hostnames when moving to Cloudflare infra.
 # ============================================================
 WA_PROVIDER = "openwa"
 OPENWA_BASE_URL = "http://100.87.71.38:2785"
-OPENWA_API_KEY = "owa_k1_6c127c65d850fa156f794cd554c3eb55f" # DEV ONLY â€” VPS dashboard key
+OPENWA_API_URL = "http://100.87.71.38:2785"
 OPENWA_SESSION_ID = "main"
-WA_WEBHOOK_SECRET = "dev-webhook-secret-change-me"
 
-# ERPNext back-office integration (Frappe REST) â€” owner-only sync endpoints
+# ERPNext back-office integration (Frappe REST) — owner-only sync endpoints
 ERPNEXT_BASE_URL = "http://100.87.71.38:8080"
+CHATWOOT_BASE_URL = "http://100.87.71.38:3200"
+N8N_BASE_URL = "http://100.87.71.38:5678"
+KUMA_BASE_URL = "http://100.87.71.38:3001"
+MAUTIC_URL = "http://100.87.71.38:8900"
+LISTMONK_BASE_URL = "http://100.87.71.38:9000"
+
+account_id = "b66f3697a847cba87b1fd44bc8a13827"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "opusos-db"
-database_id = "07f9c2d1-local-dev-db-id"
+database_id = "0cc0da81-bddf-43e8-8298-6adad0472cd9"
 migrations_dir = "migrations"
 
 [[r2_buckets]]
 binding = "BUCKET"
-bucket_name = "opusos-vault"
-preview_bucket_name = "opusos-vault-preview"
+bucket_name = "opusdocs"
+preview_bucket_name = "opusdocs"
 
-[[queues.producers]]
-queue = "opusos-jobs-queue"
-binding = "JOBS_QUEUE"
+# [[queues.producers]]
+# queue = "opusos-jobs-queue"
+# binding = "JOBS_QUEUE"
 
 # ============================================================
 # KV - cache + feature flags ONLY (Section 3.4 / 18.4.2)
@@ -74,8 +83,8 @@ binding = "JOBS_QUEUE"
 # ============================================================
 [[kv_namespaces]]
 binding = "KV"
-id = "local-kv-namespace-id"
-preview_id = "local-kv-preview-id"
+id = "578e838ad5484185875c62fe1e0adce5"
+preview_id = "578e838ad5484185875c62fe1e0adce5"
 
 # ============================================================
 # Vectorize - vector database for semantic search / AI matching
@@ -86,17 +95,17 @@ preview_id = "local-kv-preview-id"
 [[vectorize]]
 binding = "VECTOR_INDEX"
 index_name = "opusos-embeddings"
-index_id = "local-vectorize-index-id"
 
 # ============================================================
 # Workers AI - resume parsing / embeddings / summaries
 # (Section 12.2). Free tier 10k neurons/day. Binding only works
 # with a real Cloudflare account; local dev passes env mock.
 # ============================================================
-ai = { binding = "AI" }
+[ai]
+binding = "AI"
 
 # ============================================================
-# Durable Objects - Team Hub chat rooms (Â§5.5). Free tier 100k req/day.
+# Durable Objects - Team Hub chat rooms (§5.5). Free tier 100k req/day.
 # Local dev: DOs run in workerd via `wrangler dev --local`.
 # ============================================================
 [[durable_objects.bindings]]
@@ -105,5 +114,31 @@ class_name = "TeamHubRoom"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["TeamHubRoom"]
+new_sqlite_classes = ["TeamHubRoom"]
+
+# ============================================================
+# PRODUCTION ENVIRONMENT — deploy with: wrangler deploy --env production
+#   - ENVIRONMENT=production → Secure session cookies, Turnstile fail-closed,
+#     OTP/reset logging disabled (see auth.ts / turnstile.ts)
+#   - workers_dev=false → no public *.workers.dev exposure
+#   - Secrets: `wrangler secret bulk` (see docs/DEPLOY-PRODUCTION.md)
+#   - Routes: uncomment + set zone_name once opusoverseas.com is on Cloudflare
+# ============================================================
+[env.production]
+workers_dev = false
+
+  [env.production.vars]
+  ENVIRONMENT = "production"
+
+  # Routes to activate after the domain is added to Cloudflare:
+  # [[env.production.routes]]
+  # pattern = "opusoverseas.com/*"
+  # zone_name = "opusoverseas.com"
+  # [[env.production.routes]]
+  # pattern = "www.opusoverseas.com/*"
+  # zone_name = "opusoverseas.com"
+  # [[env.production.routes]]
+  # pattern = "app.opusoverseas.com/*"
+  # zone_name = "opusoverseas.com"
+
 

@@ -2,12 +2,6 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 interface RosterRow {
   userId: string; name: string; role: string; divisionCount: number;
@@ -42,7 +36,7 @@ export default function PerformanceTab() {
   const { data, isLoading, isError } = useQuery<PerformanceData>({
     queryKey: ['performance', range],
     queryFn: async () => {
-      const r = await fetch(`/api/performance?days=${range}`, { headers: AUTH });
+      const r = await fetch(`/api/performance?days=${range}`, { credentials: 'include' });
       if (!r.ok) throw new Error('performance');
       return r.json();
     },

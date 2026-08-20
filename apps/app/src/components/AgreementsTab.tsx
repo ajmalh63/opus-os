@@ -2,12 +2,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 const DIV_LABELS: Record<string, string> = {
   'study-abroad': 'Study Abroad', visa: 'Visa', umrah: 'Umrah', attestation: 'Attestation', manpower: 'Manpower',
@@ -31,13 +25,13 @@ export default function AgreementsTab() {
   const [tplForm, setTplForm] = useState({ name: '', division: 'study-abroad', clausesJson: '' });
   const [agrForm, setAgrForm] = useState({ clientId: '', templateId: '' });
 
-  const { data: agreements } = useQuery<any>({ queryKey: ['agreements'], queryFn: async () => (await fetch('/api/agreements', { headers: AUTH })).json() });
-  const { data: templates } = useQuery<any>({ queryKey: ['agreementTemplates'], queryFn: async () => (await fetch('/api/agreements/templates', { headers: AUTH })).json() });
-  const { data: clients } = useQuery<any>({ queryKey: ['clientsList'], queryFn: async () => (await fetch('/api/clients', { headers: AUTH })).json() });
+  const { data: agreements } = useQuery<any>({ queryKey: ['agreements'], queryFn: async () => (await fetch('/api/agreements', { credentials: 'include' })).json() });
+  const { data: templates } = useQuery<any>({ queryKey: ['agreementTemplates'], queryFn: async () => (await fetch('/api/agreements/templates', { credentials: 'include' })).json() });
+  const { data: clients } = useQuery<any>({ queryKey: ['clientsList'], queryFn: async () => (await fetch('/api/clients', { credentials: 'include' })).json() });
 
   const createTpl = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/agreements/templates', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify(tplForm) });
+      const r = await fetch('/api/agreements/templates', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(tplForm) });
       if (!r.ok) throw new Error('tpl');
       return r.json();
     },
@@ -46,7 +40,7 @@ export default function AgreementsTab() {
   });
   const createAgr = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/agreements', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify(agrForm) });
+      const r = await fetch('/api/agreements', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(agrForm) });
       if (!r.ok) throw new Error('agr');
       return r.json();
     },
@@ -55,7 +49,7 @@ export default function AgreementsTab() {
   });
   const signAgr = useMutation({
     mutationFn: async ({ id, method }: { id: string; method: string }) => {
-      const r = await fetch(`/api/agreements/${id}/sign`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify({ esignMethod: method }) });
+      const r = await fetch(`/api/agreements/${id}/sign`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ esignMethod: method }) });
       if (!r.ok) throw new Error('sign');
       return r.json();
     },

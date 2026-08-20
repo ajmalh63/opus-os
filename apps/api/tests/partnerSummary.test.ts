@@ -47,4 +47,19 @@ describe('Partner portal summary (§39 gold-standard dashboard payload)', () => 
     }, { DB: mockD1, BETTER_AUTH_SECRET: 's' });
     expect(res.status).toBe(401);
   });
+
+  it('payout request writes a PARTNER_PAYOUT_REQUESTED audit row', async () => {
+    const res = await app.request('/api/public/partners/p-sum/payouts', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer tok-123' },
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 's' });
+    expect(res.status).toBe(200);
+    const j = await res.json() as any;
+    expect(j.amountPaise).toBe(2500000); // matured balance only
+    const row = (mockD1.tables.audit_log as any[]).find((l: any) => l.action === 'PARTNER_PAYOUT_REQUESTED');
+    expect(row).toBeTruthy();
+    expect(row.actor_id).toBeNull(); // partner-token path → no session actor
+    expect(row.entity_name).toBe('payout_requests');
+    expect(JSON.parse(row.after_state).amountPaise).toBe(2500000);
+  });
 });

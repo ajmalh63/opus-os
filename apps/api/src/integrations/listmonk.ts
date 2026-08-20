@@ -1,4 +1,4 @@
-﻿// Listmonk adapter — reference implementation of the Tool-First contract.
+// Listmonk adapter — reference implementation of the Tool-First contract.
 // READ: campaign list + subscriber/bounce counts + recent deliveries from our
 // own webhook_events log (the A-3 store is the normalized event feed).
 // The guard (consent+suppression verdict before send) stays in the OS lane —

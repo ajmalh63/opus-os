@@ -8,6 +8,9 @@ describe('Partner Thrive workspace (§39 / Zoho Thrive-style)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
+    // This suite exercises the unified catalog — make every division available
+    // (division gating has its own suite: tests/divisions.test.ts).
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
     const now = Math.floor(Date.now() / 1000);
     mockD1.tables.partners.push({ id: 'p-thrive', name: 'Thrive Agency', panNumber: '******9999F', bank_account: '1', ifsc_code: 'SBIN0000001', status: 'active', referral_code: 'OPUS-THRIVE', api_token: 'tok-thrive', created_at: now });
     mockD1.tables.universities.push({ id: 'uni-1', name: 'Melbourne Uni', country: 'Australia', min_gpa: 6.5, min_ielts: 6.5, budget_lpa: 20, created_at: now });

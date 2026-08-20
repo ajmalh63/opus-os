@@ -17,12 +17,6 @@ import PerformanceTab from './PerformanceTab';
 import MarketingTab from './MarketingTab';
 import BoardsTab from './BoardsTab';
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 // Client-side mirror of the server Rbac gate. The server enforces the real
 // ceiling (403) - this mirror only decides what to render.
@@ -47,7 +41,7 @@ function AuditView() {
   const { data } = useQuery<{ logs?: any[] }>({
     queryKey: ['auditTrail'],
     queryFn: async () => {
-      const r = await fetch('/api/admin/audit-logs?limit=500', { headers: AUTH });
+      const r = await fetch('/api/admin/audit-logs?limit=500', { credentials: 'include' });
       if (!r.ok) throw new Error('audit');
       return r.json();
     },
@@ -76,7 +70,7 @@ function AuditView() {
   const { data: rt } = useQuery<{ logs?: any[]; sources?: string[] }>({
     queryKey: ['runtimeLogs', rtLevel, rtSource],
     queryFn: async () => {
-      const r = await fetch(`/api/admin/runtime-logs?limit=300&level=${rtLevel}&source=${encodeURIComponent(rtSource)}`, { headers: AUTH });
+      const r = await fetch(`/api/admin/runtime-logs?limit=300&level=${rtLevel}&source=${encodeURIComponent(rtSource)}`, { credentials: 'include' });
       if (!r.ok) throw new Error('runtime');
       return r.json();
     },

@@ -7,7 +7,7 @@ describe('DPDP consent withdrawal (subject right)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-7777', name: 'Withdraw Me', phone: '+91 98765 11111', email: 'w@example.com', createdAt: 1, updatedAt: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-7777', portal_token: 'OP-2026-7777', name: 'Withdraw Me', phone: '+91 98765 11111', email: 'w@example.com', createdAt: 1, updatedAt: 1 });
     mockD1.tables.consents.push({ id: 'c1', clientId: 'OP-2026-7777', consentType: 'whatsapp-updates', status: 'granted', ipAddress: '1.1.1.1', sha256Hash: 'h', grantedAt: 1, withdrawnAt: null });
   });
 

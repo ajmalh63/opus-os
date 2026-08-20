@@ -2,12 +2,6 @@ import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../lib/session';
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 type VisaStatus = 'draft' | 'submitted' | 'document_prep' | 'slot_booked' | 'granted' | 'rejected' | 'delivered' | 'cancelled';
 
@@ -497,7 +491,7 @@ export default function VisaPrepPortal() {
       if (countryFilter) params.set('country', countryFilter);
       if (searchQuery.trim()) params.set('q', searchQuery.trim());
       const qs = params.toString();
-      const r = await fetch(`/api/visa/applications${qs ? `?${qs}` : ''}`, { headers: AUTH });
+      const r = await fetch(`/api/visa/applications${qs ? `?${qs}` : ''}`, { credentials: 'include' });
       if (!r.ok) throw new Error('Failed to fetch visa applications');
       return r.json();
     },
@@ -508,7 +502,7 @@ export default function VisaPrepPortal() {
     queryKey: ['visaApplicationsAllFallback'],
     queryFn: async () => {
       const lists = await Promise.all(visaClients.map(async (c) => {
-        const r = await fetch(`/api/visa/applications?clientId=${c.id}`, { headers: AUTH });
+        const r = await fetch(`/api/visa/applications?clientId=${c.id}`, { credentials: 'include' });
         if (!r.ok) return [];
         const j = await r.json().catch(() => null);
         return (j?.applications || []).map((a: VisaApplication) => ({ ...a, clientName: c.name, clientToken: c.id }));
@@ -628,7 +622,7 @@ export default function VisaPrepPortal() {
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
       const r = await fetch(`/api/visa/applications/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...AUTH },
+        headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify(payload)
       });
       if (!r.ok) {
@@ -649,7 +643,7 @@ export default function VisaPrepPortal() {
     mutationFn: async ({ id, payload }: { id: string; payload: { status: VisaStatus; rejectionReason?: string } }) => {
       const r = await fetch(`/api/visa/applications/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...AUTH },
+        headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify(payload)
       });
       if (!r.ok) {
@@ -672,7 +666,7 @@ export default function VisaPrepPortal() {
     mutationFn: async ({ id, formJson }: { id: string; formJson: Record<string, any> }) => {
       const r = await fetch(`/api/visa/applications/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...AUTH },
+        headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ formJson })
       });
       if (!r.ok) {
@@ -802,7 +796,7 @@ export default function VisaPrepPortal() {
     mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
       const r = await fetch(`/api/visa/documents/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...AUTH },
+        headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ status: 'rejected', notes })
       });
       if (!r.ok) throw new Error('Failed to reject document');

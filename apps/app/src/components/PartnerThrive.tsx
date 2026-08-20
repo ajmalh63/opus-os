@@ -35,7 +35,7 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
 
   const { data: catalog } = useQuery<{ items: CatalogItem[] }>({
     queryKey: ['partnerCatalog'],
-    queryFn: async () => { const r = await fetch('/api/public/catalog', { headers: AUTH }); if (!r.ok) throw new Error('catalog'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/public/catalog', { credentials: 'include' }); if (!r.ok) throw new Error('catalog'); return r.json(); },
   });
 
   // Visa inventory is a separate products table (phase-1 partner surfacing)
@@ -84,7 +84,7 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
   const createLink = useMutation({
     mutationFn: async (item: CatalogItem) => {
       const r = await fetch(`/api/public/partners/${partnerId}/links`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH },
+        method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ catalogType: item.type, catalogItemId: item.id, title: item.title, pricePaise: item.pricePaise || 0 }),
       });
       if (!r.ok) throw new Error('create link');

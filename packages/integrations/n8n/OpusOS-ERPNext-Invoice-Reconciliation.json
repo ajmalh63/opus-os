@@ -1,0 +1,170 @@
+{
+  "name": "OpusOS — ERPNext Automated Invoicing & Accounting Reconciliation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "opusos-events",
+        "options": {}
+      },
+      "name": "Payment Webhook Ingest",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.event}}",
+              "value2": "payment.received"
+            }
+          ]
+        }
+      },
+      "name": "Filter Payment Event",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:8000/api/resource/Customer",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "customer_name",
+              "value": "={{$json.body.data.clientId}}"
+            },
+            {
+              "name": "customer_type",
+              "value": "Individual"
+            },
+            {
+              "name": "customer_group",
+              "value": "Individual"
+            },
+            {
+              "name": "territory",
+              "value": "India"
+            }
+          ]
+        }
+      },
+      "name": "ERPNext Upsert Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        740,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:8000/api/resource/Sales%20Invoice",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "customer",
+              "value": "={{$json.body.data.clientId}}"
+            },
+            {
+              "name": "due_date",
+              "value": "={{new Date().toISOString().slice(0,10)}}"
+            },
+            {
+              "name": "items",
+              "value": "=[{\"item_code\": \"CONSULTANCY-FEE\", \"qty\": 1, \"rate\": {{$json.body.data.amountRupees}}, \"description\": \"{{$json.body.data.milestoneName}}\"}]"
+            }
+          ]
+        }
+      },
+      "name": "ERPNext Create Sales Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        980,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "http://127.0.0.1:8080/api/send-message",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "phone",
+              "value": "+919398848376"
+            },
+            {
+              "name": "message",
+              "value": "=💰 *Opus Overseas Receipt Confirmation*\n\nPayment of *₹{{$json.body.data.amountRupees}}* received via {{$json.body.data.method.toUpperCase()}} (Ref: {{$json.body.data.referenceNumber}}).\n\nService: {{$json.body.data.milestoneName}}\nYour tax invoice has been reconciled in the financial ledger."
+            }
+          ]
+        }
+      },
+      "name": "WhatsApp Receipt Dispatch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        980,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Payment Webhook Ingest": {
+      "main": [
+        [
+          {
+            "node": "Filter Payment Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Payment Event": {
+      "main": [
+        [
+          {
+            "node": "ERPNext Upsert Customer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WhatsApp Receipt Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ERPNext Upsert Customer": {
+      "main": [
+        [
+          {
+            "node": "ERPNext Create Sales Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

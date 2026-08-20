@@ -10,8 +10,10 @@ import Footer from '../components/Footer';
 import StickyCallBar from '../components/StickyCallBar';
 import Img from '../components/Img';
 import ChatWidget from '../components/ChatWidget';
+import LiveWallpaper from '../components/LiveWallpaper';
 import { imageFor } from '../config/images';
-import { prefersReducedMotion, animateHeadlineWords } from '../lib/motion';
+import { useDivisions } from '../lib/divisions';
+import { prefersReducedMotion, animateHeadlineWords, fadeUp, staggerReveal } from '../lib/motion';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -53,6 +55,7 @@ export default function PublicService({ params }: { params: { division: string }
     fetch('/api/cal/public/links').then(r => r.json()).then((d: any) => { if (d?.links) setBookingLinks(d.links); }).catch(() => {});
   }, []);
   const reduced = prefersReducedMotion();
+  const divisions = useDivisions();
 
   // Partner attribution: /go/:ref/:type/:id redirects land here with ?ref=
   const inquiryRef = new URLSearchParams(typeof location !== 'undefined' ? location.search : '').get('ref') || '';
@@ -188,8 +191,15 @@ export default function PublicService({ params }: { params: { division: string }
   const data = serviceConfigs[currentDiv] || serviceConfigs['study-abroad'];
   const accent = ACCENTS[data.accent] ?? ACCENTS.gold;
 
+  // Division availability gating: isEnabled defaults true while unknown, so the
+  // normal page renders until the query resolves and the division is confirmed
+  // disabled (no layout flash / no premature "coming soon").
+  const divisionKey = DIVISION_SLUG_TO_ENUM[currentDiv] || 'study-abroad';
+  const divisionDisabled = divisions.enabled !== null && !divisions.isEnabled(divisionKey);
+
   // Division hero reveal + checklist stagger
   useEffect(() => {
+    if (divisionDisabled) return;
     const ctx = gsap.context(() => {
       if (!reduced) {
         animateHeadlineWords(heroRef.current?.querySelector('.division-h1') as HTMLElement, { delay: 0.1 });
@@ -209,7 +219,18 @@ export default function PublicService({ params }: { params: { division: string }
       gsap.fromTo('.division-form', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', scrollTrigger: { trigger: '.division-form', start: 'top 88%', once: true } });
     });
     return () => ctx.revert();
-  }, [reduced]);
+  }, [reduced, divisionDisabled]);
+
+  // Coming-soon hero reveal (only mounts when the division is disabled)
+  const comingSoonRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!divisionDisabled) return;
+    const ctx = gsap.context(() => {
+      fadeUp(comingSoonRef.current?.querySelector('.coming-title') ?? null, { y: 40, delay: 0.15, duration: 0.9 });
+      staggerReveal(Array.from(comingSoonRef.current?.querySelectorAll<HTMLElement>('.coming-cta') ?? []), { y: 24, stagger: 0.14, delay: 0.55, duration: 0.7 });
+    }, comingSoonRef.current ?? undefined);
+    return () => ctx.revert();
+  }, [divisionDisabled]);
 
   const handleSubmitInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,6 +286,52 @@ export default function PublicService({ params }: { params: { division: string }
   };
 
   const inputCls = 'w-full rounded-xl border border-brand-navy/10 bg-white px-3.5 py-3 text-sm text-brand-navy placeholder:text-brand-gray focus:border-brand-gold focus:outline-none';
+
+  // Coming-soon state for disabled divisions: page stays live for SEO, no lead
+  // capture — branded navy band, LiveWallpaper, orbs, CTA to Study Abroad + contact.
+  if (divisionDisabled) {
+    return (
+      <div className="min-h-screen bg-brand-navy font-sans text-white">
+        <div className="film-grain" aria-hidden="true" />
+        <Nav />
+        <LiveWallpaper />
+
+        <section ref={comingSoonRef} className="relative flex min-h-[88vh] items-center overflow-hidden pt-28">
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <div className="hero-orb -right-20 -top-24 h-[28rem] w-[28rem] rounded-full bg-brand-gold/15 blur-3xl" />
+            <div className="hero-orb -left-28 bottom-0 h-96 w-96 rounded-full bg-brand-blue/20 blur-3xl" />
+          </div>
+          <div className="relative mx-auto max-w-3xl px-5 py-20 text-center md:px-8">
+            <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
+              {data.icon} Coming Soon
+            </span>
+            <h1 className="coming-title mt-6 font-display text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
+              {data.title} is coming soon
+            </h1>
+            <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-white/70 md:text-base">
+              We're preparing this service — expect it soon.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={() => setLocation('/study-abroad')}
+                className="coming-cta rounded-full bg-brand-gold px-8 py-3.5 text-xs font-extrabold uppercase tracking-[0.15em] text-brand-navy shadow-lg shadow-brand-gold/25 transition-transform hover:scale-[1.03]"
+              >
+                Explore Study Abroad
+              </button>
+              <a
+                href="mailto:support@opusoverseas.com"
+                className="coming-cta inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-8 py-3.5 text-xs font-extrabold uppercase tracking-[0.15em] text-brand-gold transition-colors hover:bg-brand-gold hover:text-brand-navy"
+              >
+                Get in touch
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-brand-cream font-sans text-brand-navy">

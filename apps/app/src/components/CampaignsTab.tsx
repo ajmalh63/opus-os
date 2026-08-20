@@ -7,13 +7,6 @@ import { useRevealRoot } from '../lib/reveal';
 // status cards + near-real-time event feed + legacy OS-defined catalog.
 // No create/edit here — definitions happen in the tools.
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
-
 interface ToolStatus { state: 'ok' | 'unconfigured' | 'error'; label: string; summary: string }
 interface ToolSnapshot {
   tool: string; label: string; status: ToolStatus; fetchedAt: number;
@@ -51,7 +44,7 @@ export default function CampaignsTab() {
   const { data: live, isLoading, isError } = useQuery<LiveData>({
     queryKey: ['integrationsLive'],
     queryFn: async () => {
-      const r = await fetch('/api/integrations/live', { headers: AUTH });
+      const r = await fetch('/api/integrations/live');
       if (!r.ok) throw new Error('integrations');
       return r.json();
     },
@@ -59,7 +52,7 @@ export default function CampaignsTab() {
   const { data: catalog } = useQuery<{ campaigns: any[] }>({
     queryKey: ['adminCampaignsRead'],
     queryFn: async () => {
-      const r = await fetch('/api/admin/campaigns', { headers: AUTH });
+      const r = await fetch('/api/admin/campaigns');
       if (!r.ok) throw new Error('catalog');
       return r.json();
     },

@@ -62,7 +62,9 @@ describe('Workflow interlock — role simulation (the daily ops flow)', () => {
     }, M(mockD1));
     expect(leadRes.status).toBe(200);
     const lead = await leadRes.json() as any;
-    const clientId = lead.token || lead.clientId;
+    // lead.token is now the portal credential; resolve the client row for id-keyed lookups
+    const leadClient = (mockD1.tables.clients as any[]).find((c) => c.portal_token === lead.token);
+    const clientId = (leadClient && leadClient.id) || lead.token || lead.clientId;
 
     // engagement auto-created at stage lead
     const eng = (mockD1.tables.engagements as any[]).find((e) => e.client_id === clientId);
@@ -105,7 +107,7 @@ describe('Workflow interlock — role simulation (the daily ops flow)', () => {
 
   it('incentive accrual: agreement_signed accrues to the counselor (idempotent)', async () => {
     mockD1.tables.engagements.push({ id: 'eng-accrue', client_id: 'c-accrue', division: 'study-abroad', title: 'E', stage_key: 'qualified', counselor_id: 'u-roomselor', outstanding_balance: 0, status: 'active', created_at: 1, updated_at: 1 });
-    mockD1.tables.clients.push({ id: 'c-accrue', name: 'C', phone: '999', email: '', created_at: 1, updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'c-accrue', portal_token: 'c-accrue', name: 'C', phone: '999', email: '', created_at: 1, updated_at: 1 });
 
 const first = await accrueIncentives({ env: { DB: mockD1 } as any, clientId: 'c-accrue', engagementId: 'eng-accrue', triggerRef: 'ag-1', trigger: 'agreement_signed' });
     expect(first.accrued).toBeGreaterThan(0);

@@ -67,8 +67,13 @@ export const createAgreementSchema = z.object({
 });
 
 // 5. Sign Agreement Schema
+// esignMethod — free, legally valid methods only (design doc §1): typed name,
+// drawn signature (wet_ink) or OTP-verified click. Aadhaar eSign removed
+// (paid ₹5-15/sign + not working). OTP flows send signatureData?/otp?.
 export const signAgreementSchema = z.object({
-  esignMethod: z.enum(['aadhaar', 'otp', 'wet_ink'])
+  esignMethod: z.enum(['typed', 'otp', 'wet_ink']),
+  signatureData: z.string().optional(),
+  otp: z.string().optional()
 });
 
 // 6. Create Payment Ledger Schema

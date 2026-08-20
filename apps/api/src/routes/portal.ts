@@ -1,3 +1,4 @@
+import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
 import { getAuth } from '../auth.js';
@@ -61,7 +62,7 @@ portalRouter.post('/consent/withdraw', async (c) => {
   const db = getDb(c.env.DB);
 
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
 
     const now = Math.floor(Date.now() / 1000);
@@ -81,7 +82,7 @@ portalRouter.post('/consent/withdraw', async (c) => {
     });
     return c.json({ success: true, message: `Consent '${consentType}' withdrawn. Non-core outreach to this contact is now suppressed.` });
   } catch (error: any) {
-    return c.json({ error: 'Consent withdrawal failed', details: error.message }, 500);
+    return c.json({ error: 'Consent withdrawal failed',  }, 500);
   }
 });
 
@@ -99,7 +100,7 @@ portalRouter.get('/lookup', async (c) => {
   const db = getDb(c.env.DB);
 
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) {
       return c.json({ error: "Client not found matching token." }, 404);
     }
@@ -116,7 +117,7 @@ portalRouter.get('/lookup', async (c) => {
 
     return c.json(buildJourney(client, activeEngagements, clientConsents, clientDocs, clientPayments, clientVisaApps, clientVisaMocks));
   } catch (error: any) {
-    return c.json({ error: "Portal lookup transaction failed", details: error.message }, 500);
+    return c.json({ error: "Portal lookup transaction failed",  }, 500);
   }
 });
 
@@ -165,7 +166,7 @@ portalRouter.get('/session', async (c) => {
 
     return c.json({ success: true, authenticated: true, email: user.email, journeys });
   } catch (error: any) {
-    return c.json({ error: "Portal session transaction failed", details: error.message }, 500);
+    return c.json({ error: "Portal session transaction failed",  }, 500);
   }
 });
 
@@ -193,7 +194,7 @@ portalRouter.post('/claim', async (c) => {
       return c.json({ error: "Missing required fields: token, phone" }, 400);
     }
 
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) {
       return c.json({ error: "Client not found matching token." }, 404);
     }
@@ -205,11 +206,21 @@ portalRouter.post('/claim', async (c) => {
       return c.json({ error: "Phone number does not match the journey token." }, 403);
     }
 
-    // Link: attach the logged-in email to the client record (one-time ownership bind)
-    await db
-      .update(clients)
-      .set({ email: sessionResult.user.email, updatedAt: Math.floor(Date.now() / 1000) })
-      .where(and(eq(clients.id, token), eq(clients.id, client.id)));
+    // Link: bind the session to the client. SECURITY: never overwrite the
+    // client's email from an unverified claim — an attacker with a token+phone
+    // could redirect ALL OTP emails (incl. agreement-sign codes) to their own
+    // mailbox. Only bind when the emails match or the client has no email yet.
+    const sessionEmail = String(sessionResult.user.email || '').toLowerCase();
+    const clientEmail = String(client.email || '').toLowerCase();
+    if (clientEmail && clientEmail !== sessionEmail) {
+      return c.json({ error: "This journey is linked to a different email. Contact support to update it." }, 403);
+    }
+    if (!clientEmail) {
+      await db
+        .update(clients)
+        .set({ email: sessionResult.user.email, updatedAt: Math.floor(Date.now() / 1000) })
+        .where(eq(clients.id, client.id));
+    }
 
     const engs = await db.select().from(engagements).where(eq(engagements.clientId, token)).all();
     const cons = await db.select().from(consents).where(eq(consents.clientId, token)).all();
@@ -222,7 +233,7 @@ portalRouter.post('/claim', async (c) => {
       journey: buildJourney(client, engs, cons, docs, pays)
     });
   } catch (error: any) {
-    return c.json({ error: "Portal claim transaction failed", details: error.message }, 500);
+    return c.json({ error: "Portal claim transaction failed",  }, 500);
   }
 });
 
@@ -260,7 +271,7 @@ portalRouter.get('/experiments/:key/variant', async (c) => {
 
     return c.json({ success: true, key, experimentId: exp.id, variant: 'none', message: 'Pass clientId to lock in an assignment.' });
   } catch (error: any) {
-    return c.json({ error: "Variant lookup failed", details: error.message }, 500);
+    return c.json({ error: "Variant lookup failed",  }, 500);
   }
 });
 
@@ -290,7 +301,7 @@ portalRouter.get('/documents/presigned', async (c) => {
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
   try {
-    const client = await db.select().from(clients).where(eq(clients.id, token)).get();
+    const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: "Client not found matching token" }, 404);
 
     const expires = Math.floor(Date.now() / 1000) + 900;
@@ -300,7 +311,7 @@ portalRouter.get('/documents/presigned', async (c) => {
     const presignedUrl = `/api/public/portal/documents/upload?token=${token}&filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}`;
     return c.json({ success: true, url: presignedUrl, expires });
   } catch (error: any) {
-    return c.json({ error: "Presigned URL generation failed", details: error.message }, 500);
+    return c.json({ error: "Presigned URL generation failed",  }, 500);
   }
 });
 
@@ -412,7 +423,7 @@ portalRouter.put('/documents/upload', async (c) => {
     await createStaffAlert(c.env as any, { division: 'visa', type: 'document_upload', title: `Document uploaded: ${safeName}`, body: `Client ${token} uploaded ${safeName} (${version})`, clientId: token, payload: { fileName: safeName, version } });
     return c.json({ success: true, docId, version, message: "Document uploaded successfully." });
   } catch (error: any) {
-    return c.json({ error: "Upload failed", details: error.message }, 500);
+    return c.json({ error: "Upload failed",  }, 500);
   }
 });
 
@@ -473,7 +484,7 @@ portalRouter.post('/visa/inquiry', async (c) => {
     await createStaffAlert(c.env as any, { division: 'visa', type: 'visa_inquiry', title: `Visa inquiry: ${body.country}`, body: `${body.visaType}${body.notes ? ' — ' + body.notes : ''}`, clientId: body.clientId, payload: { country: body.country, visaType: body.visaType, email: body.email, mobile: body.registeredMobile } });
     return c.json({ success: true, id, message: "Visa inquiry registered successfully." });
   } catch (error: any) {
-    return c.json({ error: "Failed to submit visa inquiry", details: error.message }, 500);
+    return c.json({ error: "Failed to submit visa inquiry",  }, 500);
   }
 });
 
@@ -554,7 +565,7 @@ portalRouter.post('/payments/order', async (c) => {
       engagementId: eng.id,
     });
   } catch (error: any) {
-    return c.json({ error: "Failed to initialize order", details: error.message }, 500);
+    return c.json({ error: "Failed to initialize order",  }, 500);
   }
 });
 
@@ -602,6 +613,20 @@ portalRouter.post('/payments/verify', async (c) => {
     const ok = await verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature, secret);
     if (!ok) return c.json({ error: "Signature mismatch" }, 403);
 
+    // SECURITY: bind the order to the claimed client/engagement. The HMAC only
+    // covers order|payment — without this check a payer could replay their own
+    // valid signature against ANY victim's clientId/engagementId and credit
+    // their ledger (cross-client balance forgery).
+    const authString = 'Basic ' + btoa(`${c.env.RAZORPAY_KEY_ID}:${c.env.RAZORPAY_KEY_SECRET}`);
+    const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${razorpay_order_id}`, {
+      headers: { 'Authorization': authString },
+    });
+    const orderInfo = (orderRes.ok ? await orderRes.json() : {}) as { notes?: Record<string, string>; status?: string };
+    const orderNotes = orderInfo.notes || {};
+    if (orderNotes.clientId !== clientId || orderNotes.engagementId !== engagementId) {
+      return c.json({ error: "Order does not match the claimed client/engagement" }, 403);
+    }
+
     // Idempotency: verify no duplicate recording
     const existing = await db.select().from(payments).where(eq(payments.referenceNumber, razorpay_payment_id)).get();
     if (existing) {
@@ -609,9 +634,9 @@ portalRouter.post('/payments/verify', async (c) => {
     }
 
     // Call Razorpay API to confirm capture
-    const authString = 'Basic ' + btoa(`${c.env.RAZORPAY_KEY_ID}:${c.env.RAZORPAY_KEY_SECRET}`);
+    const payAuth = 'Basic ' + btoa(`${c.env.RAZORPAY_KEY_ID}:${c.env.RAZORPAY_KEY_SECRET}`);
     const rzRes = await fetch(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
-      headers: { 'Authorization': authString },
+      headers: { 'Authorization': payAuth },
     });
     const paymentInfo = (rzRes.ok ? await rzRes.json() : {}) as { status?: string; amount?: number };
     const captured = paymentInfo?.status === 'captured';
@@ -679,6 +704,6 @@ portalRouter.post('/payments/verify', async (c) => {
     await createStaffAlert(c.env as any, { division: eng.division || 'visa', type: 'visa_sale', title: `Payment received: ₹${(invoiceAmount / 100).toLocaleString('en-IN')}`, body: `${milestoneName || 'Visa Fee'} — ${clientId}`, clientId, payload: { amount: invoiceAmount, milestone: milestoneName, paymentId: razorpay_payment_id } });
     return c.json({ success: true, id: paymentId, razorpay_payment_id, verified: true, message: "Payment verified & recorded." });
   } catch (error: any) {
-    return c.json({ error: "Verification failed", details: error.message }, 500);
+    return c.json({ error: "Verification failed",  }, 500);
   }
 });

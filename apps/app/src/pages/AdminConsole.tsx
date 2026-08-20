@@ -14,12 +14,6 @@ import GrowthMetricsTab from '../components/GrowthMetricsTab';
 import PerformanceTab from '../components/PerformanceTab';
 
 // Real session-driven auth — the live cookie, never a forged token.
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 // API interfaces matching Drizzle schemas & Zod validators
 interface AuditLog {
@@ -117,8 +111,7 @@ export default function AdminConsole() {
     queryFn: async () => {
       const res = await fetch('/api/admin/staff', {
         headers: {
-          ...AUTH
-        }
+          }
       });
       if (!res.ok) {
         throw new Error(await res.text() || 'Failed to fetch staff directory');
@@ -132,8 +125,7 @@ export default function AdminConsole() {
     queryFn: async () => {
       const res = await fetch('/api/admin/audit-logs', {
         headers: {
-          ...AUTH
-        }
+          }
       });
       if (!res.ok) {
         throw new Error(await res.text() || 'Failed to fetch audit log history');
@@ -149,8 +141,7 @@ export default function AdminConsole() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...AUTH
-        },
+          },
         body: JSON.stringify(payload)
       });
       if (!res.ok) {
@@ -182,8 +173,7 @@ export default function AdminConsole() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...AUTH
-        },
+          },
         body: JSON.stringify({ userDivisions })
       });
       if (!res.ok) {

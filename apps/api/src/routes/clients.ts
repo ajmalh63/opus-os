@@ -1,3 +1,4 @@
+import { newPortalToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
@@ -112,7 +113,7 @@ clientsRouter.get('/:id', async (c) => {
   } catch (error: any) {
     return c.json({
       error: "Failed to fetch client data",
-      details: error.message
+      
     }, 500);
   }
 });
@@ -255,7 +256,7 @@ clientsRouter.put('/:id/documents/upload', async (c) => {
     });
 
   } catch (error: any) {
-    return c.json({ error: "Document upload transaction failed", details: error.message }, 500);
+    return c.json({ error: "Document upload transaction failed",  }, 500);
   }
 });
 
@@ -302,7 +303,7 @@ clientsRouter.get('/:id/sharing-eligibility', async (c) => {
     });
 
   } catch (error: any) {
-    return c.json({ error: "Eligibility check transaction failed", details: error.message }, 500);
+    return c.json({ error: "Eligibility check transaction failed",  }, 500);
   }
 });
 
@@ -345,7 +346,7 @@ clientsRouter.post('/:id/communications', async (c) => {
     });
     return c.json({ success: true, id, message: "Communication logged to timeline." });
   } catch (error: any) {
-    return c.json({ error: "Communication log failed", details: error.message }, 500);
+    return c.json({ error: "Communication log failed",  }, 500);
   }
 });
 
@@ -400,7 +401,7 @@ clientsRouter.patch('/:id/documents/:docId/status', async (c) => {
     }
     return c.json({ success: true, message: `Document ${parsed.data.status}.` });
   } catch (error: any) {
-    return c.json({ error: "Document review failed", details: error.message }, 500);
+    return c.json({ error: "Document review failed",  }, 500);
   }
 });
 
@@ -428,7 +429,7 @@ clientsRouter.get('/:id/documents/:docId/download', async (c) => {
       }
     });
   } catch (error: any) {
-    return c.json({ error: "Download failed", details: error.message }, 500);
+    return c.json({ error: "Download failed",  }, 500);
   }
 });
 
@@ -437,9 +438,21 @@ clientsRouter.get('/', async (c) => {
   const db = getDb(c.env.DB);
   try {
     const list = await db.select().from(clients).all();
+    // PII directory guard: counselors/coordinators only see clients in their
+    // assigned divisions (their division lives on the engagement rows).
+    const user = (c.get('user') as any) || {};
+    let divisions: string[] = [];
+    try { divisions = JSON.parse(user.userDivisions || '[]'); } catch { divisions = []; }
+    if ((user.role === 'counselor' || user.role === 'coordinator') && divisions.length > 0) {
+      const engs = await db.select().from(engagements).all();
+      const scopedIds = new Set(
+        engs.filter((e) => divisions.includes(e.division)).map((e) => e.clientId),
+      );
+      return c.json({ clients: list.filter((cl) => scopedIds.has(cl.id)) });
+    }
     return c.json({ clients: list });
   } catch (error: any) {
-    return c.json({ error: 'Failed to fetch clients list', details: error.message }, 500);
+    return c.json({ error: 'Failed to fetch clients list',  }, 500);
   }
 });
 
@@ -459,7 +472,8 @@ clientsRouter.post('/', async (c) => {
     return c.json({ error: 'Missing required fields: name, phone, email' }, 400);
   }
 
-  const token = `OP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+  const token = `OP-2026-${Math.floor(1000 + Math.random() * 9000)}`; // display id
+  const portalToken = newPortalToken();
   const now = Math.floor(Date.now() / 1000);
   try {
     const dup = await db.select().from(clients).where(eq(clients.phone, body.phone)).get();
@@ -469,6 +483,7 @@ clientsRouter.post('/', async (c) => {
 
     await db.insert(clients).values({
       id: token,
+      portalToken,
       name: body.name,
       phone: body.phone,
       email: body.email,
@@ -497,7 +512,7 @@ clientsRouter.post('/', async (c) => {
 
     return c.json({ success: true, client: { id: token, name: body.name, phone: body.phone, email: body.email, primaryDivision: body.primaryDivision } });
   } catch (error: any) {
-    return c.json({ error: 'Failed to create client', details: error.message }, 500);
+    return c.json({ error: 'Failed to create client',  }, 500);
   }
 });
 
@@ -544,7 +559,7 @@ clientsRouter.post('/:id/engagements', async (c) => {
 
     return c.json({ success: true, message: 'Engagement initialized successfully', engagement: newEngagement });
   } catch (error: any) {
-    return c.json({ error: 'Failed to initialize engagement', details: error.message }, 500);
+    return c.json({ error: 'Failed to initialize engagement',  }, 500);
   }
 });
 
@@ -578,7 +593,7 @@ clientsRouter.patch('/:id', async (c) => {
     await db.update(clients).set(updateFields).where(eq(clients.id, id));
     return c.json({ success: true, id });
   } catch (error: any) {
-    return c.json({ error: 'Failed to update client details', details: error.message }, 500);
+    return c.json({ error: 'Failed to update client details',  }, 500);
   }
 });
 

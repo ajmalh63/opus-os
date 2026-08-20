@@ -32,8 +32,10 @@ describe('Attestation Division (gold-standard)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
     mockD1.tables.clients.push({
-      id: 'OP-2026-9401', name: 'Ravi Kumar', phone: '+91 99999 66666', email: 'ravi@test.com',
+      id: 'OP-2026-9401',
+      portal_token: 'OP-2026-9401', name: 'Ravi Kumar', phone: '+91 99999 66666', email: 'ravi@test.com',
       created_at: now, updated_at: now
     });
     // Seed a rate card (UAE educational embassy)
@@ -170,7 +172,7 @@ describe('Attestation Division (gold-standard)', () => {
     expect(updated.pickup_address).toContain('Hyderabad');
 
     // Ownership: another token cannot book this pickup
-    mockD1.tables.clients.push({ id: 'OP-2026-9402', name: 'Other', phone: '+91 99999 77777', email: 'o@t.com', created_at: now, updated_at: now });
+    mockD1.tables.clients.push({ id: 'OP-2026-9402', portal_token: 'OP-2026-9402', name: 'Other', phone: '+91 99999 77777', email: 'o@t.com', created_at: now, updated_at: now });
     const res2 = await app.request(`/api/public/portal/attestation/applications/${row.id}/pickup?token=OP-2026-9402`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -209,7 +211,8 @@ describe('Attestation — full control (edit/delete/duplicate/doc/pipeline)', ()
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-9501', name: 'Test Client', phone: '+91 99999 88888', email: 't@test.com', created_at: now, updated_at: now });
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-9501', portal_token: 'OP-2026-9501', name: 'Test Client', phone: '+91 99999 88888', email: 't@test.com', created_at: now, updated_at: now });
     mockD1.tables.attestation_rate_cards.push({
       id: 'rc-qa', country: 'Qatar', category: 'personal', route: 'embassy', price_paise: 600000, timeline_days: 18,
       steps_json: JSON.stringify(['Notary', 'SDM', 'MEA', 'Qatar Embassy']), active: 1, created_at: now, updated_at: now
@@ -296,7 +299,8 @@ describe('Attestation — price bands (Option 1)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-9701', name: 'Bands Client', phone: '+91 99999 77771', email: 'b@test.com', created_at: now, updated_at: now });
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-9701', portal_token: 'OP-2026-9701', name: 'Bands Client', phone: '+91 99999 77771', email: 'b@test.com', created_at: now, updated_at: now });
   });
 
   it('GET /api/attestation/price-bands returns defaults (staff)', async () => {
@@ -335,7 +339,8 @@ describe('Attestation — supplier-check intake (deadline/urgency/scan)', () => 
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-9801', name: 'Scan Client', phone: '+91 99999 66661', email: 's@test.com', created_at: now, updated_at: now });
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-9801', portal_token: 'OP-2026-9801', name: 'Scan Client', phone: '+91 99999 66661', email: 's@test.com', created_at: now, updated_at: now });
   });
 
   it('portal create captures urgency + deadline', async () => {
@@ -378,7 +383,7 @@ describe('Attestation — supplier-check intake (deadline/urgency/scan)', () => 
     expect(alert).toBeTruthy();
 
     // Ownership: another token cannot upload to this application
-    mockD1.tables.clients.push({ id: 'OP-2026-9802', name: 'Other', phone: '+91 99999 66662', email: 'o2@test.com', created_at: now, updated_at: now });
+    mockD1.tables.clients.push({ id: 'OP-2026-9802', portal_token: 'OP-2026-9802', name: 'Other', phone: '+91 99999 66662', email: 'o2@test.com', created_at: now, updated_at: now });
     const presigned2 = await app.request(`/api/public/portal/attestation/applications/${row.id}/document/presigned?token=OP-2026-9802&filename=x.pdf`, { method: 'POST' }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     expect(presigned2.status).toBe(403);
   });
@@ -390,7 +395,8 @@ describe('Attestation — Live Activity severity (dashboard)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-9901', name: 'Task Client', phone: '+91 99999 55551', email: 'tc@test.com', created_at: now, updated_at: now });
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-9901', portal_token: 'OP-2026-9901', name: 'Task Client', phone: '+91 99999 55551', email: 'tc@test.com', created_at: now, updated_at: now });
   });
 
   it('urgent quote request fires an URGENT-severity alert (Live Activity red)', async () => {
@@ -440,7 +446,8 @@ describe('Attestation — notification actions (dismiss / clear done)', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-9911', name: 'Notif Client', phone: '+91 99999 44441', email: 'n@test.com', created_at: now, updated_at: now });
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-9911', portal_token: 'OP-2026-9911', name: 'Notif Client', phone: '+91 99999 44441', email: 'n@test.com', created_at: now, updated_at: now });
     // Two alerts: one new, one seen
     mockD1.tables.staff_alerts.push(
       { id: 'al-1', division: 'attestation', type: 'attestation_quote', title: 'Quote request', body: 'Degree → UAE', severity: 'urgent', status: 'new', link: '/divisions/attestation', created_at: now },
@@ -474,7 +481,8 @@ describe('Divisions hub — live stats', () => {
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.clients.push({ id: 'OP-2026-9921', name: 'Stats Client', phone: '+91 99999 33331', email: 'st@test.com', created_at: now, updated_at: now });
+    mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
+    mockD1.tables.clients.push({ id: 'OP-2026-9921', portal_token: 'OP-2026-9921', name: 'Stats Client', phone: '+91 99999 33331', email: 'st@test.com', created_at: now, updated_at: now });
     mockD1.tables.attestation_applications.push({
       id: 'app-stats-1', client_id: 'OP-2026-9921', document_json: '{}', category: 'educational', route: 'embassy',
       destination_country: 'UAE', chain_json: '[]', stage: 'quote_requested', pickup_status: 'awaiting_docs',

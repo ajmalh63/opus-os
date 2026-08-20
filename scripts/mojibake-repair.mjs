@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 
 const ROOTS = ['apps/api/src', 'apps/app/src', 'ops', 'automation'];
 const EXTS = ['.ts', '.tsx', '.js', '.json', '.toml', '.ps1', '.md'];
-const SUS = /(Â.|Ã.|â€.|ï¿½|dY.|A·|�)/g;
+const SUS = /(Â.|Ã.|â€.|ï¿½|A·|�)/g;
 const BACKUP = process.env.MOJIBACKUP || join(process.env.TEMP || 'C:\\Users\\asimh\\AppData\\Local\\Temp', 'opencode', 'mojibake-backup');
 
 function walk(dir, acc = []) {

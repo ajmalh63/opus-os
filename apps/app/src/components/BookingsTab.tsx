@@ -2,12 +2,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
 
 const DIV_LABELS: Record<string, string> = {
   'study-abroad': 'Study Abroad', visa: 'Visa', manpower: 'Manpower',
@@ -65,17 +59,17 @@ export default function BookingsTab() {
   const { data, isLoading } = useQuery<any>({
     queryKey: ['calBookings'],
     queryFn: async () => {
-      const r = await fetch('/api/cal/bookings', { headers: AUTH });
+      const r = await fetch('/api/cal/bookings', { credentials: 'include' });
       if (!r.ok) throw new Error('bookings');
       return r.json();
     },
     refetchInterval: 60000,
   });
-  const { data: cfg } = useQuery<any>({ queryKey: ['calConfig'], queryFn: async () => (await fetch('/api/cal/config', { headers: AUTH })).json() });
+  const { data: cfg } = useQuery<any>({ queryKey: ['calConfig'], queryFn: async () => (await fetch('/api/cal/config', { credentials: 'include' })).json() });
   const [riskFilter, setRiskFilter] = useState('all');
   const verifyBooking = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/cal/bookings/${id}/verify`, { method: 'POST', headers: AUTH });
+      const r = await fetch(`/api/cal/bookings/${id}/verify`, { method: 'POST', });
       if (!r.ok) throw new Error('verify');
       return r.json();
     },
@@ -86,7 +80,7 @@ export default function BookingsTab() {
 
   const saveCfg = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/cal/config', { method: 'POST', headers: { 'Content-Type': 'application/json', ...AUTH }, body: JSON.stringify(cfgForm) });
+      const r = await fetch('/api/cal/config', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(cfgForm) });
       if (!r.ok) throw new Error('cfg');
       return r.json();
     },

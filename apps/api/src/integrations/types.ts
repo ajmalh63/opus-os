@@ -8,12 +8,14 @@ export interface ToolEnv {
   LISTMONK_API_USER?: string;
   LISTMONK_API_PASS?: string;
   MAUTIC_URL?: string;
+  MAUTIC_BASE_URL?: string;
   MAUTIC_USER?: string;   // basic auth (verified path)
   MAUTIC_PASS?: string;
   MAUTIC_CLIENT_ID?: string;
   MAUTIC_CLIENT_SECRET?: string;
   CHATWOOT_BASE_URL?: string;
   CHATWOOT_API_TOKEN?: string;
+  OPENWA_BASE_URL?: string;
   OPENWA_API_URL?: string;
 }
 

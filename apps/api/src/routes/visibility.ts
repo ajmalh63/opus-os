@@ -139,15 +139,7 @@ visibilityRouter.post('/seo/keywords', zValidator('json', seoKeywordSchema), asy
 // ============================================================
 
 // GET /api/visibility/ga4/config — GA4 measurement ID + Cloudflare Web Analytics token
-visibilityRouter.get('/ga4/config', async (c) => {
-  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
-  const db = getDb(c.env.DB);
-  const [ga, cf] = await Promise.all([
-    db.select().from(appSettings).where(eq(appSettings.key, 'ga4_measurement_id')).get(),
-    db.select().from(appSettings).where(eq(appSettings.key, 'cf_wa_token')).get(),
-  ]);
-  return c.json({ success: true, measurementId: ga?.value || '', cfWaToken: cf?.value || '' });
-});
+
 
 // POST /api/visibility/ga4/config
 visibilityRouter.post('/ga4/config', zValidator('json', z.object({ measurementId: z.string().optional(), cfWaToken: z.string().optional() })), async (c) => {
@@ -165,13 +157,7 @@ visibilityRouter.post('/ga4/config', zValidator('json', z.object({ measurementId
 });
 
 // POST /api/visibility/ga4/events — public event capture (rate-limited by IP via rateLimit table)
-visibilityRouter.post('/ga4/events', zValidator('json', z.object({ eventName: z.string(), page: z.string().optional(), source: z.string().optional(), medium: z.string().optional() })), async (c) => {
-  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
-  const db = getDb(c.env.DB);
-  const body = c.req.valid('json');
-  await db.insert(gaEvents).values({ id: uid(), eventName: body.eventName, page: body.page, source: body.source, medium: body.medium, createdAt: now() });
-  return c.json({ success: true });
-});
+
 
 // GET /api/visibility/ga4/events — dashboard (last 30 days)
 visibilityRouter.get('/ga4/events', async (c) => {
@@ -387,13 +373,7 @@ visibilityRouter.get('/search-console/queries', async (c) => {
 // ============================================================
 
 // POST /api/visibility/utm — public capture from the site
-visibilityRouter.post('/utm', zValidator('json', z.object({ source: z.string().optional(), medium: z.string().optional(), campaign: z.string().optional() })), async (c) => {
-  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
-  const db = getDb(c.env.DB);
-  const body = c.req.valid('json');
-  await db.insert(utmEvents).values({ id: uid(), ...body, landedAt: now() });
-  return c.json({ success: true });
-});
+
 
 // GET /api/visibility/attribution — channel ROI from leadSource + payments
 visibilityRouter.get('/attribution', async (c) => {
@@ -471,12 +451,49 @@ visibilityRouter.post('/reports/schedules/:id/run', async (c) => {
   if (!s) return c.json({ error: 'Schedule not found' }, 404);
   await db.update(reportSchedules).set({ lastRunAt: now() }).where(eq(reportSchedules.id, id));
   await auditEvent(c as any, { action: 'REPORT_RUN', entityName: 'report_schedule', entityId: s.name, afterState: { type: s.reportType, period: s.period } });
-  return c.json({ success: true, message: `Report "${s.name}" queued — delivery requires SMTP config (TODO)` });
+  // Honest status: the report is SAVED but email delivery is not wired until
+  // SMTP env (LISTMONK_FROM_EMAIL etc.) is configured — never claim "sent".
+  return c.json({ success: true, status: 'saved_no_delivery', message: `Report "${s.name}" saved. Email delivery requires SMTP config — connect it in PENDING-CONFIGS #4.` });
 });
 
 // ============================================================
 // PUBLIC: /sitemap.xml + /robots.txt (served from the API)
 // ============================================================
+// Public visibility endpoints (no auth): UTM capture + GA4 event capture +
+// GA4 config read. Rate-limited at the index.ts mount (before RBAC), so
+// anonymous visitors can fire attribution events while the rest of the
+// Visibility Hub stays manager+.
+export const visibilityPublicRouter = new Hono<{ Bindings: { DB: D1Database } }>();
+
+// GET /api/visibility/ga4/config — GA4 measurement ID + Cloudflare Web Analytics token
+visibilityPublicRouter.get('/ga4/config', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const [ga, cf] = await Promise.all([
+    db.select().from(appSettings).where(eq(appSettings.key, 'ga4_measurement_id')).get(),
+    db.select().from(appSettings).where(eq(appSettings.key, 'cf_wa_token')).get(),
+  ]);
+  return c.json({ success: true, measurementId: ga?.value || '', cfWaToken: cf?.value || '' });
+});
+
+// POST /api/visibility/ga4/events — public event capture (rate-limited by IP via rateLimit table)
+visibilityPublicRouter.post('/ga4/events', zValidator('json', z.object({ eventName: z.string(), page: z.string().optional(), source: z.string().optional(), medium: z.string().optional() })), async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const body = c.req.valid('json');
+  await db.insert(gaEvents).values({ id: uid(), eventName: body.eventName, page: body.page, source: body.source, medium: body.medium, createdAt: now() });
+  return c.json({ success: true });
+});
+
+// POST /api/visibility/utm — public capture from the site
+visibilityPublicRouter.post('/utm', zValidator('json', z.object({ source: z.string().optional(), medium: z.string().optional(), campaign: z.string().optional() })), async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const body = c.req.valid('json');
+  await db.insert(utmEvents).values({ id: uid(), ...body, landedAt: now() });
+  return c.json({ success: true });
+});
+
 export const publicSeoRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
 publicSeoRouter.get('/sitemap.xml', async (c) => {
@@ -484,12 +501,13 @@ publicSeoRouter.get('/sitemap.xml', async (c) => {
   const db = getDb(c.env.DB);
   const saved = await db.select().from(seoPages).all();
   const savedMap = new Map(saved.map(p => [p.route, p]));
-  const base = 'https://opusoverseas.in';
+  const base = 'https://opusoverseas.com';
   const urls = STATIC_ROUTES.map(r => {
     const s = savedMap.get(r.route);
     return `  <url><loc>${base}${r.route === '/' ? '' : r.route}</loc><lastmod>${s?.updatedAt ? new Date(s.updatedAt * 1000).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)}</lastmod><changefreq>weekly</changefreq><priority>${r.route === '/' ? '1.0' : '0.8'}</priority></url>`;
   }).join('\n');
   c.header('Content-Type', 'application/xml');
+  c.header('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400, stale-if-error=604800');
   return c.body(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
 });
 
@@ -499,6 +517,7 @@ publicSeoRouter.get('/api/visibility/public/meta', async (c) => {
   const db = getDb(c.env.DB);
   const route = c.req.query('route') || '/';
   const row = await db.select().from(seoPages).where(eq(seoPages.route, route)).get();
+  c.header('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=7200, stale-if-error=86400');
   return c.json({
     success: true,
     meta: row ? { title: row.title, metaDescription: row.metaDescription, ogTitle: row.ogTitle, ogImage: row.ogImage, schemaJson: row.schemaJson } : null,
@@ -506,39 +525,64 @@ publicSeoRouter.get('/api/visibility/public/meta', async (c) => {
 });
 
 publicSeoRouter.get('/robots.txt', (c) => {
-  // Gold standard: allow search + AI search crawlers; block training crawlers
+  // Gold standard: allow search + AI search crawlers on public pages; block training crawlers and private portals
   c.header('Content-Type', 'text/plain');
+  c.header('Cache-Control', 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=86400, stale-if-error=604800');
   return c.body(`# Opus Overseas — robots.txt (RFC 9309)
-# Allow search engines + AI search crawlers (visibility strategy)
 User-agent: *
+Disallow: /api/
+Disallow: /admin/
+Disallow: /portal/
+Disallow: /dashboard/
+Disallow: /workspace/
+Disallow: /reset
+Disallow: /verify
 Allow: /
 
-# AI search / answer engines — ALLOWED (we want citations)
+# AI search / answer engines — ALLOWED for citations
 User-agent: GPTBot
+Disallow: /api/
+Disallow: /admin/
+Disallow: /portal/
 Allow: /
 
 User-agent: OAI-SearchBot
+Disallow: /api/
+Disallow: /admin/
+Disallow: /portal/
 Allow: /
 
 User-agent: ChatGPT-User
+Disallow: /api/
+Disallow: /admin/
+Disallow: /portal/
 Allow: /
 
 User-agent: ClaudeBot
+Disallow: /api/
+Disallow: /admin/
+Disallow: /portal/
 Allow: /
 
 User-agent: PerplexityBot
+Disallow: /api/
+Disallow: /admin/
+Disallow: /portal/
 Allow: /
 
 User-agent: Google-Extended
+Disallow: /api/
+Disallow: /admin/
+Disallow: /portal/
 Allow: /
 
-# Training crawlers — BLOCKED (protect proprietary content)
+# Scrapers & Training crawlers — BLOCKED
 User-agent: CCBot
 Disallow: /
 
 User-agent: Bytespider
 Disallow: /
 
-Sitemap: https://opusoverseas.in/sitemap.xml
+Sitemap: https://opusoverseas.com/sitemap.xml
 `);
 });
