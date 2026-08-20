@@ -13,11 +13,13 @@ workers_dev = true
 mode = "smart"
 
 # ============================================================
-# Cloudflare Workers & Agent Tracing (100% Sampling, Metadata Only)
+# Cloudflare Workers Observability
 # ============================================================
-[observability.traces]
+[observability]
 enabled = true
-head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
 
 # ============================================================
 # Wave 1 — Uptime Kuma push heartbeat producer (cron).
