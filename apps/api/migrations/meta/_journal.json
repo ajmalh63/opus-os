@@ -547,6 +547,13 @@
       "when": 1787059191106,
       "tag": "0077_concerned_earthquake",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "6",
+      "when": 1787238625534,
+      "tag": "0078_faulty_the_twelve",
+      "breakpoints": true
     }
   ]
 }

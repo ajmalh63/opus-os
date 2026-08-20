@@ -1483,3 +1483,52 @@ export const runtimeLogs = sqliteTable('runtime_logs', {
   detail: text('detail'),
   createdAt: integer('created_at').notNull()
 });
+
+// ==========================================
+// 65. ENTERPRISE API KEYS & ACCESS TOKENS (OWASP APTS-AR-012)
+// ==========================================
+export const apiKeys = sqliteTable('api_keys', {
+  id: text('id').primaryKey(), // ak_...
+  name: text('name').notNull(), // 'Zapier Integration', 'Mobile App', etc.
+  keyPrefix: text('key_prefix').notNull(), // 'opus_live_sk_8f7b'
+  keyHash: text('key_hash').notNull().unique(), // SHA-256 hash of plaintext key
+  scopes: text('scopes').notNull(), // JSON array of granted scopes
+  rateLimitPerMinute: integer('rate_limit_per_minute').notNull().default(120),
+  lastUsedAt: integer('last_used_at'),
+  expiresAt: integer('expires_at'), // optional timestamp
+  isRevoked: integer('is_revoked', { mode: 'boolean' }).notNull().default(false),
+  createdBy: text('created_by').notNull(),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 66. OUTBOUND WEBHOOK SUBSCRIPTIONS (HMAC-SHA256)
+// ==========================================
+export const outboundWebhooks = sqliteTable('outbound_webhooks', {
+  id: text('id').primaryKey(), // wh_...
+  name: text('name').notNull(),
+  url: text('url').notNull(),
+  secret: text('secret').notNull(), // whsec_... for HMAC signing
+  events: text('events').notNull(), // JSON array of event names or ['*']
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  failureCount: integer('failure_count').notNull().default(0),
+  lastDeliveryAt: integer('last_delivery_at'),
+  lastDeliveryStatus: integer('last_delivery_status'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull()
+});
+
+// ==========================================
+// 67. IDEMPOTENCY KEYS (Stripe-Grade Replay Defense)
+// ==========================================
+export const idempotencyKeys = sqliteTable('idempotency_keys', {
+  key: text('key').primaryKey(), // client-sent Idempotency-Key
+  apiKeyId: text('api_key_id'),
+  requestPath: text('request_path').notNull(),
+  requestHash: text('request_hash').notNull(), // SHA-256 of request payload
+  responseStatus: integer('response_status').notNull(),
+  responseBody: text('response_body').notNull(),
+  createdAt: integer('created_at').notNull(),
+  expiresAt: integer('expires_at').notNull() // 24-hour TTL
+});

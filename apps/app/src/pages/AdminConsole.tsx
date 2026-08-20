@@ -13,6 +13,7 @@ import AlertsVisibility from '../components/AlertsVisibility';
 import GrowthMetricsTab from '../components/GrowthMetricsTab';
 import PerformanceTab from '../components/PerformanceTab';
 import AiGovernanceTab from '../components/admin/AiGovernanceTab';
+import DeveloperApiSettingsTab from '../components/admin/DeveloperApiSettingsTab';
 
 // Real session-driven auth — the live cookie, never a forged token.
 
@@ -66,8 +67,8 @@ export default function AdminConsole() {
   const queryClient = useQueryClient();
   const { me } = useSession();
   const isOwner = me?.role === 'super_admin';
-  const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as 'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | 'performance' | 'growthmetrics' | 'ai' | null;
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | 'performance' | 'growthmetrics' | 'ai'>(initialTab && ['directory','onboard','audit','roles','growth','funnel','compliance','campaigns','partners','infra','marketing','alerts','performance','growthmetrics','ai'].includes(initialTab) ? initialTab : 'directory');
+  const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as 'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | 'performance' | 'growthmetrics' | 'ai' | 'developer' | null;
+  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | 'performance' | 'growthmetrics' | 'ai' | 'developer'>(initialTab && ['directory','onboard','audit','roles','growth','funnel','compliance','campaigns','partners','infra','marketing','alerts','performance','growthmetrics','ai','developer'].includes(initialTab) ? initialTab : 'directory');
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
@@ -474,6 +475,16 @@ export default function AdminConsole() {
                 AI & Models
               </button>
             )}
+            {isOwner && (
+              <button
+                onClick={() => setActiveTab('developer')}
+                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
+                  activeTab === 'developer' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
+                }`}
+              >
+                Developer & REST API
+              </button>
+            )}
           </div>
         </div>
 
@@ -799,6 +810,7 @@ export default function AdminConsole() {
           )}
 
           {activeTab === 'ai' && <AiGovernanceTab />}
+          {activeTab === 'developer' && <DeveloperApiSettingsTab />}
         </div>
       </main>
 

@@ -62,6 +62,7 @@ import { indexingRouter } from './routes/indexing.js';
 import { adminAiRouter } from './routes/adminAi.js';
 import { staffAiRouter } from './routes/staffAi.js';
 import { chatwootContextRouter } from './routes/chatwootContext.js';
+import { v1ApiRouter } from './routes/v1/index.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
@@ -405,6 +406,13 @@ app.route('/api/cal', calRouter);
 app.use('/api/integrations', rbacMiddleware(['super_admin', 'manager'], true));
 app.use('/api/integrations/*', rbacMiddleware(['super_admin', 'manager'], true));
 app.route('/api/integrations', integrationsRouter);
+
+// ============================================================================
+// ENTERPRISE DEVELOPER & REMOTE REST API PLATFORM (v1)
+// Authenticated via Scoped API Keys (Authorization: Bearer opus_live_sk_...)
+// Includes OpenAPI 3.1 (/api/v1/openapi.json) & Scalar Interactive Docs (/api/v1/docs)
+// ============================================================================
+app.route('/api/v1', v1ApiRouter);
 
 (app as any).scheduled = async (controller: any, env: HeartbeatEnvLike, _ctx: unknown) => {
   const cron = controller?.cron || '';
