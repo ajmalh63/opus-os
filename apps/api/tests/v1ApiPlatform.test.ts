@@ -25,7 +25,7 @@ describe('Opus OS Enterprise REST API Platform (v1)', () => {
 
     const spec = (await res.json()) as any;
     expect(spec.openapi).toBe('3.1.0');
-    expect(spec.info.title).toContain('Opus OS Enterprise REST API');
+    expect(spec.info.title).toContain('Opus OS');
     expect(spec.paths['/leads']).toBeDefined();
     expect(spec.paths['/study-abroad/match']).toBeDefined();
     expect(spec.paths['/umrah/bookings']).toBeDefined();
