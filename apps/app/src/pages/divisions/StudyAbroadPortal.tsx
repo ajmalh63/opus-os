@@ -517,31 +517,38 @@ export default function StudyAbroadPortal() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Header & Toggle bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/[0.08] pb-4">
+    <div className="space-y-6 font-sans">
+      {/* Top Header & Toggle bar with elevated glass depth */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-5">
         <div>
-          <h1 className="font-display text-2xl font-bold text-brand-navy">Study Abroad Counseling Desk</h1>
-          <p className="text-xs text-brand-navy/40 font-medium">Coordinate admissions checklists, university shortlists, and counseling flows.</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Admissions & Counseling Desk</span>
+          </div>
+          <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Study Abroad Operations</h1>
+          <p className="text-xs text-brand-textLight mt-0.5">Coordinate 35+ country applications, live eligibility matching, and automated SOP synthesis.</p>
         </div>
-        <div className="flex items-center gap-2 bg-brand-navy/[0.05] p-1.5 rounded-xl border border-brand-navy/10 text-xs font-bold text-brand-navy/60">
+        <div className="flex items-center gap-1.5 bg-white/80 p-1.5 rounded-2xl border border-brand-navy/15 text-xs font-bold text-brand-navy shadow-xs backdrop-blur-md">
           <button
             onClick={() => setViewMode('profiles')}
-            className={`px-4 py-2 rounded-lg cursor-pointer transition-all ${viewMode === 'profiles' ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'hover:text-brand-navy'}`}
+            className={`px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-1.5 ${viewMode === 'profiles' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
           >
-            🗂️ Student Profiles
+            <span>🗂️</span>
+            <span>Student Profiles</span>
           </button>
           <button
             onClick={() => setViewMode('sop')}
-            className={`px-4 py-2 rounded-lg cursor-pointer transition-all ${viewMode === 'sop' ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'hover:text-brand-navy'}`}
+            className={`px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-1.5 ${viewMode === 'sop' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
           >
-            ✨ AI SOP Studio
+            <span>✨</span>
+            <span>AI SOP Studio</span>
           </button>
           <button
             onClick={() => setViewMode('kanban')}
-            className={`px-4 py-2 rounded-lg cursor-pointer transition-all ${viewMode === 'kanban' ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'hover:text-brand-navy'}`}
+            className={`px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-1.5 ${viewMode === 'kanban' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
           >
-            📊 Kanban Pipeline
+            <span>📊</span>
+            <span>Kanban Pipeline</span>
           </button>
         </div>
       </div>

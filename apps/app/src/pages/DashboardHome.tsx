@@ -6,7 +6,7 @@ import { useSession } from '../lib/session';
 import { useRevealRoot, useCountUp } from '../lib/reveal';
 import { useStaffAlerts } from '../lib/useStaffAlerts';
 import { useTaskNotifications } from '../lib/useTaskNotifications';
-import { Panel, PanelHead, KpiTile, WorkButton, EmptyState } from '../components/WorkChrome';
+import { Panel, PanelHead, KpiTile, EmptyState } from '../components/WorkChrome';
 
 
 interface Funnel {
@@ -176,93 +176,114 @@ export default function DashboardHome() {
 
   return (
     <div ref={rootReveal as any} className="min-h-full space-y-8">
-      {/* Hero — command deck opener, same split layout as the public hero */}
-      <section className="reveal relative overflow-hidden rounded-[2rem] border border-brand-navy/10 bg-white/70 p-7 shadow-[0_24px_60px_-25px_rgba(10,45,80,0.15)] backdrop-blur-xl md:p-9">
-        <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-brand-gold/15 blur-3xl" aria-hidden="true" />
-        <div className="relative z-10 flex flex-wrap items-end justify-between gap-5">
-          <div className="max-w-xl">
+      {/* Hero — command deck opener with dark luxury glass styling */}
+      <section className="reveal relative overflow-hidden rounded-[2.2rem] border border-brand-navy/15 bg-gradient-to-br from-[#09223e] via-[#06182c] to-[#040f1d] p-8 text-white shadow-[0_25px_60px_-20px_rgba(6,24,44,0.35)] backdrop-blur-2xl md:p-10">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-96 w-96 rounded-full bg-brand-gold/20 blur-[100px] animate-pulse" aria-hidden="true" />
+        <div className="pointer-events-none absolute -left-20 -bottom-24 h-80 w-80 rounded-full bg-brand-blue/20 blur-[100px]" aria-hidden="true" />
+        
+        <div className="relative z-10 flex flex-wrap items-end justify-between gap-6">
+          <div className="max-w-2xl">
             <div className="flex items-center gap-2.5">
-              <span className="gold-dot" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">
-                {me?.role?.replace('_', ' ') || 'Staff'} · Command Center
+              <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_10px_rgba(215,160,25,0.9)] animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-gold">
+                {me?.role?.replace('_', ' ') || 'Super Admin'} · Executive Command Deck
               </span>
             </div>
-            <h1 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-brand-navy md:text-4xl">
-              Good to see you, {me?.name?.split(' ')[0] || 'there'}
+            <h1 className="mt-3.5 font-display text-3xl font-black tracking-tight text-white md:text-4xl">
+              Welcome back, {me?.name?.split(' ')[0] || 'Ajmal'}
             </h1>
+            <p className="mt-2 text-xs leading-relaxed text-slate-300 max-w-xl">
+              Real-time telemetry across Study Abroad, Umrah, Attestation, and Visa operations. All systems operational.
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2.5">
-            <WorkButton onClick={() => setEditMode(!editMode)}>
-              ⚙️ Customize Layout
-            </WorkButton>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setEditMode(!editMode)}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md transition-all hover:bg-white/20 hover:border-brand-gold/60 active:scale-95 shadow-sm"
+            >
+              ⚙️ Layout
+            </button>
             {actions.slice(0, 3).map((a, i) => (
               <button
                 key={a.to + a.label}
                 onClick={() => setLocation(a.to)}
                 style={{ transitionDelay: `${i * 60}ms` }}
-                className="group inline-flex cursor-pointer items-center gap-2.5 rounded-full bg-brand-gold px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-navy shadow-[0_10px_24px_-10px_rgba(215,160,25,0.55)] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-brand-gold/90 active:scale-[0.97]"
+                className="group inline-flex cursor-pointer items-center gap-2.5 rounded-full bg-gradient-to-r from-brand-gold to-amber-500 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-brand-navy shadow-[0_12px_28px_-8px_rgba(215,160,25,0.6)] transition-all duration-300 hover:brightness-110 hover:shadow-[0_15px_32px_-6px_rgba(215,160,25,0.75)] active:scale-95"
               >
-                {a.label}
+                <span>{a.label}</span>
+                <span className="text-sm transition-transform group-hover:translate-x-0.5">→</span>
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Live Activity — instant sales/requests feed */}
-      <section className="reveal rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_16px_40px_-22px_rgba(10,45,80,0.16)]">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="gold-dot" />
-            <h3 className="font-display text-sm font-bold text-brand-navy">Live Activity</h3>
-            {newCount > 0 && <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-bold text-white animate-pulse">{newCount} new</span>}
+      {/* Live Activity Stream — real-time sales, leads & requests */}
+      <section className="reveal rounded-2xl border border-brand-navy/10 bg-white/95 p-6 shadow-[0_20px_50px_-20px_rgba(10,45,80,0.10)] backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-5 border-b border-brand-navy/10 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
+            <h3 className="font-display text-sm font-extrabold text-brand-navy tracking-tight">Live Activity Stream</h3>
+            {newCount > 0 && (
+              <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-black text-white shadow-[0_0_8px_rgba(244,63,94,0.6)] animate-pulse">
+                {newCount} new
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            {newCount > 0 && <button onClick={markAllSeen} className="text-[10px] font-bold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer">✓ Mark all seen</button>}
+          <div className="flex items-center gap-3">
+            {newCount > 0 && (
+              <button onClick={markAllSeen} className="text-[10px] font-extrabold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer">
+                ✓ Mark all seen
+              </button>
+            )}
             {alerts.some(a => a.status === 'seen') && (
-              <button onClick={() => { if (confirm('Clear all completed notifications?')) clearSeen(); }} className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 hover:text-rose-500 cursor-pointer">🗑 Clear done</button>
+              <button onClick={() => { if (confirm('Clear all completed notifications?')) clearSeen(); }} className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight hover:text-rose-500 cursor-pointer transition-colors">
+                🗑 Clear done
+              </button>
             )}
           </div>
         </div>
         {alerts.length === 0 ? (
-          <p className="py-6 text-center text-xs text-brand-navy/40 italic">No client activity yet — sales and requests will appear here instantly.</p>
+          <div className="py-8 text-center">
+            <p className="text-xs font-semibold text-brand-textLight italic">No active alerts — real-time sales and client requests will stream here instantly.</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {alerts.slice(0, 9).map((a) => {
               const sev = a.severity || 'info';
               const sevStyle: Record<string, string> = {
-                urgent: 'border-rose-300 bg-rose-50/80',
-                warning: 'border-amber-300 bg-amber-50/70',
-                info: 'border-brand-navy/10 bg-brand-navy/[0.03]',
+                urgent: 'border-rose-300 bg-rose-50/90 shadow-sm',
+                warning: 'border-amber-300 bg-amber-50/80 shadow-sm',
+                info: 'border-brand-navy/10 bg-brand-navy/[0.02] hover:bg-brand-navy/[0.04]',
               };
               const sevDot: Record<string, string> = {
-                urgent: 'bg-rose-500',
-                warning: 'bg-amber-400',
-                info: 'bg-brand-gold',
+                urgent: 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.8)]',
+                warning: 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]',
+                info: 'bg-brand-gold shadow-[0_0_6px_rgba(215,160,25,0.8)]',
               };
               const sevBadge: Record<string, string> = {
-                urgent: 'bg-rose-500/15 text-rose-600',
-                warning: 'bg-amber-500/15 text-amber-700',
-                info: 'bg-brand-navy/[0.06] text-brand-navy/50',
+                urgent: 'bg-rose-500/15 text-rose-700 border border-rose-300',
+                warning: 'bg-amber-500/15 text-amber-800 border border-amber-300',
+                info: 'bg-brand-navy/[0.06] text-brand-navy/60 border border-brand-navy/10',
               };
               return (
-              <div key={a.id} onClick={() => openAlert(a)} className={`rounded-xl border p-3.5 transition-all cursor-pointer hover:shadow-md hover:border-brand-gold/50 ${a.status === 'new' ? `${sevStyle[sev]} animate-in fade-in slide-in-from-top-2 duration-300` : sevStyle[sev]}`}>
+              <div key={a.id} onClick={() => openAlert(a)} className={`group rounded-xl border p-4 transition-all duration-200 cursor-pointer hover:shadow-md hover:border-brand-gold/60 ${a.status === 'new' ? `${sevStyle[sev]} ring-1 ring-brand-gold/30 animate-in fade-in slide-in-from-top-2 duration-300` : sevStyle[sev]}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold text-brand-navy truncate">{a.title}</span>
+                  <span className="text-xs font-bold text-brand-navy truncate tracking-tight">{a.title}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {sev !== 'info' && <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${sevBadge[sev]}`}>{sev}</span>}
+                    {sev !== 'info' && <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${sevBadge[sev]}`}>{sev}</span>}
                     {a.status === 'new' && <span className={`shrink-0 h-2 w-2 rounded-full animate-pulse ${sevDot[sev]}`} />}
                   </div>
                 </div>
-                {a.body && <p className="text-[10px] text-brand-navy/50 mt-1 truncate">{a.body}</p>}
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-[9px] uppercase tracking-wider text-brand-gold font-bold">{a.division} · {a.type}</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] text-brand-navy/40">{new Date(a.createdAt * 1000).toLocaleTimeString()}</span>
+                {a.body && <p className="text-[11px] text-brand-textLight mt-1.5 line-clamp-2 leading-relaxed">{a.body}</p>}
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-brand-navy/5">
+                  <span className="text-[9px] uppercase tracking-wider text-brand-gold font-extrabold">{a.division} · {a.type}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-brand-textLight">{new Date(a.createdAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); dismiss(a.id); }}
-                      title="Dismiss this notification"
-                      className="text-brand-navy/30 hover:text-rose-500 cursor-pointer text-[10px]"
+                      title="Dismiss notification"
+                      className="text-brand-navy/30 hover:text-rose-500 cursor-pointer text-xs transition-colors"
                     >
                       ✕
                     </button>
@@ -327,19 +348,24 @@ export default function DashboardHome() {
 
       {/* Stale clients — follow-up automation */}
       {staleData && staleData.stale.length > 0 && (
-        <section className="reveal rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-display font-bold text-brand-navy text-sm">🕰️ Clients needing follow-up ({staleData.stale.length})</h3>
-            <span className="text-[10px] text-brand-navy/40">no contact in 3+ days</span>
+        <section className="reveal rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/90 to-amber-100/30 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3 border-b border-amber-200/60 pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🕰️</span>
+              <h3 className="font-display font-extrabold text-brand-navy text-sm tracking-tight">Clients Needing Attention ({staleData.stale.length})</h3>
+            </div>
+            <span className="text-[11px] font-semibold text-amber-900/60">No contact in 3+ days</span>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {staleData.stale.slice(0, 8).map((c: any) => (
               <button
                 key={c.engagementId}
                 onClick={() => navigate(`/clients/${c.clientId}`)}
-                className="rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-brand-navy hover:border-brand-gold/60 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-300/80 bg-white/90 px-3.5 py-2 text-xs font-bold text-brand-navy shadow-xs hover:border-brand-gold hover:shadow-md transition-all cursor-pointer active:scale-95"
               >
-                {c.clientName} · {c.division.replace('-', ' ')} · <span className="text-amber-700">{c.daysSinceContact}d</span>
+                <span>{c.clientName}</span>
+                <span className="text-[10px] font-extrabold uppercase text-brand-gold tracking-wider">{c.division.replace('-', ' ')}</span>
+                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-black text-amber-800">{c.daysSinceContact}d</span>
               </button>
             ))}
           </div>
@@ -348,15 +374,15 @@ export default function DashboardHome() {
 
       {/* New-task notification toast */}
       {taskToast && (
-        <div className={`fixed top-4 right-4 z-[100] max-w-sm rounded-xl border p-4 shadow-lg animate-in slide-in-from-top-2 duration-300 ${taskToast.urgent ? 'border-rose-300 bg-rose-50' : 'border-brand-gold/40 bg-white'}`}>
+        <div className={`fixed top-5 right-5 z-[100] max-w-sm rounded-2xl border p-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-3 duration-300 ${taskToast.urgent ? 'border-rose-400 bg-rose-50/95 ring-2 ring-rose-400/40' : 'border-brand-gold/60 bg-white/95 ring-2 ring-brand-gold/30'}`}>
           <div className="flex items-start gap-3">
-            <span className={`text-lg ${taskToast.urgent ? 'text-rose-500' : 'text-brand-gold'}`}>{taskToast.urgent ? '🔔⚡' : '🔔'}</span>
+            <span className="text-2xl">{taskToast.urgent ? '🚨' : '🔔'}</span>
             <div className="flex-1">
-              <div className={`text-[10px] font-bold uppercase tracking-widest ${taskToast.urgent ? 'text-rose-600' : 'text-brand-gold'}`}>{taskToast.urgent ? 'URGENT — New task' : 'New task'}</div>
-              <div className="text-xs font-semibold text-brand-navy mt-0.5">{taskToast.title}</div>
-              <div className="text-[9px] text-brand-navy/40 mt-0.5">See it in My Assigned Open Tasks below.</div>
+              <div className={`text-[10px] font-black uppercase tracking-widest ${taskToast.urgent ? 'text-rose-600' : 'text-brand-gold'}`}>{taskToast.urgent ? 'URGENT TASK DISPATCH' : 'NEW TASK ASSIGNED'}</div>
+              <div className="text-xs font-bold text-brand-navy mt-0.5">{taskToast.title}</div>
+              <div className="text-[10px] text-brand-textLight mt-1">Check off in My Assigned Tasks feed.</div>
             </div>
-            <button onClick={dismissTaskToast} className="text-brand-navy/40 hover:text-brand-navy cursor-pointer">✕</button>
+            <button onClick={dismissTaskToast} className="text-brand-navy/40 hover:text-brand-navy cursor-pointer text-sm">✕</button>
           </div>
         </div>
       )}
@@ -368,28 +394,32 @@ export default function DashboardHome() {
           switch (w.key) {
             case 'tasks':
               return (
-                <Panel key={w.key} className={`${spanClass} reveal-widget p-6 hover:border-brand-gold/40`}>
-                  <PanelHead title={`📋 My Assigned Open Tasks (${openTasksList.length})`} caption="Check off to complete" />
-                  <div className="mt-2 max-h-56 space-y-1.5 overflow-y-auto pr-1">
+                <Panel key={w.key} className={`${spanClass} reveal-widget p-6 hover:border-brand-gold/60 transition-all`}>
+                  <PanelHead 
+                    title={`📋 Priority Action Queue (${openTasksList.length})`} 
+                    caption="Check off to mark as completed in real-time" 
+                  />
+                  <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1 scrollbar-thin">
                     {openTasksList.map(t => {
                       const prio = t.priority || 'medium';
                       const prioStyle: Record<string, string> = {
-                        urgent: 'border-l-4 border-rose-500 bg-rose-50/80',
-                        high: 'border-l-4 border-amber-400 bg-amber-50/60',
-                        medium: 'border-l-4 border-blue-400 bg-blue-50/40',
-                        low: 'border-l-4 border-brand-navy/20 bg-brand-navy/[0.04]',
+                        urgent: 'border-l-4 border-rose-500 bg-rose-50/90 hover:bg-rose-50 shadow-xs',
+                        high: 'border-l-4 border-amber-500 bg-amber-50/70 hover:bg-amber-50 shadow-xs',
+                        medium: 'border-l-4 border-blue-500 bg-blue-50/50 hover:bg-blue-50 shadow-xs',
+                        low: 'border-l-4 border-brand-navy/20 bg-brand-navy/[0.02] hover:bg-brand-navy/[0.04]',
                       };
                       const prioBadge: Record<string, string> = {
-                        urgent: 'bg-rose-500/15 text-rose-600',
-                        high: 'bg-amber-500/15 text-amber-700',
-                        medium: 'bg-blue-500/15 text-blue-700',
-                        low: 'bg-brand-navy/[0.06] text-brand-navy/50',
+                        urgent: 'bg-rose-500/15 text-rose-700 font-black border border-rose-300',
+                        high: 'bg-amber-500/15 text-amber-800 font-extrabold border border-amber-300',
+                        medium: 'bg-blue-500/15 text-blue-800 font-bold border border-blue-200',
+                        low: 'bg-brand-navy/[0.06] text-brand-navy/60 font-semibold border border-brand-navy/10',
                       };
                       return (
-                      <div key={t.id} onClick={() => openTask(t)} className={`flex items-center gap-2.5 rounded-lg p-2.5 text-xs transition-colors hover:brightness-95 cursor-pointer ${prioStyle[prio] || prioStyle.medium}`}>
+                      <div key={t.id} onClick={() => openTask(t)} className={`flex items-center gap-3 rounded-xl p-3 text-xs transition-all duration-200 hover:translate-x-0.5 cursor-pointer ${prioStyle[prio] || prioStyle.medium}`}>
                         <input
                           type="checkbox"
-                          className="h-4 w-4 cursor-pointer rounded accent-brand-gold"
+                          className="h-4.5 w-4.5 cursor-pointer rounded-md accent-brand-gold"
+                          onClick={(e) => e.stopPropagation()}
                           onChange={async () => {
                             await fetch(`/api/kanban/board/tasks/${t.id}`, {
                               method: 'PATCH',
@@ -399,13 +429,17 @@ export default function DashboardHome() {
                             queryClient.invalidateQueries({ queryKey: ['dashTasksFeed'] });
                           }}
                         />
-                        <span className="font-medium text-brand-navy/80 flex-1">{t.title}</span>
-                        <span className={`shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${prioBadge[prio] || prioBadge.medium}`}>{prio}</span>
+                        <span className="font-bold text-brand-navy flex-1 tracking-tight">{t.title}</span>
+                        <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider ${prioBadge[prio] || prioBadge.medium}`}>{prio}</span>
                       </div>
                       );
                     })}
                     {openTasksList.length === 0 && (
-                      <p className="py-6 text-center text-brand-navy/30 italic">No pending tasks for today.</p>
+                      <div className="py-8 text-center">
+                        <span className="text-2xl">🎉</span>
+                        <p className="text-xs font-bold text-brand-navy mt-1.5">Zero pending tasks</p>
+                        <p className="text-[11px] text-brand-textLight">You are all caught up for today!</p>
+                      </div>
                     )}
                   </div>
                 </Panel>

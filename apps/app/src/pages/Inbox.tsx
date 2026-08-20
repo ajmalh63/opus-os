@@ -215,59 +215,99 @@ return (
         ) : (
         <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Conversation list */}
-          <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-3">
-            <div className="mb-3 px-2 text-[10px] font-bold uppercase tracking-wider text-brand-gold">Conversations</div>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="🔍 Search conversations…"
-              className="w-full rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-xs text-brand-navy outline-none focus:border-brand-gold mb-2"
-            />
-            {isLoading && <p className="p-6 text-center text-xs text-brand-navy/40">Loading…</p>}
+          <div className="reveal rounded-2xl border border-brand-navy/10 bg-white/95 p-4 shadow-[0_20px_50px_-20px_rgba(10,45,80,0.10)] backdrop-blur-sm flex flex-col">
+            <div className="mb-3 flex items-center justify-between px-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
+                Active Inbound Streams
+              </span>
+              <span className="text-[10px] font-bold text-brand-textLight">{(data?.conversations || []).length} chats</span>
+            </div>
+            <div className="relative mb-3">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search conversations, clients, phones…"
+                className="w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-xs text-brand-navy placeholder:text-brand-navy/35 outline-none transition-all focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 font-sans shadow-xs"
+              />
+            </div>
+            {isLoading && <p className="p-8 text-center text-xs text-brand-textLight">Loading conversations…</p>}
             {!isLoading && (!data?.conversations || data.conversations.length === 0) && (
-              <p className="p-6 text-center text-xs text-brand-navy/40">No conversations yet. WhatsApp/web messages will appear here.</p>
+              <div className="p-8 text-center">
+                <p className="text-xs font-semibold text-brand-textLight">No conversations yet.</p>
+                <p className="text-[10px] text-brand-textLight mt-1">Inbound WhatsApp, Email, or Web chats will appear here live.</p>
+              </div>
             )}
-            <div className="space-y-2">
+            <div className="space-y-2 overflow-y-auto max-h-[520px] pr-1 scrollbar-thin">
               {(data?.conversations || []).filter((c: any) => {
                 if (!search.trim()) return true;
                 const q = search.toLowerCase();
-                return (c.clientName || '').toLowerCase().includes(q) || (c.phone || '').includes(q) || (c.lastMessage || '').toLowerCase().includes(q);
-              }).map((c) => (
+                return (c.contactName || '').toLowerCase().includes(q) || (c.contactKey || '').includes(q) || (c.lastMessage || '').toLowerCase().includes(q);
+              }).map((c) => {
+                const isSelected = selected === c.id;
+                const isWa = c.channel?.toLowerCase().includes('wa') || c.channel?.toLowerCase().includes('whatsapp');
+                return (
                 <button
                   key={c.id}
                   onClick={() => setSelected(c.id)}
-                  className={`w-full rounded-xl p-3 text-left transition-all ${selected === c.id ? 'bg-brand-gold/15 border border-brand-gold/40' : 'bg-brand-navy/[0.04] border border-transparent hover:bg-brand-navy/[0.06]'}`}
+                  className={`group w-full rounded-xl p-3.5 text-left transition-all duration-200 cursor-pointer ${
+                    isSelected 
+                      ? 'bg-gradient-to-r from-brand-gold/20 via-brand-gold/10 to-transparent border border-brand-gold/60 shadow-xs' 
+                      : 'bg-brand-navy/[0.02] border border-brand-navy/10 hover:bg-brand-navy/[0.05] hover:border-brand-navy/20'
+                  }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="truncate text-sm font-semibold">{c.contactName || c.contactKey}</span>
-                    {c.unread > 0 && <span className="h-2.5 w-2.5 rounded-full bg-brand-gold" />}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-black ${isWa ? 'bg-emerald-500/20 text-emerald-700' : 'bg-blue-500/20 text-blue-700'}`}>
+                        {isWa ? '💬' : '🌐'}
+                      </span>
+                      <span className="truncate text-xs font-extrabold text-brand-navy tracking-tight">{c.contactName || c.contactKey}</span>
+                    </div>
+                    {c.unread > 0 && (
+                      <span className="rounded-full bg-rose-500 px-1.5 py-0.2 text-[9px] font-black text-white shadow-[0_0_6px_rgba(244,63,94,0.6)] animate-pulse">{c.unread}</span>
+                    )}
                   </div>
-                  <p className="mt-1 truncate text-[11px] text-brand-navy/40">{c.lastMessage || '\u200B'}</p>
-                  <p className="mt-1 text-[10px] text-brand-navy/50">{fmt(c.lastMessageAt)} · {c.channel}</p>
+                  <p className="mt-1.5 truncate text-[11px] font-medium text-brand-textLight">{c.lastMessage || 'No recent messages'}</p>
+                  <div className="mt-2 flex items-center justify-between pt-1 border-t border-brand-navy/5 text-[9px] font-bold text-brand-navy/40">
+                    <span className="uppercase tracking-wider">{c.channel}</span>
+                    <span>{fmt(c.lastMessageAt)}</span>
+                  </div>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* Thread */}
-          <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-4 lg:col-span-2">
+          {/* Thread Panel */}
+          <div className="reveal rounded-2xl border border-brand-navy/10 bg-white/95 p-5 shadow-[0_20px_50px_-20px_rgba(10,45,80,0.10)] backdrop-blur-sm lg:col-span-2 flex flex-col">
             {!selected ? (
-              <div className="flex h-full min-h-[320px] items-center justify-center text-xs text-brand-navy/40">Select a conversation to reply.</div>
+              <div className="flex h-full min-h-[400px] flex-col items-center justify-center text-center p-8">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gold/10 border border-brand-gold/30 mb-3">
+                  <span className="text-2xl">📬</span>
+                </div>
+                <h4 className="font-display font-extrabold text-sm text-brand-navy">No conversation selected</h4>
+                <p className="mt-1 text-xs text-brand-textLight max-w-sm">Select an inbound thread from the left to read messages, use AI translation, and dispatch verified replies.</p>
+              </div>
             ) : (
               <div className="flex h-full flex-col">
                 <div className="mb-3 flex items-center justify-between border-b border-brand-navy/10 pb-3">
-                  <div>
-                    <p className="font-display text-sm font-bold">{thread?.conversation.contactName || thread?.conversation.contactKey}</p>
-                    <p className="text-[10px] text-brand-navy/40">{thread?.conversation.channel} · {thread?.conversation.contactKey}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-navy to-brand-blue text-sm font-black text-white shadow-xs">
+                      {(thread?.conversation.contactName || thread?.conversation.contactKey || 'C').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-display text-sm font-black text-brand-navy tracking-tight">{thread?.conversation.contactName || thread?.conversation.contactKey}</p>
+                      <p className="text-[10px] font-semibold text-brand-textLight uppercase tracking-wider">{thread?.conversation.channel} · {thread?.conversation.contactKey}</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setShowTranslator(!showTranslator)}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${showTranslator ? 'bg-brand-gold text-brand-navy' : 'bg-brand-navy/[0.06] text-brand-navy hover:bg-brand-navy/10'}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs ${showTranslator ? 'bg-brand-gold text-brand-navy' : 'bg-brand-navy/[0.05] border border-brand-navy/10 text-brand-navy hover:border-brand-gold'}`}
                     >
                       ✨ AI Translator
                     </button>
-                    {me && <span className="text-[10px] text-brand-navy/40">Replying as {me.name?.split(' ')[0]}</span>}
+                    {me && <span className="hidden sm:inline text-[10px] font-semibold text-brand-textLight">Replying as <strong className="text-brand-navy">{me.name?.split(' ')[0]}</strong></span>}
                   </div>
                 </div>
 
@@ -277,28 +317,62 @@ return (
                   </div>
                 )}
 
-                <div className="flex-1 space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '46vh' }}>
-                  {(thread?.messages || []).map((m) => (
-                    <div key={m.id} className={`max-w-[80%] rounded-xl px-3.5 py-2.5 text-xs ${m.direction === 'outgoing' ? 'ml-auto bg-emerald-600 text-white' : 'bg-brand-navy/[0.06] text-brand-navy border border-brand-navy/10'}`}>
-                      <p className="leading-relaxed">{m.body}</p>
-                      <p className="mt-1 text-[9px] text-brand-navy/50">{fmt(m.createdAt)}</p>
+                {/* Message Stream */}
+                <div className="flex-1 space-y-3 overflow-y-auto pr-1.5 scrollbar-thin" style={{ maxHeight: '46vh', minHeight: '260px' }}>
+                  {(thread?.messages || []).map((m) => {
+                    const isOut = m.direction === 'outgoing';
+                    return (
+                    <div key={m.id} className={`max-w-[78%] rounded-2xl px-4 py-3 text-xs shadow-xs transition-all ${
+                      isOut 
+                        ? 'ml-auto bg-gradient-to-r from-[#0a2d50] to-[#0d3b66] text-white rounded-br-xs' 
+                        : 'bg-[#f4f1ea] text-brand-navy border border-brand-navy/10 rounded-bl-xs'
+                    }`}>
+                      <p className="leading-relaxed text-[12px] font-medium">{m.body}</p>
+                      <div className={`mt-1.5 flex items-center justify-end gap-1.5 text-[9px] font-semibold ${isOut ? 'text-white/60' : 'text-brand-navy/40'}`}>
+                        <span>{fmt(m.createdAt)}</span>
+                        {isOut && <span>✓✓</span>}
+                      </div>
                     </div>
-                  ))}
-                  {thread && thread.messages.length === 0 && <p className="p-4 text-center text-xs text-brand-navy/50">No messages in this thread yet.</p>}
+                    );
+                  })}
+                  {thread && thread.messages.length === 0 && (
+                    <p className="p-8 text-center text-xs text-brand-textLight italic">No messages in this thread yet. Send a greeting to initiate contact.</p>
+                  )}
                 </div>
 
+                {/* Canned macro reply pills */}
+                <div className="mt-3 flex flex-wrap gap-1.5 border-t border-brand-navy/10 pt-3">
+                  <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider self-center mr-1">Quick:</span>
+                  {[
+                    "Hello! How can we assist you today?",
+                    "Documents received. We are reviewing them now.",
+                    "Your application status has been updated in your portal.",
+                    "Please let us know your convenient time for a quick call."
+                  ].map((macro) => (
+                    <button
+                      key={macro}
+                      type="button"
+                      onClick={() => setReply(macro)}
+                      className="rounded-lg border border-brand-navy/10 bg-brand-navy/[0.02] px-2.5 py-1 text-[10px] font-medium text-brand-navy hover:border-brand-gold hover:bg-brand-gold/10 transition-colors cursor-pointer"
+                    >
+                      {macro}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Reply Form */}
                 <form
                   onSubmit={(e) => { e.preventDefault(); if (reply.trim() && selected) sendReply.mutate(); }}
-                  className="mt-3 flex gap-2 border-t border-brand-navy/10 pt-3"
+                  className="mt-3 flex gap-2"
                 >
                   <input
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
-                    placeholder="Type a WhatsApp reply…"
-                    className="flex-1 rounded-xl border border-brand-navy/10 bg-white px-4 py-3 text-sm text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none"
+                    placeholder="Type a verified WhatsApp / omnichannel reply…"
+                    className="flex-1 rounded-xl border border-brand-navy/15 bg-white px-4 py-3 text-xs text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 focus:outline-none font-sans shadow-xs"
                   />
-                  <button type="submit" disabled={sendReply.isPending || !reply.trim()} className="rounded-xl bg-brand-gold px-5 py-3 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover disabled:opacity-40">
-                    {sendReply.isPending ? '…' : 'Send'}
+                  <button type="submit" disabled={sendReply.isPending || !reply.trim()} className="rounded-xl bg-gradient-to-r from-brand-gold to-amber-500 px-6 py-3 text-xs font-black uppercase tracking-wider text-brand-navy shadow-md transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 cursor-pointer">
+                    {sendReply.isPending ? 'Sending…' : 'Send Reply →'}
                   </button>
                 </form>
               </div>

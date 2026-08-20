@@ -1382,23 +1382,23 @@ export default function PartnerDashboard() {
             </section>
 
             {/* STICKY LUXURY NAVIGATION TAB BAR */}
-            <div className="sticky top-20 z-40 px-5 pt-4 md:px-8">
-              <nav className="glass-light mx-auto flex max-w-6xl items-center justify-between gap-1 overflow-x-auto rounded-full px-2.5 py-2 shadow-lg">
-                <div className="flex items-center gap-1">
+            <div className="sticky top-0 z-30 border-b border-brand-navy/10 bg-[#FAF8F4]/90 backdrop-blur-xl shadow-xs">
+              <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 md:px-8">
+                <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-white/90 p-1.5 shadow-sm border border-brand-navy/10">
                   {[
-                    { key: 'overview', label: 'Command Cockpit' },
-                    { key: 'links', label: '1-Click Links & Creative Kit' },
-                    { key: 'referrals', label: `Commission Ledger (${totalReferredCount})` },
-                    { key: 'payouts', label: 'Payout Station' },
-                    { key: 'tiers', label: `VIP Loyalty Tier (${thrive?.totalPoints || 0} pts)` },
+                    { key: 'overview' as TabKey, label: 'Command Cockpit' },
+                    { key: 'links' as TabKey, label: '1-Click Links & Creative Kit' },
+                    { key: 'referrals' as TabKey, label: `Commission Ledger (${totalReferredCount})` },
+                    { key: 'payouts' as TabKey, label: 'Payout Station' },
+                    { key: 'tiers' as TabKey, label: `VIP Loyalty Tier (${thrive?.totalPoints || 0} pts)` },
                   ].map((t) => (
                     <button
                       key={t.key}
-                      onClick={() => setTab(t.key as TabKey)}
-                      className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      onClick={() => setTab(t.key)}
+                      className={`tactile-btn rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                         tab === t.key
-                          ? 'bg-brand-navy text-white shadow-sm'
-                          : 'text-brand-navy/60 hover:text-brand-gold hover:bg-brand-gold/10'
+                          ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm'
+                          : 'text-brand-navy/60 hover:text-brand-navy hover:bg-brand-navy/5'
                       }`}
                     >
                       {t.label}
@@ -1406,8 +1406,8 @@ export default function PartnerDashboard() {
                   ))}
                 </div>
 
-                <div className="hidden items-center gap-2 pr-3 text-[10px] font-bold uppercase tracking-wider text-brand-gold lg:flex">
-                  <span className="live-pulse-dot text-brand-gold" /> Real-Time Telemetry
+                <div className="hidden items-center gap-2 pr-3 text-[10px] font-black uppercase tracking-wider text-brand-gold lg:flex">
+                  <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.9)] animate-pulse" /> Real-Time Telemetry
                 </div>
               </nav>
             </div>

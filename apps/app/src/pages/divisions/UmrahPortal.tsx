@@ -442,46 +442,53 @@ export default function UmrahPortal() {
   const labelCls = 'font-semibold text-brand-navy/40 block mb-1 text-[10px] uppercase tracking-wider';
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-6 font-sans">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-5">
         <div>
-          <h1 className="font-display text-2xl font-bold text-brand-navy">Umrah &amp; Travel Desk</h1>
-          <p className="text-xs text-brand-navy/40 font-medium">Package inventory, announced dates (capacity 30), manifests, and checklists.</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Pilgrimage & Sacred Travel Desk</span>
+          </div>
+          <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Umrah Operations & Manifests</h1>
+          <p className="text-xs text-brand-textLight mt-0.5">Manage 30-pax group departures, hotel allotments (Makkah & Madinah), and visa checklists.</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${inventoryEnabled ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>
-            {inventoryEnabled ? '● Live' : '○ Coming Soon'}
+          <span className={`text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-1.5 rounded-full border shadow-xs ${inventoryEnabled ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700' : 'bg-brand-navy/[0.04] border-brand-navy/15 text-brand-textLight'}`}>
+            {inventoryEnabled ? '● Live Booking Active' : '○ Coming Soon Mode'}
           </span>
           {isManager && (
             <button
               onClick={() => toggleSettingsMutation.mutate(!inventoryEnabled)}
               disabled={toggleSettingsMutation.isPending}
-              className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50 ${inventoryEnabled ? 'border border-rose-300 text-rose-600 hover:bg-rose-50' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+              className={`text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 ${inventoryEnabled ? 'border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:brightness-110'}`}
             >
-              {inventoryEnabled ? 'Switch to Coming Soon' : 'Go Live'}
+              {inventoryEnabled ? 'Switch to Coming Soon' : 'Go Live Now →'}
             </button>
           )}
         </div>
       </div>
 
-      <div className="flex border-b border-brand-navy/[0.08] text-xs font-semibold gap-6 pb-2.5">
+      <div className="flex bg-white/80 p-1.5 rounded-2xl border border-brand-navy/15 text-xs font-bold text-brand-navy shadow-xs backdrop-blur-md gap-1.5 w-fit">
         <button
           onClick={() => setActiveSubTab('packages')}
-          className={`pb-2.5 transition-colors cursor-pointer border-b-2 ${activeSubTab === 'packages' ? 'border-brand-gold text-brand-navy' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'}`}
+          className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'packages' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
         >
-          Packages
+          <span>📦</span>
+          <span>Packages Inventory</span>
         </button>
         <button
           onClick={() => setActiveSubTab('departures')}
-          className={`pb-2.5 transition-colors cursor-pointer border-b-2 ${activeSubTab === 'departures' ? 'border-brand-gold text-brand-navy' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'}`}
+          className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'departures' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
         >
-          Departure Calendar
+          <span>📅</span>
+          <span>Departure Calendar</span>
         </button>
         <button
           onClick={() => { setActiveSubTab('groups'); }}
-          className={`pb-2.5 transition-colors cursor-pointer border-b-2 ${activeSubTab === 'groups' ? 'border-brand-gold text-brand-navy' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'}`}
+          className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'groups' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
         >
-          Group Departures Manifest
+          <span>👥</span>
+          <span>Group Departures Manifest</span>
         </button>
       </div>
 

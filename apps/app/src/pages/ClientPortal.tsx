@@ -412,62 +412,68 @@ export default function ClientPortal() {
           </div>
         </section>
 
-        {/* PORTAL SECTION NAV — Visa Services primary, Journey overview secondary */}
+        {/* PORTAL SECTION NAV — Floating Frosted Luxury Tab Bar */}
         {activeToken && (
-          <nav className="flex gap-1 rounded-full bg-white/5 p-1 w-fit border border-white/10">
+          <nav className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-white/10 backdrop-blur-2xl p-1.5 w-fit border border-white/20 shadow-2xl mx-auto sm:mx-0">
             <button
               type="button"
               onClick={() => setPortalTab('visa')}
-              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                portalTab === 'visa' ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                portalTab === 'visa' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
-              ✈ Visa Services
+              <span>✈️</span>
+              <span>Visa Services</span>
             </button>
             <button
               type="button"
               onClick={() => setPortalTab('jobs')}
-              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                portalTab === 'jobs' ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                portalTab === 'jobs' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
-              🧑‍🔧 Jobs
+              <span>💼</span>
+              <span>Jobs & Careers</span>
             </button>
             <button
               type="button"
               onClick={() => setPortalTab('umrah')}
-              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                portalTab === 'umrah' ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                portalTab === 'umrah' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
-              🕋 Umrah
+              <span>🕋</span>
+              <span>Umrah Pilgrimage</span>
             </button>
             <button
               type="button"
               onClick={() => setPortalTab('study')}
-              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                portalTab === 'study' ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                portalTab === 'study' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
-              🎓 Study Abroad
+              <span>🎓</span>
+              <span>Study Abroad</span>
             </button>
             <button
               type="button"
               onClick={() => setPortalTab('attestation')}
-              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                portalTab === 'attestation' ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                portalTab === 'attestation' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
-              🧾 Attestation
+              <span>🧾</span>
+              <span>Attestation</span>
             </button>
             <button
               type="button"
               onClick={() => setPortalTab('journey')}
-              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-                portalTab === 'journey' ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                portalTab === 'journey' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
-              Journey Overview
+              <span>🗺️</span>
+              <span>Journey Overview</span>
             </button>
           </nav>
         )}
