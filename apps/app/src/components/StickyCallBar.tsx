@@ -36,7 +36,7 @@ export default function StickyCallBar({ division, hookText }: Props) {
       case 'manpower':
         return '💼 100% Verified Employer Demands in Gulf & Europe · Zero Hidden Charges';
       default:
-        return '🌟 Opus Overseas · Premier Operating System for Global Mobility';
+        return '🌟 Opus Overseas · Your Trusted Gateway to Global Opportunities';
     }
   };
 

@@ -167,10 +167,10 @@ export default function AboutUsPage() {
         <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
           <div className="mb-14 text-center space-y-3">
             <h2 className="font-display fluid-h2 font-extrabold text-white">
-              The Four Pillars of Opus OS
+              The Four Pillars of Opus Overseas
             </h2>
             <p className="text-sm text-white/70 max-w-md mx-auto">
-              How our proprietary operating system sets the gold standard for cross-border services.
+              How our dedicated advisory platform sets the gold standard for cross-border journeys.
             </p>
           </div>
 

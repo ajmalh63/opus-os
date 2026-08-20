@@ -26,7 +26,7 @@ export default function Footer() {
               <Logo variant="footer" className="h-14 sm:h-16 w-auto" />
             </div>
             <p className="max-w-sm text-xs sm:text-sm leading-relaxed text-white/65">
-              Your premier operating system for global mobility — study abroad, express visas, Umrah group travel, government attestation chains, and international careers.
+              Your trusted gateway to the world — empowering global education, express visas, sacred Umrah pilgrimages, government attestation, and international careers.
             </p>
             <div className="pt-2 flex items-center gap-3">
               <button
