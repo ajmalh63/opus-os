@@ -24,8 +24,7 @@ export default function ChatWidget() {
 
     window.chatwootSettings = {
       position: 'right',
-      type: 'expanded_bubble',
-      launcherTitle: 'Chat with Opus Overseas',
+      type: 'standard',
       locale: 'en',
     };
 

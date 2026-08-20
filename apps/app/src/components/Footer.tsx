@@ -23,7 +23,7 @@ export default function Footer() {
           {/* Brand Col */}
           <div className="space-y-4 lg:col-span-2">
             <div className="flex items-center">
-              <Logo variant="footer" className="h-11 sm:h-12 w-auto" />
+              <Logo variant="footer" className="h-14 sm:h-16 w-auto" />
             </div>
             <p className="max-w-sm text-xs sm:text-sm leading-relaxed text-white/65">
               Your premier operating system for global mobility — study abroad, express visas, Umrah group travel, government attestation chains, and international careers.
