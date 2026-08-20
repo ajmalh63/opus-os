@@ -9,7 +9,7 @@ import { createStaffAlert } from '../infra/staffAlerts.js';
 import { sendNotification } from '../infra/notify.js';
 import { notifications } from '../db/schema.js';
 import { auditBounded } from '../middleware/audit.js';
-import { calGetSlots, calCreateBooking } from '../lib/calApi.js';
+import { calGetSlots, calCreateBooking, calCancelBooking } from '../lib/calApi.js';
 import { mauticSyncContact } from '../infra/mautic.js';
 
 // ============================================================
@@ -246,8 +246,22 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
       description: `${attendee?.name || 'Attendee'} · ${start ? new Date(start * 1000).toLocaleString('en-IN') : ''} · ${attendee?.email || ''}`,
       priority: 'medium', status: 'open', dueDate: start, createdAt: now(), updatedAt: now(),
     });
-    // Anti-spam: suspicion score (disposable email, no phone, patterns, new contact)
     const { score, flags } = await scoreBooking(attendee, existingClient, start);
+
+    // Auto-Defense: If suspicion score >= 50 (fake email, disposable domain, fake phone), auto-cancel on Cal.com
+    if (score >= 50 && cfg.apiKey) {
+      calCancelBooking(cfg.apiKey, calUid, `Spam defense: security policy violation (${flags.join(', ')})`).catch(() => {});
+      await auditBounded(c, {
+        action: 'SPAM_BOOKING_AUTO_CANCELLED',
+        entityName: 'bookings',
+        entityId: calUid,
+        result: 'success',
+        category: 'access',
+        actorType: 'system',
+        authMethod: 'hmac',
+        afterState: { calUid, email, phone, score, flags }
+      }, 'webhook');
+    }
 
     // Insert booking — pending when Requires Confirmation is active (BOOKING_REQUESTED)
     const isPending = trigger === 'BOOKING_REQUESTED';
@@ -255,7 +269,7 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
       id: uid(), calUid, eventTypeId, division, title: p?.title || 'Consultation',
       startTime: start, endTime: end,
       attendeeName: attendee?.name || null, attendeeEmail: attendee?.email || null, attendeePhone: attendee?.phone || null,
-      status: isPending ? 'pending' : 'scheduled', riskScore: score, riskFlags: JSON.stringify(flags), clientId, taskId, createdAt: now(), updatedAt: now(),
+      status: score >= 50 ? 'cancelled' : isPending ? 'pending' : 'scheduled', riskScore: score, riskFlags: JSON.stringify(flags), clientId, taskId, createdAt: now(), updatedAt: now(),
     });
     // Communication row
     if (clientId) {
@@ -268,8 +282,8 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
     // Staff alert — severity escalates with suspicion score; pending needs approval
     const riskLevel = score >= 50 ? 'urgent' : score >= 20 ? 'warning' : 'info';
     await createStaffAlert(c.env, {
-      division, type: 'cal_booking', title: `${score >= 50 ? '🚨' : score >= 20 ? '⚠️' : '📅'} ${isPending ? '⏳ Pending approval' : 'Consultation booked'}: ${p?.title || 'Booking'}${score >= 20 ? ` (risk ${score})` : ''}`,
-      body: `${attendee?.name || 'Attendee'} · ${new Date(start * 1000).toLocaleString('en-IN')}${flags.length ? ` · flags: ${flags.join(', ')}` : ''}${isPending ? ' · approve in cal.com' : ''}`,
+      division, type: 'cal_booking', title: `${score >= 50 ? '🚨 [SPAM CANCELLED]' : score >= 20 ? '⚠️' : '📅'} ${isPending ? '⏳ Pending approval' : 'Consultation booked'}: ${p?.title || 'Booking'}${score >= 20 ? ` (risk ${score})` : ''}`,
+      body: `${attendee?.name || 'Attendee'} · ${new Date(start * 1000).toLocaleString('en-IN')}${flags.length ? ` · flags: ${flags.join(', ')}` : ''}${score >= 50 ? ' · auto-cancelled on Cal.com' : isPending ? ' · approve in cal.com' : ''}`,
       severity: riskLevel as any, link: '/bookings', clientId,
     });
 

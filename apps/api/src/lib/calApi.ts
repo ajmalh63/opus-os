@@ -138,3 +138,28 @@ export async function calCreateBooking(
     return { ok: false, reason: 'unavailable', message: 'Cal.com API unreachable' };
   }
 }
+
+/** POST /v2/bookings/{uid}/cancel or DELETE — cancel a booking on Cal.com */
+export async function calCancelBooking(
+  apiKey: string,
+  uid: string,
+  cancellationReason: string = 'Security check failed: automated spam detection'
+): Promise<{ ok: boolean; reason?: string }> {
+  if (!apiKey || !uid) return { ok: false, reason: 'no_api_key' };
+  try {
+    const res = await calFetch(apiKey, `/bookings/${encodeURIComponent(uid)}/cancel`, CAL_API_VERSION_BOOKINGS, {
+      method: 'POST',
+      body: JSON.stringify({ cancellationReason }),
+    });
+    if (!res.ok) {
+      const delRes = await calFetch(apiKey, `/bookings/${encodeURIComponent(uid)}`, CAL_API_VERSION_BOOKINGS, {
+        method: 'DELETE',
+        body: JSON.stringify({ cancellationReason }),
+      });
+      return { ok: delRes.ok };
+    }
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, reason: e?.message };
+  }
+}
