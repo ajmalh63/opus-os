@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../lib/session';
+import AiVisaRiskCopilot from '../../components/ai/AiVisaRiskCopilot';
 
 
 type VisaStatus = 'draft' | 'submitted' | 'document_prep' | 'slot_booked' | 'granted' | 'rejected' | 'delivered' | 'cancelled';
@@ -360,9 +361,9 @@ const VISA_COUNTRIES = [
 export default function VisaPrepPortal() {
   const queryClient = useQueryClient();
   const { me } = useSession();
-  const [viewMode, setViewMode] = useState<'applicants' | 'inventory'>('applicants');
+  const [viewMode, setViewMode] = useState<'applicants' | 'inventory' | 'ai-copilot'>('applicants');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'booking' | 'mock'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'booking' | 'mock' | 'ai-risk'>('details');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Rejection notes state
@@ -907,6 +908,12 @@ export default function VisaPrepPortal() {
           >
             👥 Applicants Desk
           </button>
+          <button
+            onClick={() => setViewMode('ai-copilot')}
+            className={`px-4 py-2 rounded-lg cursor-pointer transition-all ${viewMode === 'ai-copilot' ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'hover:text-brand-navy'}`}
+          >
+            ✨ AI Risk Copilot
+          </button>
           {['super_admin', 'manager'].includes(me?.role || '') && (
             <button
               onClick={() => setViewMode('inventory')}
@@ -918,7 +925,19 @@ export default function VisaPrepPortal() {
         </div>
       </div>
 
-      {viewMode === 'applicants' ? (
+      {viewMode === 'ai-copilot' ? (
+        <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm backdrop-blur-sm">
+          <div className="mb-4 border-b border-brand-navy/10 pb-3">
+            <h2 className="font-display font-extrabold text-base text-brand-navy">✨ AI Visa Refusal & Risk Copilot</h2>
+            <p className="text-xs text-brand-navy/50">Evaluate points-based immigration risk, financial thresholds, academic gaps, and prior refusal impacts across destinations.</p>
+          </div>
+          <AiVisaRiskCopilot
+            clientId={selectedClientId || undefined}
+            clientName={selectedClient?.name}
+            defaultCountry={activeApp?.country || 'United Kingdom'}
+          />
+        </div>
+      ) : viewMode === 'applicants' ? (
         /* Applicants Processing Desk mode */
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 text-xs">
           {/* Applicant list sidebar */}
@@ -1110,7 +1129,8 @@ export default function VisaPrepPortal() {
                   {[
                     { key: 'details', label: 'Application Details' },
                     { key: 'booking', label: 'Embassy Slot Booking' },
-                    { key: 'mock', label: 'Mock Interview Prep' }
+                    { key: 'mock', label: 'Mock Interview Prep' },
+                    { key: 'ai-risk', label: '✨ AI Risk Copilot' }
                   ].map(tab => (
                     <button
                       key={tab.key}
@@ -1696,6 +1716,16 @@ export default function VisaPrepPortal() {
                           <p className="text-brand-navy/50 italic text-center py-4">No mock preparation loops scheduled.</p>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'ai-risk' && (
+                    <div className="rounded-xl border border-brand-navy/10 bg-white p-5 space-y-4 backdrop-blur-sm">
+                      <AiVisaRiskCopilot
+                        clientId={selectedClient?.id}
+                        clientName={selectedClient?.name}
+                        defaultCountry={activeApp?.country || 'United Kingdom'}
+                      />
                     </div>
                   )}
                 </div>

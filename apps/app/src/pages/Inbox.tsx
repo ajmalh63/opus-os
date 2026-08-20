@@ -2,14 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
+import AiTranslatePanel from '../components/ai/AiTranslatePanel';
 
 // Staff unified inbox  OpenWA + Chatwoot inbound conversations become visible
 // here; replies dispatch via the WhatsApp gateway (sendWhatsApp).
-
-const baseAuth = (): HeadersInit => {
-  const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
-  return s ? { Cookie: s } : {};
-};
 
 interface Conversation {
   id: string; channel: string; contactKey: string; contactName: string | null;
@@ -25,6 +21,7 @@ export default function Inbox() {
   const [reply, setReply] = useState('');
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [search, setSearch] = useState('');
+  const [showTranslator, setShowTranslator] = useState(false);
   // Team chat (merged into inbox): staff rooms
   const [teamMode, setTeamMode] = useState(false);
   const [roomId, setRoomId] = useState('ops');
@@ -41,13 +38,13 @@ export default function Inbox() {
   ];
   const { data: teamThread } = useQuery<{ messages: any[] }>({
     queryKey: ['teamRoom', roomId],
-    queryFn: async () => { const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, { headers: baseAuth() }); if (!r.ok) throw new Error('team'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, { credentials: 'include' }); if (!r.ok) throw new Error('team'); return r.json(); },
     enabled: teamMode,
     refetchInterval: 5000,
   });
   const { data: teamMembers } = useQuery<{ members: any[] }>({
     queryKey: ['teamMembers'],
-    queryFn: async () => { const r = await fetch('/api/teamhub/members', { headers: baseAuth() }); if (!r.ok) throw new Error('members'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/teamhub/members', { credentials: 'include' }); if (!r.ok) throw new Error('members'); return r.json(); },
     enabled: teamMode,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +54,7 @@ export default function Inbox() {
     mutationFn: async (file: File) => {
       const fd = new FormData();
       fd.append('file', file);
-      const r = await fetch(`/api/teamhub/rooms/${roomId}/files`, { method: 'POST', headers: baseAuth(), body: fd });
+      const r = await fetch(`/api/teamhub/rooms/${roomId}/files`, { method: 'POST', credentials: 'include', body: fd });
       if (!r.ok) throw new Error('upload');
       return r.json();
     },
@@ -66,7 +63,7 @@ export default function Inbox() {
   });
   const sendTeam = useMutation({
     mutationFn: async () => {
-      const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, { method: 'POST', headers: { ...baseAuth(), 'Content-Type': 'application/json' }, body: JSON.stringify({ body: teamMsg }) });
+      const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: teamMsg }) });
       if (!r.ok) throw new Error('team send');
       return r.json();
     },
@@ -75,20 +72,20 @@ export default function Inbox() {
 
   const { data, isLoading } = useQuery<{ conversations: Conversation[]; unreadTotal: number }>({
     queryKey: ['inbox'],
-    queryFn: async () => { const r = await fetch('/api/inbox', { headers: baseAuth() }); if (!r.ok) throw new Error('load failed'); return r.json(); },
+    queryFn: async () => { const r = await fetch('/api/inbox', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); },
     refetchInterval: 15000, // near-real-time while open
   });
 
   const { data: thread } = useQuery<{ conversation: Conversation; messages: Msg[] }>({
     queryKey: ['inboxThread', selected],
-    queryFn: async () => { const r = await fetch(`/api/inbox/${selected}/thread`, { headers: baseAuth() }); if (!r.ok) throw new Error('load failed'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`/api/inbox/${selected}/thread`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); },
     enabled: !!selected,
   });
 
   const sendReply = useMutation({
     mutationFn: async () => {
       const r = await fetch(`/api/inbox/${selected}/reply`, {
-        method: 'POST', headers: { ...baseAuth(), 'Content-Type': 'application/json' },
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ body: reply }),
       });
       const d = await r.json();
@@ -124,6 +121,12 @@ return (
             <p className="text-xs text-brand-navy/40">WhatsApp + website chat (OpenWA / Chatwoot)</p>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowTranslator(!showTranslator)}
+              className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${showTranslator ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'bg-brand-navy/[0.04] border border-brand-navy/15 text-brand-navy/60 hover:text-brand-navy'}`}
+            >
+              ✨ AI Translator
+            </button>
             <div className="flex gap-1 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-1 text-[10px] font-bold uppercase">
               <button onClick={() => setTeamMode(false)} className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${!teamMode ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-navy'}`}>Clients</button>
               <button onClick={() => setTeamMode(true)} className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${teamMode ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-navy'}`}>Team</button>
@@ -135,6 +138,16 @@ return (
             )}
           </div>
         </div>
+
+        {showTranslator && (
+          <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm">
+            <div className="mb-3 border-b border-brand-navy/10 pb-2">
+              <h3 className="font-display font-bold text-sm text-brand-navy">✨ AI Multilingual Communications Translator</h3>
+              <p className="text-[10px] text-brand-navy/40">Translate inbound foreign language inquiries (Arabic, Urdu, Hindi, German, etc.) to English or craft client replies in their native language.</p>
+            </div>
+            <AiTranslatePanel />
+          </div>
+        )}
 
         {toast && <div className={`rounded-xl px-4 py-3 text-xs font-semibold ${toast.kind === 'ok' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-700'}`}>{toast.text}</div>}
 
@@ -247,8 +260,22 @@ return (
                     <p className="font-display text-sm font-bold">{thread?.conversation.contactName || thread?.conversation.contactKey}</p>
                     <p className="text-[10px] text-brand-navy/40">{thread?.conversation.channel} · {thread?.conversation.contactKey}</p>
                   </div>
-                  {me && <span className="text-[10px] text-brand-navy/40">Replying as {me.name?.split(' ')[0]}</span>}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowTranslator(!showTranslator)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${showTranslator ? 'bg-brand-gold text-brand-navy' : 'bg-brand-navy/[0.06] text-brand-navy hover:bg-brand-navy/10'}`}
+                    >
+                      ✨ AI Translator
+                    </button>
+                    {me && <span className="text-[10px] text-brand-navy/40">Replying as {me.name?.split(' ')[0]}</span>}
+                  </div>
                 </div>
+
+                {showTranslator && (
+                  <div className="mb-3">
+                    <AiTranslatePanel />
+                  </div>
+                )}
 
                 <div className="flex-1 space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '46vh' }}>
                   {(thread?.messages || []).map((m) => (

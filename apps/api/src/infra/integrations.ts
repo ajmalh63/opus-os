@@ -109,7 +109,7 @@ export async function integrationsStatus(env: Env, db?: any): Promise<Integratio
 
   // Listmonk (email)
   if (env.LISTMONK_BASE_URL) {
-    const p = await probeHttp(`${env.LISTMONK_BASE_URL.replace(/\/$/, '')}/`, {});
+    const p = await probeHttp(`${env.LISTMONK_BASE_URL.replace(/\/$/, '')}/subscription/form`, {});
     out.push({ key: 'listmonk', name: 'Listmonk (Email)', kind: 'email', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
   } else {
     out.push({ key: 'listmonk', name: 'Listmonk (Email)', kind: 'email', state: 'stub' });
@@ -117,7 +117,7 @@ export async function integrationsStatus(env: Env, db?: any): Promise<Integratio
 
   // Umami (analytics — frontend tracker; reachability probe only)
   if (env.UMAMI_BASE_URL) {
-    const p = await probeHttp(`${env.UMAMI_BASE_URL.replace(/\/$/, '')}/script.js`);
+    const p = await probeHttp(`${env.UMAMI_BASE_URL.replace(/\/$/, '')}/`);
     out.push({ key: 'umami', name: 'Umami (Analytics)', kind: 'analytics', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
   } else {
     out.push({ key: 'umami', name: 'Umami (Analytics)', kind: 'analytics', state: 'stub' });

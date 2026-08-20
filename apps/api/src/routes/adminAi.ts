@@ -6,6 +6,7 @@ import {
   APPROVED_AI_MODELS,
 } from '../lib/aiGovernance.js';
 import { auditEvent } from '../middleware/audit.js';
+import { runAiModel } from '../infra/ai.js';
 
 export const adminAiRouter = new Hono<{ Bindings: any }>();
 
@@ -15,11 +16,13 @@ adminAiRouter.get('/config', async (c) => {
   const db = getDb(c.env.DB);
   const settings = await getAiGovernanceSettings(db);
 
+  const bound = !!c.env?.AI || !!(c.env?.CLOUDFLARE_API_TOKEN && c.env?.CLOUDFLARE_ACCOUNT_ID);
+
   return c.json({
     success: true,
     settings,
     models: APPROVED_AI_MODELS,
-    bound: !!c.env?.AI,
+    bound,
   });
 });
 
@@ -51,31 +54,20 @@ adminAiRouter.post('/test', async (c) => {
   const model = body.model || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
   const prompt = body.prompt || 'Respond with a confirmation message confirming Cloudflare Workers AI edge execution for Opus Overseas.';
 
-  const ai = c.env?.AI;
-  if (!ai) {
-    return c.json(
-      {
-        success: false,
-        error: 'Workers AI binding (env.AI) is not active in this environment.',
-        model,
-      },
-      503
-    );
-  }
-
   const startMs = Date.now();
   try {
-    const res = await ai.run(model, {
+    const res = await runAiModel(c.env, model, {
       prompt,
       max_tokens: 250,
     });
     const latencyMs = Date.now() - startMs;
+    const output = (res as any)?.response || (res as any)?.output || (res as any)?.choices?.[0]?.text || (typeof res === 'string' ? res : JSON.stringify(res));
 
     return c.json({
       success: true,
       model,
       latencyMs,
-      output: res?.response || res,
+      output,
     });
   } catch (err: any) {
     return c.json(
@@ -100,22 +92,12 @@ adminAiRouter.post('/batch-test', async (c) => {
     'Evaluate admission chances for US MS Computer Science with 3.4 GPA and 315 GRE.',
   ];
 
-  const ai = c.env?.AI;
-  if (!ai) {
-    return c.json({
-      success: true,
-      mode: 'mock-batch',
-      total: prompts.length,
-      latencyMs: 15,
-      results: prompts.map((p, idx) => ({ id: idx + 1, prompt: p, output: `[Simulated edge evaluation for query: ${p}]` })),
-    });
-  }
-
   const startMs = Date.now();
   const results = await Promise.allSettled(
     prompts.map(async (prompt, idx) => {
-      const res = await ai.run(model, { prompt, max_tokens: 150 });
-      return { id: idx + 1, prompt, output: res?.response || res };
+      const res = await runAiModel(c.env, model, { prompt, max_tokens: 150 });
+      const output = (res as any)?.response || (res as any)?.output || (res as any)?.choices?.[0]?.text || (typeof res === 'string' ? res : JSON.stringify(res));
+      return { id: idx + 1, prompt, output };
     })
   );
 

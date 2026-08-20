@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import AiOcrPanel from '../../components/ai/AiOcrPanel';
 
 interface Client {
   id: string;
@@ -107,7 +108,7 @@ const CHAIN_TEMPLATES: Record<string, string[]> = {
 export default function AttestationPortal() {
   const queryClient = useQueryClient();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [activeSubTab, setActiveSubTab] = useState<'rates' | 'applications' | 'indiapost' | 'tracking'>('rates');
+  const [activeSubTab, setActiveSubTab] = useState<'rates' | 'applications' | 'indiapost' | 'tracking' | 'ocr'>('rates');
 
   // India Post form
   const [senderName] = useState('Opus Overseas Office');
@@ -577,6 +578,7 @@ export default function AttestationPortal() {
           { key: 'applications', label: 'Applications & Stamping' },
           { key: 'indiapost', label: 'India Post DNK Booking Panel' },
           { key: 'tracking', label: 'Internal Courier Tracking' },
+          { key: 'ocr', label: '✨ AI Document OCR' },
         ].map(t => (
           <button
             key={t.key}
@@ -1041,6 +1043,16 @@ export default function AttestationPortal() {
               <p className="text-xs text-brand-navy/50 italic py-12 text-center">Select a client to view their courier shipments.</p>
             )}
           </div>
+        </div>
+      )}
+
+      {activeSubTab === 'ocr' && (
+        <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm space-y-4 text-xs backdrop-blur-sm">
+          <div className="border-b border-brand-navy/10 pb-3">
+            <h3 className="font-display font-bold text-brand-navy text-sm">AI Document OCR & Seal Verification</h3>
+            <p className="text-[10px] text-brand-navy/40">Upload passport copies, degree certificates, transcripts, or MEA seals to automatically parse details using Cloudflare Vision AI.</p>
+          </div>
+          <AiOcrPanel clientId={selectedClientId || undefined} />
         </div>
       )}
 

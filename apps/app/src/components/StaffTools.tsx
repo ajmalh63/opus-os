@@ -16,11 +16,6 @@ interface OverdueTask {
   dueDate?: number;
 }
 
-const baseAuth = (): HeadersInit => {
-  const s = document.cookie.split(';').map(p => p.trim()).find(p => p.startsWith('better-auth.session_token='));
-  return s ? { Cookie: s } : {};
-};
-
 export default function StaffTools() {
   const { me } = useSession();
   const [tab, setTab] = useState<'overdue' | 'gst' | 'attestation' | 'visa' | 'expiry'>('overdue');
@@ -56,7 +51,7 @@ export default function StaffTools() {
   const { data: overdueData } = useQuery({
     queryKey: ['staffOverdue'],
     queryFn: async () => {
-      const r = await fetch('/api/tasks/overdue', { headers: baseAuth() });
+      const r = await fetch('/api/tasks/overdue', { credentials: 'include' });
       if (!r.ok) return { overdue: [] as any[] };
       return r.json();
     },

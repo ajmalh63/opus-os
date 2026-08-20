@@ -66,10 +66,12 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
     // if the check cannot run, the password is rejected — never let a possibly
     // breached password through because the checker hiccupped.
     plugins: [
-      haveIBeenPwned({
-        customPasswordCompromisedMessage:
-          "This password has appeared in known data breaches. Please choose a different password."
-      }),
+      ...((env as any)?.DISABLE_HIBP !== 'true' ? [
+        haveIBeenPwned({
+          customPasswordCompromisedMessage:
+            "This password has appeared in known data breaches. Please choose a different password."
+        })
+      ] : []),
       // twoFactor is a PLUGIN in better-auth >=1.2 (it was a core option in
       // older 1.1.x releases and is silently ignored when passed top-level).
       // Registered here so /two-factor/* endpoints exist at all.

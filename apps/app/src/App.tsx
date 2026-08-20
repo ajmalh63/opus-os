@@ -45,6 +45,8 @@ import AttestationPortal from './pages/divisions/AttestationPortal.js';
 import UmrahPortal from './pages/divisions/UmrahPortal.js';
 import ManpowerPortal from './pages/divisions/ManpowerPortal.js';
 import Inbox from './pages/Inbox.js';
+import Settings from './pages/Settings.js';
+import GoRedirectPage from './pages/GoRedirectPage.js';
 
 // ONE umbrella: every authenticated page renders inside the WorkspaceShell so
 // sidebar/brand/topbar persist across ALL modules. The workspace shell owns
@@ -89,6 +91,7 @@ export default function App() {
         <Route path="/portal" component={ClientPortal} />
         <Route path="/partner" component={PartnerDashboard} />
         <Route path="/payment-confirmed" component={PaymentConfirmed} />
+        <Route path="/go/:ref/:type/:id" component={GoRedirectPage} />
 
         {/* Authenticated surface — EVERY route inside the one workspace shell */}
         <Route path="/workspaces">
@@ -96,6 +99,9 @@ export default function App() {
         </Route>
         <Route path="/dashboard">
           {() => <AuthGuard><WorkspaceRoute><DashboardHome /></WorkspaceRoute></AuthGuard>}
+        </Route>
+        <Route path="/settings">
+          {() => <AuthGuard><WorkspaceRoute><Settings /></WorkspaceRoute></AuthGuard>}
         </Route>
         <Route path="/clients">
           {() => <AuthGuard><WorkspaceRoute><ClientsList /></WorkspaceRoute></AuthGuard>}

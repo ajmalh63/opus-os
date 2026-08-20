@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StudyAbroadApplicationModal, { ApplicationSnapshot, MatchResult, StudentProfile } from '../../components/StudyAbroadApplicationModal';
 import StudentProfileWizard, { profileCompleteness } from '../../components/StudentProfileWizard';
+import AiSopStudio from '../../components/ai/AiSopStudio';
 
 interface Student {
   id: string;
@@ -87,9 +88,9 @@ const DESTINATION_COUNTRIES = [
 
 export default function StudyAbroadPortal() {
   const queryClient = useQueryClient();
-  const [viewMode, setViewMode] = useState<'profiles' | 'kanban'>('profiles');
+  const [viewMode, setViewMode] = useState<'profiles' | 'kanban' | 'sop'>('profiles');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'shortlist' | 'docs' | 'apps'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'shortlist' | 'docs' | 'apps' | 'sop'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals state
@@ -531,6 +532,12 @@ export default function StudyAbroadPortal() {
             🗂️ Student Profiles
           </button>
           <button
+            onClick={() => setViewMode('sop')}
+            className={`px-4 py-2 rounded-lg cursor-pointer transition-all ${viewMode === 'sop' ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'hover:text-brand-navy'}`}
+          >
+            ✨ AI SOP Studio
+          </button>
+          <button
             onClick={() => setViewMode('kanban')}
             className={`px-4 py-2 rounded-lg cursor-pointer transition-all ${viewMode === 'kanban' ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'hover:text-brand-navy'}`}
           >
@@ -539,7 +546,19 @@ export default function StudyAbroadPortal() {
         </div>
       </div>
 
-      {viewMode === 'profiles' ? (
+      {viewMode === 'sop' ? (
+        <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm backdrop-blur-sm">
+          <div className="mb-4 border-b border-brand-navy/10 pb-3">
+            <h2 className="font-display font-extrabold text-base text-brand-navy">✨ AI Statement of Purpose (SOP) & LOR Studio</h2>
+            <p className="text-xs text-brand-navy/50">Draft and polish high-conversion admissions essays, academic statements, and letters of recommendation tailored to target universities.</p>
+          </div>
+          <AiSopStudio
+            studentName={selectedStudent?.name || 'Applicant'}
+            defaultCountry={targetCountry || 'United Kingdom'}
+            defaultUniversity="University of Birmingham"
+          />
+        </div>
+      ) : viewMode === 'profiles' ? (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Sidebar Student Directory */}
           <div className="lg:col-span-1 rounded-2xl border border-brand-navy/10 bg-white p-4 flex flex-col gap-4 shadow-sm h-[600px] backdrop-blur-sm">
@@ -676,7 +695,8 @@ export default function StudyAbroadPortal() {
                     { key: 'overview', label: 'Overview' },
                     { key: 'shortlist', label: 'Applications' },
                     { key: 'docs', label: 'Documents' },
-                    { key: 'apps', label: 'Portal Tracking' }
+                    { key: 'apps', label: 'Portal Tracking' },
+                    { key: 'sop', label: '✨ AI SOP Studio' }
                   ].map(tab => (
                     <button
                       key={tab.key}
@@ -1324,6 +1344,16 @@ export default function StudyAbroadPortal() {
                           </select>
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'sop' && (
+                    <div className="rounded-xl border border-brand-navy/10 bg-white p-5 space-y-4 shadow-sm backdrop-blur-sm">
+                      <AiSopStudio
+                        studentName={selectedStudent?.name || 'Rahul Sharma'}
+                        defaultCountry="United Kingdom"
+                        defaultUniversity="University of Birmingham"
+                      />
                     </div>
                   )}
                 </div>

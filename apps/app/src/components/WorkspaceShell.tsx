@@ -87,9 +87,9 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Security & Program',
     items: [
+      { key: 'control', label: 'Admin Desk', to: '/control', icon: I.admindesk, roles: ['super_admin'], match: '/control' },
       { key: 'audit', label: 'Security Logs', to: '/workspaces/audit', icon: I.audit, roles: ['super_admin'], match: '/workspaces/audit' },
       { key: 'roles', label: 'Roles & Access', to: '/workspaces/roles', icon: I.roles, roles: ['super_admin'], match: '/workspaces/roles' },
-      { key: 'control', label: 'Admin Desk', to: '/control', icon: I.admindesk, roles: ['super_admin'], match: '/control' },
     ],
   },
 ];
@@ -236,13 +236,18 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
         <div className={`border-t border-white/10 p-3 ${collapsed ? 'text-center' : ''}`}>
           {!collapsed ? (
             <div className="flex items-center gap-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-gold/15 text-sm font-bold text-brand-gold">
+              <button onClick={() => setLocation('/settings')} title="Settings & Profile"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-gold/15 text-sm font-bold text-brand-gold hover:ring-2 hover:ring-brand-gold/50 cursor-pointer transition-all">
                 {(me?.name || 'O').trim().charAt(0).toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-semibold">{me?.name || 'Operator'}</div>
+              </button>
+              <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setLocation('/settings')}>
+                <div className="truncate text-xs font-semibold hover:text-brand-gold transition-colors">{me?.name || 'Operator'}</div>
                 <div className="truncate text-[10px] capitalize text-slate-500">{me?.role?.replace('_', ' ') || 'staff'}</div>
               </div>
+              <button onClick={() => setLocation('/settings')} title="Settings"
+                className="cursor-pointer rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white/[0.08] hover:text-white">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d={I.infra} /></svg>
+              </button>
               <button onClick={signOut} title="Sign out"
                 className="cursor-pointer rounded-md p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d={I.signout} /></svg>
@@ -250,9 +255,14 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
-              <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-gold/15 text-sm font-bold text-brand-gold">
+              <button onClick={() => setLocation('/settings')} title="Settings & Profile"
+                className="grid h-9 w-9 place-items-center rounded-full bg-brand-gold/15 text-sm font-bold text-brand-gold hover:ring-2 hover:ring-brand-gold/50 cursor-pointer transition-all">
                 {(me?.name || 'O').trim().charAt(0).toUpperCase()}
-              </div>
+              </button>
+              <button onClick={() => setLocation('/settings')} title="Settings"
+                className="cursor-pointer rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white/[0.08] hover:text-white">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d={I.infra} /></svg>
+              </button>
               <button onClick={signOut} title="Sign out"
                 className="cursor-pointer rounded-md p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d={I.signout} /></svg>

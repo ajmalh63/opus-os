@@ -8,14 +8,11 @@ import { useRevealRoot } from '../lib/reveal';
 // control plane with full visibility into Journeys, Templates, Assets, Forms,
 // Pages, DWC, Audiences, WhatsApp Workflows, and Suppression.
 
-const AUTH = {
-  get Cookie() {
-    const s = document.cookie.split(';').map((p: string) => p.trim()).find((p: string) => p.startsWith('better-auth.session_token='));
-    return s || '';
-  }
-} as Record<string, string>;
-
-const getJson = async (url: string) => { const r = await fetch(url, { headers: AUTH }); if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); };
+const getJson = async (url: string) => {
+  const r = await fetch(url, { credentials: 'include' });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+};
 
 const STATE_STYLE: Record<string, string> = {
   ok: 'bg-emerald-500/15 text-emerald-700',
@@ -282,7 +279,8 @@ function WhatsAppView() {
     try {
       const res = await fetch('/api/marketing/whatsapp/test-send', {
         method: 'POST',
-        headers: { ...AUTH, 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: testPhone,
           name: testName,

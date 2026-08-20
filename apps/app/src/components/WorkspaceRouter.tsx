@@ -16,14 +16,18 @@ import InfraHealth from './InfraHealth';
 import PerformanceTab from './PerformanceTab';
 import MarketingTab from './MarketingTab';
 import BoardsTab from './BoardsTab';
+import AiGovernanceTab from './admin/AiGovernanceTab';
+import GrowthMetricsTab from './GrowthMetricsTab';
 
 
 // Client-side mirror of the server Rbac gate. The server enforces the real
 // ceiling (403) - this mirror only decides what to render.
 const MODULE_ROLES: Record<string, string[]> = {
+  ai: ['super_admin'],
   funnel: ['super_admin', 'manager'],
   campaigns: ['super_admin'],
   growth: ['super_admin', 'manager'],
+  growthmetrics: ['super_admin', 'manager'],
   roles: ['super_admin'],
   compliance: ['super_admin', 'manager'],
   audit: ['super_admin'],
@@ -238,6 +242,7 @@ export function WorkspaceModule({ name }: { name: string }) {
     case 'funnel': return <FunnelTab />;
     case 'campaigns': return <CampaignsTab />;
     case 'growth': return <GrowthTab />;
+    case 'growthmetrics': return <GrowthMetricsTab />;
     case 'compliance': return <ComplianceTab />;
     case 'roles': return <RolesTab />;
     case 'infra': return <InfraHealth />;
@@ -247,6 +252,7 @@ case 'transactions': return <TransactionsTab />;
     case 'performance': return <PerformanceTab />;
     case 'boards': return <BoardsTab />;
     case 'marketing': return <MarketingTab />;
+    case 'ai': return <AiGovernanceTab />;
     default: return <NotFoundModule name={name} />;
   }
 }
