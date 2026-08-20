@@ -209,19 +209,23 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-full space-y-6 p-6 lg:p-8">
-      <div>
-        <h1 className="font-display text-xl font-bold text-brand-navy">Settings</h1>
-        <p className="mt-1 text-xs text-brand-navy/50">Your profile, security and signed-in devices.</p>
+    <div className="min-h-full space-y-6 font-sans">
+      <div className="border-b border-brand-navy/10 pb-4">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Account Governance</span>
+        </div>
+        <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Account & Security Settings</h1>
+        <p className="mt-0.5 text-xs text-brand-textLight">Manage your personal credentials, hardware 2FA authenticator, and active enterprise sessions.</p>
       </div>
 
-      <div className="flex flex-wrap gap-1.5 rounded-2xl border border-brand-navy/10 bg-white p-1.5 w-fit">
+      <div className="flex flex-wrap gap-1.5 rounded-2xl border border-brand-navy/15 bg-white/80 backdrop-blur-md p-1.5 w-fit shadow-xs">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-colors ${
-              tab === t.key ? 'bg-brand-navy text-white' : 'text-brand-navy/60 hover:bg-brand-navy/5 hover:text-brand-navy'
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 cursor-pointer ${
+              tab === t.key ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-navy/60 hover:bg-brand-navy/5 hover:text-brand-navy'
             }`}>
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d={t.icon} />
             </svg>
             {t.label}
@@ -232,12 +236,8 @@ export default function Settings() {
       {tab === 'profile' && <ProfileTab />}
 
       {tab === 'security' && (
-        <div className="space-y-4">
-          {/* Dark security card: TwoFactorSetup is styled for dark surfaces
-              (also used in the gate + legacy portal) — wrap to match. */}
-          <div className="rounded-2xl border border-white/10 bg-brand-navy p-5 shadow-[0_4px_20px_rgba(10,45,80,0.15)]">
-            <TwoFactorSetup />
-          </div>
+        <div className="space-y-6 max-w-4xl">
+          <TwoFactorSetup />
           <ChangePasswordCard />
         </div>
       )}
