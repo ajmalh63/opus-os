@@ -29,6 +29,8 @@ export default function Login() {
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [capsLockActive, setCapsLockActive] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +40,7 @@ export default function Login() {
       { y: 30, opacity: 0, scale: 0.98 },
       { y: 0, opacity: 1, scale: 1, duration: 0.8, ease: 'power3.out' }
     );
-  }, [signInMethod, twoFactorStep]);
+  }, [signInMethod, twoFactorStep, forgotPasswordMode]);
 
   const fail = (t: string) => setMsg({ kind: 'err', text: t });
   const ok = (t: string) => setMsg({ kind: 'ok', text: t });
@@ -105,6 +107,28 @@ export default function Login() {
     }
   };
 
+  // Forgot Password Request
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      fail('Please enter your registered email address.');
+      return;
+    }
+    setBusy(true); setMsg(null);
+    try {
+      const r = await post('/forget-password', { email, redirectTo: window.location.origin + '/login' });
+      if (r.status === 200 || r.data?.status === true) {
+        ok(`Password reset instructions sent to ${email}. Please check your inbox.`);
+      } else {
+        fail(r.data?.message || r.data?.error || 'Unable to process reset request. Please check your email.');
+      }
+    } catch (err: any) {
+      fail(`Connection error: ${err.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // 2FA TOTP Verification
   const handleTwoFactor = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,13 +148,40 @@ export default function Login() {
     }
   };
 
-  // Email OTP Sign-In
+  // Step 1: Send Email OTP
+  const handleSendOTP = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!email || !email.includes('@')) {
+      fail('Please enter a valid email address.');
+      return;
+    }
+    setBusy(true); setMsg(null);
+    try {
+      const r = await post('/otp/send', { email });
+      if (r.status === 200) {
+        setOtpSent(true);
+        ok(`6-digit code sent to ${email}. Check your inbox.`);
+      } else {
+        fail(r.data?.error || 'Failed to send OTP code.');
+      }
+    } catch (err: any) {
+      fail(`Connection error: ${err.message}`);
+    } finally { 
+      setBusy(false); 
+    }
+  };
+
+  // Step 2: Verify Email OTP Sign-In
   const handleOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!otpCode || otpCode.length !== 6) {
+      fail('Please enter the 6-digit code sent to your email.');
+      return;
+    }
     setBusy(true); setMsg(null);
     try {
       const r = await post('/otp/verify', { email, otp: otpCode });
-      if (r.status === 200) {
+      if (r.status === 200 && r.data?.success) {
         ok('Passcode verified. Loading your workspace…');
         await finish();
       } else {
@@ -209,116 +260,18 @@ export default function Login() {
             {/* Standard Sign-In Surface */}
             {!twoFactorStep && (
               <>
-                {/* Method selector: Password vs Instant Email OTP */}
-                <div className="mb-6 grid grid-cols-2 rounded-2xl bg-brand-navy/5 p-1 text-xs font-bold border border-brand-navy/10">
-                  <button 
-                    type="button"
-                    onClick={() => { setSignInMethod('password'); setMsg(null); }} 
-                    className={`cursor-pointer rounded-xl py-2.5 transition-all ${
-                      signInMethod === 'password' 
-                        ? 'bg-brand-navy text-white shadow-md' 
-                        : 'text-brand-navy/70 hover:text-brand-navy'
-                    }`}
-                  >
-                    Password Sign In
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => { setSignInMethod('otp'); setMsg(null); }} 
-                    className={`cursor-pointer rounded-xl py-2.5 transition-all ${
-                      signInMethod === 'otp' 
-                        ? 'bg-brand-gold text-brand-navy shadow-md font-extrabold' 
-                        : 'text-brand-navy/70 hover:text-brand-navy'
-                    }`}
-                  >
-                    Direct Email OTP
-                  </button>
-                </div>
-
-                {signInMethod === 'password' ? (
-                  <form onSubmit={handlePasswordLogin} className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
-                          Email Address
-                        </label>
-                        <span className="text-[10px] text-brand-gold-hover font-semibold">
-                          Client / Partner / Staff
-                        </span>
-                      </div>
-                      <input 
-                        type="email" 
-                        required 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        placeholder="you@example.com" 
-                        className={inputClasses} 
-                      />
-                      <p className="mt-1 text-[10px] text-brand-textLight/75">
-                        💡 Students & Clients: Use the email provided during your consultation.
+                {forgotPasswordMode ? (
+                  /* Forgot Password Request Surface */
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="rounded-2xl bg-brand-gold/10 border border-brand-gold/30 p-4 text-xs text-brand-navy space-y-1">
+                      <p className="font-bold flex items-center gap-1.5">
+                        <span>🔑</span> Reset Your Account Password
+                      </p>
+                      <p className="text-[11px] text-brand-navy/75">
+                        Enter your registered account email. We'll send you a secure 10-minute password reset link to your mailbox.
                       </p>
                     </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
-                          Password
-                        </label>
-                        {capsLockActive && (
-                          <span className="text-[10px] font-bold text-amber-600 animate-pulse">
-                            ⚠️ Caps Lock is ON
-                          </span>
-                        )}
-                      </div>
-                      <div className="relative">
-                        <input 
-                          type={showPassword ? 'text' : 'password'} 
-                          required 
-                          minLength={8} 
-                          value={password} 
-                          onChange={(e) => setPassword(e.target.value)} 
-                          onKeyDown={handleKeyDown}
-                          placeholder="••••••••••••" 
-                          className={`${inputClasses} pr-11`} 
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-brand-textLight hover:text-brand-navy cursor-pointer"
-                        >
-                          {showPassword ? 'Hide' : 'Show'}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <label className="flex items-center gap-2 text-xs text-brand-textLight cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={rememberMe} 
-                          onChange={(e) => setRememberMe(e.target.checked)} 
-                          className="h-4 w-4 rounded border-brand-navy/20 accent-brand-gold"
-                        />
-                        <span>Remember session (30d)</span>
-                      </label>
-                      <button 
-                        type="button" 
-                        onClick={() => setSignInMethod('otp')} 
-                        className="text-xs font-bold text-brand-gold-hover hover:underline cursor-pointer"
-                      >
-                        Sign in via Email OTP
-                      </button>
-                    </div>
-
-                    <button 
-                      disabled={busy} 
-                      className="w-full cursor-pointer rounded-full bg-brand-navy py-4 text-xs font-extrabold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 tactile-btn"
-                    >
-                      {busy ? 'Authenticating…' : 'Sign In to Workspace →'}
-                    </button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleOTP} className="space-y-4">
                     <div>
                       <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
                         Registered Account Email
@@ -332,40 +285,236 @@ export default function Login() {
                         className={inputClasses} 
                       />
                     </div>
-                    <div>
-                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
-                        6-Digit One-Time Passcode
-                      </label>
-                      <input 
-                        inputMode="numeric" 
-                        value={otpCode} 
-                        onChange={(e) => setOtpCode(e.target.value)} 
-                        placeholder="e.g. 482913" 
-                        maxLength={6} 
-                        className={`${inputClasses} font-mono tracking-widest text-center text-lg font-bold`} 
-                      />
-                    </div>
+
                     <button 
                       disabled={busy} 
-                      className="w-full cursor-pointer rounded-full bg-brand-gold py-4 text-xs font-extrabold uppercase tracking-wider text-brand-navy hover:bg-brand-gold-hover hover:text-white transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 tactile-btn"
+                      className="w-full cursor-pointer rounded-full bg-brand-navy py-4 text-xs font-extrabold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 tactile-btn"
                     >
-                      {busy ? 'Verifying…' : 'Verify Email OTP →'}
+                      {busy ? 'Dispatching Reset Link…' : 'Send Password Reset Link →'}
                     </button>
-                  </form>
-                )}
 
-                {/* Account Registration Link */}
-                <div className="mt-6 pt-5 border-t border-brand-navy/10 text-center text-xs text-brand-textLight space-y-2">
-                  <p>
-                    Don't have a client account yet?{' '}
-                    <button 
-                      onClick={() => setLocation('/signup')} 
-                      className="font-bold text-brand-navy hover:text-brand-gold underline cursor-pointer"
-                    >
-                      Create Client Account →
-                    </button>
-                  </p>
-                </div>
+                    <div className="text-center pt-2">
+                      <button
+                        type="button"
+                        onClick={() => { setForgotPasswordMode(false); setMsg(null); }}
+                        className="text-xs font-bold text-brand-textLight hover:text-brand-navy transition cursor-pointer"
+                      >
+                        ← Back to Sign In
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    {/* Method selector: Password vs Instant Email OTP */}
+                    <div className="mb-6 grid grid-cols-2 rounded-2xl bg-brand-navy/5 p-1 text-xs font-bold border border-brand-navy/10">
+                      <button 
+                        type="button"
+                        onClick={() => { setSignInMethod('password'); setMsg(null); }} 
+                        className={`cursor-pointer rounded-xl py-2.5 transition-all ${
+                          signInMethod === 'password' 
+                            ? 'bg-brand-navy text-white shadow-md' 
+                            : 'text-brand-navy/70 hover:text-brand-navy'
+                        }`}
+                      >
+                        Password Sign In
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => { setSignInMethod('otp'); setMsg(null); }} 
+                        className={`cursor-pointer rounded-xl py-2.5 transition-all ${
+                          signInMethod === 'otp' 
+                            ? 'bg-brand-gold text-brand-navy shadow-md font-extrabold' 
+                            : 'text-brand-navy/70 hover:text-brand-navy'
+                        }`}
+                      >
+                        Direct Email OTP
+                      </button>
+                    </div>
+
+                    {signInMethod === 'password' ? (
+                      <form onSubmit={handlePasswordLogin} className="space-y-4">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+                              Email Address
+                            </label>
+                            <span className="text-[10px] text-brand-gold-hover font-semibold">
+                              Client / Partner / Staff
+                            </span>
+                          </div>
+                          <input 
+                            type="email" 
+                            required 
+                            value={email} 
+                            onChange={(e) => setEmail(e.target.value)} 
+                            placeholder="you@example.com" 
+                            className={inputClasses} 
+                          />
+                          <p className="mt-1 text-[10px] text-brand-textLight/75">
+                            💡 Students & Clients: Use the email provided during your consultation.
+                          </p>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+                              Password
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => { setForgotPasswordMode(true); setMsg(null); }}
+                              className="text-[11px] font-bold text-brand-gold-hover hover:underline cursor-pointer"
+                            >
+                              Forgot Password?
+                            </button>
+                          </div>
+                          <div className="relative">
+                            <input 
+                              type={showPassword ? 'text' : 'password'} 
+                              required 
+                              minLength={8} 
+                              value={password} 
+                              onChange={(e) => setPassword(e.target.value)} 
+                              onKeyDown={handleKeyDown}
+                              placeholder="••••••••••••" 
+                              className={`${inputClasses} pr-11`} 
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-brand-textLight hover:text-brand-navy cursor-pointer"
+                            >
+                              {showPassword ? 'Hide' : 'Show'}
+                            </button>
+                          </div>
+                          {capsLockActive && (
+                            <span className="mt-1 block text-[10px] font-bold text-amber-600 animate-pulse">
+                              ⚠️ Caps Lock is ON
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <label className="flex items-center gap-2 text-xs text-brand-textLight cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={rememberMe} 
+                              onChange={(e) => setRememberMe(e.target.checked)} 
+                              className="h-4 w-4 rounded border-brand-navy/20 accent-brand-gold"
+                            />
+                            <span>Remember session (30d)</span>
+                          </label>
+                          <button 
+                            type="button" 
+                            onClick={() => { setSignInMethod('otp'); setMsg(null); }} 
+                            className="text-xs font-bold text-brand-gold-hover hover:underline cursor-pointer"
+                          >
+                            Sign in via Email OTP
+                          </button>
+                        </div>
+
+                        <button 
+                          disabled={busy} 
+                          className="w-full cursor-pointer rounded-full bg-brand-navy py-4 text-xs font-extrabold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 tactile-btn"
+                        >
+                          {busy ? 'Authenticating…' : 'Sign In to Workspace →'}
+                        </button>
+                      </form>
+                    ) : (
+                      /* Email OTP 2-Step Interactive Form */
+                      <form onSubmit={otpSent ? handleOTP : handleSendOTP} className="space-y-4">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+                              Registered Account Email
+                            </label>
+                            {otpSent && (
+                              <button
+                                type="button"
+                                onClick={() => { setOtpSent(false); setOtpCode(''); setMsg(null); }}
+                                className="text-[11px] font-bold text-brand-gold-hover hover:underline cursor-pointer"
+                              >
+                                ✏️ Change Email
+                              </button>
+                            )}
+                          </div>
+                          <input 
+                            type="email" 
+                            required 
+                            disabled={otpSent || busy}
+                            value={email} 
+                            onChange={(e) => setEmail(e.target.value)} 
+                            placeholder="you@example.com" 
+                            className={`${inputClasses} ${otpSent ? 'opacity-70 bg-brand-navy/5' : ''}`} 
+                          />
+                        </div>
+
+                        {!otpSent ? (
+                          <>
+                            <p className="text-[11px] text-brand-textLight/80">
+                              🔒 No password needed. We will transmit a 6-digit one-time code to your registered email address.
+                            </p>
+                            <button 
+                              type="submit"
+                              disabled={busy} 
+                              className="w-full cursor-pointer rounded-full bg-brand-gold py-4 text-xs font-extrabold uppercase tracking-wider text-brand-navy hover:bg-brand-gold-hover hover:text-white transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 tactile-btn"
+                            >
+                              {busy ? 'Sending One-Time Passcode…' : 'Send One-Time Passcode →'}
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+                                  6-Digit Passcode from Email
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendOTP()}
+                                  disabled={busy}
+                                  className="text-[11px] font-bold text-brand-gold-hover hover:underline cursor-pointer"
+                                >
+                                  Resend Code
+                                </button>
+                              </div>
+                              <input 
+                                inputMode="numeric" 
+                                autoFocus
+                                required
+                                value={otpCode} 
+                                onChange={(e) => setOtpCode(e.target.value)} 
+                                placeholder="e.g. 482913" 
+                                maxLength={6} 
+                                className={`${inputClasses} font-mono tracking-widest text-center text-lg font-bold`} 
+                              />
+                            </div>
+                            <button 
+                              type="submit"
+                              disabled={busy} 
+                              className="w-full cursor-pointer rounded-full bg-brand-navy py-4 text-xs font-extrabold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 tactile-btn"
+                            >
+                              {busy ? 'Verifying Code…' : 'Verify Email OTP & Sign In →'}
+                            </button>
+                          </>
+                        )}
+                      </form>
+                    )}
+
+                    {/* Account Registration Link */}
+                    <div className="mt-6 pt-5 border-t border-brand-navy/10 text-center text-xs text-brand-textLight space-y-2">
+                      <p>
+                        Don't have a client account yet?{' '}
+                        <button 
+                          onClick={() => setLocation('/signup')} 
+                          className="font-bold text-brand-navy hover:text-brand-gold underline cursor-pointer"
+                        >
+                          Create Client Account →
+                        </button>
+                      </p>
+                    </div>
+                  </>
+                )}
               </>
             )}
 

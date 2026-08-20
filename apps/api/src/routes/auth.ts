@@ -1,13 +1,14 @@
 import { Hono } from 'hono';
-import { getAuth } from '../auth.js';
+import { getAuth, sendOtpEmail } from '../auth.js';
 import { getDb } from '../db/client.js';
-import { users } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { users, verifications, sessions } from '../db/schema.js';
+import { eq, and, gt } from 'drizzle-orm';
 import { rateLimit, isRateLimited, clearRateLimit } from '../middleware/rateLimit.js';
 import { auditEvent, auditBounded } from '../middleware/audit.js';
+import { sha256Hex } from '../lib/auditChain.js';
 
 export const authRouter = new Hono<{
-  Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string; ADMIN_EMAIL?: string; ADMIN_PASSWORD?: string };
+  Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string; ADMIN_EMAIL?: string; ADMIN_PASSWORD?: string; ENVIRONMENT?: string };
 }>();
 
 // Brute-force protection on auth-sensitive routes (spec §18.2.1).
@@ -149,6 +150,130 @@ async function twoFactorIntercept(c: any, action: string) {
 
 authRouter.post('/two-factor/enable', (c) => twoFactorIntercept(c, 'TWO_FACTOR_ENABLED'));
 authRouter.post('/two-factor/disable', (c) => twoFactorIntercept(c, 'TWO_FACTOR_DISABLED'));
+
+// POST /api/auth/otp/send — Request 6-digit email OTP
+authRouter.post('/otp/send', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'Database not available' }, 500);
+  const body = await c.req.json().catch(() => ({}));
+  const email = String(body?.email || '').trim().toLowerCase();
+
+  if (!email || !email.includes('@')) {
+    return c.json({ error: 'Valid email address is required' }, 400);
+  }
+
+  // Rate limiting (max 5 OTP requests per 10 mins per email)
+  const { over } = await isRateLimited(c.env, { bucket: 'otp-send', windowSeconds: 600, limit: 5 }, email);
+  if (over) {
+    return c.json({ error: 'Too many OTP requests. Please wait a few minutes before trying again.' }, 429);
+  }
+
+  const db = getDb(c.env.DB);
+  const user = await db.select().from(users).where(eq(users.email, email)).get();
+  if (!user) {
+    return c.json({ error: 'No account found with this email. Please check your spelling or create an account.' }, 404);
+  }
+
+  // Generate secure 6-digit OTP
+  const rawOtp = String(Math.floor(100000 + Math.random() * 900000));
+  const hashedOtp = await sha256Hex(rawOtp);
+  const identifier = `otp:${email}`;
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+  // Clean old OTP and insert fresh verification row
+  await db.delete(verifications).where(eq(verifications.identifier, identifier)).catch(() => {});
+  await db.insert(verifications).values({
+    id: crypto.randomUUID(),
+    identifier,
+    value: hashedOtp,
+    attempts: 0,
+    expiresAt,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+
+  // Dispatch OTP via Listmonk -> Titan Mail
+  await sendOtpEmail(c.env, db, user, rawOtp);
+
+  return c.json({
+    success: true,
+    message: `A 6-digit verification code has been sent to ${email}.`,
+    email
+  });
+});
+
+// POST /api/auth/otp/verify — Verify 6-digit email OTP & Create Session
+authRouter.post('/otp/verify', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'Database not available' }, 500);
+  const body = await c.req.json().catch(() => ({}));
+  const email = String(body?.email || '').trim().toLowerCase();
+  const otp = String(body?.otp || '').trim();
+
+  if (!email || !otp || otp.length !== 6) {
+    return c.json({ error: 'Valid 6-digit passcode is required' }, 400);
+  }
+
+  const db = getDb(c.env.DB);
+  const identifier = `otp:${email}`;
+  const row = await db.select().from(verifications).where(eq(verifications.identifier, identifier)).get();
+
+  if (!row) {
+    return c.json({ error: 'Passcode expired or not requested. Please request a new code.' }, 400);
+  }
+
+  if (new Date() > new Date(row.expiresAt)) {
+    await db.delete(verifications).where(eq(verifications.identifier, identifier)).catch(() => {});
+    return c.json({ error: 'Passcode has expired. Please request a fresh code.' }, 400);
+  }
+
+  const hashedInput = await sha256Hex(otp);
+  if (row.value !== hashedInput) {
+    await db.update(verifications).set({ attempts: (row.attempts || 0) + 1 }).where(eq(verifications.identifier, identifier));
+    return c.json({ error: 'Incorrect passcode. Please check the code sent to your email.' }, 400);
+  }
+
+  // Verification successful — delete verification record
+  await db.delete(verifications).where(eq(verifications.identifier, identifier));
+
+  const user = await db.select().from(users).where(eq(users.email, email)).get();
+  if (!user) return c.json({ error: 'User not found' }, 404);
+
+  // Create session for user
+  const sessionId = crypto.randomUUID();
+  const sessionToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  await db.insert(sessions).values({
+    id: sessionId,
+    userId: user.id,
+    token: sessionToken,
+    expiresAt,
+    ipAddress: c.req.header('cf-connecting-ip') || '127.0.0.1',
+    userAgent: c.req.header('user-agent') || 'browser',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+
+  const cookieStr = `better-auth.session_token=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800; ${c.env?.ENVIRONMENT === 'production' ? 'Secure;' : ''}`;
+  c.header('Set-Cookie', cookieStr);
+
+  await auditEvent(c, {
+    action: 'LOGIN_SUCCESS',
+    entityName: 'users',
+    entityId: user.id,
+    category: 'auth',
+    afterState: { email: user.email, method: 'email_otp' }
+  });
+
+  return c.json({
+    success: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
+  });
+});
 
 // All other /api/auth/* routes go to Better Auth (sign-in, sign-up, session, 2FA…)
 authRouter.all('/*', (c) => {
