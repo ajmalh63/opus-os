@@ -15,6 +15,7 @@ This document details all features, architectural fixes, security patches, and i
 | **Authentication Gateway** | Implemented interactive 2-Step Direct Email OTP flow & Forgot Password recovery modal. | `Login.tsx`, `apps/api/src/routes/auth.ts` (`/otp/send`, `/otp/verify`). |
 | **Owner Account** | Updated primary Super Admin identity to `ajmalsn63@gmail.com` with `OwnerPass2026!`. | D1 SQLite `users` table, `apps/api/.dev.vars`, `wrangler.toml`, Listmonk DB. |
 | **UI Simplification** | Removed subtitle `"Unified gateway..."` and role-specific hints from the login gate. | `apps/app/src/pages/Login.tsx`. |
+| **Workspace UI/UX Elevation** | Upgraded Staff, Client, and Partner workspaces with gold-standard dark luxury glassmorphism, animated cards, live telemetry pills, and micro-interactions. | `WorkChrome.tsx`, `WorkspaceShell.tsx`, `DashboardHome.tsx`, `Inbox.tsx`, `StudyAbroadPortal.tsx`, `UmrahPortal.tsx`, `ClientPortal.tsx`, `PartnerDashboard.tsx`. |
 | **Stress Benchmarks** | Created automated enterprise concurrency stress tests (10k ops/sec throughput). | `apps/api/tests/stress_benchmark.test.ts`, `apps/api/tests/auth_email_lane.test.ts`. |
 
 ---
