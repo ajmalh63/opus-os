@@ -1,4 +1,4 @@
-﻿import { Hono } from 'hono';
+import { Hono } from 'hono';
 import { newPortalToken } from '../lib/clientToken.js';
 import { getDb } from '../db/client.js';
 import { conversations, clients } from '../db/schema.js';
@@ -114,6 +114,11 @@ const parsed = JSON.parse(raw) as any;
   }
 });
 
+import {
+  processChatwootMessageWithAI,
+  summarizeResolvedConversation,
+} from '../infra/chatwootAiCopilot.js';
+
 chatwootWebhookRouter.post('/', async (c) => {
   const rawCw = await c.req.text();
   if (!(await secretOk(c, rawCw))) {
@@ -140,6 +145,31 @@ chatwootWebhookRouter.post('/', async (c) => {
     if ((phone || name) && body) {
       await persistMessage(db, 'whatsapp', String(phone || name || 'unknown'), name, body);
     }
+
+    const safeWaitUntil = (p: Promise<any>) => {
+      try {
+        if (c.executionCtx && typeof c.executionCtx.waitUntil === 'function') {
+          c.executionCtx.waitUntil(p);
+          return;
+        }
+      } catch {
+        // ExecutionContext not available (e.g. in test env)
+      }
+      p.catch(() => {});
+    };
+
+    // AI Copilot: Smart reply draft, auto-translation & category triage for incoming customer messages
+    const isIncoming = ev?.message_type === 'incoming' || ev?.event === 'message_created' || (ev?.event === 'webwidget_triggered' && body);
+    const isPrivate = !!ev?.private;
+    if (isIncoming && !isPrivate && body) {
+      safeWaitUntil(processChatwootMessageWithAI(c.env, ev));
+    }
+
+    // AI Resolution Summary: When a conversation is marked as resolved, post an executive summary
+    if (ev?.event === 'conversation_status_changed' && ev?.status === 'resolved') {
+      safeWaitUntil(summarizeResolvedConversation(c.env, ev));
+    }
+
     // Lead capture: chat visitors become client records (leadSource=chatwoot)
     if (email || phone) {
       try {
@@ -148,7 +178,7 @@ chatwootWebhookRouter.post('/', async (c) => {
           : (phone ? await db.select().from(clients).where(eq(clients.phone, String(phone))).get() : null);
         if (!existing && (email || (phone && String(phone).length >= 10))) {
           const cid = `OP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`; // display id
-        const portalToken = newPortalToken();
+          const portalToken = newPortalToken();
           await db.insert(clients).values({
             id: cid, portalToken, name: name || 'Chat lead', phone: String(phone || '0000000000'),
             email: email || `${String(phone || 'unknown').replace(/\D/g, '')}@chat.lead`, leadSource: 'chatwoot',
