@@ -564,26 +564,30 @@ export default function AttestationPortal() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-6 font-sans">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-5">
         <div>
-          <h1 className="font-display text-2xl font-bold text-brand-navy">Document Attestation Portal</h1>
-          <p className="text-xs text-brand-navy/40 font-medium">Book certificate legalizations, handle HRD/MEA stamps, and process courier consignments.</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Legalization & Stamping</span>
+          </div>
+          <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Document Attestation Operations</h1>
+          <p className="text-xs text-brand-textLight mt-0.5">Book certificate legalizations, handle HRD/MEA stamps, and process India Post courier consignments.</p>
         </div>
       </div>
 
-      <div className="flex border-b border-brand-navy/[0.08] text-xs font-semibold gap-6 pb-2.5 overflow-x-auto">
+      <div className="flex bg-white/80 p-1.5 rounded-2xl border border-brand-navy/15 text-xs font-bold text-brand-navy shadow-xs backdrop-blur-md gap-1.5 overflow-x-auto w-fit">
         {[
-          { key: 'rates', label: 'Attestation Services Rates' },
-          { key: 'applications', label: 'Applications & Stamping' },
-          { key: 'indiapost', label: 'India Post DNK Booking Panel' },
-          { key: 'tracking', label: 'Internal Courier Tracking' },
+          { key: 'rates', label: '💰 Rate Cards' },
+          { key: 'applications', label: '📋 Stamping & Apps' },
+          { key: 'indiapost', label: '📦 India Post DNK Panel' },
+          { key: 'tracking', label: '🚚 Courier Tracking' },
           { key: 'ocr', label: '✨ AI Document OCR' },
         ].map(t => (
           <button
             key={t.key}
             onClick={() => setActiveSubTab(t.key as any)}
-            className={`pb-2.5 transition-colors cursor-pointer border-b-2 whitespace-nowrap ${activeSubTab === t.key ? 'border-brand-gold text-brand-navy' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'}`}
+            className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${activeSubTab === t.key ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
           >
             {t.label}
           </button>

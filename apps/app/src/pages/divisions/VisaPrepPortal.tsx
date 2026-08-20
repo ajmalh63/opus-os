@@ -894,32 +894,39 @@ export default function VisaPrepPortal() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Toggle Switch */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/[0.08] pb-4">
+    <div className="space-y-6 font-sans">
+      {/* Top Toggle Switch with luxury glass depth */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-5">
         <div>
-          <h1 className="font-display text-2xl font-bold text-brand-navy">Visa Processing Desk</h1>
-          <p className="text-xs text-brand-navy/40 font-medium">Manage visa applicants, embassy schedules, and master inventory.</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Immigration & Embassy Slots</span>
+          </div>
+          <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Visa Processing Operations</h1>
+          <p className="text-xs text-brand-textLight mt-0.5">Coordinate visa applicants, embassy appointments, mock interviews, and active inventory.</p>
         </div>
-        <div className="flex items-center gap-2 bg-brand-navy/[0.05] p-1.5 rounded-xl border border-brand-navy/10 text-xs font-bold text-brand-navy/60">
+        <div className="flex items-center gap-1.5 bg-white/80 p-1.5 rounded-2xl border border-brand-navy/15 text-xs font-bold text-brand-navy shadow-xs backdrop-blur-md">
           <button
             onClick={() => setViewMode('applicants')}
-            className={`px-4 py-2 rounded-lg cursor-pointer transition-all ${viewMode === 'applicants' ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'hover:text-brand-navy'}`}
+            className={`px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-1.5 ${viewMode === 'applicants' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
           >
-            👥 Applicants Desk
+            <span>👥</span>
+            <span>Applicants Desk</span>
           </button>
           <button
             onClick={() => setViewMode('ai-copilot')}
-            className={`px-4 py-2 rounded-lg cursor-pointer transition-all ${viewMode === 'ai-copilot' ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'hover:text-brand-navy'}`}
+            className={`px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-1.5 ${viewMode === 'ai-copilot' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
           >
-            ✨ AI Risk Copilot
+            <span>✨</span>
+            <span>AI Risk Copilot</span>
           </button>
           {['super_admin', 'manager'].includes(me?.role || '') && (
             <button
               onClick={() => setViewMode('inventory')}
-              className={`px-4 py-2 rounded-lg cursor-pointer transition-all ${viewMode === 'inventory' ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'hover:text-brand-navy'}`}
+              className={`px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-1.5 ${viewMode === 'inventory' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
             >
-              ⚙️ Manage Inventory
+              <span>⚙️</span>
+              <span>Manage Inventory</span>
             </button>
           )}
         </div>

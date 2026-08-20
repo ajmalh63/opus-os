@@ -307,32 +307,39 @@ export default function ManpowerPortal() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-6 font-sans">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-5">
         <div>
-          <h1 className="font-display text-2xl font-bold text-brand-navy">Manpower Sourcing Portal</h1>
-          <p className="text-xs text-brand-navy/40 font-medium">Manage international job openings, recruitment classifications, and candidate flight deployments.</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Recruitment & Deployment</span>
+          </div>
+          <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Manpower Sourcing Operations</h1>
+          <p className="text-xs text-brand-textLight mt-0.5">Manage international job openings, recruitment classifications, and candidate flight deployments.</p>
         </div>
       </div>
 
-      <div className="flex border-b border-brand-navy/[0.08] text-xs font-semibold gap-6 pb-2.5">
+      <div className="flex bg-white/80 p-1.5 rounded-2xl border border-brand-navy/15 text-xs font-bold text-brand-navy shadow-xs backdrop-blur-md gap-1.5 w-fit">
         <button
           onClick={() => setActiveSubTab('jobs')}
-          className={`pb-2.5 transition-colors cursor-pointer border-b-2 ${activeSubTab === 'jobs' ? 'border-brand-gold text-brand-navy' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'}`}
+          className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'jobs' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
         >
-          Job Vacancies Board
+          <span>💼</span>
+          <span>Job Vacancies Board</span>
         </button>
         <button
           onClick={() => { setActiveSubTab('deployments'); }}
-          className={`pb-2.5 transition-colors cursor-pointer border-b-2 ${activeSubTab === 'deployments' ? 'border-brand-gold text-brand-navy' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'}`}
+          className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'deployments' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
         >
-          Candidate Deployment Status
+          <span>✈️</span>
+          <span>Deployment Status</span>
         </button>
         <button
           onClick={() => setActiveSubTab('community')}
-          className={`pb-2.5 transition-colors cursor-pointer border-b-2 ${activeSubTab === 'community' ? 'border-brand-gold text-brand-navy' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'}`}
+          className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'community' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
         >
-          🔒 Exclusive Community
+          <span>🔒</span>
+          <span>Exclusive Community</span>
         </button>
       </div>
 

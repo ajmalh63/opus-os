@@ -393,53 +393,57 @@ export default function ClientsList() {
       </div>
 
       {/* Spreadsheet directory table */}
-      <div className="reveal overflow-hidden rounded-2xl border border-brand-navy/10 bg-white shadow-md">
-        <table className="w-full text-left text-xs">
-          <thead className="border-b border-brand-navy/[0.08] bg-brand-navy/[0.04] text-[10px] uppercase tracking-wider text-brand-gold font-semibold">
-            <tr>
-              <th className="px-4 py-3">Token ID</th>
-              <th className="px-4 py-3">Client Name</th>
-              <th className="px-4 py-3">Phone</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Primary Division</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-brand-navy/[0.08] text-brand-navy/70">
-            {isLoading ? (
+      <div className="reveal overflow-hidden rounded-2xl border border-brand-navy/15 bg-white shadow-md">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="border-b border-brand-navy/10 bg-[#FAF8F4] text-[10px] uppercase tracking-wider text-brand-gold font-extrabold">
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-brand-navy/50">Loading directory...</td>
+                <th className="px-4 py-3.5">Token ID</th>
+                <th className="px-4 py-3.5">Client Name</th>
+                <th className="px-4 py-3.5">Profile Score</th>
+                <th className="px-4 py-3.5">Phone</th>
+                <th className="px-4 py-3.5">Email</th>
+                <th className="px-4 py-3.5">Primary Division</th>
+                <th className="px-4 py-3.5">Status</th>
+                <th className="px-4 py-3.5 text-right">Actions</th>
               </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-brand-navy/50">No clients match your filter.</td>
-              </tr>
-            ) : (
-              filtered.map((c) => (
-                <tr key={c.id} className="hover:bg-brand-navy/[0.04] transition-colors">
-                  <td className="whitespace-nowrap px-4 py-3 font-mono font-bold text-brand-navy">{c.id}</td>
-                  <td className="px-4 py-3 font-medium text-brand-navy">
-                    {c.name}
-                    {c.name === 'Deleted Candidate' && (
-                      <span className="ml-1.5 inline-block text-[8px] bg-rose-50 text-rose-600 px-1 py-0.5 rounded font-bold uppercase">DPDP Anonymized</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-14 h-1 rounded bg-brand-navy/[0.08] overflow-hidden"><div className={`h-full ${completenessOf(c) === 100 ? 'bg-emerald-500' : completenessOf(c) >= 50 ? 'bg-brand-gold' : 'bg-amber-400'}`} style={{ width: `${completenessOf(c)}%` }} /></div>
-                      <span className={`text-[8px] font-bold ${completenessOf(c) === 100 ? 'text-emerald-700' : completenessOf(c) >= 50 ? 'text-brand-gold' : 'text-amber-600'}`}>{completenessOf(c)}%</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">{c.phone}</td>
-                  <td className="px-4 py-3">{c.email}</td>
-                  <td className="px-4 py-3 capitalize">{c.primaryDivision?.replace('-', ' ')}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${c.status === 'blocked' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {c.status || 'active'}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right space-x-1">
+            </thead>
+            <tbody className="divide-y divide-brand-navy/[0.06] text-brand-navy/80">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-brand-textLight">Loading client directory...</td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-brand-textLight">No clients match your search filter.</td>
+                </tr>
+              ) : (
+                filtered.map((c) => (
+                  <tr key={c.id} className="hover:bg-brand-navy/[0.02] transition-colors">
+                    <td className="whitespace-nowrap px-4 py-3.5 font-mono font-bold text-brand-navy">{c.id}</td>
+                    <td className="px-4 py-3.5 font-bold text-brand-navy">
+                      {c.name}
+                      {c.name === 'Deleted Candidate' && (
+                        <span className="ml-1.5 inline-block text-[8px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-bold uppercase border border-rose-200">DPDP Anonymized</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 rounded-full bg-brand-navy/[0.08] overflow-hidden">
+                          <div className={`h-full ${completenessOf(c) === 100 ? 'bg-emerald-500' : completenessOf(c) >= 50 ? 'bg-brand-gold' : 'bg-amber-400'}`} style={{ width: `${completenessOf(c)}%` }} />
+                        </div>
+                        <span className={`text-[9px] font-black ${completenessOf(c) === 100 ? 'text-emerald-700' : completenessOf(c) >= 50 ? 'text-brand-gold' : 'text-amber-600'}`}>{completenessOf(c)}%</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 font-mono text-[11px] text-brand-navy/70">{c.phone}</td>
+                    <td className="px-4 py-3.5 text-brand-navy/70">{c.email}</td>
+                    <td className="px-4 py-3.5 capitalize font-medium text-brand-navy">{c.primaryDivision?.replace('-', ' ')}</td>
+                    <td className="px-4 py-3.5">
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase border tracking-wider ${c.status === 'blocked' ? 'bg-rose-500/10 border-rose-500/30 text-rose-700' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700'}`}>
+                        {c.status || 'active'}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3.5 text-right space-x-1.5">
                     
                     {/* Workspace Desk */}
                     <button
@@ -498,6 +502,7 @@ export default function ClientsList() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* ========================================================
