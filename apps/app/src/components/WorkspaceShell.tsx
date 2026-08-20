@@ -23,26 +23,30 @@ export interface NavSection {
 const ALL = ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'];
 
 const I = {
-  dash: 'M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10',
-  kanban: 'M6 3h12M9 3v18M15 3v18M4 21h16',
-  clients: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm14 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
-  inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z',
-  admindesk: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
-  funnel: 'M3 3v18h18M7 14l4-4 3 3 5-6',
-  campaigns: 'M11 5.882V19.24a1.76 1.76 0 01-3.01 1.247L3 14.8V9.2l4.985-4.9A1.76 1.76 0 0111 5.67zM14.5 6.5a1 1 0 000 1.5M12 1.5c3.5 0 6 2.5 6 6s-2.5 6-6 6',
-  growth: 'M2 12h3l3-9 4 18 3-9h3',
-  compliance: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-  roles: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-  infra: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.065 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
-  audit: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M6 12h12',
-  partner: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
-  billing: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
-  team: 'M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.583m7.44-2.982a1.994 1.994 0 00-.777-.435M6 12a2 2 0 00-2 2v4h2v4l4-4m-2-6h.01M8 8a4 4 0 108 0 4 4 0 00-8 0z',
+  dash: 'M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10', // Dashboard Home
+  inbox: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-4.5a2.5 2.5 0 01-2.5-2.5V13m-6 0h-4', // Unified Messaging Inbox
+  clients: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', // Client Directory
+  kanban: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2', // Kanban Board
+  divisions: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Division Hubs
+  billing: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', // Billing & Currency
+  analytics: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z', // Flow Analytics
+  visibility: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z', // Visibility Radar
+  bookings: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', // Consultations Calendar
+  agreements: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Legal Agreements
+  funnel: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z', // Sales Funnel Filter
+  marketing: 'M11 5.882V19.24a1.76 1.76 0 01-3.01 1.247L3 14.8V9.2l4.985-4.9A1.76 1.76 0 0111 5.67zM14.5 6.5a1 1 0 000 1.5M12 1.5c3.5 0 6 2.5 6 6s-2.5 6-6 6', // Marketing Megaphone
+  campaigns: 'M13 10V3L4 14h7v7l9-11h-7z', // Campaigns Rocket / Fast Launch
+  growth: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', // Leads & Growth Chart
+  compliance: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', // Shield Compliance
+  performance: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', // Performance Bar Metrics
+  growthmetrics: 'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', // Growth Metrics
+  infra: 'M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01', // Server Infrastructure
+  control: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4', // Admin Desk Controls
+  audit: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01', // Security Logs
+  roles: 'M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2H9.17A3.001 3.001 0 0112 14z', // Roles & Access Badge
   signout: 'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1',
   panel: 'M11 19l-7-7 7-7m8 14l-7-7 7-7',
   panelOpen: 'M13 5l7 7-7 7M5 5l7 7-7 7',
-  calendar: 'M8 2v4M16 2v4M3 8h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z',
-  doc: 'M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zm7 0v5h5M9 13h6M9 17h6',
 };
 
 export const NAV_SECTIONS: NavSection[] = [
@@ -51,26 +55,26 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { key: 'dashboard', label: 'Dashboard', to: '/dashboard', icon: I.dash, roles: ALL, match: '/dashboard' },
       { key: 'inbox', label: 'Inbox', to: '/inbox', icon: I.inbox, roles: ALL, match: '/inbox' },
-      { key: 'clients', label: 'Clients', to: '/clients', icon: I.partner, roles: ['super_admin', 'manager', 'counselor', 'coordinator'], match: '/clients' },
+      { key: 'clients', label: 'Clients', to: '/clients', icon: I.clients, roles: ['super_admin', 'manager', 'counselor', 'coordinator'], match: '/clients' },
       { key: 'kanban', label: 'Pipeline', to: '/kanban', icon: I.kanban, roles: ['super_admin', 'manager', 'counselor', 'coordinator'], match: '/kanban' },
-      { key: 'divisions', label: 'Divisions', to: '/divisions', icon: I.dash, roles: ALL, match: '/divisions' },
+      { key: 'divisions', label: 'Divisions', to: '/divisions', icon: I.divisions, roles: ALL, match: '/divisions' },
     ],
   },
   {
     title: 'Operations',
     items: [
       { key: 'billing', label: 'Billing & GST', to: '/billing', icon: I.billing, roles: ALL, match: '/billing' },
-      { key: 'analytics', label: 'Flow Analytics', to: '/analytics', icon: I.growth, roles: ['super_admin', 'manager'], match: '/analytics' },
-      { key: 'visibility', label: 'Visibility Hub', to: '/visibility', icon: I.growth, roles: ['super_admin', 'manager'], match: '/visibility' },
-      { key: 'bookings', label: 'Consultations', to: '/bookings', icon: I.calendar, roles: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], match: '/bookings' },
-      { key: 'agreements', label: 'Agreements', to: '/agreements', icon: I.doc, roles: ['super_admin', 'manager', 'counselor'], match: '/agreements' },
+      { key: 'analytics', label: 'Flow Analytics', to: '/analytics', icon: I.analytics, roles: ['super_admin', 'manager'], match: '/analytics' },
+      { key: 'visibility', label: 'Visibility Hub', to: '/visibility', icon: I.visibility, roles: ['super_admin', 'manager'], match: '/visibility' },
+      { key: 'bookings', label: 'Consultations', to: '/bookings', icon: I.bookings, roles: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], match: '/bookings' },
+      { key: 'agreements', label: 'Agreements', to: '/agreements', icon: I.agreements, roles: ['super_admin', 'manager', 'counselor'], match: '/agreements' },
     ],
   },
   {
     title: 'Marketing',
     items: [
       { key: 'funnel', label: 'Sales Funnel', to: '/workspaces/funnel', icon: I.funnel, roles: ['super_admin', 'manager'], match: '/workspaces/funnel' },
-      { key: 'marketing', label: 'Marketing', to: '/workspaces/marketing', icon: I.campaigns, roles: ['super_admin'], match: '/workspaces/marketing' },
+      { key: 'marketing', label: 'Marketing', to: '/workspaces/marketing', icon: I.marketing, roles: ['super_admin'], match: '/workspaces/marketing' },
       { key: 'campaigns', label: 'Campaigns', to: '/workspaces/campaigns', icon: I.campaigns, roles: ['super_admin'], match: '/workspaces/campaigns' },
       { key: 'growth', label: 'Leads & Growth', to: '/workspaces/growth', icon: I.growth, roles: ['super_admin', 'manager'], match: '/workspaces/growth' },
     ],
@@ -79,15 +83,15 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'Finance & Ops',
     items: [
       { key: 'compliance', label: 'Compliance', to: '/workspaces/compliance', icon: I.compliance, roles: ['super_admin', 'manager'], match: '/workspaces/compliance' },
-      { key: 'performance', label: 'Performance', to: '/workspaces/performance', icon: I.growth, roles: ['super_admin'], match: '/workspaces/performance' },
-      { key: 'growthmetrics', label: 'Growth Metrics', to: '/workspaces/growth', icon: I.growth, roles: ['super_admin'], match: '/workspaces/growth' },
+      { key: 'performance', label: 'Performance', to: '/workspaces/performance', icon: I.performance, roles: ['super_admin'], match: '/workspaces/performance' },
+      { key: 'growthmetrics', label: 'Growth Metrics', to: '/workspaces/growth', icon: I.growthmetrics, roles: ['super_admin'], match: '/workspaces/growth' },
       { key: 'infra', label: 'Infra Health', to: '/workspaces/infra', icon: I.infra, roles: ['super_admin'], match: '/workspaces/infra' },
     ],
   },
   {
     title: 'Security & Program',
     items: [
-      { key: 'control', label: 'Admin Desk', to: '/control', icon: I.admindesk, roles: ['super_admin'], match: '/control' },
+      { key: 'control', label: 'Admin Desk', to: '/control', icon: I.control, roles: ['super_admin'], match: '/control' },
       { key: 'audit', label: 'Security Logs', to: '/workspaces/audit', icon: I.audit, roles: ['super_admin'], match: '/workspaces/audit' },
       { key: 'roles', label: 'Roles & Access', to: '/workspaces/roles', icon: I.roles, roles: ['super_admin'], match: '/workspaces/roles' },
     ],
