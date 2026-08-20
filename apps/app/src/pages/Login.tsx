@@ -223,9 +223,6 @@ export default function Login() {
                 <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy tracking-tight">
                   Sign In to Opus OS
                 </h1>
-                <p className="text-xs sm:text-sm text-brand-textLight mt-1">
-                  Unified gateway for Students, Clients, Partners & Staff
-                </p>
               </div>
             </div>
 
@@ -334,14 +331,9 @@ export default function Login() {
                     {signInMethod === 'password' ? (
                       <form onSubmit={handlePasswordLogin} className="space-y-4">
                         <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
-                              Email Address
-                            </label>
-                            <span className="text-[10px] text-brand-gold-hover font-semibold">
-                              Client / Partner / Staff
-                            </span>
-                          </div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                            Email Address
+                          </label>
                           <input 
                             type="email" 
                             required 
@@ -350,9 +342,6 @@ export default function Login() {
                             placeholder="you@example.com" 
                             className={inputClasses} 
                           />
-                          <p className="mt-1 text-[10px] text-brand-textLight/75">
-                            💡 Students & Clients: Use the email provided during your consultation.
-                          </p>
                         </div>
 
                         <div>
