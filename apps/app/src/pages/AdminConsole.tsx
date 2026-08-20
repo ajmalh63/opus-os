@@ -1,34 +1,14 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
-import RolesTab from '../components/RolesTab';
-import GrowthTab from '../components/GrowthTab';
-import ComplianceTab from '../components/ComplianceTab';
-import FunnelTab from '../components/FunnelTab';
-import CampaignsTab from '../components/CampaignsTab';
 import PartnerAdminPanel from '../components/PartnerAdminPanel';
-import InfraHealth from '../components/InfraHealth';
-import MarketingTab from '../components/MarketingTab';
 import AlertsVisibility from '../components/AlertsVisibility';
-import GrowthMetricsTab from '../components/GrowthMetricsTab';
-import PerformanceTab from '../components/PerformanceTab';
 import AiGovernanceTab from '../components/admin/AiGovernanceTab';
 import DeveloperApiSettingsTab from '../components/admin/DeveloperApiSettingsTab';
 
-// Real session-driven auth — the live cookie, never a forged token.
+// Real session-driven auth — the live cookie, never a forged token.
 
-// API interfaces matching Drizzle schemas & Zod validators
-interface AuditLog {
-  id: string;
-  actorId: string | null;
-  action: string;
-  entityName: string;
-  entityId: string;
-  beforeState: string | null;
-  afterState: string | null;
-  ipAddress: string | null;
-  createdAt: number;
-}
+type AdminTab = 'directory' | 'onboard' | 'partners' | 'alerts' | 'ai' | 'developer';
 
 interface StaffUser {
   id: string;
@@ -67,8 +47,12 @@ export default function AdminConsole() {
   const queryClient = useQueryClient();
   const { me } = useSession();
   const isOwner = me?.role === 'super_admin';
-  const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as 'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | 'performance' | 'growthmetrics' | 'ai' | 'developer' | null;
-  const [activeTab, setActiveTab] = useState<'directory' | 'onboard' | 'audit' | 'roles' | 'growth' | 'funnel' | 'compliance' | 'campaigns' | 'partners' | 'infra' | 'marketing' | 'alerts' | 'performance' | 'growthmetrics' | 'ai' | 'developer'>(initialTab && ['directory','onboard','audit','roles','growth','funnel','compliance','campaigns','partners','infra','marketing','alerts','performance','growthmetrics','ai','developer'].includes(initialTab) ? initialTab : 'directory');
+  const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as AdminTab | null;
+  const [activeTab, setActiveTab] = useState<AdminTab>(
+    initialTab && ['directory', 'onboard', 'partners', 'alerts', 'ai', 'developer'].includes(initialTab)
+      ? initialTab
+      : 'directory'
+  );
   const [toast, setToast] = useState<{ show: boolean; msg: string; type: 'success' | 'error' | 'warning' }>({
     show: false,
     msg: '',
@@ -84,12 +68,6 @@ export default function AdminConsole() {
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState<'super_admin' | 'manager' | 'counselor' | 'receptionist' | 'coordinator'>('counselor');
   const [newScopes, setNewScopes] = useState<string[]>([]);
-
-  // Audit Log Filter/Search State
-  const [actionFilter, setActionFilter] = useState('all');
-  const [entityFilter, setEntityFilter] = useState('all');
-  const [actorSearch, setActorSearch] = useState('');
-  const [selectedLogDetail, setSelectedLogDetail] = useState<AuditLog | null>(null);
 
   const showToast = (msg: string, type: 'success' | 'error' | 'warning' = 'success') => {
     setToast({ show: true, msg, type });
@@ -111,26 +89,9 @@ export default function AdminConsole() {
   const { data: staffData, isLoading: loadingStaff, isError: staffError } = useQuery<{ staff: StaffUser[] }>({
     queryKey: ['adminStaff'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/staff', {
-        headers: {
-          }
-      });
+      const res = await fetch('/api/admin/staff');
       if (!res.ok) {
         throw new Error(await res.text() || 'Failed to fetch staff directory');
-      }
-      return res.json();
-    }
-  });
-
-  const { data: auditData, isLoading: loadingAudit, isError: auditError } = useQuery<{ logs: AuditLog[] }>({
-    queryKey: ['adminAuditLogs'],
-    queryFn: async () => {
-      const res = await fetch('/api/admin/audit-logs', {
-        headers: {
-          }
-      });
-      if (!res.ok) {
-        throw new Error(await res.text() || 'Failed to fetch audit log history');
       }
       return res.json();
     }
@@ -234,31 +195,6 @@ export default function AdminConsole() {
     }
   };
 
-  // Client-side filtering of audit logs
-  const getFilteredLogs = () => {
-    if (!auditData?.logs) return [];
-    
-    // Sort descending by default
-    const sorted = [...auditData.logs].sort((a, b) => b.createdAt - a.createdAt);
-
-    return sorted.filter(log => {
-      if (actionFilter !== 'all' && log.action !== actionFilter) return false;
-      if (entityFilter !== 'all' && log.entityName !== entityFilter) return false;
-      if (actorSearch.trim()) {
-        const search = actorSearch.toLowerCase();
-        const actorMatch = log.actorId?.toLowerCase().includes(search);
-        const actionMatch = log.action.toLowerCase().includes(search);
-        const entityIdMatch = log.entityId.toLowerCase().includes(search);
-        if (!actorMatch && !actionMatch && !entityIdMatch) return false;
-      }
-      return true;
-    });
-  };
-
-  // Helper to extract unique actions and entities for filters
-  const uniqueActions = Array.from(new Set(auditData?.logs?.map(l => l.action) || []));
-  const uniqueEntities = Array.from(new Set(auditData?.logs?.map(l => l.entityName) || []));
-
   // Role Badge Styling
   const getRoleBadgeStyle = (role: string) => {
     switch (role) {
@@ -277,26 +213,10 @@ export default function AdminConsole() {
     }
   };
 
-  // Helper to format UNIX timestamps
-  const formatTime = (ts: number) => {
-    if (!ts) return 'N/A';
-    return new Date(ts * 1000).toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    });
-  };
-
   return (
-<div className="flex h-full min-h-full w-full flex-col overflow-hidden text-brand-navy font-sans">
-
+    <div className="flex h-full min-h-full w-full flex-col overflow-hidden text-brand-navy font-sans">
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-transparent">
-
         {/* TOP STATUS BAR */}
         <header className="h-20 border-b border-brand-navy/10 px-8 flex items-center justify-between shrink-0 bg-white/85 backdrop-blur-xl z-10">
           <div>
@@ -305,7 +225,7 @@ export default function AdminConsole() {
               <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-gold">Super Admin · Control</span>
             </div>
             <h2 className="mt-1 font-display font-extrabold text-xl text-brand-navy tracking-wide">System Control Console</h2>
-            <p className="text-[11px] text-brand-navy/50">Manage staff access controls, scope limits, and system-wide write logs</p>
+            <p className="text-[11px] text-brand-navy/50">Manage staff access controls, scope limits, and master administrative desks</p>
           </div>
 
           <div className="flex gap-4">
@@ -317,8 +237,8 @@ export default function AdminConsole() {
               </div>
               <div className="border-l border-brand-navy/10 h-6"></div>
               <div>
-                <span className="text-brand-navy/40 block text-[9px] uppercase tracking-wider font-semibold">Audit Logs</span>
-                <span className="text-brand-gold font-bold text-sm">{auditData?.logs?.length || 0}</span>
+                <span className="text-brand-navy/40 block text-[9px] uppercase tracking-wider font-semibold">Division Desks</span>
+                <span className="text-brand-gold font-bold text-sm">5 Active</span>
               </div>
             </div>
           </div>
@@ -336,155 +256,30 @@ export default function AdminConsole() {
           </div>
         )}
 
-        {/* SUBHEADER TABS */}
-        <div className="px-8 border-b border-brand-navy/10 bg-white/60 backdrop-blur flex justify-between items-center shrink-0">
-          <div className="flex gap-4">
-            <button
-              onClick={() => setActiveTab('directory')}
-              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'directory' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-              }`}
-            >
-              Staff Directory & Scoping
-            </button>
-            <button
-              onClick={() => setActiveTab('onboard')}
-              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'onboard' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-              }`}
-            >
-              Onboard New Staff
-            </button>
-            <button
-              onClick={() => setActiveTab('audit')}
-              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'audit' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-              }`}
-            >
-              System Audit Logs
-            </button>
-            <button
-              onClick={() => setActiveTab('roles')}
-              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'roles' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-              }`}
-            >
-              Roles & Permissions
-            </button>
-            <button
-              onClick={() => setActiveTab('growth')}
-              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'growth' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-              }`}
-            >
-              Growth & Incentives
-            </button>
-            <button
-              onClick={() => setActiveTab('funnel')}
-              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'funnel' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-              }`}
-            >
-              Sales Funnel
-            </button>
-            <button
-              onClick={() => setActiveTab('compliance')}
-              className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                activeTab === 'compliance' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-              }`}
-            >
-              Compliance (GST)
-            </button>
-            {isOwner && (
+        {/* SUBHEADER TABS - DEDICATED MASTER ADMIN CONTROLS ONLY */}
+        <div className="px-8 border-b border-brand-navy/10 bg-white/80 backdrop-blur-md flex justify-between items-center shrink-0">
+          <div className="flex gap-2 py-3">
+            {[
+              { key: 'directory', label: 'Staff Directory & Scoping', icon: '👥' },
+              { key: 'onboard', label: 'Onboard New Staff', icon: '➕' },
+              { key: 'partners', label: 'Partner Network', icon: '🤝' },
+              { key: 'alerts', label: 'Staff Broadcast Alerts', icon: '📢' },
+              { key: 'ai', label: 'AI & Models', icon: '✨' },
+              { key: 'developer', label: 'Developer & REST API', icon: '🔑' },
+            ].map((t) => (
               <button
-                onClick={() => setActiveTab('campaigns')}
-                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'campaigns' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
+                key={t.key}
+                onClick={() => setActiveTab(t.key as AdminTab)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === t.key
+                    ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-xs'
+                    : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'
                 }`}
               >
-                Campaigns
+                <span>{t.icon}</span>
+                <span>{t.label}</span>
               </button>
-            )}
-            {isOwner && (
-              <button
-                onClick={() => setActiveTab('partners')}
-                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'partners' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-                }`}
-              >
-                Partners
-              </button>
-            )}
-            {isOwner && (
-              <button
-                onClick={() => setActiveTab('alerts')}
-                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'alerts' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-                }`}
-              >
-                Staff Alerts
-              </button>
-            )}
-            {isOwner && (
-              <button
-                onClick={() => setActiveTab('growthmetrics')}
-                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'growthmetrics' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-                }`}
-              >
-                Growth Metrics
-              </button>
-            )}
-            {isOwner && (
-              <button
-                onClick={() => setActiveTab('marketing')}
-                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'marketing' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-                }`}
-              >
-                Marketing
-              </button>
-            )}
-            {isOwner && (
-              <button
-                onClick={() => setActiveTab('infra')}
-                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'infra' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-                }`}
-              >
-                Infra Health
-              </button>
-            )}
-            {isOwner && (
-              <button
-                onClick={() => setActiveTab('performance')}
-                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'performance' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-                }`}
-              >
-                Performance
-              </button>
-            )}
-            {isOwner && (
-              <button
-                onClick={() => setActiveTab('ai')}
-                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'ai' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-                }`}
-              >
-                AI & Models
-              </button>
-            )}
-            {isOwner && (
-              <button
-                onClick={() => setActiveTab('developer')}
-                className={`py-4 text-xs font-semibold uppercase tracking-wider border-b-2 px-1 transition duration-200 cursor-pointer ${
-                  activeTab === 'developer' ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-navy/50 hover:text-brand-navy'
-                }`}
-              >
-                Developer & REST API
-              </button>
-            )}
+            ))}
           </div>
         </div>
 
@@ -663,154 +458,17 @@ export default function AdminConsole() {
             </div>
           )}
 
-          {/* TAB 3: SYSTEM AUDIT LOGS */}
-          {/* TAB 3.5: ROLES & PERMISSIONS (Section 33) */}
-          {activeTab === 'roles' && <RolesTab />}
-          {activeTab === 'growth' && <GrowthTab />}
-          {activeTab === 'funnel' && <FunnelTab />}
-          {activeTab === 'compliance' && <ComplianceTab />}
-          {activeTab === 'campaigns' && isOwner && <CampaignsTab />}
+          {/* TAB 3: PARTNER NETWORK */}
           {activeTab === 'partners' && isOwner && <PartnerAdminPanel />}
+
+          {/* TAB 4: STAFF BROADCAST ALERTS */}
           {activeTab === 'alerts' && isOwner && <AlertsVisibility />}
-          {activeTab === 'growthmetrics' && isOwner && <GrowthMetricsTab />}
-          {activeTab === 'marketing' && isOwner && <MarketingTab />}
-          {activeTab === 'infra' && isOwner && <InfraHealth />}
-          {activeTab === 'performance' && isOwner && <PerformanceTab />}
 
-          {activeTab === 'audit' && (
-            <div className="space-y-6">
-              
-              {/* FILTERS & SEARCH ROW */}
-              <div className="bg-white border border-brand-navy/10 p-4 rounded-xl flex flex-wrap gap-4 items-end text-xs">
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-[9px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-                    Search logs
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Search Action, Entity, Actor ID..."
-                    value={actorSearch}
-                    onChange={(e) => setActorSearch(e.target.value)}
-                    className="w-full bg-white border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none focus:border-brand-gold"
-                  />
-                </div>
+          {/* TAB 5: AI & MODEL GOVERNANCE */}
+          {activeTab === 'ai' && isOwner && <AiGovernanceTab />}
 
-                <div>
-                  <label className="block text-[9px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-                    Action Type
-                  </label>
-                  <select
-                    value={actionFilter}
-                    onChange={(e) => setActionFilter(e.target.value)}
-                    className="bg-white border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none"
-                  >
-                    <option value="all">All Actions</option>
-                    {uniqueActions.map(action => (
-                      <option key={action} value={action}>{action}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[9px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-                    Entity Table
-                  </label>
-                  <select
-                    value={entityFilter}
-                    onChange={(e) => setEntityFilter(e.target.value)}
-                    className="bg-white border border-brand-navy/10 rounded px-2.5 py-1.5 text-xs text-brand-navy focus:outline-none"
-                  >
-                    <option value="all">All Entities</option>
-                    {uniqueEntities.map(ent => (
-                      <option key={ent} value={ent}>{ent}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setActionFilter('all');
-                    setEntityFilter('all');
-                    setActorSearch('');
-                  }}
-                  className="px-3 py-1.5 bg-brand-navy/[0.04] hover:bg-brand-navy/[0.06] text-slate-400 hover:text-brand-navy rounded border border-brand-navy/10 cursor-pointer font-medium"
-                >
-                  Reset
-                </button>
-              </div>
-
-              {/* AUDIT LOG TABLE */}
-              {loadingAudit ? (
-                <div className="p-12 text-center text-xs text-slate-400">Loading system write log pipeline...</div>
-              ) : auditError ? (
-                <div className="p-12 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200/50 rounded-lg">
-                  ⚠ Error – Failed to fetch audit log trail. Please verify DB status and Admin session permissions.
-                </div>
-              ) : (
-                <div className="bg-white border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
-                        <th className="p-4">Timestamp</th>
-                        <th className="p-4">Action</th>
-                        <th className="p-4">Entity Mapped</th>
-                        <th className="p-4">Actor ID</th>
-                        <th className="p-4">IP Address</th>
-                        <th className="p-4 text-right">Data Diff</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-brand-navy/[0.08]">
-                      {getFilteredLogs().length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="p-8 text-center text-slate-500 italic">
-                            No write audit records matched the filter query.
-                          </td>
-                        </tr>
-                      ) : (
-                        getFilteredLogs().map((log) => (
-                          <tr key={log.id} className="hover:bg-brand-navy/[0.04] transition duration-150">
-                            <td className="p-4 text-brand-navy/70 font-mono whitespace-nowrap">
-                              {formatTime(log.createdAt)}
-                            </td>
-                            <td className="p-4 font-mono font-bold text-brand-navy tracking-wider">
-                              <span className="px-1.5 py-0.5 rounded bg-white text-brand-gold border border-brand-gold/10">
-                                {log.action}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <div className="font-semibold text-brand-navy">{log.entityName}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">{log.entityId}</div>
-                            </td>
-                            <td className="p-4 font-mono text-slate-400">
-                              {log.actorId || <span className="text-slate-500 italic text-[10px]">guest_user</span>}
-                            </td>
-                            <td className="p-4 font-mono text-slate-400">
-                              {log.ipAddress || 'unknown'}
-                            </td>
-                            <td className="p-4 text-right">
-                              {(log.beforeState || log.afterState) ? (
-                                <button
-                                  onClick={() => setSelectedLogDetail(log)}
-                                  className="px-2 py-1 bg-brand-navy/[0.05] hover:bg-brand-navy/[0.06] border border-brand-navy/10 hover:border-brand-navy/15 text-brand-gold text-[10px] font-semibold rounded cursor-pointer transition"
-                                >
-                                  Inspect State
-                                </button>
-                              ) : (
-                                <span className="text-brand-navy/40 text-[10px] italic">No State Changes</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'ai' && <AiGovernanceTab />}
-          {activeTab === 'developer' && <DeveloperApiSettingsTab />}
+          {/* TAB 6: DEVELOPER & REST API */}
+          {activeTab === 'developer' && isOwner && <DeveloperApiSettingsTab />}
         </div>
       </main>
 
@@ -871,148 +529,6 @@ export default function AdminConsole() {
           </div>
         </div>
       )}
-
-      {/* MODAL: STATE DIFF INSPECTOR */}
-      {selectedLogDetail && (
-        <div className="fixed inset-0 bg-brand-navy/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-brand-navy/10 rounded-xl shadow-2xl max-w-3xl w-full p-6 flex flex-col max-h-[85vh]">
-            
-            {/* Header */}
-            <div className="flex justify-between items-start border-b border-brand-navy/10 pb-4 shrink-0">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-brand-gold px-1.5 py-0.5 rounded bg-brand-navy/[0.05] border border-brand-gold/20">
-                  {selectedLogDetail.action}
-                </span>
-                <h3 className="font-display font-bold text-brand-navy text-base mt-2">
-                  Audit State Inspector
-                </h3>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Entity: <span className="text-brand-navy font-mono">{selectedLogDetail.entityName}</span> (ID: <span className="text-brand-navy font-mono">{selectedLogDetail.entityId}</span>) | Actor: <span className="text-brand-navy font-mono">{selectedLogDetail.actorId || 'guest_user'}</span>
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedLogDetail(null)}
-                className="text-slate-400 hover:text-brand-navy text-xl p-1 font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Content & State Comparison */}
-            <div className="flex-1 overflow-y-auto py-6 space-y-6 min-h-0">
-              
-              {/* Visual State Diffs */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-                
-                {/* Before State */}
-                <div className="flex flex-col space-y-2">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    - State Before Change
-                  </div>
-                  <div className="bg-brand-navy/[0.04] border border-brand-navy/10 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-rose-700">
-                    {selectedLogDetail.beforeState ? (
-                      (() => {
-                        try {
-                          const parsed = JSON.parse(selectedLogDetail.beforeState);
-                          return <pre className="whitespace-pre">{JSON.stringify(parsed, null, 2)}</pre>;
-                        } catch {
-                          return <pre className="whitespace-pre">{selectedLogDetail.beforeState}</pre>;
-                        }
-                      })()
-                    ) : (
-                      <span className="italic text-slate-500">None (Creation Event)</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* After State */}
-                <div className="flex flex-col space-y-2">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-emerald-700">
-                    + State After Change
-                  </div>
-                  <div className="bg-brand-navy/[0.04] border border-brand-navy/10 rounded-lg p-4 font-mono text-[11px] overflow-x-auto overflow-y-auto max-h-80 text-emerald-700">
-                    {selectedLogDetail.afterState ? (
-                      (() => {
-                        try {
-                          const parsed = JSON.parse(selectedLogDetail.afterState);
-                          return <pre className="whitespace-pre">{JSON.stringify(parsed, null, 2)}</pre>;
-                        } catch {
-                          return <pre className="whitespace-pre">{selectedLogDetail.afterState}</pre>;
-                        }
-                      })()
-                    ) : (
-                      <span className="italic text-slate-500">None (Deletion Event)</span>
-                    )}
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Structured Field changes if both exist */}
-              {selectedLogDetail.beforeState && selectedLogDetail.afterState && (
-                <div className="bg-brand-navy/[0.04] border border-brand-navy/10 rounded-lg p-4 text-xs space-y-3">
-                  <h4 className="text-[10px] uppercase font-bold text-brand-gold tracking-wider">
-                    Detected Value Modifications
-                  </h4>
-                  <div className="space-y-2 font-mono text-[11px]">
-                    {(() => {
-                      try {
-                        const beforeObj = JSON.parse(selectedLogDetail.beforeState);
-                        const afterObj = JSON.parse(selectedLogDetail.afterState);
-                        const allKeys = Array.from(new Set([...Object.keys(beforeObj), ...Object.keys(afterObj)]));
-                        
-                        const changedFields: React.ReactNode[] = [];
-                        
-                        allKeys.forEach(key => {
-                          const valBefore = JSON.stringify(beforeObj[key]);
-                          const valAfter = JSON.stringify(afterObj[key]);
-                          
-                          if (valBefore !== valAfter) {
-                            changedFields.push(
-                              <div key={key} className="border-b border-brand-navy/10 py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                <span className="text-slate-300 font-semibold">{key}</span>
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 line-through max-w-[200px] truncate">
-                                    {valBefore === undefined ? 'undefined' : valBefore}
-                                  </span>
-                                  <span className="text-slate-500">→</span>
-                                  <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 max-w-[200px] truncate">
-                                    {valAfter === undefined ? 'undefined' : valAfter}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          }
-                        });
-                        
-                        return changedFields.length > 0 ? (
-                          <div className="divide-y divide-brand-navy/[0.08]">{changedFields}</div>
-                        ) : (
-                          <div className="text-slate-500 italic">No direct property differences found (nested object similarity).</div>
-                        );
-                      } catch {
-                        return <div className="text-slate-500 italic">Binary or unparseable state data. Unable to compute diff.</div>;
-                      }
-                    })()}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="pt-4 border-t border-brand-navy/10 flex justify-end shrink-0">
-              <button
-                onClick={() => setSelectedLogDetail(null)}
-                className="px-4 py-2 bg-brand-navy/[0.05] border border-brand-navy/10 hover:bg-brand-navy/[0.06] text-brand-navy/70 rounded font-semibold text-xs cursor-pointer"
-              >
-                Close Inspector
-              </button>
-            </div>
-            
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
