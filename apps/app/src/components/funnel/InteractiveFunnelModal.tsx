@@ -576,9 +576,10 @@ export default function InteractiveFunnelModal({
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="tactile-btn mt-6 min-h-12 w-full rounded-full bg-brand-navy py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy shadow-md cursor-pointer flex items-center justify-center gap-2 sm:min-h-0"
+                className="mt-6 w-full rounded-xl bg-brand-navy py-3.5 px-6 text-sm font-bold text-white transition-all hover:bg-brand-gold hover:text-brand-navy shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>Calculate Eligibility & Match →</span>
+                <span>Calculate Eligibility & Match</span>
+                <span className="text-base leading-none">→</span>
               </button>
             </div>
           )}
@@ -673,11 +674,11 @@ export default function InteractiveFunnelModal({
                 </span>
               </div>
 
-              <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+              <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center pt-2">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="w-full min-h-11 rounded-full border border-brand-navy/20 px-5 py-3 text-xs font-bold uppercase tracking-wider text-brand-navy hover:bg-slate-100 transition cursor-pointer sm:min-h-0 sm:w-auto"
+                  className="w-full sm:w-auto rounded-xl border border-brand-navy/15 bg-white px-5 py-3 text-xs font-semibold text-brand-navy/70 hover:bg-slate-50 hover:text-brand-navy transition-all cursor-pointer text-center"
                 >
                   ← Edit Criteria
                 </button>
@@ -685,9 +686,10 @@ export default function InteractiveFunnelModal({
                 <button
                   type="submit"
                   disabled={leadMutation.isPending}
-                  className="tactile-btn w-full min-h-12 rounded-full bg-brand-gold py-3 text-xs font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 sm:min-h-0 sm:flex-1"
+                  className="w-full sm:flex-1 rounded-xl bg-brand-gold py-3 px-6 text-sm font-bold text-brand-navy hover:bg-brand-gold-hover hover:text-white transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {leadMutation.isPending ? 'Verifying Profile...' : 'Unlock Evaluation & Request Advisory Session →'}
+                  <span>{leadMutation.isPending ? 'Verifying Profile...' : 'Unlock Evaluation & Continue'}</span>
+                  {!leadMutation.isPending && <span className="text-base leading-none">→</span>}
                 </button>
               </div>
             </form>
