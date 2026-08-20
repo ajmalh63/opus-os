@@ -51,10 +51,10 @@ export default function TermsOfServicePage() {
           
           <div>
             <h2 className="font-display text-lg sm:text-xl font-extrabold text-brand-navy mb-2">
-              1. Acceptance of Terms & Advisory Scope
+              1. Legal Entity & Acceptance of Terms
             </h2>
             <p>
-              By accessing the Opus Overseas platform, submitting consultation leads, or engaging our consulting services, you enter into a binding agreement with Opus Overseas. We provide professional advisory, document compilation, logistics coordination, and application facilitation across five specialized mobility divisions.
+              Opus Overseas is a premier international education, consular visa advisory, attestation, and mobility consultancy brand owned, registered, and operated by <strong className="text-brand-navy">Cordial Crafts</strong> (&ldquo;Company&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;). By accessing the Opus Overseas platform, submitting consultation inquiries, or engaging our advisory services, you enter into a legally binding agreement with Cordial Crafts.
             </p>
           </div>
 

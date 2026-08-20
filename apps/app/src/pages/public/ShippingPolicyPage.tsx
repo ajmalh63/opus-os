@@ -54,7 +54,7 @@ export default function ShippingPolicyPage() {
               1. Nature of Physical Deliveries
             </h2>
             <p>
-              Opus Overseas primarily delivers digital consultation, university admissions, and e-visa services. Physical shipments are restricted to high-security custody transit of original physical assets, including:
+              <strong className="text-brand-navy">Cordial Crafts</strong> (trading and operating as <strong className="text-brand-navy">Opus Overseas</strong>) primarily delivers digital consultation, university admissions, and e-visa services. Physical shipments are restricted to high-security custody transit of original physical assets, including:
             </p>
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
               <li>Original educational degree certificates, marksheets, and commercial documents submitted for State HRD, MEA Apostille, and Embassy Legalization.</li>

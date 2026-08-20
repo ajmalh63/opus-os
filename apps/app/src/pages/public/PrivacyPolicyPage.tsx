@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
               1. Introduction & Data Fiduciary Role
             </h2>
             <p>
-              Opus Overseas ("we", "us", or "our") acts as a Data Fiduciary under the Digital Personal Data Protection Act, 2023 (India) and applicable international data privacy standards. We are committed to safeguarding the personal, academic, biometric, and travel metadata entrusted to us by applicants, students, pilgrims, and partner institutions.
+              <strong className="text-brand-navy">Cordial Crafts</strong> (operating under the trade and brand name <strong className="text-brand-navy">Opus Overseas</strong>, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) acts as a Data Fiduciary under the Digital Personal Data Protection Act, 2023 (India) and applicable international data privacy standards. We are committed to safeguarding the personal, academic, financial, and travel metadata entrusted to us by applicants, students, pilgrims, and partner institutions.
             </p>
           </div>
 

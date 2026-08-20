@@ -54,7 +54,7 @@ export default function RefundPolicyPage() {
               1. Policy Overview & Commitment to Fair Dealing
             </h2>
             <p>
-              At Opus Overseas, we maintain 100% transparent fee ledgers. Our refund policy distinguishes clearly between non-refundable statutory government disbursements and refundable professional advisory fees.
+              At <strong className="text-brand-navy">Cordial Crafts</strong> (trading and operating as <strong className="text-brand-navy">Opus Overseas</strong>), we maintain 100% transparent fee ledgers. Our refund policy distinguishes clearly between non-refundable statutory government disbursements and refundable professional advisory fees.
             </p>
           </div>
 

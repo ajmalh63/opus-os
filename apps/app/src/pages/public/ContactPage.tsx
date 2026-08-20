@@ -164,8 +164,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-display text-xs font-bold uppercase tracking-wider text-brand-textLight">Phone Assistance</h3>
-                  <a href="tel:+919876500001" className="text-sm sm:text-base font-bold text-brand-navy hover:text-brand-gold transition-colors">
-                    +91 98765 00001
+                  <a href="tel:+919398848376" className="text-sm sm:text-base font-bold text-brand-navy hover:text-brand-gold transition-colors">
+                    +91 93988 48376
                   </a>
                   <p className="text-[11px] text-brand-textLight mt-0.5">Mon – Sat: 9:30 AM to 6:30 PM IST</p>
                 </div>
@@ -229,6 +229,19 @@ export default function ContactPage() {
                   <span className="font-semibold text-brand-navy">attestation@opusoverseas.com</span>
                 </li>
               </ul>
+            </div>
+
+            {/* Legal Entity & Merchant Registration Card */}
+            <div className="clay-card p-6 space-y-2 border border-brand-gold/30 bg-brand-gold/5">
+              <h3 className="font-display text-xs font-bold uppercase tracking-wider text-brand-navy flex items-center gap-1.5">
+                <span>🏛️</span> Registered Business Entity
+              </h3>
+              <p className="text-xs text-brand-navy/80 leading-relaxed">
+                <strong>Opus Overseas</strong> is a registered commercial brand owned and operated by <strong>Cordial Crafts</strong>.
+              </p>
+              <p className="text-[11px] text-brand-textLight">
+                Headquarters: 1-1-382, Rakasipet, Bodhan, Nizamabad District, Telangana 503185, India.
+              </p>
             </div>
           </div>
 
