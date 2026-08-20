@@ -22,11 +22,8 @@ export default function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand Col */}
           <div className="space-y-4 lg:col-span-2">
-            <div className="flex items-center gap-2.5">
-              <Logo className="h-9 w-auto" />
-              <span className="font-display text-lg font-bold tracking-tight text-white">
-                OPUS <span className="text-brand-gold font-extrabold">OVERSEAS</span>
-              </span>
+            <div className="flex items-center">
+              <Logo variant="footer" className="h-11 sm:h-12 w-auto" />
             </div>
             <p className="max-w-sm text-xs sm:text-sm leading-relaxed text-white/65">
               Your premier operating system for global mobility — study abroad, express visas, Umrah group travel, government attestation chains, and international careers.
