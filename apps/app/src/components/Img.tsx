@@ -28,9 +28,21 @@ export default function Img({
   const ratioClass = RATIOS[ratio] ?? RATIOS['16/9'];
 
   if (src) {
+    // WebP/srcSet ready — when sharp is installed, generate srcWebp via vite-imagetools; fallback to jpg
+    const srcWebp = src.replace(/\.jpg$/, '.webp');
     return (
       <div className={`relative overflow-hidden rounded-2xl border border-brand-navy/10 bg-brand-cream ${ratioClass} ${className}`}>
-        <img src={src} alt={alt || label || 'Opus Overseas'} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src={src}
+          srcSet={`${src} 1x, ${srcWebp} 1x`}
+          sizes="(max-width: 768px) 100vw, 50vw"
+          alt={alt || label || 'Opus Overseas'}
+          loading="lazy"
+          decoding="async"
+          width={800}
+          height={450}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
       </div>
     );
   }

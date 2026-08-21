@@ -28,7 +28,7 @@ enabled = true
 # monitor: prod → `wrangler secret put KUMA_PUSH_URL`.
 # ============================================================
 [triggers]
-crons = [ "0 */6 * * *", "0 3 1 * *", "30 3 1 * *", "0 4 * * 1" ]
+crons = [ "0 */6 * * *", "0 3 1 * *", "30 3 1 * *", "0 4 * * 1", "0 2 * * *" ]
 
 # NOTE — credential-bearing vars are NOT in [vars] (they would ship to any
 # deploy verbatim). Local dev values live in .dev.vars (gitignored); production
@@ -84,9 +84,18 @@ binding = "BUCKET"
 bucket_name = "opusdocs"
 preview_bucket_name = "opusdocs"
 
-# [[queues.producers]]
-# queue = "opusos-jobs-queue"
-# binding = "JOBS_QUEUE"
+[[queues.producers]]
+queue = "opusos-jobs-queue"
+binding = "JOBS_QUEUE"
+
+[[queues.producers]]
+queue = "opusos-dlq"
+binding = "DLQ"
+
+[[queues.consumers]]
+queue = "opusos-jobs-queue"
+max_retries = 5
+dead_letter_queue = "opusos-dlq"
 
 # ============================================================
 # KV - cache + feature flags ONLY (Section 3.4 / 18.4.2)

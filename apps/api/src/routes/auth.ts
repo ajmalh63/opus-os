@@ -96,7 +96,7 @@ authRouter.post('/sign-in/email', async (c) => {
 
   // 1. Lockout gate (checked BEFORE the handler — even correct credentials are
   // blocked while the account is locked).
-  const { over } = await isRateLimited(c.env, { bucket: 'login-fail', windowSeconds: 900, limit: 5 }, email || 'anon');
+  const { over } = await isRateLimited(c.env, { bucket: 'login-fail', windowSeconds: 900, limit: 5 }, email || 'anon', { failClosed: true });
   if (over) {
     await auditBounded(c, {
       action: 'LOGIN_FAILED', entityName: 'users', entityId: email || 'unknown',
@@ -161,8 +161,7 @@ authRouter.post('/otp/send', async (c) => {
     return c.json({ error: 'Valid email address is required' }, 400);
   }
 
-  // Rate limiting (max 5 OTP requests per 10 mins per email)
-  const { over } = await isRateLimited(c.env, { bucket: 'otp-send', windowSeconds: 600, limit: 5 }, email);
+  const { over } = await isRateLimited(c.env, { bucket: 'otp-send', windowSeconds: 600, limit: 5 }, email, { failClosed: true });
   if (over) {
     return c.json({ error: 'Too many OTP requests. Please wait a few minutes before trying again.' }, 429);
   }
@@ -214,6 +213,10 @@ authRouter.post('/otp/verify', async (c) => {
 
   const db = getDb(c.env.DB);
   const identifier = `otp:${email}`;
+  const { over: otpVerifyOver } = await isRateLimited(c.env, { bucket: 'otp-verify', windowSeconds: 900, limit: 10 }, identifier, { failClosed: true });
+  if (otpVerifyOver) {
+    return c.json({ error: 'Too many verification attempts. Try again in 15 minutes.' }, 429);
+  }
   const row = await db.select().from(verifications).where(eq(verifications.identifier, identifier)).get();
 
   if (!row) {
@@ -223,6 +226,10 @@ authRouter.post('/otp/verify', async (c) => {
   if (new Date() > new Date(row.expiresAt)) {
     await db.delete(verifications).where(eq(verifications.identifier, identifier)).catch(() => {});
     return c.json({ error: 'Passcode has expired. Please request a fresh code.' }, 400);
+  }
+
+  if ((row.attempts || 0) >= 5) {
+    return c.json({ error: 'Too many incorrect attempts' }, 429);
   }
 
   const hashedInput = await sha256Hex(otp);

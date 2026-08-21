@@ -50,17 +50,26 @@ export async function accrueIncentives(ctx: AccrualContext): Promise<{ accrued: 
       amount = Math.floor((ctx.triggerAmountPaise * rule.amount) / 100);
     }
 
-    await db.insert(incentiveEntries).values({
-      id: crypto.randomUUID(),
-      employeeId: assigneeId,
-      ruleId: rule.id,
-      engagementId: eng?.id || null,
-      triggerRef: `${rule.id}:${ctx.triggerRef}`,
-      amount: amount,
-      status: 'accrued',
-      period,
-      createdAt: now,
-    });
+    try {
+      await db.insert(incentiveEntries).values({
+        id: crypto.randomUUID(),
+        employeeId: assigneeId,
+        ruleId: rule.id,
+        engagementId: eng?.id || null,
+        triggerRef: `${rule.id}:${ctx.triggerRef}`,
+        amount: amount,
+        status: 'accrued',
+        period,
+        createdAt: now,
+      });
+    } catch (e: any) {
+      // Unique index violation -> concurrent duplicate, treat as skipped
+      if (String(e?.message || '').includes('UNIQUE') || String(e?.message || '').includes('trigger_ref')) {
+        skipped++;
+        continue;
+      }
+      throw e;
+    }
     accrued++;
   }
   return { accrued, skipped };

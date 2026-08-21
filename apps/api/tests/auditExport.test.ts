@@ -57,6 +57,10 @@ vi.mock('../src/auth.js', () => {
 function utcMonth(now = new Date()): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
+function prevMonth(now = new Date()): string {
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
 
 describe('Phase 3 — audit chain verification & export endpoints', () => {
   let mockD1: MockD1Database;
@@ -250,11 +254,11 @@ describe('Phase 3 — audit archive cron (runAuditArchive)', () => {
     const res = await runAuditArchive({ DB: mockD1 as any, BUCKET: { put } });
 
     expect(res.archived).toBe(true);
-    expect(res.month).toBe(utcMonth());
+    expect(res.month).toBe(prevMonth());
     expect(res.rows).toBe(2);
     expect(put).toHaveBeenCalledTimes(2);
 
-    const month = utcMonth();
+    const month = prevMonth();
     const jsonlCall = put.mock.calls.find((c) => String(c[0]).endsWith(`${month}.jsonl`));
     const manifestCall = put.mock.calls.find((c) => String(c[0]).endsWith(`${month}.manifest.json`));
     expect(jsonlCall).toBeTruthy();
@@ -294,13 +298,13 @@ describe('Phase 3 — audit archive cron (runAuditArchive)', () => {
     const second = await runAuditArchive(env);
     expect(second.archived).toBe(false);
     expect(second.reason).toBe('already-archived');
-    expect(second.month).toBe(utcMonth());
+    expect(second.month).toBe(prevMonth());
     expect(put).toHaveBeenCalledTimes(2);
   });
 
   it('skips immediately when app_settings already has the current month', async () => {
     const put = vi.fn().mockResolvedValue({});
-    (mockD1.tables.app_settings as any[]).push({ key: 'audit_archive_last_month', value: utcMonth(), updated_at: 0 });
+    (mockD1.tables.app_settings as any[]).push({ key: 'audit_archive_last_month', value: prevMonth(), updated_at: 0 });
     const res = await runAuditArchive({ DB: mockD1 as any, BUCKET: { put } });
     expect(res.archived).toBe(false);
     expect(res.reason).toBe('already-archived');
@@ -333,7 +337,7 @@ describe('Phase 3 — audit archive cron (runAuditArchive)', () => {
     const res = await runAuditArchive({ DB: mockD1 as any, BUCKET: { put } });
     expect(res.archived).toBe(true);
     expect(res.rows).toBe(0);
-    const month = utcMonth();
+    const month = prevMonth();
     const manifestCall = put.mock.calls.find((c) => String(c[0]).endsWith(`${month}.manifest.json`));
     const manifest = JSON.parse(String(manifestCall![1]));
     expect(manifest.rowCount).toBe(0);

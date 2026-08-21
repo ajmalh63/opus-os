@@ -26,8 +26,10 @@ analyticsRouter.get('/revenue', async (c) => {
   const now = Math.floor(Date.now() / 1000);
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime() / 1000;
   try {
-    const allPayments = await db.select().from(payments).all();
-    const engs = await db.select().from(engagements).all();
+    // N+1 pushdown: only last 6 months for cashFlow + this month for collected (was full scan)
+    const sixMonthStart = monthStart - 5 * 30 * 86400;
+    const allPayments = await db.select().from(payments).where(gte(payments.createdAt, sixMonthStart)).all();
+    const engs = await db.select().from(engagements).where(eq(engagements.status, 'active')).all();
 
     // Collected this month (paid, minus refunds)
     const monthPaid = allPayments.filter(p => p.status === 'paid' && p.createdAt >= monthStart);

@@ -379,10 +379,12 @@ visibilityRouter.get('/search-console/queries', async (c) => {
 visibilityRouter.get('/attribution', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  const ninetyDaysAgo = now - 90 * 86400;
   const [allClients, allPayments, allEngs] = await Promise.all([
-    db.select().from(clients).all(),
-    db.select().from(payments).all(),
-    db.select().from(engagements).all(),
+    db.select().from(clients).where(gte(clients.createdAt, ninetyDaysAgo)).all(),
+    db.select().from(payments).where(gte(payments.createdAt, ninetyDaysAgo)).all(),
+    db.select().from(engagements).where(gte(engagements.createdAt, ninetyDaysAgo)).all(),
   ]);
   const engMap = new Map(allEngs.map(e => [e.id, e]));
   const channels: Record<string, { leads: number; converted: number; revenue: number }> = {};

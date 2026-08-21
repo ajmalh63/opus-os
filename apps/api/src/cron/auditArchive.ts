@@ -50,8 +50,13 @@ function utcMonthKey(now = new Date()): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
+function prevMonthKey(now = new Date()): string {
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
 export async function runAuditArchive(env: AuditArchiveEnv): Promise<AuditArchiveResult> {
-  const month = utcMonthKey();
+  const month = prevMonthKey();
   if (!env?.DB) return { archived: false, month, rows: 0, reason: 'no-db' };
   if (!env.BUCKET) return { archived: false, month, rows: 0, reason: 'no-bucket' };
 

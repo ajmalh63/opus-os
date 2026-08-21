@@ -11,6 +11,7 @@ import { auditSystem } from './middleware/audit.js';
 import { serviceTokenMiddleware } from './middleware/serviceToken.js';
 import { turnstileVerify } from './middleware/turnstile.js';
 import { rateLimit, rateLimitGroup } from './middleware/rateLimit.js';
+import { idempotency } from './middleware/idempotency.js';
 import { agreementsRouter, portalAgreementsRouter } from './routes/agreements.js';
 import { paymentsRouter } from './routes/payments.js';
 import { transactionsRouter } from './routes/transactions.js';
@@ -85,6 +86,8 @@ app.use('*', secureHeaders({
   },
   permissionsPolicy: { camera: [], microphone: [], geolocation: [], payment: [] },
 }));
+
+app.use('/api/*', idempotency());
 
 // Global Error Handler — gold-standard shape:
 //   - never leak stack traces to clients
@@ -448,6 +451,17 @@ app.route('/api/v1', v1ApiRouter);
       await runAuditArchive(env as any);
     } catch {
       /* fail-open: archiving must never crash the scheduled run */
+    }
+    return;
+  }
+
+  // Daily (02:00): workflow auto-expiry — W5 offer_letter + W6 quote_requested + W4 suppression
+  if (cron === '0 2 * * *') {
+    const { runWorkflowExpiry } = await import('./cron/workflowExpiry.js');
+    try {
+      await runWorkflowExpiry(env as any);
+    } catch {
+      /* fail-open: workflow expiry must never crash */
     }
     return;
   }

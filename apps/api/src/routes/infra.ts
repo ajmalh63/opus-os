@@ -59,18 +59,21 @@ infraRouter.get('/health', async (c) => {
 
   const allUp = Object.values(report).every(Boolean);
 
-  return c.json({
-    success: true,
-    services: [
-      { name: 'D1 (SQLite database)', binding: 'DB', up: report.d1, plan: 'Section 3.4' },
-      { name: 'R2 (document vault)', binding: 'BUCKET', up: report.r2, plan: 'Section 3.4' },
-      { name: 'KV (cache + feature flags)', binding: 'KV', up: report.kv, plan: '18.4.2' },
-      { name: 'Vectorize (vector DB)', binding: 'VECTOR_INDEX', up: report.vector, status: v.status, plan: '3.4 / 3.9.2' },
-      { name: 'Queues (async jobs)', binding: 'JOBS_QUEUE', up: report.queues, plan: '3.3.3' },
-      { name: 'Workers AI (embeddings)', binding: 'AI', up: report.ai, plan: '3.4' },
-    ],
-    allUp,
-  });
+  return c.json(
+    {
+      success: true,
+      services: [
+        { name: 'D1 (SQLite database)', binding: 'DB', up: report.d1, plan: 'Section 3.4' },
+        { name: 'R2 (document vault)', binding: 'BUCKET', up: report.r2, plan: 'Section 3.4' },
+        { name: 'KV (cache + feature flags)', binding: 'KV', up: report.kv, plan: '18.4.2' },
+        { name: 'Vectorize (vector DB)', binding: 'VECTOR_INDEX', up: report.vector, status: v.status, plan: '3.4 / 3.9.2' },
+        { name: 'Queues (async jobs)', binding: 'JOBS_QUEUE', up: report.queues, plan: '3.3.3' },
+        { name: 'Workers AI (embeddings)', binding: 'AI', up: report.ai, plan: '3.4' },
+      ],
+      allUp,
+    },
+    allUp ? 200 : 503
+  );
 });
 
 // POST /api/infrastructure/indiapost/book

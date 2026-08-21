@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { moveCardSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
 import { engagements, pipelineStages, clients, auditLog, tasks } from '../db/schema.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { auditBegin } from '../middleware/audit.js';
 import { kanbanFlowAnalytics } from '../infra/flowAnalytics.js';
 
@@ -61,7 +61,9 @@ kanbanRouter.get('/board', async (c) => {
     // Group cards by stageKey, and attach each card's linked tasks (the
     // gold-standard "task lane inside card" pattern — tasks bound to an
     // engagement ride along on the board, so staff see work at a glance).
-    const allTasks = await db.select().from(tasks).all();
+    // N+1 FIX: push filter to SQL — was full table scan, now only visible engagements
+    const visibleIds = visible.map((c: any) => c.id);
+    const allTasks = visibleIds.length > 0 ? await db.select().from(tasks).where(inArray(tasks.engagementId, visibleIds)).all() : [];
     const tasksByEngagement = new Map<string, any[]>();
     for (const t of allTasks) {
       if (!t.engagementId) continue;

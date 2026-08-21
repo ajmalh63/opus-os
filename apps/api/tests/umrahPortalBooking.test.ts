@@ -42,8 +42,8 @@ describe('Umrah Client Portal Booking (₹500 advance → 3-day hold)', () => {
     mockD1.tables.app_settings.push({ key: 'divisions_enabled', value: JSON.stringify({ 'study-abroad': true, visa: true, umrah: true, attestation: true, manpower: true }), updated_at: 1 });
     mockD1.tables.app_settings.push({ key: 'umrah_inventory_enabled', value: 'true', updated_at: now });
     mockD1.tables.clients.push(
-      { id: 'OP-2026-9001', name: 'Client One', phone: '+91 99999 11111', email: 'c1@test.com', created_at: now, updated_at: now },
-      { id: 'OP-2026-9002', name: 'Client Two', phone: '+91 99999 22222', email: 'c2@test.com', created_at: now, updated_at: now }
+      { id: 'OP-2026-9001', portal_token: 'OP-2026-9001', name: 'Client One', phone: '+91 99999 11111', email: 'c1@test.com', created_at: now, updated_at: now },
+      { id: 'OP-2026-9002', portal_token: 'OP-2026-9002', name: 'Client Two', phone: '+91 99999 22222', email: 'c2@test.com', created_at: now, updated_at: now }
     );
     mockD1.tables.engagements.push(
       { id: 'eng-9001', client_id: 'OP-2026-9001', division: 'umrah', title: 'Umrah', stage_key: 'lead', outstanding_balance: 0, status: 'active', created_at: now, updated_at: now }

@@ -13,7 +13,7 @@ This document details all features, architectural fixes, security patches, and i
 | **Email Infrastructure** | Audited & verified Cloudflare DNS (MX, SPF, DKIM, DMARC) & Titan SMTP relay (`smtpout.secureserver.net:465`). | End-to-end transactional & marketing email delivery confirmed. |
 | **Cloudflare Observability** | Corrected `wrangler.toml` observability schema to prevent Wrangler runtime crashes. | `apps/api/wrangler.toml` (`[observability]`, `[observability.logs]`). |
 | **Authentication Gateway** | Implemented interactive 2-Step Direct Email OTP flow & Forgot Password recovery modal. | `Login.tsx`, `apps/api/src/routes/auth.ts` (`/otp/send`, `/otp/verify`). |
-| **Owner Account** | Updated primary Super Admin identity to `ajmalsn63@gmail.com` with `OwnerPass2026!`. | D1 SQLite `users` table, `apps/api/.dev.vars`, `wrangler.toml`, Listmonk DB. |
+| **Owner Account** | Updated primary Super Admin identity to `ajmalsn63@gmail.com` with `[REDACTED]`. | D1 SQLite `users` table, `apps/api/.dev.vars`, `wrangler.toml`, Listmonk DB. |
 | **UI Simplification** | Removed subtitle `"Unified gateway..."` and role-specific hints from the login gate. | `apps/app/src/pages/Login.tsx`. |
 | **Workspace UI/UX Elevation** | Upgraded Staff, Client, and Partner workspaces with gold-standard dark luxury glassmorphism, animated cards, live telemetry pills, and micro-interactions. | `WorkChrome.tsx`, `WorkspaceShell.tsx`, `DashboardHome.tsx`, `Inbox.tsx`, `StudyAbroadPortal.tsx`, `UmrahPortal.tsx`, `ClientPortal.tsx`, `PartnerDashboard.tsx`. |
 | **Stress Benchmarks** | Created automated enterprise concurrency stress tests (10k ops/sec throughput). | `apps/api/tests/stress_benchmark.test.ts`, `apps/api/tests/auth_email_lane.test.ts`. |
@@ -24,7 +24,7 @@ This document details all features, architectural fixes, security patches, and i
 
 ### Verification Item 1: Owner & Super Admin Authentication
 - [ ] **Action**: Navigate to `https://app.opusoverseas.com/login` (or local `http://127.0.0.1:5173/login`).
-- [ ] **Test 1A (Password)**: Log in with `ajmalsn63@gmail.com` / `OwnerPass2026!`.
+- [ ] **Test 1A (Password)**: Log in with `ajmalsn63@gmail.com` / `[REDACTED]`.
   - **Expected**: HTTP 200 $\rightarrow$ Redirects to `/dashboard` with Super Admin permissions.
 - [ ] **Test 1B (Direct Email OTP)**: Click "Direct Email OTP", enter `ajmalsn63@gmail.com`, and click "Send One-Time Passcode".
   - **Expected**: 6-digit code arrives in `ajmalsn63@gmail.com` mailbox $\rightarrow$ typing code logs in successfully.
@@ -96,9 +96,9 @@ When deploying to production Cloudflare Worker (`apps/api`), ensure the followin
 cd apps/api
 npx wrangler secret put ENVIRONMENT           # production
 npx wrangler secret put BETTER_AUTH_SECRET    # [Cryptographic 32-char secret]
-npx wrangler secret put ADMIN_PASSWORD        # OwnerPass2026!
+npx wrangler secret put ADMIN_PASSWORD        # [REDACTED]
 npx wrangler secret put TURNSTILE_SECRET_KEY  # [Cloudflare Turnstile secret]
-npx wrangler secret put OPENWA_API_KEY        # owa_k1_...
+npx wrangler secret put OPENWA_API_KEY        # [REDACTED]
 npx wrangler secret put CHATWOOT_API_TOKEN    # [Chatwoot token]
 npx wrangler secret put WA_WEBHOOK_SECRET     # [Webhook HMAC secret]
 npx wrangler secret put RAZORPAY_KEY_ID       # [Razorpay live key]

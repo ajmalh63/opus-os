@@ -47,14 +47,13 @@ function hashKey(mat: string[]): string {
  * returns { over, count }. Fail-open on infra errors (over=false).
  * Used by the middleware below and by bounded audit writes (audit.ts).
  */
-export async function isRateLimited(env: any, rule: RateLimitRule, identity: string): Promise<{ over: boolean; count: number }> {
+export async function isRateLimited(env: any, rule: RateLimitRule, identity: string, opts?: { failClosed?: boolean }): Promise<{ over: boolean; count: number }> {
   if (!env?.DB) return { over: false, count: 0 };
   const db = getDb(env.DB);
   const now = Math.floor(Date.now() / 1000);
   const windowStart = Math.floor(now / rule.windowSeconds) * rule.windowSeconds;
   const key = hashKey([rule.bucket, String(windowStart), identity]);
   try {
-    // Upsert: insert 1, else increment count atomically (ON CONFLICT DO UPDATE).
     await db.insert(rateLimitTable).values({ key, bucket: rule.bucket, windowStart, identity, count: 1 })
       .onConflictDoUpdate({ target: rateLimitTable.key, set: { count: sql`${rateLimitTable.count} + 1` } })
       .run();
@@ -62,8 +61,10 @@ export async function isRateLimited(env: any, rule: RateLimitRule, identity: str
     const count = Number(row?.count) || 1;
     return { over: count > rule.limit, count };
   } catch (e: any) {
-    // Fail-open on infra error — never block a user because a counter hiccupped.
     console.error('rateLimit error', e?.message);
+    if (opts?.failClosed && ['otp', 'login', 'otp-verify', 'login-fail', 'otp-send'].includes(rule.bucket)) {
+      return { over: true, count: 0 };
+    }
     return { over: false, count: 0 };
   }
 }

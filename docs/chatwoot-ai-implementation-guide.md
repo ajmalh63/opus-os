@@ -51,7 +51,7 @@ Chatwoot's native **Captain AI** engine (`https://chat.opusoverseas.com/super_ad
 
 ### Configuration Parameters:
 * **`CAPTAIN_OPEN_AI_ENDPOINT`**: `https://api.cloudflare.com/client/v4/accounts/b66f3697a847cba87b1fd44bc8a13827/ai`
-* **`CAPTAIN_OPEN_AI_API_KEY`**: `cfut_2GTML90E1gmbyIRkUq24lcqPBtTySyWt2D6b665f373aed72`
+* **`CAPTAIN_OPEN_AI_API_KEY`**: `[REDACTED]`
 * **`CAPTAIN_OPEN_AI_MODEL`**: `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (Meta 70B Parameter LLM)
 * **`CAPTAIN_EMBEDDING_MODEL`**: `@cf/baai/bge-small-en-v1.5` (Semantic search & article embeddings)
 
@@ -220,7 +220,7 @@ Macros execute multi-step automations (labeling, priority assignment, customer n
 2. Chatwoot fires outgoing webhook `POST /api/webhooks/chatwoot`.
 3. Opus OS Worker calls OpenWA REST API:
    `POST http://100.87.71.38:2785/api/sessions/main/messages/send-text`
-   Headers: `X-API-Key: owa_k1_6c127c65d850fa156f794cd554c3eb55f11b316ecabcd83a5b5f8926956de645`
+   Headers: `X-API-Key: [REDACTED]`
    Body: `{ "chatId": "<phone>@c.us", "text": "<message>" }`
 4. OpenWA delivers the message directly to the customer's WhatsApp on their mobile phone.
 

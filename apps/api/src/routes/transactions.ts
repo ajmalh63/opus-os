@@ -209,13 +209,21 @@ transactionsRouter.post('/:id/confirm', async (c) => {
     const row = await db.select().from(payments).where(eq(payments.id, id)).get();
     if (!row) return c.json({ error: 'Entry not found' }, 404);
     if (row.status !== 'draft') return c.json({ error: `Only draft entries can be confirmed (current: ${row.status})` }, 409);
-    // Flip to confirmed FIRST so balance recomputation includes this entry.
-    await db.update(payments).set({ status: 'confirmed', confirmedBy: user.id, confirmedAt: now }).where(eq(payments.id, id));
-    const balance = await recomputeBalance(db, row.engagementId);
-    await db.update(engagements).set({ outstandingBalance: balance }).where(eq(engagements.id, row.engagementId));
+    // Atomic ledger: payment confirm + balance update in single D1 batch (prev non-atomic caused drift under concurrency)
+    const balance = await recomputeBalance(db, row.engagementId).then((b) => b + (row.amount || 0));
+    // Use batch for atomicity: both writes succeed or both fail
+    await db.batch([
+      db.update(payments).set({ status: 'confirmed', confirmedBy: user.id, confirmedAt: now }).where(eq(payments.id, id)),
+      db.update(engagements).set({ outstandingBalance: balance }).where(eq(engagements.id, row.engagementId)),
+    ]);
+    // Reconcile in case of concurrent writes (authoritative recompute)
+    const authoritative = await recomputeBalance(db, row.engagementId);
+    if (authoritative !== balance) {
+      await db.update(engagements).set({ outstandingBalance: authoritative }).where(eq(engagements.id, row.engagementId));
+    }
     await auditEvent(c, { action: 'BILLING_ENTRY_CONFIRMED', entityName: 'payments', entityId: id, afterState: { id, confirmedBy: user.id } });
     const erp = await pushToErpIfInvoice(c, db, id, row.engagementId, now);
-    return c.json({ success: true, id, status: 'confirmed', erp: erp?.ok === true ? 'synced' : (erp?.reason || 'queued'), message: 'Entry confirmed ₹€₹€₹₹ balance applied.' });
+    return c.json({ success: true, id, status: 'confirmed', erp: erp?.ok === true ? 'synced' : (erp?.reason || 'queued'), message: 'Entry confirmed — balance applied atomically.' });
   } catch (error: any) {
     return c.json({ error: 'Confirm failed',  }, 500);
   }
@@ -235,12 +243,18 @@ transactionsRouter.post('/:id/void', async (c) => {
     if (row.status === 'synced' || row.status === 'paid') {
       return c.json({ error: 'Synced/paid entries cannot be voided in-place; raise a refund instead' }, 409);
     }
-    // Flip to void FIRST so balance recomputation excludes this entry.
-    await db.update(payments).set({ status: 'void', confirmedBy: row.confirmedBy || user.id, confirmedAt: now }).where(eq(payments.id, id));
-    const balance = await recomputeBalance(db, row.engagementId);
-    await db.update(engagements).set({ outstandingBalance: balance }).where(eq(engagements.id, row.engagementId));
+    // Atomic void: recompute without this entry, then batch
+    const balance = await recomputeBalance(db, row.engagementId).then((b) => (row.status === 'confirmed' ? b - (row.amount || 0) : b));
+    await db.batch([
+      db.update(payments).set({ status: 'void', confirmedBy: row.confirmedBy || user.id, confirmedAt: now }).where(eq(payments.id, id)),
+      db.update(engagements).set({ outstandingBalance: balance }).where(eq(engagements.id, row.engagementId)),
+    ]);
+    const authoritative = await recomputeBalance(db, row.engagementId);
+    if (authoritative !== balance) {
+      await db.update(engagements).set({ outstandingBalance: authoritative }).where(eq(engagements.id, row.engagementId));
+    }
     await auditEvent(c, { action: 'BILLING_ENTRY_VOID', entityName: 'payments', entityId: id, afterState: { id } });
-    return c.json({ success: true, id, status: 'void', message: 'Entry voided.' });
+    return c.json({ success: true, id, status: 'void', message: 'Entry voided atomically.' });
   } catch (error: any) {
     return c.json({ error: 'Void failed',  }, 500);
   }

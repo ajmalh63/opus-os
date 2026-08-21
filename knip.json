@@ -1,0 +1,7 @@
+{
+  "$schema": "https://unpkg.com/knip@6.32.2/schema.json",
+  "ignore": ["scripts/**","functions/**","wireframes/**","apps/app/functions/**","apps/app/dist/**",".wrangler/**","ops/**"],
+  "ignoreExports": ["seedDatabaseRest","seedCampaigns","seedAttestationRateCards","RESUME_PARSER_MODEL","DOC_EXTENSIONS","RESUME_EXTENSIONS","MAX_DOC_BYTES","MAX_RESUME_BYTES","EMBEDDING_MODEL","embedText","upsertVector","queryVectors","semanticSearch","ALLOWED_DOMAINS","DEFAULT_DIVISIONS_ENABLED","AUDIT_SCHEMA_VERSION","canonicalize","INVOICE_SETTINGS_KEY","BOARD_DEFAULTS","validGstin","erpnextPublicWebhookRouter","pickCampaign","rzrAuth","verifyWebhookSignature"],
+  "ignoreDependencies": ["wrangler"],
+  "vite": { "entry": ["apps/app/index.html","apps/app/src/main.tsx"] }
+}
