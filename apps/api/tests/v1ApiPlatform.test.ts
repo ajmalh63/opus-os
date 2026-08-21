@@ -29,6 +29,9 @@ describe('Opus OS Enterprise REST API Platform (v1)', () => {
     expect(spec.paths['/leads']).toBeDefined();
     expect(spec.paths['/study-abroad/match']).toBeDefined();
     expect(spec.paths['/umrah/bookings']).toBeDefined();
+    expect(spec.paths['/recruitment/deployments']).toBeDefined();
+    expect(spec.paths['/recruitment/match']).toBeDefined();
+    expect(spec.paths['/recruitment/vas-plans']).toBeDefined();
   });
 
   it('serves interactive Scalar API documentation at /docs', async () => {

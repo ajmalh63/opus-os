@@ -43,31 +43,51 @@ export const mauticAdapter: ToolAdapter = {
   label: 'Mautic — automation engine',
   async snapshot(env: ToolEnv): Promise<ToolSnapshot> {
     const base = { tool: 'mautic', label: this.label, fetchedAt: Math.floor(Date.now() / 1000) };
-    const { token, reason } = await mauticToken(env);
-    if (!token) {
-      return { ...base, status: { state: 'unconfigured', label: this.label, summary: reason || 'unconfigured' }, metrics: {}, items: [] };
+    const url = env.MAUTIC_URL || env.MAUTIC_BASE_URL;
+    if (!url) {
+      return { ...base, status: { state: 'unconfigured', label: this.label, summary: 'MAUTIC_URL / MAUTIC_CLIENT_ID / MAUTIC_CLIENT_SECRET not set' }, metrics: {}, items: [] };
     }
-    const authHeaders = token.startsWith('basic:')
-      ? { Authorization: `Basic ${token.slice(6)}` }
-      : { Authorization: `Bearer ${token}` };
+    const { token } = await mauticToken(env);
+    if (token) {
+      const authHeaders = token.startsWith('basic:')
+        ? { Authorization: `Basic ${token.slice(6)}` }
+        : { Authorization: `Bearer ${token}` };
+      try {
+        const [camps, conts, segs] = await Promise.all([
+          fetch(`${url}/api/campaigns?limit=10`, { headers: authHeaders }),
+          fetch(`${url}/api/contacts?limit=1`, { headers: authHeaders }),
+          fetch(`${url}/api/segments?limit=1`, { headers: authHeaders }),
+        ]);
+        if (!camps.ok || !conts.ok || !segs.ok) {
+          const bad = [camps, conts, segs].find((r) => !r.ok);
+          throw new Error(`fetch failed: HTTP ${bad?.status}`);
+        }
+        const cj: any = await camps.json().catch(() => ({ total: null, campaigns: [] }));
+        const oj: any = await conts.json().catch(() => ({ total: null }));
+        const sj: any = await segs.json().catch(() => ({ total: null }));
+        const items: ToolFeedItem[] = (cj.campaigns || []).map((c: any) => ({
+          tool: 'mautic', kind: 'journey', id: String(c.id), title: c.name || `Campaign ${c.id}`,
+          detail: `published: ${!!c.isPublished} · events: ${(c.events || []).length}`, at: Math.floor(Date.now() / 1000),
+        }));
+        return {
+          ...base,
+          status: { state: 'ok', label: this.label, summary: `${items.length} journeys · ${oj.total ?? 0} contacts` },
+          metrics: { campaigns: items.length, contacts: oj.total ?? 0, segments: sj.total ?? 0 },
+          items,
+        };
+      } catch (e: any) {
+        return { ...base, status: { state: 'error', label: this.label, summary: `fetch failed: ${e?.message || 'unknown'}` }, metrics: {}, items: [] };
+      }
+    }
+
     try {
-      const [camps, conts, segs] = await Promise.all([
-        fetch(`${env.MAUTIC_URL}/api/campaigns?limit=10`, { headers: authHeaders }),
-        fetch(`${env.MAUTIC_URL}/api/contacts?limit=1`, { headers: authHeaders }),
-        fetch(`${env.MAUTIC_URL}/api/segments?limit=1`, { headers: authHeaders }),
-      ]);
-      const cj: any = await camps.json().catch(() => ({ total: null, campaigns: [] }));
-      const oj: any = await conts.json().catch(() => ({ total: null }));
-      const sj: any = await segs.json().catch(() => ({ total: null }));
-      const items: ToolFeedItem[] = (cj.campaigns || []).map((c: any) => ({
-        tool: 'mautic', kind: 'journey', id: String(c.id), title: c.name || `Campaign ${c.id}`,
-        detail: `published: ${!!c.isPublished} · events: ${(c.events || []).length}`, at: Math.floor(Date.now() / 1000),
-      }));
+      const probe = await fetch(`${url.replace(/\/$/, '')}/s/dashboard`, { signal: AbortSignal.timeout(4000) });
+      const ok = probe.status < 500;
       return {
         ...base,
-        status: { state: 'ok', label: this.label, summary: `${items.length} campaigns · ${oj.total ?? '?'} contacts` },
-        metrics: { campaigns: items.length, contacts: oj.total ?? null, segments: sj.total ?? null },
-        items,
+        status: { state: ok ? 'ok' : 'error', label: this.label, summary: ok ? 'automation engine reachable' : `HTTP ${probe.status}` },
+        metrics: { httpStatus: probe.status },
+        items: [],
       };
     } catch (e: any) {
       return { ...base, status: { state: 'error', label: this.label, summary: `fetch failed: ${e?.message || 'unknown'}` }, metrics: {}, items: [] };

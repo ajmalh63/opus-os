@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
-import { clients, engagements, consents, candidateProfiles, manpowerDeployments, jobPostings, membershipPlans, appSettings } from '../db/schema.js';
+import { clients, engagements, consents, candidateProfiles, manpowerDeployments, jobPostings, membershipPlans, appSettings, tasks } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { parseResumeWithAI } from '../infra/ai.js';
 import { auditEvent } from '../middleware/audit.js';
 import { seedMembershipPlans } from './portalManpower.js';
+import { computeManpowerMatch, calculateProfileCompleteness } from '../lib/manpowerMatch.js';
 
 export const manpowerRouter = new Hono<{ Bindings: { DB: D1Database; MANPOWER_AI?: 'mock' | 'real'; AI?: unknown }; Variables: { user?: { id?: string; role?: string } | null } }>();
 
@@ -247,10 +248,11 @@ manpowerRouter.post('/interviews/confirm', async (c) => {
   }
 });
 
-// GET /api/manpower/deployments — Get deployment tracking (optionally by clientId / jobId), joined + candidate detail
+// GET /api/manpower/deployments — Get deployment tracking (optionally by clientId / jobId / triageTier), joined + candidate detail & match scores
 manpowerRouter.get('/deployments', async (c) => {
   const clientId = c.req.query('clientId');
   const jobId = c.req.query('jobId');
+  const triageFilter = c.req.query('triageTier');
 
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -262,24 +264,68 @@ manpowerRouter.get('/deployments', async (c) => {
 
     const jobs = await db.select().from(jobPostings).all();
     const allClients = await db.select().from(clients).all();
+    const vasTasks = await db.select().from(tasks).all().catch(() => []);
     const joined = list.map(d => {
       const job = jobs.find(j => j.id === d.jobId);
       const cl = allClients.find(c => c.id === d.clientId);
+      const clientVasTask = vasTasks.find(t => t.clientId === d.clientId);
+      const hasPaidVas = !!clientVasTask || !!cl?.exclusiveMember;
       let formJson = null;
       try { formJson = d.formJson ? JSON.parse(d.formJson) : null; } catch { formJson = null; }
+
+      const match = job ? computeManpowerMatch(formJson, {
+        title: job.title,
+        country: job.country,
+        sector: job.sector,
+        collar: job.collar,
+        experienceYearsMin: job.experienceYearsMin,
+        tradeCategory: job.tradeCategory,
+        requirements: (() => { try { return JSON.parse(job.requirementsJson || '[]'); } catch { return []; } })()
+      }) : { score: 50, tier: 'standard' as const, strengths: [], gaps: [], reasons: [] };
+
+      const completeness = calculateProfileCompleteness(formJson);
+
       return {
         ...d,
         formJson,
         jobTitle: job?.title || 'Unknown Job',
         jobCountry: job?.country || 'Unknown Country',
         jobSector: job?.sector || '',
+        collar: job?.collar || 'blue_collar',
+        employer: job?.employer || null,
+        employerReference: job?.employerReference || null,
         candidateName: cl?.name || 'Unknown',
         candidateEmail: cl?.email || '',
         candidatePhone: cl?.phone || '',
+        exclusiveMember: !!cl?.exclusiveMember,
+        hasPaidVas,
+        vasServiceTitle: clientVasTask?.title || (cl?.exclusiveMember ? 'Exclusive Community' : null),
+        matchScore: match.score,
+        matchTier: match.tier,
+        matchStrengths: match.strengths,
+        matchGaps: match.gaps,
+        profileCompletenessPct: completeness.pct,
+        missingProfileSections: completeness.missing
       };
     });
 
-    return c.json({ success: true, deployments: joined });
+    const filtered = triageFilter && triageFilter !== 'all'
+      ? triageFilter === 'paid_vas'
+        ? joined.filter((d) => d.hasPaidVas)
+        : joined.filter((d) => d.matchTier === triageFilter)
+      : joined;
+
+    return c.json({
+      success: true,
+      deployments: filtered,
+      counts: {
+        total: joined.length,
+        topMatch: joined.filter(d => d.matchTier === 'top_match').length,
+        standard: joined.filter(d => d.matchTier === 'standard').length,
+        coldPool: joined.filter(d => d.matchTier === 'cold_pool').length,
+        paidVas: joined.filter(d => d.hasPaidVas).length
+      }
+    });
   } catch (error: any) {
     return c.json({ error: "Failed to fetch deployments", details: error.message }, 500);
   }

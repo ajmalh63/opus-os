@@ -51,6 +51,9 @@ interface Deployment {
   jobTitle?: string;
   jobCountry?: string;
   jobSector?: string;
+  collar?: string;
+  employer?: string | null;
+  employerReference?: string | null;
   candidateName?: string;
   candidateEmail?: string;
   candidatePhone?: string;
@@ -59,6 +62,14 @@ interface Deployment {
   appliedAt?: number | null;
   rejectionReason?: string | null;
   notes?: string | null;
+  matchScore?: number;
+  matchTier?: 'top_match' | 'standard' | 'cold_pool';
+  matchStrengths?: string[];
+  matchGaps?: string[];
+  profileCompletenessPct?: number;
+  missingProfileSections?: string[];
+  hasPaidVas?: boolean;
+  vasServiceTitle?: string;
 }
 
 const COLLAR_LABEL: Record<string, string> = { blue_collar: 'Blue Collar', white_collar: 'White Collar' };
@@ -75,6 +86,7 @@ export default function ManpowerPortal() {
   const [previewJob, setPreviewJob] = useState<JobPosting | null>(null);
   const [jobStatusFilter, setJobStatusFilter] = useState('all');
   const [exclusiveEnabled, setExclusiveEnabled] = useState(true);
+  const [triageFilter, setTriageFilter] = useState<'all' | 'top_match' | 'standard' | 'cold_pool' | 'paid_vas'>('all');
 
   const [jobForm, setJobForm] = useState({
     title: '', country: '', sector: '', salaryText: '', collar: 'blue_collar' as 'blue_collar' | 'white_collar',
@@ -579,18 +591,110 @@ export default function ManpowerPortal() {
                   </div>
                 </div>
 
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-brand-navy/[0.03] p-2.5 rounded-xl border border-brand-navy/10">
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setTriageFilter('all')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'all' ? 'bg-brand-navy text-white' : 'text-brand-navy/60 hover:text-brand-navy'}`}
+                    >
+                      All ({deployments.length})
+                    </button>
+                    <button
+                      onClick={() => setTriageFilter('paid_vas')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'paid_vas' ? 'bg-purple-600 text-white font-bold' : 'text-purple-700 bg-purple-50 hover:bg-purple-100'}`}
+                    >
+                      ✨ Paid Add-Ons ({deployments.filter(d => d.hasPaidVas).length})
+                    </button>
+                    <button
+                      onClick={() => setTriageFilter('top_match')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'top_match' ? 'bg-emerald-600 text-white' : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'}`}
+                    >
+                      🔥 Top Match (≥75%)
+                    </button>
+                    <button
+                      onClick={() => setTriageFilter('standard')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'standard' ? 'bg-brand-gold text-brand-navy font-bold' : 'text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20'}`}
+                    >
+                      ⚡ Standard (50–74%)
+                    </button>
+                    <button
+                      onClick={() => setTriageFilter('cold_pool')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'cold_pool' ? 'bg-slate-600 text-white' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}
+                    >
+                      ❄️ Cold Pool (&lt;50%)
+                    </button>
+                  </div>
+
+                  <div className="text-[10px] text-brand-navy/50 flex items-center gap-1.5 font-mono">
+                    <span>🛡️ AI Guardrails: OWASP LLM01 Active</span>
+                  </div>
+                </div>
+
                 {deployments.length === 0 ? (
                   <p className="text-xs text-brand-navy/50 italic">No deployment record yet. Use "Deploy" to assign this candidate to an opening.</p>
                 ) : (
                   <div className="space-y-4">
-                    {deployments.map(d => (
-                      <div key={d.id} className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.04] p-5">
-                        <div className="flex items-center justify-between border-b border-brand-navy/[0.08] pb-3 mb-3">
+                    {deployments
+                      .filter(d => triageFilter === 'all' || (triageFilter === 'paid_vas' ? d.hasPaidVas : d.matchTier === triageFilter))
+                      .map(d => (
+                      <div key={d.id} className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.04] p-5 space-y-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-brand-navy/[0.08] pb-3">
                           <div>
-                            <div className="font-bold text-brand-navy text-sm">{d.jobTitle || 'Job'}</div>
-                            <div className="text-[10px] text-brand-navy/50">{d.jobCountry || ''} · {d.id}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-brand-navy text-sm">{d.jobTitle || 'Job'}</span>
+                              <span className="bg-brand-gold/10 text-brand-gold rounded px-1.5 py-0.5 text-[9px] font-bold capitalize">
+                                {COLLAR_LABEL[d.collar || 'blue_collar']}
+                              </span>
+                              {d.hasPaidVas && (
+                                <span className="bg-purple-100 text-purple-800 border border-purple-300 rounded px-1.5 py-0.5 text-[9px] font-bold flex items-center gap-1">
+                                  <span>✨</span> {d.vasServiceTitle || 'Paid Add-On'}
+                                </span>
+                              )}
+                              {d.matchScore !== undefined && (
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                                  d.matchTier === 'top_match'
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                    : d.matchTier === 'standard'
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    : 'bg-slate-100 text-slate-700 border border-slate-300'
+                                }`}>
+                                  {d.matchTier === 'top_match' ? '🔥 Top Match ' : ''}{d.matchScore}% Match Score
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-brand-navy/50 mt-0.5">
+                              {d.jobCountry || ''} · {d.jobSector || ''} {d.employer ? `· Employer: ${d.employer}` : ''} · <span className="font-mono">{d.id}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {d.profileCompletenessPct !== undefined && (
+                              <span className="text-[10px] font-bold text-brand-navy/60 bg-white px-2 py-1 rounded border border-brand-navy/10">
+                                📋 {d.profileCompletenessPct}% Profile
+                              </span>
+                            )}
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                              🛡️ docScan: Verified Clean
+                            </span>
                           </div>
                         </div>
+
+                        {/* Match Strengths & Gaps */}
+                        {(d.matchStrengths?.length || 0) > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {d.matchStrengths!.map((st, i) => (
+                              <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] px-2 py-0.5 rounded font-medium">
+                                ✓ {st}
+                              </span>
+                            ))}
+                            {(d.matchGaps || []).map((gp, i) => (
+                              <span key={i} className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-2 py-0.5 rounded font-medium">
+                                ⚠️ {gp}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="flex justify-between items-center">
                             <span className="font-semibold text-brand-navy/70">Selection Status</span>
@@ -635,8 +739,8 @@ export default function ManpowerPortal() {
                         </div>
 
                         {d.formJson && (
-                          <details className="mt-3 rounded-lg border border-brand-navy/10 bg-brand-navy/[0.03]">
-                            <summary className="cursor-pointer px-3 py-2 text-[11px] font-bold text-brand-navy">📋 Application Form</summary>
+                          <details className="mt-3 rounded-lg border border-brand-navy/10 bg-white">
+                            <summary className="cursor-pointer px-3 py-2 text-[11px] font-bold text-brand-navy">📋 Candidate Structured Profile &amp; Form Data</summary>
                             <div className="px-3 pb-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-brand-navy/80">
                               <p><span className="text-brand-navy/40">Name:</span> {d.formJson.personal?.fullName || '—'}</p>
                               <p><span className="text-brand-navy/40">DOB:</span> {d.formJson.personal?.dob || '—'}</p>

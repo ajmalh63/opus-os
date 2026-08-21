@@ -442,3 +442,29 @@ export type UpdateAttestationStageInput = z.infer<typeof updateAttestationStageS
 export type UpdateAttestationChainInput = z.infer<typeof updateAttestationChainSchema>;
 export type UpdateAttestationPickupInput = z.infer<typeof updateAttestationPickupSchema>;
 export type CreateAttestationRateCardInput = z.infer<typeof createAttestationRateCardSchema>;
+
+// 12. Manpower Application & VAS Schemas
+export const manpowerApplicationSchema = z.object({
+  token: z.string().min(1, 'Candidate token is required'),
+  jobId: z.string().min(1, 'Job ID is required'),
+  turnstileToken: z.string().optional(),
+  formJson: z.any().optional(),
+  resumeKey: z.string().nullable().optional()
+});
+
+export const manpowerVasOrderSchema = z.object({
+  token: z.string().min(1, 'Candidate token is required'),
+  serviceKey: z.enum(['ats_resume_revamp', 'mock_interview_prep', 'express_screening'])
+});
+
+export const manpowerVasVerifySchema = z.object({
+  token: z.string().min(1, 'Candidate token is required'),
+  serviceKey: z.string().min(1, 'Service key is required'),
+  razorpay_order_id: z.string().min(1, 'Order ID is required'),
+  razorpay_payment_id: z.string().min(1, 'Payment ID is required'),
+  razorpay_signature: z.string().min(1, 'Signature is required')
+});
+
+export type ManpowerApplicationInput = z.infer<typeof manpowerApplicationSchema>;
+export type ManpowerVasOrderInput = z.infer<typeof manpowerVasOrderSchema>;
+export type ManpowerVasVerifyInput = z.infer<typeof manpowerVasVerifySchema>;

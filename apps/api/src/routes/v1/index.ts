@@ -104,6 +104,15 @@ v1ApiRouter.get('/openapi.json', (c) => {
         get: { summary: 'List open overseas job demands', tags: ['Recruitment & Manpower'] },
         post: { summary: 'Create overseas job posting', tags: ['Recruitment & Manpower'] },
       },
+      '/recruitment/deployments': {
+        get: { summary: 'List candidate applications and deployments with algorithmic triage and VAS status', tags: ['Recruitment & Manpower'] },
+      },
+      '/recruitment/match': {
+        post: { summary: 'Execute deterministic 4-pillar candidate match scoring engine', tags: ['Recruitment & Manpower'] },
+      },
+      '/recruitment/vas-plans': {
+        get: { summary: 'List career acceleration add-on services and SLA commitments', tags: ['Recruitment & Manpower'] },
+      },
       '/bookings': {
         get: { summary: 'List Cal.com consultation appointments', tags: ['Appointments'] },
       },

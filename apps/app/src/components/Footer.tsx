@@ -112,7 +112,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row">
-          <p>© {new Date().getFullYear()} Opus Overseas · Operated by <strong className="text-white/70">Cordial Crafts</strong>. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Opus Overseas. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-3 sm:gap-5">
             <button onClick={() => setLocation('/privacy')} className="cursor-pointer hover:text-brand-gold transition-colors">Privacy Policy</button>
             <button onClick={() => setLocation('/terms')} className="cursor-pointer hover:text-brand-gold transition-colors">Terms of Service</button>

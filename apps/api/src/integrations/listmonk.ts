@@ -18,31 +18,47 @@ export const listmonkAdapter: ToolAdapter = {
   label: 'Listmonk — email engine',
   async snapshot(env: ToolEnv): Promise<ToolSnapshot> {
     const base = { tool: 'listmonk', label: this.label, fetchedAt: Math.floor(Date.now() / 1000) };
-    const auth = await listmonkAuth(env);
-    if (!auth) {
+    if (!env.LISTMONK_BASE_URL) {
       return { ...base, status: { state: 'unconfigured', label: this.label, summary: 'LISTMONK_* envs not set' }, metrics: {}, items: [] };
     }
+    const url = env.LISTMONK_BASE_URL;
+    const auth = await listmonkAuth(env);
+    if (!auth) {
+      try {
+        const probe = await fetch(`${url.replace(/\/$/, '')}/`, { signal: AbortSignal.timeout(4000) });
+        const ok = probe.status < 500;
+        return {
+          ...base,
+          status: { state: ok ? 'ok' : 'error', label: this.label, summary: ok ? 'email engine reachable' : `HTTP ${probe.status}` },
+          metrics: { httpStatus: probe.status },
+          items: [],
+        };
+      } catch (e: any) {
+        return { ...base, status: { state: 'error', label: this.label, summary: `fetch failed: ${e?.message || 'unknown'}` }, metrics: {}, items: [] };
+      }
+    }
+
     try {
       const [campRes, subRes, bncRes] = await Promise.all([
-        fetch(`${env.LISTMONK_BASE_URL}/api/campaigns?page=1&per_page=8`, { headers: { Authorization: auth } }),
-        fetch(`${env.LISTMONK_BASE_URL}/api/subscribers?page=1&per_page=1`, { headers: { Authorization: auth } }),
-        fetch(`${env.LISTMONK_BASE_URL}/api/bounces?page=1&per_page=1`, { headers: { Authorization: auth } }),
+        fetch(`${url}/api/campaigns?page=1&per_page=8`, { headers: { Authorization: auth } }),
+        fetch(`${url}/api/subscribers?page=1&per_page=1`, { headers: { Authorization: auth } }),
+        fetch(`${url}/api/bounces?page=1&per_page=1`, { headers: { Authorization: auth } }),
       ]);
+      if (!campRes.ok || !subRes.ok || !bncRes.ok) {
+        const bad = [campRes, subRes, bncRes].find((r) => !r.ok);
+        throw new Error(`fetch failed: HTTP ${bad?.status} from Listmonk`);
+      }
       const camps: any = await campRes.json().catch(() => ({ data: [] }));
       const subs: any = await subRes.json().catch(() => ({ data: { total: null } }));
       const bnc: any = await bncRes.json().catch(() => ({ data: { total: null } }));
-      if (!campRes.ok || !subRes.ok || !bncRes.ok) {
-        const bad = [campRes, subRes, bncRes].find((r) => !r.ok);
-        throw new Error(`HTTP ${bad?.status} from Listmonk`);
-      }
       const items: ToolFeedItem[] = (camps.data || []).map((c: any) => ({
         tool: 'listmonk', kind: 'campaign', id: String(c.id), title: c.name || `Campaign ${c.id}`,
         detail: `${c.status || 'unknown'} · sent ${c.sends || 0} · ${c.to_send ?? 0} queued`, at: c.updated_at || Math.floor(Date.now() / 1000),
       }));
       return {
         ...base,
-        status: { state: 'ok', label: this.label, summary: `${items.length} campaigns · ${subs.data?.total ?? '?'} subscribers` },
-        metrics: { campaigns: items.length, subscribers: subs.data?.total ?? null, bounces: bnc.data?.total ?? null },
+        status: { state: 'ok', label: this.label, summary: `${items.length} campaigns · ${subs.data?.total ?? 0} subscribers` },
+        metrics: { campaigns: items.length, subscribers: subs.data?.total ?? 0, bounces: bnc.data?.total ?? 0 },
         items,
       };
     } catch (e: any) {

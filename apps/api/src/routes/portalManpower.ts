@@ -1,17 +1,28 @@
 import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
-import { clients, jobPostings, manpowerDeployments, membershipPlans, appSettings } from '../db/schema.js';
+import { clients, jobPostings, manpowerDeployments, membershipPlans, appSettings, tasks } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
 import { isDivisionEnabled } from '../lib/divisions.js';
 import { manpowerFormSchema, missingManpowerSections } from '../validation/manpowerForm.js';
+import { computeManpowerMatch, verifyTurnstileToken, calculateProfileCompleteness, MANPOWER_VAS_CATALOG } from '../lib/manpowerMatch.js';
+import { manpowerApplicationSchema, manpowerVasOrderSchema, manpowerVasVerifySchema } from '@opusos/shared';
+
+// Re-export for any dependent modules
+export { MANPOWER_VAS_CATALOG };
 
 // Client self-service Manpower surface (token = client.id).
 // Mounted at /api/public/portal/manpower.
 export const portalManpowerRouter = new Hono<{
-  Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string }
+  Bindings: {
+    DB: D1Database;
+    BETTER_AUTH_SECRET: string;
+    RAZORPAY_KEY_ID?: string;
+    RAZORPAY_KEY_SECRET?: string;
+    TURNSTILE_SECRET_KEY?: string;
+  }
 }>();
 
 const RZR_BASE = 'https://api.razorpay.com/v1';
@@ -45,8 +56,6 @@ function isMember(client: any, now: number): boolean {
 }
 
 // Seed default plans once (idempotent) so the paywall is never empty.
-// Inserts only the defaults that are missing (by key) — never skips seeding
-// just because a custom plan already exists.
 export async function seedMembershipPlans(db: any) {
   const existing = await db.select().from(membershipPlans).all();
   const existingKeys = new Set(existing.map((p: any) => p.key));
@@ -78,7 +87,6 @@ function publicJob(j: any) {
 // GET /jobs — public jobs for everyone; secret jobs only for exclusive members
 portalManpowerRouter.get('/jobs', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
-  // Division availability (kill-switch): job board hidden when manpower is OFF.
   if (!(await isDivisionEnabled(c.env, 'manpower'))) return c.json({ success: true, jobs: [] });
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
@@ -139,7 +147,6 @@ portalManpowerRouter.get('/membership', async (c) => {
 
 // POST /membership/order — create a Razorpay order for a membership plan
 portalManpowerRouter.post('/membership/order', async (c) => {
-  // Division availability: new membership purchase is intake — blocked when OFF.
   if (!(await isDivisionEnabled(c.env, 'manpower'))) {
     return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
   }
@@ -182,7 +189,6 @@ portalManpowerRouter.post('/membership/order', async (c) => {
 
 // POST /membership/verify — verify Razorpay signature, then grant membership
 portalManpowerRouter.post('/membership/verify', async (c) => {
-  // Division availability: new membership purchase is intake — blocked when OFF.
   if (!(await isDivisionEnabled(c.env, 'manpower'))) {
     return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
   }
@@ -207,7 +213,6 @@ portalManpowerRouter.post('/membership/verify', async (c) => {
     const plan = await db.select().from(membershipPlans).where(eq(membershipPlans.key, planKey)).get();
     if (!plan) return c.json({ error: 'Plan not found' }, 404);
 
-    // Extend from current expiry if still active, else from now.
     const base = isMember(client, now) && client.exclusiveExpiresAt ? client.exclusiveExpiresAt : now;
     const expiresAt = base + plan.durationDays * 86400;
 
@@ -231,7 +236,128 @@ portalManpowerRouter.post('/membership/verify', async (c) => {
   }
 });
 
-// GET /applications?token= — this client's own job applications + pipeline
+// GET /vas-plans — optional value added career accelerator services
+portalManpowerRouter.get('/vas-plans', async (c) => {
+  return c.json({ success: true, plans: MANPOWER_VAS_CATALOG });
+});
+
+// POST /vas/order — create Razorpay order for optional career accelerator add-on
+portalManpowerRouter.post('/vas/order', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as any;
+  const parsed = manpowerVasOrderSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: 'Invalid VAS request', details: parsed.error.format() }, 400);
+  }
+  const { token, serviceKey } = parsed.data;
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  if (!c.env.RAZORPAY_KEY_ID || !c.env.RAZORPAY_KEY_SECRET) {
+    return c.json({ error: 'Razorpay not configured' }, 503);
+  }
+
+  const vasItem = MANPOWER_VAS_CATALOG.find((s) => s.key === serviceKey);
+  if (!vasItem) return c.json({ error: 'Selected career service not found' }, 404);
+
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client profile not found' }, 404);
+
+  try {
+    const rzRes = await fetch(`${RZR_BASE}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': basicAuth(c) },
+      body: JSON.stringify({
+        amount: vasItem.pricePaise,
+        currency: 'INR',
+        receipt: `vas_${serviceKey.slice(0, 5)}_${Date.now().toString(36)}`,
+        notes: { clientId: token, serviceKey, title: vasItem.title },
+        partial_payment: false,
+      }),
+    });
+    if (!rzRes.ok) {
+      const errTxt = await rzRes.text().catch(() => '');
+      return c.json({ error: 'Payment gateway error', details: errTxt }, 502);
+    }
+    const order = (await rzRes.json()) as { id: string; amount: number; currency: string };
+    return c.json({
+      success: true,
+      order_id: order.id,
+      amount_paise: order.amount,
+      currency: order.currency,
+      key: c.env.RAZORPAY_KEY_ID,
+      serviceKey,
+      title: vasItem.title
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to initiate VAS order', details: e?.message }, 500);
+  }
+});
+
+// POST /vas/verify — confirm VAS payment and create recruiter task
+portalManpowerRouter.post('/vas/verify', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as any;
+  const parsed = manpowerVasVerifySchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: 'Missing required payment verification parameters' }, 400);
+  }
+  const { token, serviceKey, razorpay_order_id, razorpay_payment_id, razorpay_signature } = parsed.data;
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const secret = c.env.RAZORPAY_KEY_SECRET;
+  if (!secret) return c.json({ error: 'Razorpay credentials not configured' }, 503);
+
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const ok = await verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature, secret);
+    if (!ok) return c.json({ error: 'Payment signature mismatch' }, 403);
+
+    const client = await resolveClientByToken(db, token);
+    if (!client) return c.json({ error: 'Client profile not found' }, 404);
+
+    const vasItem = MANPOWER_VAS_CATALOG.find((s) => s.key === serviceKey);
+    const serviceTitle = vasItem?.title || 'Career Service';
+
+    // Auto-create counselor fulfillment task
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      clientId: client.id,
+      title: `Deliver ${serviceTitle}: ${client.name}`,
+      description: `Client purchased ${serviceTitle}. Deliverable: ${vasItem?.deliverable || 'Deliver service within SLA'}. Payment ID: ${razorpay_payment_id}`,
+      priority: 'high',
+      status: 'open',
+      cos: 'fixed_date',
+      dueDate: now + (vasItem?.durationDays || 3) * 86400,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    await auditEvent(c as any, {
+      action: 'PAYMENT_ENTER',
+      entityName: 'tasks',
+      entityId: taskId,
+      afterState: { clientId: token, serviceKey, paymentId: razorpay_payment_id, amountPaise: vasItem?.pricePaise }
+    }).catch(() => {});
+
+    await createStaffAlert(c.env as any, {
+      division: 'manpower',
+      type: 'vas_purchase',
+      title: `Career Add-On Purchased: ${serviceTitle}`,
+      body: `${client.name} (₹${((vasItem?.pricePaise || 0) / 100).toLocaleString('en-IN')})`,
+      clientId: token,
+      payload: { serviceKey, paymentId: razorpay_payment_id }
+    });
+
+    return c.json({
+      success: true,
+      message: `Payment confirmed. Our career advisory team will deliver your ${serviceTitle}.`,
+      deliverable: vasItem?.deliverable
+    });
+  } catch (e: any) {
+    return c.json({ error: 'VAS verification error', details: e?.message }, 500);
+  }
+});
+
+// GET /applications?token= — this client's own job applications + pipeline & match scores
 portalManpowerRouter.get('/applications', async (c) => {
   const token = c.req.query('token');
   if (!token) return c.json({ error: 'token is required' }, 400);
@@ -244,16 +370,32 @@ portalManpowerRouter.get('/applications', async (c) => {
       const job = jobs.find((j) => j.id === d.jobId);
       let formJson = null;
       try { formJson = d.formJson ? JSON.parse(d.formJson) : null; } catch { formJson = null; }
+
+      // Compute match score
+      const match = job ? computeManpowerMatch(formJson, {
+        title: job.title,
+        country: job.country,
+        sector: job.sector,
+        collar: job.collar,
+        experienceYearsMin: job.experienceYearsMin,
+        tradeCategory: job.tradeCategory,
+        requirements: (() => { try { return JSON.parse(job.requirementsJson || '[]'); } catch { return []; } })()
+      }) : { score: 50, tier: 'standard' as const, strengths: [], gaps: [], reasons: [] };
+
       return {
         id: d.id, jobId: d.jobId, jobTitle: job?.title || 'Job', jobCountry: job?.country || '',
         selectionStatus: d.selectionStatus, medicalStatus: d.medicalStatus,
         visaStatus: d.visaStatus, flightStatus: d.flightStatus,
         formJson, resumeKey: d.resumeKey, appliedAt: d.appliedAt,
         rejectionReason: d.rejectionReason, notes: d.notes, updatedAt: d.updatedAt,
+        matchScore: match.score, matchTier: match.tier, matchStrengths: match.strengths, matchGaps: match.gaps
       };
     });
     joined.sort((a: any, b: any) => (b.appliedAt || 0) - (a.appliedAt || 0));
-    return c.json({ success: true, applications: joined });
+    
+    // Active applications count for quota display
+    const activeCount = list.filter(d => !['rejected'].includes(d.selectionStatus) && d.flightStatus !== 'deployed').length;
+    return c.json({ success: true, applications: joined, activeCount, maxQuota: 3 });
   } catch (e: any) {
     return c.json({ error: 'Failed to fetch applications', details: e?.message }, 500);
   }
@@ -261,16 +403,28 @@ portalManpowerRouter.get('/applications', async (c) => {
 
 // POST /applications — apply to a public job (anyone) or a secret job (members only)
 portalManpowerRouter.post('/applications', async (c) => {
-  // Division availability: new job application is intake — blocked when OFF.
   if (!(await isDivisionEnabled(c.env, 'manpower'))) {
     return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
   }
-  const body = await c.req.json().catch(() => ({})) as {
-    token?: string; jobId?: string; formJson?: unknown; resumeKey?: string | null;
-  };
-  const { token, jobId, formJson, resumeKey } = body;
-  if (!token || !jobId) return c.json({ error: 'token and jobId are required' }, 400);
+  const body = await c.req.json().catch(() => ({})) as any;
+  const parsedInput = manpowerApplicationSchema.safeParse(body);
+  if (!parsedInput.success) {
+    return c.json({ error: 'Invalid application request', details: parsedInput.error.format() }, 400);
+  }
+
+  const { token, jobId, formJson, resumeKey, turnstileToken } = parsedInput.data;
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+
+  // Cloudflare Turnstile Bot Defense Check
+  const turnstileCheck = await verifyTurnstileToken(
+    turnstileToken,
+    c.env.TURNSTILE_SECRET_KEY,
+    c.req.header('CF-Connecting-IP') || c.req.header('x-forwarded-for')
+  );
+  if (!turnstileCheck.success) {
+    return c.json({ error: 'Bot challenge validation failed. Please try again.', details: turnstileCheck.reason }, 403);
+  }
+
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
 
@@ -285,16 +439,40 @@ portalManpowerRouter.post('/applications', async (c) => {
       return c.json({ error: 'This is an exclusive job. Join the paid community to apply.' }, 403);
     }
 
+    // Anti-Spam Quota Check: Max 3 active applications per candidate
+    const existingApps = await db.select().from(manpowerDeployments)
+      .where(eq(manpowerDeployments.clientId, token))
+      .all();
+    
+    const activeCount = existingApps.filter(d => !['rejected'].includes(d.selectionStatus) && d.flightStatus !== 'deployed').length;
+    if (activeCount >= 3) {
+      return c.json({
+        error: 'Active application limit reached (3/3). Please await current reviews before applying to additional openings.',
+        code: 'QUOTA_EXCEEDED',
+        activeCount,
+        maxQuota: 3
+      }, 429);
+    }
+
     const parsed = manpowerFormSchema.safeParse(formJson || {});
     if (!parsed.success) {
       return c.json({ success: false, code: 'incomplete_form', error: 'Application form incomplete.', missingSections: missingManpowerSections(formJson) }, 400);
     }
 
     // Idempotent: one application per (client, job)
-    const existing = await db.select().from(manpowerDeployments)
-      .where(and(eq(manpowerDeployments.clientId, token), eq(manpowerDeployments.jobId, jobId)))
-      .get();
+    const existing = existingApps.find(d => d.jobId === jobId);
     if (existing) return c.json({ success: true, id: existing.id, duplicate: true, message: 'You already applied to this opening.' });
+
+    // Compute live match
+    const match = computeManpowerMatch(parsed.data as any, {
+      title: job.title,
+      country: job.country,
+      sector: job.sector,
+      collar: job.collar,
+      experienceYearsMin: job.experienceYearsMin,
+      tradeCategory: job.tradeCategory,
+      requirements: (() => { try { return JSON.parse(job.requirementsJson || '[]'); } catch { return []; } })()
+    });
 
     const id = crypto.randomUUID();
     await db.insert(manpowerDeployments).values({
@@ -305,11 +483,25 @@ portalManpowerRouter.post('/applications', async (c) => {
 
     await auditEvent(c as any, {
       action: 'JOB_APPLIED', entityName: 'manpower_deployments', entityId: id,
-      afterState: { id, clientId: token, jobId, title: job.title, tier: job.tier },
+      afterState: { id, clientId: token, jobId, title: job.title, tier: job.tier, matchScore: match.score, matchTier: match.tier },
     }).catch(() => {});
 
-    await createStaffAlert(c.env as any, { division: 'manpower', type: 'manpower_application', title: `Job application: ${job.title}`, body: `${job.country} — ${token}`, clientId: token, payload: { jobId, jobTitle: job.title, tier: job.tier } });
-    return c.json({ success: true, id, message: 'Application submitted. Our recruitment desk will review it.' });
+    await createStaffAlert(c.env as any, {
+      division: 'manpower',
+      type: 'manpower_application',
+      title: `Job application: ${job.title} (${match.tier === 'top_match' ? '🔥 Top Match ' + match.score + '%' : match.score + '%'})`,
+      body: `${job.country} — ${token}`,
+      clientId: token,
+      payload: { jobId, jobTitle: job.title, tier: job.tier, matchScore: match.score, matchTier: match.tier }
+    });
+
+    return c.json({
+      success: true,
+      id,
+      matchScore: match.score,
+      matchTier: match.tier,
+      message: 'Application submitted successfully. Our recruitment desk will review your profile.'
+    });
   } catch (e: any) {
     return c.json({ error: 'Failed to submit application', details: e?.message }, 500);
   }
