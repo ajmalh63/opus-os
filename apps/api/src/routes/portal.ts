@@ -168,7 +168,7 @@ portalRouter.get('/session', async (c) => {
         email: user.email,
         phone: '',
         portalToken: pToken,
-        status: 'active',
+        status: 'active' as const,
         createdAt: now,
         updatedAt: now,
       };
@@ -746,4 +746,80 @@ portalRouter.post('/payments/verify', async (c) => {
   } catch (error: any) {
     return c.json({ error: "Verification failed",  }, 500);
   }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Study Abroad Catalog & Shortlist — token-based (ApplyBoard gold standard)
+// S1 P0: Browse + Shortlist Cart inside client portal (no staff needed)
+// ─────────────────────────────────────────────────────────────
+import { universities, studyAbroadShortlists } from '../db/schema.js';
+portalRouter.get('/study-abroad/catalog', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token required' }, 400);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const rows = await db.select().from(universities).all();
+  // Attach match score if profile available (lightweight, client can recompute)
+  return c.json({ success: true, universities: rows, clientId: client.id });
+});
+portalRouter.get('/study-abroad/shortlist', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token required' }, 400);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const list = await db.select().from(studyAbroadShortlists).where(eq(studyAbroadShortlists.clientId, client.id)).all();
+  const uniIds = list.map((i: any) => i.universityId);
+  const unis = uniIds.length ? await db.select().from(universities).all() : [];
+  const joined = list.map((item: any) => {
+    const uni = unis.find((u: any) => u.id === item.universityId);
+    return { ...item, universityName: uni?.name || 'Unknown', country: uni?.country || '', intake: uni?.intake || '' };
+  });
+  return c.json({ success: true, shortlist: joined });
+});
+portalRouter.post('/study-abroad/shortlist', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token required' }, 400);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const { universityId } = await c.req.json().catch(() => ({}));
+  if (!universityId) return c.json({ error: 'universityId required' }, 400);
+  const dup = await db.select().from(studyAbroadShortlists).where(and(eq(studyAbroadShortlists.clientId, client.id), eq(studyAbroadShortlists.universityId, universityId))).get();
+  if (dup) return c.json({ error: 'Already shortlisted' }, 400);
+  const now = Math.floor(Date.now()/1000);
+  const id = crypto.randomUUID();
+  await db.insert(studyAbroadShortlists).values({ id, clientId: client.id, universityId, status: 'shortlisted', createdAt: now, updatedAt: now });
+  return c.json({ success: true, id });
+});
+portalRouter.post('/study-abroad/shortlist/batch', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'token required' }, 400);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const { universityIds } = await c.req.json().catch(() => ({}));
+  if (!Array.isArray(universityIds) || universityIds.length === 0) return c.json({ error: 'universityIds[] required' }, 400);
+  let added = 0, skipped = 0;
+  for (const uid of universityIds.slice(0, 10)) {
+    const dup = await db.select().from(studyAbroadShortlists).where(and(eq(studyAbroadShortlists.clientId, client.id), eq(studyAbroadShortlists.universityId, uid))).get();
+    if (dup) { skipped++; continue; }
+    const now = Math.floor(Date.now()/1000);
+    await db.insert(studyAbroadShortlists).values({ id: crypto.randomUUID(), clientId: client.id, universityId: uid, status: 'shortlisted', createdAt: now, updatedAt: now });
+    added++;
+  }
+  return c.json({ success: true, added, skipped, message: `Added ${added} universities to shortlist${skipped?` (${skipped} already there)`:''}` });
+});
+portalRouter.delete('/study-abroad/shortlist/:id', async (c) => {
+  const token = c.req.query('token');
+  const id = c.req.param('id');
+  if (!token || !id) return c.json({ error: 'token and id required' }, 400);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const row = await db.select().from(studyAbroadShortlists).where(eq(studyAbroadShortlists.id, id)).get();
+  if (!row || row.clientId !== client.id) return c.json({ error: 'Not found or not owned' }, 404);
+  await db.delete(studyAbroadShortlists).where(eq(studyAbroadShortlists.id, id));
+  return c.json({ success: true });
 });

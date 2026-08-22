@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -37,16 +37,19 @@ if (token === 'token-admin') {
   };
 });
 
-const leadPayload = (over: any = {}) => ({
-  name: "Anita Desai",
-  phone: `+91 98480 1${Math.floor(1000 + Math.random() * 8999)}`, // unique per submission (dup-phone guard)
-  email: `anita${Math.floor(1000 + Math.random() * 8999)}.desai@example.com`,
-  highestQualification: "undergrad",
-  division: "study-abroad",
-  leadSource: "website",
-  consents: { coreProcessing: true, whatsappUpdates: true, marketingCampaigns: false },
-  ...over
-});
+const leadPayload = (over: any = {}) => {
+  const uniq = `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+  return {
+    name: "Anita Desai",
+    phone: `+91 98480 ${Math.floor(10000 + Math.random() * 89999)}`,
+    email: `anita_${uniq}@example.com`,
+    highestQualification: "undergrad",
+    division: "study-abroad",
+    leadSource: "website",
+    consents: { coreProcessing: true, whatsappUpdates: true, marketingCampaigns: false },
+    ...over
+  };
+};
 
 describe('Marketing automation interlock  funnel + partner affiliate (Sections 26/39)', () => {
   let mockD1: MockD1Database;

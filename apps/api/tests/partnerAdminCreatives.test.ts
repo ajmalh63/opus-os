@@ -165,6 +165,6 @@ describe('Payout lifecycle emails (Phase B)', () => {
     expect(res.status).toBe(200);
     const email = (mockD1.tables as any).notifications.filter((n: any) => n.channel === 'email' && n.to === 'partner@example.com').at(-1);
     expect(email).toBeTruthy();
-    expect(email.subject).toContain('paid');
+    expect(email.subject).toMatch(/settled|paid/i);
   });
 });

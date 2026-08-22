@@ -440,9 +440,19 @@ export default function PartnerDashboard() {
   // QR Code Modal State
   const [qrModal, setQrModal] = useState<{ open: boolean; title: string; url: string }>({ open: false, title: '', url: '' });
 
-  // Catalog browser state
+  // Catalog browser state — P0 Deep Link Builder (FirstPromoter gold: division deep links + SubID)
   const [catalogType, setCatalogType] = useState<string>('university');
   const [catalogSearch, setCatalogSearch] = useState<string>('');
+  const [utmCampaign, setUtmCampaign] = useState<string>('');
+  const divisionForCatalog = (t: string) => t === 'university' ? 'study-abroad' : t === 'visa' ? 'visa-services' : t === 'umrah_package' ? 'umrah-travel' : t === 'departure' ? 'umrah-travel' : t === 'job' ? 'recruitment' : 'study-abroad';
+  const deepLinkFor = (item: any) => {
+    const base = typeof window !== 'undefined' ? window.location.origin : '';
+    const div = divisionForCatalog(item.type);
+    const ref = `ref=${refCode}`;
+    const utm = utmCampaign.trim() ? `&utm_campaign=${encodeURIComponent(utmCampaign.trim())}` : '';
+    const deep = item.type === 'visa' ? `?country=${encodeURIComponent(item.title.split(' ')[0])}&` : item.type === 'umrah_package' ? `?pkg=${item.id}&` : item.type === 'job' ? `?job=${item.id}&` : `?program=${encodeURIComponent(item.title)}&`;
+    return `${base}/${div}${deep}${ref}${utm}`;
+  };
 
   // Landing page Calculator State
   const [calcStudy, setCalcStudy] = useState(3);
@@ -803,6 +813,8 @@ export default function PartnerDashboard() {
           catalogItemId: item.id,
           title: item.title,
           pricePaise: item.pricePaise || 0,
+          utmCampaign: utmCampaign.trim() || undefined,
+          deepLink: deepLinkFor(item),
         }),
       });
       if (!r.ok) throw new Error('Failed to create link');
@@ -1626,7 +1638,7 @@ export default function PartnerDashboard() {
                       </div>
                     </div>
 
-                    <div className="mt-4">
+                    <div className="mt-4 space-y-3">
                       <input
                         type="text"
                         placeholder={`Search ${catalogType} catalog…`}
@@ -1634,6 +1646,20 @@ export default function PartnerDashboard() {
                         onChange={(e) => setCatalogSearch(e.target.value)}
                         className={baseInput}
                       />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder="UTM campaign e.g. ramadan, whatsapp_june (SubID)"
+                          value={utmCampaign}
+                          onChange={(e) => setUtmCampaign(e.target.value)}
+                          className={baseInput}
+                        />
+                        <div className="rounded-xl bg-brand-navy text-white px-3 py-2.5 text-xs font-mono truncate flex items-center gap-2">
+                          <span className="text-brand-gold shrink-0">Preview:</span>
+                          <span className="truncate">{typeof window !== 'undefined' ? `${window.location.origin}/${divisionForCatalog(catalogType)}?ref=${refCode}${utmCampaign.trim() ? `&utm_campaign=${utmCampaign.trim()}` : ''}` : ''}</span>
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-brand-navy/40">Deep link adds `?country=`/`?pkg=`/`?job=` + `ref` + `utm_campaign` → track per-campaign in Clicks table (FirstPromoter SubID gold).</div>
                     </div>
 
                     <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">

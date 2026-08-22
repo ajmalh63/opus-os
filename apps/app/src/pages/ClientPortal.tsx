@@ -10,6 +10,7 @@ import UmrahClientSection from '../components/UmrahClientSection';
 import StudyAbroadClientSection from '../components/StudyAbroadClientSection';
 import AttestationClientSection from '../components/AttestationClientSection';
 import ManpowerApplyWizard from '../components/manpower/ManpowerApplyWizard';
+import ManpowerMarketplace from '../components/ManpowerMarketplace';
 import { createSyncClient } from '../lib/syncClient';
 
 interface Engagement {
@@ -696,10 +697,14 @@ export default function ClientPortal() {
               </div>
             )}
 
-            {/* TAB 6: GLOBAL JOBS & CAREERS */}
+            {/* TAB 6: GLOBAL JOBS & CAREERS — P0 Manpower Marketplace (Indeed gold: match + 1-click) */}
             {portalTab === 'jobs' && (
-              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
-                <ManpowerJobs token={activeToken || me?.id || 'client-self'} />
+              <div className="space-y-4">
+                <ManpowerMarketplace token={activeToken || me?.id || 'client-self'} />
+                <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
+                  <h4 className="font-display font-bold text-xs text-brand-navy mb-3">My Applications — Live Tracking</h4>
+                  <ManpowerJobs token={activeToken || me?.id || 'client-self'} />
+                </div>
               </div>
             )}
 
@@ -770,6 +775,25 @@ export default function ClientPortal() {
           </div>
         </div>
       </footer>
+      {/* Mobile Bottom Nav — thumb zone (platform-design HIG, 44px) */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 flex justify-around items-center py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+        {[
+          { k: 'dashboard', label: 'Browse', icon: '⌂' },
+          { k: 'visa', label: 'Bookings', icon: '✈' },
+          { k: 'journey', label: 'Docs', icon: '📄' },
+          { k: 'help', label: 'Help', icon: '?' },
+        ].map(i => (
+          <button key={i.k} onClick={() => i.k === 'help' ? (window as any).$chatwoot?.toggle?.() : setPortalTab(i.k as any)} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg ${portalTab===i.k?'text-brand-gold':'text-slate-400'} cursor-pointer`}>
+            <span className="text-base leading-none">{i.icon}</span><span className="text-[9px] font-bold uppercase tracking-wide">{i.label}</span>
+          </button>
+        ))}
+      </nav>
+      {/* In-product Help Center — Vezert 30% deflection */}
+      <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-30 hidden md:block">
+        <button onClick={() => (window as any).$chatwoot?.toggle?.()} className="bg-brand-navy text-white px-3.5 py-2.5 rounded-full text-xs font-bold shadow-lg hover:bg-brand-gold hover:text-brand-navy transition flex items-center gap-1.5 cursor-pointer">
+          <span>?</span> Help center — search docs, dues, refunds
+        </button>
+      </div>
       <ChatWidget />
 
       {/* TOAST SYSTEM */}
@@ -805,6 +829,13 @@ function ClientVisaWidget({ journey }: { journey: any }) {
   const [checkoutPhone, setCheckoutPhone] = useState(journey.client.phone || '');
   const [checkoutAgreed, setCheckoutAgreed] = useState(false);
   const [catalogFiles, setCatalogFiles] = useState<Record<string, File>>({});
+  // Visa Cart (P0 RICE 230) — gold standard: eligibility + cart + sticky CTA
+  const [visaCart, setVisaCart] = useState<any[]>([]);
+  const [showVisaCart, setShowVisaCart] = useState(false);
+  const addToVisaCart = (p: any) => {
+    if (visaCart.find(v => v.id === p.id)) return;
+    setVisaCart(c => [...c, p]);
+  };
 
   const { data: dbProducts } = useQuery<any>({
     queryKey: ['publicVisaProducts'],
@@ -1065,11 +1096,22 @@ function ClientVisaWidget({ journey }: { journey: any }) {
         </div>
       )}
 
-      {/* Available Visa Categories */}
+      {/* Available Visa Categories — P0 Visa Cart (Ralabs gold: eligibility + cart + sticky CTA) */}
       <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl space-y-4">
-        <div>
-          <h3 className="font-display font-bold text-sm text-white">✈️ Browse Active Visa Offerings</h3>
-          <p className="text-[10px] text-brand-cream/50 mt-0.5">Explore standard entry visas and submit processing requests.</p>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h3 className="font-display font-bold text-sm text-white">✈️ Browse Active Visa Offerings</h3>
+            <p className="text-[10px] text-brand-cream/50 mt-0.5">Explore standard entry visas — add to cart for family, pay once.</p>
+          </div>
+          {visaCart.length > 0 && (
+            <button onClick={() => setShowVisaCart(true)} className="inline-flex items-center gap-1.5 bg-brand-gold text-brand-navy px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer">
+              🛒 Cart ({visaCart.length}) — ₹{(visaCart.reduce((s,p)=>s+(p.feePaise||0),0)/100).toLocaleString('en-IN')}
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5 text-[10px]">
+          <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-bold">✅ Indian → Dubai Tourist Eligible · 3-4 Days</span>
+          <span className="px-2.5 py-1 rounded-full bg-white/10 text-white/70">Single-column form · 44px</span>
         </div>
 
         {selectedCatalogProduct ? (
@@ -1229,20 +1271,54 @@ function ClientVisaWidget({ journey }: { journey: any }) {
                   <span className="text-[8px] text-brand-cream/40 uppercase font-bold tracking-wider">Fee:</span>
                   <span>₹{(p.feePaise / 100).toLocaleString('en-IN')}</span>
                 </div>
-                <button
-                  onClick={() => {
-                    setSelectedCatalogProduct(p);
-                    setCheckoutEmail(journey.client.email || '');
-                    setCheckoutPhone(journey.client.phone || '');
-                    setCheckoutAgreed(false);
-                    setCatalogFiles({});
-                  }}
-                  className="w-full mt-3 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy font-bold py-1.5 rounded text-[9px] uppercase tracking-wider transition-all cursor-pointer text-center"
-                >
-                  Inquire / Apply
-                </button>
+                <div className="flex gap-1.5 mt-3">
+                  <button onClick={() => addToVisaCart(p)} disabled={visaCart.some(v=>v.id===p.id)} className={`flex-1 py-1.5 rounded text-[9px] font-bold uppercase border transition cursor-pointer ${visaCart.some(v=>v.id===p.id) ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
+                    {visaCart.some(v=>v.id===p.id) ? '✓ In cart' : '+ Cart'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedCatalogProduct(p);
+                      setCheckoutEmail(journey.client.email || '');
+                      setCheckoutPhone(journey.client.phone || '');
+                      setCheckoutAgreed(false);
+                      setCatalogFiles({});
+                    }}
+                    className="flex-1 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy font-bold py-1.5 rounded text-[9px] uppercase tracking-wider transition-all cursor-pointer text-center"
+                  >
+                    Inquire / Apply
+                  </button>
+                </div>
               </div>
             ))}
+          </div>
+        )}
+        {visaCart.length > 0 && (
+          <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-4 flex items-center justify-between flex-wrap gap-3">
+            <div className="text-xs text-brand-navy">
+              <span className="font-bold">Cart ({visaCart.length})</span>
+              <span className="mx-1.5 text-brand-navy/40">·</span>
+              <span>₹{(visaCart.reduce((s,p)=>s+(p.feePaise||0),0)/100).toLocaleString('en-IN')}</span>
+              <span className="hidden sm:inline text-brand-navy/40 ml-2">{visaCart.map(p=>p.country).join(' + ')}</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setVisaCart([])} className="px-3 py-1.5 rounded-full border border-brand-navy/15 bg-white text-xs font-bold text-brand-navy hover:bg-brand-navy/5 cursor-pointer">Clear</button>
+              <button onClick={async () => {
+                if (visaCart.length === 1) { setSelectedCatalogProduct(visaCart[0]); setShowVisaCart(false); return; }
+                // Bulk: create inquiries for each, then one cart checkout
+                const ok = confirm(`Place ${visaCart.length} visa inquiries together? Each will create a tracking entry and you can pay once.`);
+                if (!ok) return;
+                for (const item of visaCart) {
+                  try {
+                    await fetch('/api/public/portal/visa/inquiry', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientId: journey.client.id, country: item.country, visaType: item.visaType, email: journey.client.email, registeredMobile: journey.client.phone, agreedToTerms: true, notes: `Bulk cart checkout — ${item.entryType}, ${item.processingTime}` }) });
+                  } catch {}
+                }
+                const total = visaCart.reduce((s,p)=>s+(p.feePaise||0),0);
+                alert(`✓ ${visaCart.length} inquiries placed. Total fee ₹${(total/100).toLocaleString('en-IN')} — pay from Outstanding Balance or we’ll contact you.`);
+                setVisaCart([]); setShowVisaCart(false); window.location.reload();
+              }} className="px-4 py-1.5 rounded-full bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy/90 cursor-pointer">
+                Checkout Cart → Pay ₹{(visaCart.reduce((s,p)=>s+(p.feePaise||0),0)/100).toLocaleString('en-IN')}
+              </button>
+            </div>
           </div>
         )}
 

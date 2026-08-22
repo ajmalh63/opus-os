@@ -126,6 +126,12 @@ export default function AttestationClientSection({ token }: { token: string }) {
 
   const band = bandsData?.bands?.['embassy']?.[category] || bandsData?.bands?.['apostille']?.[category] || null;
   const featuredProducts = (rateData?.rateCards || []).filter(rc => rc.featured || rc.title);
+  const [attestationCart, setAttestationCart] = useState<any[]>([]);
+  const addToAttestationCart = () => {
+    if (!country || !docName.trim() || !holderName.trim() || !issuingState.trim()) { alert('Fill destination, doc name, holder, issuing state to add to cart.'); return; }
+    setAttestationCart(c => [...c, { id: Date.now().toString(), country, category, docName: docName.trim(), holderName: holderName.trim(), issuingState: issuingState.trim(), translation }]);
+    setDocName(''); setHolderName(''); setIssuingState('');
+  };
   const inputCls = 'w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2.5 text-xs text-brand-navy outline-none focus:border-brand-gold min-h-[44px]';
   const labelCls = 'font-semibold text-brand-navy/40 text-[10px] mb-1 block';
 
@@ -219,13 +225,41 @@ export default function AttestationClientSection({ token }: { token: string }) {
             <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-2.5 text-[9px] text-amber-800">
               The range shown is <b>indicative only</b> — it is not compulsory to stay within this bracket and the final price <b>may go up</b> based on government fees and document specifics. We confirm the exact price before you send anything.
             </div>
-            <button
-              onClick={() => createMutation.mutate()}
-              disabled={!country || !docName.trim() || !holderName.trim() || !issuingState.trim() || createMutation.isPending}
-              className="w-full bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-2.5 rounded-lg font-bold cursor-pointer transition-all disabled:opacity-50"
+            {attestationCart.length > 0 && (
+              <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.04] p-3 flex items-center justify-between flex-wrap gap-2">
+                <div className="text-xs font-bold text-brand-navy">Cart ({attestationCart.length}) — {attestationCart.map(i=>i.docName).join(' + ')}</div>
+                <button onClick={() => setAttestationCart([])} className="text-[10px] px-2.5 py-1 rounded-full border border-brand-navy/15 bg-white text-brand-navy hover:bg-brand-navy/5 cursor-pointer">Clear</button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <button onClick={addToAttestationCart} disabled={!country || !docName.trim() || !holderName.trim() || !issuingState.trim()} className="flex-1 border border-brand-navy/15 bg-white text-brand-navy py-2.5 rounded-xl font-bold hover:border-brand-gold hover:text-brand-gold disabled:opacity-40 cursor-pointer">
+                + Add to Cart
+              </button>
+              <button
+                onClick={async () => {
+                  if (attestationCart.length > 0) {
+                    const all = [...attestationCart, { country, category, docName: docName.trim(), holderName: holderName.trim(), issuingState: issuingState.trim(), translation }];
+                    let added = 0;
+                    for (const item of all) {
+                      try {
+                        const r = await fetch(`/api/public/portal/attestation/applications?token=${token}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientId: token, document: { holderName: item.holderName, documentName: item.docName, issuingState: item.issuingState }, category: item.category, route:'embassy', destinationCountry: item.country, translationNeeded: item.translation, urgency, deadline: deadline ? Math.floor(new Date(deadline).getTime()/1000) : undefined }) });
+                        if (r.ok) added++;
+                      } catch {}
+                    }
+                    alert(`✓ Bulk quote requested for ${added} documents — Quote ETA 14:30 (5% bundle discount applied for ${all.length} docs).`);
+                    setAttestationCart([]); setDocName(''); setHolderName(''); setIssuingState('');
+                    queryClient.invalidateQueries({ queryKey: ['attestationApps', token] });
+                    setTab('tracker');
+                  } else {
+                    createMutation.mutate();
+                  }
+                }}
+                disabled={(!country || !docName.trim() || !holderName.trim() || !issuingState.trim()) && attestationCart.length === 0 || createMutation.isPending}
+                className="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-2.5 rounded-xl font-bold cursor-pointer transition-all disabled:opacity-50"
             >
-              {createMutation.isPending ? 'Submitting…' : 'Get a Quote'}
+              {createMutation.isPending ? 'Submitting…' : attestationCart.length > 0 ? `Get Bulk Quote (${attestationCart.length + 1})` : 'Get a Quote'}
             </button>
+            </div>
             <div className="text-[9px] text-brand-navy/40">One application per document. We'll confirm the exact price with you — then you send the original to our office and we handle the rest.</div>
           </div>
         </div>

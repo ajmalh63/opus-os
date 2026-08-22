@@ -70,6 +70,13 @@ describe('WhatsApp & Chatwoot Automation Suite', () => {
   });
 
   it('dispatches unified WhatsApp with fail-open fallback', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementationOnce(async () => {
+      return new Response(JSON.stringify({ success: true, messageId: 'wa-123' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
     const res = await dispatchUnifiedWhatsApp(
       {
         OPENWA_BASE_URL: 'https://wa.opusoverseas.com',
@@ -85,6 +92,7 @@ describe('WhatsApp & Chatwoot Automation Suite', () => {
     );
 
     expect(typeof res).toBe('object');
+    fetchSpy.mockRestore();
   });
 
   it('serves template definitions and test-send via marketing API', async () => {
