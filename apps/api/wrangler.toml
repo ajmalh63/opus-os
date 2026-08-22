@@ -51,25 +51,32 @@ ADMIN_EMAIL = "ajmalsn63@gmail.com"
 # makes auth + document uploads fail-closed with a clear error.
 
 # ============================================================
-# Unified messaging — TAILSCALE TEST PHASE (PENDING-CONFIGS #1)
-# VPS services reachable only on the tailnet (100.87.71.38); ports
-# are closed from the public internet (DOCKER-USER firewall).
-# Replace with tunnel hostnames when moving to Cloudflare infra.
+# Unified messaging — PRODUCTION VIA CLOUDFLARE TUNNEL (Tunnel 6f1a97cc...)
+# All services now routed via public hostnames (listmonk.opusoverseas.com etc.)
+# Tailscale IPs remain as fallback for local dev via .dev.vars override.
 # ============================================================
 WA_PROVIDER = "openwa"
-OPENWA_BASE_URL = "http://100.87.71.38:2785"
-OPENWA_API_URL = "http://100.87.71.38:2785"
+OPENWA_BASE_URL = "https://wa.opusoverseas.com"
+OPENWA_API_URL = "https://wa.opusoverseas.com"
 OPENWA_SESSION_ID = "main"
 
 # ERPNext back-office integration (Frappe REST) — owner-only sync endpoints
-ERPNEXT_BASE_URL = "http://100.87.71.38:8080"
-CHATWOOT_BASE_URL = "http://100.87.71.38:3200"
-N8N_BASE_URL = "http://100.87.71.38:5678"
-KUMA_BASE_URL = "http://100.87.71.38:3003"
-UMAMI_BASE_URL = "http://100.87.71.38:3002"
-TWENTY_BASE_URL = "http://100.87.71.38:3001"
-MAUTIC_URL = "http://100.87.71.38:8085"
-LISTMONK_BASE_URL = "http://100.87.71.38:9009"
+ERPNEXT_BASE_URL = "https://erpnext.opusoverseas.com"
+CHATWOOT_BASE_URL = "https://chat.opusoverseas.com"
+N8N_BASE_URL = "https://n8n.opusoverseas.com"
+KUMA_BASE_URL = "https://status.opusoverseas.com"
+UMAMI_BASE_URL = "https://analytics.opusoverseas.com"
+TWENTY_BASE_URL = "https://crm.opusoverseas.com"
+MAUTIC_URL = "https://mautic.opusoverseas.com"
+LISTMONK_BASE_URL = "https://listmonk.opusoverseas.com"
+# ── Unified Docker fleet — all via public hostnames (Cloudflare Tunnel 6f1a97cc...) ──
+# Tailscale IPs remain as local-dev fallback via .dev.vars override only
+NOCODB_BASE_URL = "https://nocodb.opusoverseas.com"
+POSTIZ_BASE_URL = "https://postiz.opusoverseas.com"
+SOCIAL_BASE_URL = "https://social.opusoverseas.com"
+OPENREPLY_BASE_URL = "https://openreply.opusoverseas.com"
+ERP_BASE_URL = "https://erp.opusoverseas.com"
+INDIA_POST_BASE_URL = "https://india-post.opusoverseas.com"
 
 account_id = "b66f3697a847cba87b1fd44bc8a13827"
 
@@ -84,18 +91,18 @@ binding = "BUCKET"
 bucket_name = "opusdocs"
 preview_bucket_name = "opusdocs"
 
-[[queues.producers]]
-queue = "opusos-jobs-queue"
-binding = "JOBS_QUEUE"
+# [[queues.producers]]
+# queue = "opusos-jobs-queue"
+# binding = "JOBS_QUEUE"
 
-[[queues.producers]]
-queue = "opusos-dlq"
-binding = "DLQ"
+# [[queues.producers]]
+# queue = "opusos-dlq"
+# binding = "DLQ"
 
-[[queues.consumers]]
-queue = "opusos-jobs-queue"
-max_retries = 5
-dead_letter_queue = "opusos-dlq"
+# [[queues.consumers]]
+# queue = "opusos-jobs-queue"
+# max_retries = 5
+# dead_letter_queue = "opusos-dlq"
 
 # ============================================================
 # KV - cache + feature flags ONLY (Section 3.4 / 18.4.2)
@@ -125,16 +132,25 @@ index_name = "opusos-embeddings"
 binding = "AI"
 
 # ============================================================
-# Durable Objects - Team Hub chat rooms (§5.5). Free tier 100k req/day.
+# Durable Objects - Team Hub (§5.5) + Sync Fabric v2 (Gold-standard Hibernatable WS)
+# TeamHub stays internal-only; SyncHub is the public-safe bus for client/partner/staff sync.
 # Local dev: DOs run in workerd via `wrangler dev --local`.
 # ============================================================
 [[durable_objects.bindings]]
 name = "TEAM_HUB"
 class_name = "TeamHubRoom"
 
+[[durable_objects.bindings]]
+name = "SYNC_HUB"
+class_name = "SyncHub"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["TeamHubRoom"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["SyncHub"]
 
 # ============================================================
 # PRODUCTION ENVIRONMENT — deploy with: wrangler deploy --env production

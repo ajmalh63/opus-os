@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import LiveWallpaper from '../components/LiveWallpaper';
 import { useLocation } from 'wouter';
@@ -27,6 +27,50 @@ export default function Signup() {
     );
   }, []);
 
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  const handleResend = async () => {
+    if (resendCooldown > 0 || resending || !email) return;
+    setResending(true);
+    try {
+      const r = await fetch('/api/auth/send-verification-email', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, callbackURL: window.location.origin }),
+      });
+      const j: any = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const msg = j?.message || j?.error || `Resend failed (HTTP ${r.status})`;
+        // Better Auth returns 429 on rate-limit, 400 if already verified, 404 if email not found
+        if (r.status === 429) {
+          setMsg({ kind: 'err', text: 'Too many resend attempts — please wait a minute and try again.' });
+        } else if (msg.toLowerCase().includes('already verified') || msg.toLowerCase().includes('verified')) {
+          setMsg({ kind: 'ok', text: 'Your email is already verified — please sign in.' });
+        } else {
+          setMsg({ kind: 'err', text: msg });
+        }
+        // Keep cooldown even on 429 to respect server rate-limit (10/hour on /lookup & verification)
+        if (r.status === 429) setResendCooldown(60);
+        return;
+      }
+      setResendCooldown(30);
+      setMsg({ kind: 'ok', text: 'A fresh activation link has been sent to your email! Check inbox and Spam/Promotions.' });
+    } catch (e: any) {
+      setMsg({ kind: 'err', text: e?.message || 'Network error while resending. Check your connection and try again.' });
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
@@ -39,10 +83,18 @@ export default function Signup() {
         body: JSON.stringify({ name, email, password }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.status === 200) {
+
+      // Better Auth emailVerification.sendOnSignUp=true already dispatches the verification email
+      // via Listmonk transactional (template 5) or Cloudflare Email fallback (see auth.ts:91-98).
+      // DO NOT double-send here — the manual POST below burned the portal rate-limit (10/hour) and
+      // hid Listmonk auth failures behind a fake green toast. Resend is handled by the button below
+      // with cooldown + real error surfacing.
+
+      if (res.ok || data?.message?.toLowerCase().includes('already exists') || data?.error?.toLowerCase().includes('already exists')) {
+        setResendCooldown(30);
         setMsg({
           kind: 'ok',
-          text: 'Account created! Check your inbox for the verification link. (Dev: see the API log.)',
+          text: 'Account registered! An activation link has been sent to your email. Please check your inbox (and Spam folder) to activate your account.',
         });
       } else {
         setMsg({ kind: 'err', text: data?.message || data?.error || 'Sign-up failed.' });
@@ -76,29 +128,61 @@ export default function Signup() {
             </div>
 
             {msg && (
-              <div className={`mb-5 rounded-xl px-4 py-3 text-xs font-semibold ${msg.kind === 'ok' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'}`}>
+              <div className={`mb-5 rounded-xl px-4 py-3 text-xs font-semibold ${msg.kind === 'ok' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-rose-50 border border-rose-200 text-rose-600'}`}>
                 {msg.text}
               </div>
             )}
 
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Full name</label>
-                <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className={baseInput} />
+            {msg?.kind === 'ok' ? (
+              <div className="space-y-4 pt-2 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600 shadow-inner">
+                  ✉️
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-display text-base font-bold text-brand-navy">Verify Your Email</h3>
+                  <p className="text-xs text-brand-textLight">
+                    We sent an activation link to <strong className="text-brand-navy">{email}</strong>. Click the link in the email to activate your account.
+                  </p>
+                  <p className="text-[11px] text-brand-textLight/75">
+                    If you don't see it in your primary inbox, please check your <strong>Spam</strong> or <strong>Promotions</strong> folder.
+                  </p>
+                </div>
+                <div className="space-y-2 pt-3">
+                  <button
+                    onClick={() => setLocation('/login')}
+                    className="w-full rounded-full bg-brand-gold py-3 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white active:scale-[0.98]"
+                  >
+                    Proceed to Sign In →
+                  </button>
+                  <button
+                    onClick={handleResend}
+                    disabled={resendCooldown > 0 || resending}
+                    className="w-full rounded-full border border-brand-navy/20 py-2.5 text-xs font-semibold text-brand-navy transition-all hover:bg-brand-navy/5 disabled:opacity-50"
+                  >
+                    {resending ? 'Sending...' : resendCooldown > 0 ? `Resend email in ${resendCooldown}s` : 'Resend Activation Link'}
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Email</label>
-                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={baseInput} />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Password</label>
-                <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" className={baseInput} />
-                <p className="mt-1.5 text-[10px] text-brand-textLight">Use 8+ characters. 2FA (authenticator app) can be enabled later from your workspace.</p>
-              </div>
-              <button disabled={busy} className="w-full rounded-full bg-brand-gold py-3.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] disabled:opacity-50">
-                {busy ? 'Creating…' : 'Create & Verify Account'}
-              </button>
-            </form>
+            ) : (
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Full name</label>
+                  <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className={baseInput} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Email</label>
+                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={baseInput} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Password</label>
+                  <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" className={baseInput} />
+                  <p className="mt-1.5 text-[10px] text-brand-textLight">Use 8+ characters. 2FA (authenticator app) can be enabled later from your workspace.</p>
+                </div>
+                <button disabled={busy} className="w-full rounded-full bg-brand-gold py-3.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] disabled:opacity-50">
+                  {busy ? 'Creating…' : 'Create & Verify Account'}
+                </button>
+              </form>
+            )}
 
             <p className="mt-6 text-center text-xs text-brand-textLight">
               Already have an account?{' '}

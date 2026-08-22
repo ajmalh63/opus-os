@@ -59,8 +59,8 @@ portalVisaRouter.get('/applications', async (c) => {
     const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
 
-    const apps = await db.select().from(visaApplications).where(eq(visaApplications.clientId, token)).orderBy(desc(visaApplications.createdAt)).all();
-    const docs = await db.select().from(documents).where(eq(documents.clientId, token)).all();
+    const apps = await db.select().from(visaApplications).where(eq(visaApplications.clientId, client.id)).orderBy(desc(visaApplications.createdAt)).all();
+    const docs = await db.select().from(documents).where(eq(documents.clientId, client.id)).all();
 
     const applications = [];
     for (const app of apps) {

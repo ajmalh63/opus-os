@@ -3,7 +3,7 @@
 // One-way sync: OpusOS (front office) → ERPNext (official books/GST).
 
 export type ErpEnv = {
-  ERPNEXT_BASE_URL?: string;     // e.g. http://100.87.71.38:8000 (VPS bench)
+  ERPNEXT_BASE_URL?: string;     // e.g. https://erp.opusoverseas.com
   ERPNEXT_API_KEY?: string;      // generated in ERPNext user profile
   ERPNEXT_API_SECRET?: string;
 };

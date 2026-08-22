@@ -32,7 +32,7 @@ authRouter.get('/me', async (c) => {
       id: u.id,
       name: u.name,
       email: u.email,
-      role: u.role || 'counselor',
+      role: u.role || 'client',
       userDivisions: (() => { try { return JSON.parse(u.userDivisions || '[]'); } catch { return []; } })(),
       twoFactorEnabled: !!u.twoFactorEnabled,
       emailVerified: !!u.emailVerified,
@@ -280,6 +280,30 @@ authRouter.post('/otp/verify', async (c) => {
       role: user.role
     }
   });
+});
+
+// POST /api/auth/sign-out — robust session termination & cookie clearance
+authRouter.post('/sign-out', async (c) => {
+  try {
+    if (c.env?.DB) {
+      const auth = getAuth(c.env);
+      const session = await auth.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
+      if (session?.session?.id) {
+        const db = getDb(c.env.DB);
+        await db.delete(sessions).where(eq(sessions.id, session.session.id)).catch(() => {});
+      }
+    }
+  } catch {
+    // Fail-open to cookie clearing
+  }
+
+  // Clear all session cookies immediately
+  const isProd = c.env?.ENVIRONMENT === 'production';
+  c.header('Set-Cookie', `better-auth.session_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; ${isProd ? 'Secure;' : ''}`, { append: true });
+  c.header('Set-Cookie', `better-auth.session_data=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; ${isProd ? 'Secure;' : ''}`, { append: true });
+  c.header('Set-Cookie', `better-auth.dont_remember=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; ${isProd ? 'Secure;' : ''}`, { append: true });
+
+  return c.json({ success: true });
 });
 
 // All other /api/auth/* routes go to Better Auth (sign-in, sign-up, session, 2FA…)

@@ -8,6 +8,8 @@ import { accruePartnerPoints } from '../services/partnerLoyalty.js';
 import { getAuth } from '../auth.js';
 import { auditEvent, auditBounded } from '../middleware/audit.js';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { payoutRequestReceivedTemplate } from '../infra/emailTemplates.js';
 import { getDivisionsEnabled } from '../lib/divisions.js';
 
 // Mock-D1-safe field reader: real D1 (drizzle) returns camelCase keys, the
@@ -435,11 +437,17 @@ const p = await authedPartner(db, partnerId, c);
     // a notification hiccup must never fail the request itself).
     if (p.email) {
       try {
+        const { subject, html } = payoutRequestReceivedTemplate({
+          partnerName: p.name || 'Valued Partner',
+          amountPaise: matured,
+        });
+        const amt = `₹${(matured / 100).toLocaleString('en-IN')}`;
         await sendNotification(c.env as any, db, {
           channel: 'email',
           to: p.email,
-          subject: 'Opus Overseas — payout request received',
-          body: `Your payout request of ₹${(matured / 100).toLocaleString('en-IN')} (${matured} paise) was received — owner will approve.`,
+          subject, body: html,
+          templateId: getListmonkTemplateId(c.env as any, 'payoutRequestReceived'),
+          data: { PartnerName: p.name || 'Valued Partner', Amount: amt, DateStr: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }), StatusText: 'Awaiting Approval', BannerText: 'Our team will review and approve your request promptly. You will receive a confirmation once it is processed.', PortalUrl: 'https://opusoverseas.com/partner', Subject: subject },
         });
       } catch (e: any) {
         console.error('payout request email failed', e?.message);

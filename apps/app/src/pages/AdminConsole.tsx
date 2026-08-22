@@ -5,10 +5,11 @@ import PartnerAdminPanel from '../components/PartnerAdminPanel';
 import AlertsVisibility from '../components/AlertsVisibility';
 import AiGovernanceTab from '../components/admin/AiGovernanceTab';
 import DeveloperApiSettingsTab from '../components/admin/DeveloperApiSettingsTab';
+import DivisionControlsTab from '../components/admin/DivisionControlsTab';
 
 // Real session-driven auth — the live cookie, never a forged token.
 
-type AdminTab = 'directory' | 'onboard' | 'partners' | 'alerts' | 'ai' | 'developer';
+type AdminTab = 'directory' | 'onboard' | 'divisions' | 'partners' | 'alerts' | 'ai' | 'developer';
 
 interface StaffUser {
   id: string;
@@ -49,7 +50,7 @@ export default function AdminConsole() {
   const isOwner = me?.role === 'super_admin';
   const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as AdminTab | null;
   const [activeTab, setActiveTab] = useState<AdminTab>(
-    initialTab && ['directory', 'onboard', 'partners', 'alerts', 'ai', 'developer'].includes(initialTab)
+    initialTab && ['directory', 'onboard', 'divisions', 'partners', 'alerts', 'ai', 'developer'].includes(initialTab)
       ? initialTab
       : 'directory'
   );
@@ -96,6 +97,18 @@ export default function AdminConsole() {
       return res.json();
     }
   });
+
+  const { data: divisionsData } = useQuery<{ enabled: Record<string, boolean> }>({
+    queryKey: ['adminDivisions'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/divisions');
+      if (!res.ok) return { enabled: {} };
+      return res.json();
+    },
+    staleTime: 30000,
+  });
+
+  const activeDivisionsCount = Object.values(divisionsData?.enabled || {}).filter(Boolean).length;
 
   // Mutations
   const registerMutation = useMutation({
@@ -238,7 +251,7 @@ export default function AdminConsole() {
               <div className="border-l border-brand-navy/10 h-6"></div>
               <div>
                 <span className="text-brand-navy/40 block text-[9px] uppercase tracking-wider font-semibold">Division Desks</span>
-                <span className="text-brand-gold font-bold text-sm">5 Active</span>
+                <span className="text-brand-gold font-bold text-sm">{activeDivisionsCount} / 5 Live</span>
               </div>
             </div>
           </div>
@@ -261,6 +274,7 @@ export default function AdminConsole() {
           <div className="flex gap-2 py-3">
             {[
               { key: 'directory', label: 'Staff Directory & Scoping', icon: '👥' },
+              { key: 'divisions', label: 'Division Go-Live', icon: '⚡' },
               { key: 'onboard', label: 'Onboard New Staff', icon: '➕' },
               { key: 'partners', label: 'Partner Network', icon: '🤝' },
               { key: 'alerts', label: 'Staff Broadcast Alerts', icon: '📢' },
@@ -354,6 +368,9 @@ export default function AdminConsole() {
               )}
             </div>
           )}
+
+          {/* TAB: DIVISION GO-LIVE & KILL-SWITCH */}
+          {activeTab === 'divisions' && isOwner && <DivisionControlsTab />}
 
           {/* TAB 2: REGISTER NEW STAFF */}
           {activeTab === 'onboard' && (

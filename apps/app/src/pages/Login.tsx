@@ -116,7 +116,7 @@ export default function Login() {
     }
     setBusy(true); setMsg(null);
     try {
-      const r = await post('/forget-password', { email, redirectTo: window.location.origin + '/login' });
+      const r = await post('/request-password-reset', { email, redirectTo: window.location.origin + '/login' });
       if (r.status === 200 || r.data?.status === true) {
         ok(`Password reset instructions sent to ${email}. Please check your inbox.`);
       } else {

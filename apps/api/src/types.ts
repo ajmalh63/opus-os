@@ -20,6 +20,10 @@ export interface OpusEnv {
   // Vectorize - vector database (semantic search, AI matching). Section 3.4.
   VECTOR_INDEX: any;
 
+  // Sync Fabric v2 — Durable Objects (SyncHub) + TeamHub
+  SYNC_HUB?: DurableObjectNamespace;
+  TEAM_HUB?: DurableObjectNamespace;
+
   // Queues - async jobs (email, PDF, AI) to respect the 10ms CPU budget.
   JOBS_QUEUE: any;
 

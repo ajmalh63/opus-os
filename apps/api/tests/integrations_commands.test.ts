@@ -33,7 +33,7 @@ describe('Tool-First command envelope (control panel operations)', () => {
 
   const env = () => ({
     DB: mockD1, BETTER_AUTH_SECRET: 's',
-    LISTMONK_BASE_URL: 'http://100.87.71.38:9009', LISTMONK_API_USER: 'u', LISTMONK_API_PASS: 'p',
+    LISTMONK_BASE_URL: 'https://listmonk.opusoverseas.com', LISTMONK_API_USER: 'u', LISTMONK_API_PASS: 'p',
   });
   const MGR = { 'Content-Type': 'application/json', cookie: 'better-auth.session_token=token-manager' };
 
@@ -45,7 +45,7 @@ describe('Tool-First command envelope (control panel operations)', () => {
     expect(res.status).toBe(200);
     const d = await res.json() as any;
     expect(d.ok).toBe(true);
-    expect(calls[0].url).toBe('http://100.87.71.38:9009/api/campaigns');
+    expect(calls[0].url).toBe('https://listmonk.opusoverseas.com/api/campaigns');
     expect(calls[0].method).toBe('POST');
     expect(calls[0].body).toMatchObject({ name: 'Ramadan Drop', subject: 'Prepare for Ramadan', lists: [7] });
     expect(calls[0].body.body).toContain('{{ name }}');
@@ -56,7 +56,7 @@ describe('Tool-First command envelope (control panel operations)', () => {
       method: 'POST', headers: MGR, body: JSON.stringify({ id: 9, emails: ['qa@opusoverseas.com'] }),
     }, env());
     expect(res.status).toBe(200);
-    expect(calls[0].url).toBe('http://100.87.71.38:9009/api/campaigns/9/test');
+    expect(calls[0].url).toBe('https://listmonk.opusoverseas.com/api/campaigns/9/test');
     expect(calls[0].body).toEqual({ emails: ['qa@opusoverseas.com'] });
   });
 
@@ -64,7 +64,7 @@ describe('Tool-First command envelope (control panel operations)', () => {
     await app.request('/api/integrations/listmonk/campaigns/status', {
       method: 'POST', headers: MGR, body: JSON.stringify({ id: 3, status: 'running' }),
     }, env());
-    expect(calls[0].url).toBe('http://100.87.71.38:9009/api/campaigns/3/status');
+    expect(calls[0].url).toBe('https://listmonk.opusoverseas.com/api/campaigns/3/status');
     expect(calls[0].body.status).toBe('running');
   });
 

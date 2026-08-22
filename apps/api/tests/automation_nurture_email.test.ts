@@ -12,7 +12,7 @@ let mockD1: MockD1Database;
 describe('Nurture email lane (Wave 3)', () => {
   const ENV = () => ({
     DB: mockD1, AUTOMATION_TOKEN: TOKEN,
-    LISTMONK_BASE_URL: 'http://100.87.71.38:9009',
+    LISTMONK_BASE_URL: 'https://listmonk.opusoverseas.com',
     LISTMONK_API_USER: 'admin@opusoverseas.com',
     LISTMONK_API_PASS: 'pw',
   });

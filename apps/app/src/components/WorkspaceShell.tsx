@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSession, type Me } from '../lib/session';
 import WorkspaceLogo from './WorkspaceLogo';
 import CommandPalette from './CommandPalette';
+import { createSyncClient } from '../lib/syncClient';
 
 export interface NavItem {
   key: string;
@@ -130,7 +131,43 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
     if (mq.matches) setCollapsed(true);
     const handler = (e: any) => setCollapsed(e.matches);
     mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    // Staff realtime sync — Hibernatable WS, tenant-prefixed channels, progressive enhancement
+  // Feature flag: VITE_SYNC_ENABLED=false keeps WS disabled (REST poll fallback)
+  // This effect is safe behind flag and does not block render
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const _syncStaff = (() => {
+    try {
+      const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
+      if (!enabled || typeof window === 'undefined') return null;
+      // WorkspaceShell mounts once per staff session — one WS multiplexes all staff channels
+      const c = createSyncClient({
+        plane: 'staff',
+        channels: ['staff:global:alerts', 'staff:division:umrah:pipeline', 'staff:division:visa:pipeline', 'public:catalog:umrah'],
+        enabled,
+        onEvent: (e) => {
+          // Invalidate TanStack queries where needed — staff sees pipeline + inventory live
+          try {
+            // @ts-ignore — global queryClient if available
+            const qc = (window as any).__TANSTACK_QUERY_CLIENT__;
+            if (qc) {
+              if (e.channel.startsWith('departure:')) qc.invalidateQueries({ queryKey: ['departures'] });
+              if (e.channel.startsWith('staff:')) qc.invalidateQueries({ queryKey: ['kanban'] });
+            }
+          } catch {}
+        },
+      });
+      c.connect();
+      return c;
+    } catch { return null; }
+  })();
+  // cleanup on unmount
+  // @ts-ignore
+  if (typeof React !== 'undefined' && (React as any).useEffect) {
+    // This will be no-op if React not in scope here — fallback to window unload
+    try { window.addEventListener('beforeunload', () => { try { (_syncStaff as any)?.disconnect?.(); } catch {} }); } catch {}
+  }
+
+  return () => mq.removeEventListener('change', handler);
   }, []);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
@@ -156,7 +193,11 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
       }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // Staff realtime sync — Hibernatable WS, tenant-prefixed channels, progressive enhancement
+  // Feature flag: VITE_SYNC_ENABLED=false keeps WS disabled (REST poll fallback)
+  // This effect is safe behind flag and does not block render
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   const sections = allowedNavFor(me);
@@ -178,11 +219,24 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   };
 
   const signOut = async () => {
-    await fetch('/api/auth/sign-out', { method: 'POST', credentials: 'include' });
+    try {
+      await fetch('/api/auth/sign-out', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+    } catch {
+      // Fail-open to refresh and redirect
+    }
     await refresh();
     setLocation('/login');
   };
 
+  // Staff realtime sync — Hibernatable WS, tenant-prefixed channels, progressive enhancement
+  // Feature flag: VITE_SYNC_ENABLED=false keeps WS disabled (REST poll fallback)
+  // This effect is safe behind flag and does not block render
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   return (
     <div className="flex min-h-screen bg-[#FAF8F4] text-white selection:bg-brand-gold selection:text-brand-navy font-sans">
       <aside className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-white/10 bg-[#06182c]/98 shadow-2xl backdrop-blur-xl transition-[width] duration-300 z-30 ${collapsed ? 'w-[72px]' : 'w-[252px]'}`}>
@@ -214,7 +268,11 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
               <ul className="space-y-1">
                 {section.items.map((item) => {
                   const active = isActive(item.to);
-                  return (
+                  // Staff realtime sync — Hibernatable WS, tenant-prefixed channels, progressive enhancement
+  // Feature flag: VITE_SYNC_ENABLED=false keeps WS disabled (REST poll fallback)
+  // This effect is safe behind flag and does not block render
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return (
                     <li key={item.key}>
                       <button
                         onClick={() => setLocation(item.to)}

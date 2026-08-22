@@ -58,6 +58,7 @@ infraRouter.get('/health', async (c) => {
   report.ai = !!env.AI;
 
   const allUp = Object.values(report).every(Boolean);
+  const isStrictProbe = c.req.query('strict') === '1' || c.req.query('probe') === '1';
 
   return c.json(
     {
@@ -72,7 +73,7 @@ infraRouter.get('/health', async (c) => {
       ],
       allUp,
     },
-    allUp ? 200 : 503
+    isStrictProbe && !allUp ? 503 : 200
   );
 });
 

@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { getAuth } from '../auth.js';
 import { auditEvent } from '../middleware/audit.js';
+import { publishSyncEvent } from './sync.js';
 
 export const partnerRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();
 
@@ -175,6 +176,7 @@ partnerRouter.post('/', async (c) => {
     });
 
     await auditEvent(c, { action: 'PARTNER_REGISTERED', entityName: 'partners', entityId: partnerId, afterState: { name: body.name, email: accountEmail, maskedPan, accountCreated } });
+    try { await publishSyncEvent(c.env as any, { channel: `staff:global:alerts`, type: 'PARTNER_REGISTERED', payload: { partnerId, name: body.name } }, (c as any).executionCtx); } catch {}
 
     return c.json({
       success: true,
@@ -229,6 +231,7 @@ partnerRouter.post('/referrals', async (c) => {
     });
 
     await auditEvent(c, { action: 'REFERRAL_LOGGED', entityName: 'referrals', entityId: referralId, actorType: 'partner', authMethod: 'partner_token', afterState: { partnerId: body.partnerId, clientId: body.clientId, commissionRate: body.commissionRate || 5 } });
+    try { await publishSyncEvent(c.env as any, { channel: `partner:${body.partnerId}:referrals`, type: 'REFERRAL_CREATED', payload: { referralId, clientId: body.clientId } }, (c as any).executionCtx); await publishSyncEvent(c.env as any, { channel: `staff:partner:${body.partnerId}:referrals`, type: 'REFERRAL_CREATED', payload: { referralId } }, (c as any).executionCtx); } catch {}
 
     return c.json({ success: true, referralId, message: "Referral logged successfully." });
   } catch (error: any) {

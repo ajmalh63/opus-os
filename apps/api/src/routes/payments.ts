@@ -5,6 +5,7 @@ import { getDb } from '../db/client.js';
 import { payments, engagements, milestones, clients, businessProfile } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
+import { publishSyncEvent } from './sync.js';
 
 export const paymentsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -171,6 +172,7 @@ paymentsRouter.post('/', zValidator('json', createPaymentSchema), async (c) => {
           division: eng.division || 'general',
           tags: ['payment-receipt', 'invoice-sent'],
         }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `staff:global:alerts`, type: 'PAYMENT_CONFIRMED', payload: {} }, (c as any).executionCtx); } catch {}
       }
     } catch { /* fail-open */ }
 

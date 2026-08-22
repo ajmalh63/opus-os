@@ -6,6 +6,7 @@ import { clients, groupDepartures, seatBookings, bookingPassengers, umrahPackage
 import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
 import { auditEvent, auditBounded } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { publishSyncEvent } from './sync.js';
 import { isDivisionEnabled } from '../lib/divisions.js';
 import { bookUmrahSlotSchema, verifyUmrahAdvanceSchema, payUmrahBalanceSchema } from '@opusos/shared';
 import { computePartyPrice, partyAdvancePaise, serializePassenger, type PartyPassenger } from '../lib/umrahParty.js';
@@ -64,6 +65,7 @@ async function releaseExpiredHolds(db: any, now: number): Promise<void> {
     if (dep && dep.bookedSeats > 0) {
       const released = Math.max(0, (b.paxCount ?? 1));
       await db.update(groupDepartures).set({ bookedSeats: Math.max(0, dep.bookedSeats - released) }).where(eq(groupDepartures.id, dep.id));
+      try { /* inventory replenish */ } catch {}
     }
   }
 }
@@ -102,9 +104,10 @@ portalUmrahRouter.get('/packages', async (c) => {
     const pkgs = await db.select().from(umrahPackages).where(eq(umrahPackages.status, 'open')).all();
     const deps = await db.select().from(groupDepartures).where(eq(groupDepartures.status, 'open')).all();
     const list = pkgs.map(p => {
+      const { wholesalePricePaise: _, ...safePkg } = p;
       const pkgDeps = deps.filter(d => d.packageId === p.id);
       return {
-        ...p,
+        ...safePkg,
         upcomingDepartures: pkgDeps.filter(d => d.departureDate * 1000 > Date.now()).length,
         nextDeparture: pkgDeps.filter(d => d.departureDate * 1000 > Date.now()).sort((a, b) => a.departureDate - b.departureDate)[0]?.departureDate || null,
       };
@@ -124,10 +127,11 @@ portalUmrahRouter.get('/packages/:id', async (c) => {
     if (!enabled) return c.json({ success: true, comingSoon: true, enabled: false });
     const pkg = await db.select().from(umrahPackages).where(and(eq(umrahPackages.id, c.req.param('id')), eq(umrahPackages.status, 'open'))).get();
     if (!pkg) return c.json({ error: 'Package not found' }, 404);
+    const { wholesalePricePaise: _, ...safePkg } = pkg;
     const deps = await db.select().from(groupDepartures)
       .where(and(eq(groupDepartures.packageId, pkg.id), eq(groupDepartures.status, 'open'), gte(groupDepartures.departureDate, Math.floor(Date.now() / 1000))))
       .orderBy(groupDepartures.departureDate).all();
-    return c.json({ success: true, package: pkg, departures: deps.map(d => ({ ...d, available: Math.max(0, d.capacity - d.bookedSeats) })) });
+    return c.json({ success: true, package: safePkg, departures: deps.map(d => ({ ...d, available: Math.max(0, d.capacity - d.bookedSeats) })) });
   } catch (e: any) {
     return c.json({ error: 'Package fetch failed', details: e?.message }, 500);
   }
@@ -261,6 +265,12 @@ portalUmrahRouter.post('/departures/:id/book', umrahIntakeGate, zValidator('json
     }
 
     await auditEvent(c as any, { action: 'UMRAH_BOOKING_CREATED', entityName: 'seat_bookings', entityId: bookingId, afterState: { clientId: token, departureId: dep.id, status: hasSeats ? 'held' : 'waitlist', paxCount: pax } }).catch(() => {});
+    // Phase 1 — realtime: inventory + client booking (shared + private atoms) — Hibernatable WS, tenant-prefixed
+    try {
+      const avail = Math.max(0, dep.capacity - (dep.bookedSeats + (hasSeats ? pax : 0)));
+      await publishSyncEvent(c.env as any, { channel: `departure:${dep.id}:inventory`, type: 'INVENTORY_UPDATED', payload: { departureId: dep.id, bookedSeats: dep.bookedSeats + (hasSeats ? pax : 0), available: avail, capacity: dep.capacity } }, (c as any).executionCtx);
+      await publishSyncEvent(c.env as any, { channel: `client:${token}:bookings`, type: 'BOOKING_CREATED', payload: { bookingId, departureId: dep.id, status: hasSeats ? 'held' : 'waitlist', paxCount: pax } }, (c as any).executionCtx);
+    } catch {}
 
     if (!hasSeats) {
       return c.json({ success: true, bookingId, status: 'waitlist', pax_count: pax, message: `Departure has only ${Math.max(0, dep.capacity - dep.bookedSeats)} seat(s) left for your party of ${pax} — added to the waiting list. We will contact you if seats open.` });
@@ -373,6 +383,11 @@ portalUmrahRouter.post('/bookings/:id/verify-advance', zValidator('json', verify
     }
 
     await auditEvent(c as any, { action: 'UMRAH_ADVANCE_PAID', entityName: 'seat_bookings', entityId: booking.id, afterState: { paymentId: body.razorpay_payment_id, reservedUntil, paxCount: booking.paxCount ?? 1 } }).catch(() => {});
+    try {
+      await publishSyncEvent(c.env as any, { channel: `client:${booking.clientId}:bookings`, type: 'BOOKING_ADVANCE_PAID', payload: { bookingId: booking.id, reservedUntil, status:'reserved' } }, (c as any).executionCtx);
+      await publishSyncEvent(c.env as any, { channel: `departure:${booking.departureId}:inventory`, type: 'BOOKING_RESERVED', payload: { bookingId: booking.id, departureId: booking.departureId } }, (c as any).executionCtx);
+      await publishSyncEvent(c.env as any, { channel: `staff:division:umrah:pipeline`, type: 'UMRAH_ADVANCE_PAID', payload: { bookingId: booking.id } }, (c as any).executionCtx);
+    } catch {}
     await createStaffAlert(c.env as any, { division: 'umrah', type: 'booking_advance', title: 'Umrah advance paid — party reserved', body: `Booking ${booking.id.slice(0, 8)} (${booking.paxCount ?? 1} pax) reserved until ${new Date(reservedUntil * 1000).toLocaleString()}`, clientId: booking.clientId, payload: { bookingId: booking.id, reservedUntil, paxCount: booking.paxCount ?? 1 } });
 
     // Party balance: total party price − advance already paid.
@@ -494,6 +509,11 @@ portalUmrahRouter.post('/bookings/:id/verify-balance', zValidator('json', payUmr
     }
 
     await auditEvent(c as any, { action: 'UMRAH_BALANCE_PAID', entityName: 'seat_bookings', entityId: booking.id, afterState: { paymentId: body.razorpay_payment_id } }).catch(() => {});
+    try {
+      await publishSyncEvent(c.env as any, { channel: `client:${booking.clientId}:bookings`, type: 'BOOKING_CONFIRMED', payload: { bookingId: booking.id, status:'confirmed' } }, (c as any).executionCtx);
+      await publishSyncEvent(c.env as any, { channel: `departure:${booking.departureId}:inventory`, type: 'BOOKING_CONFIRMED', payload: { bookingId: booking.id } }, (c as any).executionCtx);
+      await publishSyncEvent(c.env as any, { channel: `staff:division:umrah:pipeline`, type: 'BOOKING_CONFIRMED', payload: { bookingId: booking.id } }, (c as any).executionCtx);
+    } catch {}
     await createStaffAlert(c.env as any, { division: 'umrah', type: 'booking_confirmed', title: 'Umrah booking confirmed (balance paid)', body: `Booking ${booking.id.slice(0, 8)} fully paid online`, clientId: booking.clientId, payload: { bookingId: booking.id } });
 
     return c.json({ success: true, message: 'Balance received. Your booking is confirmed. May Allah accept your Umrah.', status: 'confirmed' });

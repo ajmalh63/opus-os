@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { getDb } from '../db/client.js';
 import { nurtureTouches, consents, engagements, clients, campaigns, campaignTouches, scoringEvents } from '../db/schema.js';
 import { eq, and, lte } from 'drizzle-orm';
+import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { nurtureTouchTemplate } from '../infra/emailTemplates.js';
 import { resolvePrimaryDivision } from '../lib/intent.js';
 
 // WhatsApp re-nurture sequence engine (FunnelTODO #4).
@@ -219,16 +222,14 @@ nurtureRouter.post('/dispatch', async (c) => {
         if (!client) { failed++; continue; }
         const body = (t.body || '').replace(/{{name}}/g, client.name || 'there').replace(/{{division}}/g, t.campaignId || '');
         if (t.channel === 'email') {
-          const r = await fetch(`${(c.env as any).LISTMONK_BASE_URL || ''}/api/tx`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Basic ${btoa(`${(c.env as any).LISTMONK_API_USER || ''}:${(c.env as any).LISTMONK_API_PASS || ''}`)}` },
-            body: JSON.stringify({
-              subscriber_email: client.email,
-              template_id: Number((c.env as any).LISTMONK_TX_TEMPLATE_ID || 5),
-              from_email: (c.env as any).LISTMONK_FROM_EMAIL || 'info@opusoverseas.com',
-              subject: `Opus Overseas — ${t.stage}`,
-              data: { Subject: `Opus Overseas — ${t.stage}`, Body: body },
-            }),
+          const headingMap: Record<string, string> = { value: 'Insights for Your Journey — Opus Overseas', case_study: 'Success Story — Opus Overseas', offer: 'Your Next Step with Opus Overseas', final: 'Final Reminder — Opus Overseas' };
+          const heading = headingMap[t.stage] || `Update — ${t.stage}`;
+          const { subject, html } = nurtureTouchTemplate({ leadName: client.name || 'there', heading, messageBody: body });
+          const r = await sendNotification(c.env as any, db as any, {
+            channel: 'email', to: client.email, subject, body: html,
+            templateId: getListmonkTemplateId(c.env as any, 'nurtureTouch'),
+            data: { Heading: heading, LeadName: client.name || 'there', MessageBody: body, Subject: subject },
+            clientId: client.id,
           });
           if (!r.ok) { failed++; continue; }
         } else {

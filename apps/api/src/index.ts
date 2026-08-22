@@ -54,6 +54,7 @@ import { waWebhookRouter, chatwootWebhookRouter } from './routes/messagingWebhoo
 import { listmonkWebhookRouter } from './routes/listmonkWebhooks.js';
 import { inboxRouter } from './routes/inbox.js';
 import { teamHubRouter } from './routes/teamHub.js';
+import { syncRouter } from './routes/sync.js';
 import { erpnextRouter } from './routes/erpnext.js';
 import { studyAbroadRouter } from './routes/studyAbroad.js';
 import { studyAbroadAppsRouter, portalStudyAbroadRouter } from './routes/studyAbroadApps.js';
@@ -144,23 +145,23 @@ app.route('/api/leads', leadsRouter);
 // Client journey lookup /api/public/portal/lookup (Section 25) — public, token-based.
 // Rate-limited: the OP-XXXX client token is the portal credential (enumeration
 // guard) — limit + audit, fail-open on rate-limit table errors.
-app.use('/api/public/portal/*', rateLimit({ bucket: 'portal-lookup', windowSeconds: 300, limit: 30 }));
+app.use('/api/public/portal/*', rateLimit({ bucket: 'portal-lookup', windowSeconds: 300, limit: 300 }));
 app.route('/api/public/portal', portalRouter);
 // Client-portal Visa services (Phase 1): products, applications, draft wizard, submit
-app.use('/api/public/portal/visa/*', rateLimit({ bucket: 'portal-visa', windowSeconds: 300, limit: 40 }));
+app.use('/api/public/portal/visa/*', rateLimit({ bucket: 'portal-visa', windowSeconds: 300, limit: 300 }));
 app.route('/api/public/portal/visa', portalVisaRouter);
 // Client-portal Manpower services (Phase 2): public jobs, apply, application tracker
-app.use('/api/public/portal/manpower/*', rateLimit({ bucket: 'portal-manpower', windowSeconds: 300, limit: 40 }));
+app.use('/api/public/portal/manpower/*', rateLimit({ bucket: 'portal-manpower', windowSeconds: 300, limit: 300 }));
 app.route('/api/public/portal/manpower', portalManpowerRouter);
 // Client-portal Umrah services (Phase 3): package inventory, calendar, ₹500 advance booking
-app.use('/api/public/portal/umrah/*', rateLimit({ bucket: 'portal-umrah', windowSeconds: 300, limit: 40 }));
+app.use('/api/public/portal/umrah/*', rateLimit({ bucket: 'portal-umrah', windowSeconds: 300, limit: 300 }));
 app.use('/api/public/portal/umrah/departures/*/book', turnstileVerify);
 app.route('/api/public/portal/umrah', portalUmrahRouter);
 // Client self-service agreement e-sign (Phase A §3 — token-based, no session):
 // list agreements, request OTP, sign (typed / wet_ink / otp)
 // Public agreement e-sign (OTP + sign) — rate-limited (anti brute-force on the
 // guessable client token + OTP). MUST precede the router mount.
-app.use('/api/public/portal/agreements/*', rateLimit({ bucket: 'portal-agreements', windowSeconds: 900, limit: 30 }));
+app.use('/api/public/portal/agreements/*', rateLimit({ bucket: 'portal-agreements', windowSeconds: 900, limit: 300 }));
 app.route('/api/public/portal/agreements', portalAgreementsRouter);
 // Hero live artifacts (Section 24.1.1): jobs ticker, umrah departures, attestation chains, eligibility
 app.route('/api/public', publicRouter);
@@ -318,6 +319,11 @@ app.route('/api/admin/indexing', indexingRouter);
 app.route('/api/inbox', inboxRouter);
 // Team Hub chat + file drive
 app.route('/api/teamhub', teamHubRouter);
+
+// Realtime Sync Fabric — public WS (auth at upgrade) + internal publish (gold-standard: Hibernation + tenant-prefixed channels)
+app.use('/api/sync/ws', rateLimit({ bucket:'sync-ws', windowSeconds:60, limit:30 }));
+app.use('/api/sync/publish', rateLimit({ bucket:'sync-publish', windowSeconds:60, limit:120 }));
+app.route('/api/sync', syncRouter);
 app.route('/api/erpnext', erpnextRouter);
 
 // Automation lane (n8n spine, Wave 2) — scoped, fail-closed service token.
@@ -344,6 +350,7 @@ export type AppType = typeof app;
 // Durable Object for Team Hub chat rooms (A5.5) — must be exported for wrangler
 // to route DO traffic to the class.
 export { TeamHubRoom } from './routes/teamHub.js';
+export { SyncHub } from './durable/SyncHub.js';
 
 // Wave 1 — Uptime Kuma push heartbeat producer (cron trigger, see wrangler.toml).
 // Attached to the Hono app so the default export keeps `app.request` working for
@@ -352,6 +359,9 @@ import { runHeartbeat } from './cron/heartbeat.js';
 import { getDb } from './db/client.js';
 import { nurtureTouches, clients } from './db/schema.js';
 import { eq, and, lte } from 'drizzle-orm';
+import { sendNotification } from './infra/notify.js';
+import { getListmonkTemplateId } from './infra/listmonk.js';
+import { nurtureTouchTemplate } from './infra/emailTemplates.js';
 import { performanceRouter } from './routes/performance.js';
 import { analyticsRouter } from './routes/analytics.js';
 import { visibilityRouter, visibilityPublicRouter, publicSeoRouter } from './routes/visibility.js';
@@ -486,16 +496,14 @@ app.route('/api/v1', v1ApiRouter);
           if (!client) continue;
           const body = (t.body || '').replace(/{{name}}/g, client.name || 'there').replace(/{{division}}/g, t.campaignId || '');
           if (t.channel === 'email' && (env as any).LISTMONK_BASE_URL) {
-            const r = await fetch(`${(env as any).LISTMONK_BASE_URL}/api/tx`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Basic ${btoa(`${(env as any).LISTMONK_API_USER || ''}:${(env as any).LISTMONK_API_PASS || ''}`)}` },
-              body: JSON.stringify({
-                subscriber_email: client.email,
-                template_id: Number((env as any).LISTMONK_TX_TEMPLATE_ID || 5),
-                from_email: (env as any).LISTMONK_FROM_EMAIL || 'info@opusoverseas.com',
-                subject: `Opus Overseas — ${t.stage}`,
-                data: { Subject: `Opus Overseas — ${t.stage}`, Body: body },
-              }),
+            const headingMap: Record<string, string> = { value: 'Insights for Your Journey — Opus Overseas', case_study: 'Success Story — Opus Overseas', offer: 'Your Next Step with Opus Overseas', final: 'Final Reminder — Opus Overseas' };
+            const heading = headingMap[t.stage] || `Update — ${t.stage}`;
+            const { subject, html } = nurtureTouchTemplate({ leadName: client.name || 'there', heading, messageBody: body });
+            const r = await sendNotification(env as any, db as any, {
+              channel: 'email', to: client.email, subject, body: html,
+              templateId: getListmonkTemplateId(env as any, 'nurtureTouch'),
+              data: { Heading: heading, LeadName: client.name || 'there', MessageBody: body, Subject: subject },
+              clientId: client.id,
             });
             if (!r.ok) continue;
           } else if (t.channel === 'whatsapp' && (env as any).OPENWA_BASE_URL) {

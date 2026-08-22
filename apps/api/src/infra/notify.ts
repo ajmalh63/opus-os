@@ -17,6 +17,12 @@ export interface SendNotificationInput {
   subject?: string;
   body: string;
   clientId?: string | null;
+  // Optional Listmonk per-kind template routing. When set, Listmonk renders
+  // that template with `data` scalars (Name, VerifyUrl, …) instead of
+  // interpolating a pre-rendered Body. This avoids Go html/template escaping
+  // of HTML bodies (no raw function exists in this Listmonk build).
+  templateId?: number;
+  data?: Record<string, any>;
 }
 
 export type NotifyEnv = MessagingEnv & ListmonkEnv & {
@@ -28,28 +34,46 @@ export type NotifyEnv = MessagingEnv & ListmonkEnv & {
 export type NotifyDb = { insert(table: any): any };
 
 // Low-level per-channel senders (never throw → SendResult).
-async function sendEmail(env: NotifyEnv, to: string, subject: string, body: string): Promise<SendResult> {
+async function sendEmail(
+  env: NotifyEnv,
+  to: string,
+  subject: string,
+  body: string,
+  opts: { templateId?: number; data?: Record<string, any> } = {}
+): Promise<SendResult> {
+  console.log(`[sendEmail] Target: ${to}, BaseURL: ${env.LISTMONK_BASE_URL || 'NONE'}`);
   // Wave 1: Listmonk is the email engine when configured (owns DKIM/bounce).
   if (env.LISTMONK_BASE_URL) {
     const mk = await listmonkUpsertSubscriber(env, to, { name: '', channel: 'os-email' });
-    // Escape text but auto-link URLs — OTP/reset links must be clickable
-    // (transactional gold standard), receipts too.
-    const safe = body.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      // SECURITY: URL class excludes quotes/angle brackets — otherwise attacker
-      // text like https://evil/x" onmouseover="... injects HTML attributes into
-      // transactional mail (phishing from the Opus domain).
-      .replace(/(https?:\/\/[^\s<"'>]+)/g, (u) => `<a href="${u}" style="color:#C7A24B">${u}</a>`);
-    const res = await listmonkSendTransactional(env, to, subject, `<p style="font-family:sans-serif">${safe}</p>`);
+    console.log(`[sendEmail] listmonkUpsertSubscriber result:`, JSON.stringify(mk));
+    let htmlContent: string;
+    if (body.trim().startsWith('<')) {
+      // Pre-rendered rich HTML template (used as Body for generic template,
+      // or as fallback HTML for per-kind templates that ignore Body)
+      htmlContent = body;
+    } else {
+      // Plain text: escape angle brackets and auto-link URLs
+      const safe = body.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/(https?:\/\/[^\s<"'>]+)/g, (u) => `<a href="${u}" style="color:#d7a019;font-weight:bold;text-decoration:underline;">${u}</a>`);
+      htmlContent = `<p style="margin:0 0 16px 0;font-size:15px;color:#4a5568;line-height:1.6;">${safe}</p>`;
+    }
+    const txOpts = opts.templateId != null ? { templateId: opts.templateId } : {};
+    const res = await listmonkSendTransactional(env, to, subject, htmlContent, opts.data || {}, txOpts);
+    console.log(`[sendEmail] listmonkSendTransactional result:`, JSON.stringify(res));
     if (res.ok) return { ok: true, provider: 'listmonk', remoteId: res.id != null ? String(res.id) : undefined };
     return { ok: false, provider: 'listmonk', reason: res.reason || (mk.ok ? undefined : 'subscriber+send failed') };
   }
   if (env.EMAIL) {
     try {
+      const isHtml = body.trim().startsWith('<');
+      const htmlContent = isHtml
+        ? body
+        : `<p style="margin:0 0 16px 0;font-family:'IBM Plex Sans',-apple-system,sans-serif;font-size:15px;color:#4a5568;line-height:1.6;">${body.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/(https?:\/\/[^\s<"'>]+)/g, (u) => `<a href="${u}" style="color:#d7a019;font-weight:bold;text-decoration:underline;">${u}</a>`)}</p>`;
       const res = await env.EMAIL.send({
         from: env.EMAIL.from_email || 'no-reply@opusoverseas.com',
         to: [to],
         subject,
-        html: `<p style="font-family:sans-serif">${body.replace(/</g, '&lt;')}</p>`,
+        html: htmlContent,
       });
       return { ok: true, provider: 'cf-email-workers', remoteId: String(res?.MessageId || res?.Status || '') };
     } catch (e: any) {
@@ -98,7 +122,7 @@ export async function sendNotification(env: NotifyEnv, db: NotifyDb, input: Send
       result = await sendWhatsApp(env, input.to, input.body);
       break;
     case 'email':
-      result = await sendEmail(env, input.to, input.subject || 'OpusOS update', input.body);
+      result = await sendEmail(env, input.to, input.subject || 'OpusOS update', input.body, { templateId: input.templateId, data: input.data });
       break;
     case 'sms':
       result = await sendSms(env, input.to, input.body);

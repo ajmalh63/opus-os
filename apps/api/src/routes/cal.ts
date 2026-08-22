@@ -7,6 +7,8 @@ import { bookings, clients, engagements, tasks, communications, appSettings } fr
 import { eq, and, gte, lte, desc, inArray } from 'drizzle-orm';
 import { createStaffAlert } from '../infra/staffAlerts.js';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { bookingConfirmationTemplate } from '../infra/emailTemplates.js';
 import { notifications } from '../db/schema.js';
 import { auditBounded } from '../middleware/audit.js';
 import { calGetSlots, calCreateBooking, calCancelBooking } from '../lib/calApi.js';
@@ -292,10 +294,17 @@ async function handleEvent(c: any, db: any, cfg: any, body: any) {
       const when = new Date(start * 1000).toLocaleString('en-IN');
       const msg = `⏳ PENDING consultation: ${p?.title || 'Booking'} (${division})\n${attendee?.name || 'Attendee'} · ${when}\n${attendee?.email || ''}${attendee?.phone ? ' · ' + attendee.phone : ''}${flags.length ? '\nFlags: ' + flags.join(', ') : ''}\nApprove in cal.com → OS Consultations tab`;
       if (cfg.notifyEmail) {
+        const { subject, html } = bookingConfirmationTemplate({
+          clientName: attendee?.name || 'Client',
+          counselorName: 'Advisory Team',
+          meetingTime: when,
+          meetingLink: 'https://cal.opusoverseas.com',
+        });
         await sendNotification(c.env as any, { insert: () => ({}) } as any, {
           channel: 'email', to: cfg.notifyEmail,
-          subject: `⏳ Pending consultation: ${p?.title || 'Booking'} (${division})`,
-          body: msg,
+          subject, body: html,
+          templateId: getListmonkTemplateId(c.env as any, 'consultationConfirmed'),
+          data: { ClientName: attendee?.name || 'Client', CounselorName: 'Advisory Team', MeetingTime: when, FormatText: 'Online Video Consultation', MeetingLink: 'https://cal.opusoverseas.com', Subject: subject },
         }).catch(() => {});
       }
       if (cfg.notifyWhatsapp) {

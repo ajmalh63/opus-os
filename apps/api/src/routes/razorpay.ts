@@ -5,6 +5,8 @@ import { getDb } from '../db/client.js';
 import { payments, engagements, milestones, clients, referrals, webhookEvents } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { paymentReceiptTemplate } from '../infra/emailTemplates.js';
 import { accrueIncentives } from '../services/incentiveAccrual.js';
 import { auditBounded } from '../middleware/audit.js';
 import { accruePartnerPoints } from '../services/partnerLoyalty.js';
@@ -216,16 +218,24 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       console.error('partner points accrual failed', ppErr?.message);
     }
 
-    // §7.6 Transactional email — payment receipt to the client (never throws;
-    // dev uses the stub channel; prod uses the CF Email binding).
+    // §7.6 Transactional email — payment receipt to the client
     try {
       const client = await db.select().from(clients).where(eq(clients.id, data.clientId)).get();
       if (client?.email) {
+        const { subject, html } = paymentReceiptTemplate({
+          clientName: client.name || 'Valued Client',
+          amountPaise: invoiceAmount,
+          milestoneName: data.milestoneName?.trim() || 'Online Payment',
+          paymentId: data.razorpay_payment_id,
+        });
+        const amt = `₹${(invoiceAmount / 100).toLocaleString('en-IN')}`;
+        const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
         await sendNotification(c.env as any, db as any, {
           channel: 'email',
           to: client.email,
-          subject: `Opus Overseas — payment receipt ${data.razorpay_payment_id}`,
-          body: `Hi ${client.name}, we have received your payment of â‚¹${(invoiceAmount / 100).toLocaleString('en-IN')} (${data.milestoneName?.trim() || 'Online payment'}). Reference: ${data.razorpay_payment_id}. Thank you — Opus Overseas.`,
+          subject, body: html,
+          templateId: getListmonkTemplateId(c.env as any, 'paymentReceipt'),
+          data: { ClientName: client.name || 'Valued Client', Amount: amt, MilestoneName: data.milestoneName?.trim() || 'Online Payment', PaymentId: data.razorpay_payment_id, DateStr: dateStr, StatusText: 'Verified & Confirmed ✓', PortalUrl: 'https://opusoverseas.com/login', Subject: subject },
           clientId: client.id,
         });
       }

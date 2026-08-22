@@ -2,14 +2,17 @@ import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
 import { getAuth } from '../auth.js';
-import { clients, engagements, consents, documents, payments, experiments, experimentAssignments, tasks, visaApplications, visaMockInterviews, referrals, pipelineStages } from '../db/schema.js';
+import { clients, engagements, consents, documents, payments, experiments, experimentAssignments, tasks, visaApplications, visaMockInterviews, referrals, pipelineStages, users } from '../db/schema.js';
 import { accruePartnerPoints } from '../services/partnerLoyalty.js';
 import { accrueIncentives } from '../services/incentiveAccrual.js';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { paymentReceiptTemplate } from '../infra/emailTemplates.js';
 import { ensurePipelineStages } from '../db/seed.js';
 import { eq, and } from 'drizzle-orm';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { auditEvent } from '../middleware/audit.js';
+import { publishSyncEvent } from './sync.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 
@@ -19,15 +22,25 @@ export const portalRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_S
 portalRouter.use('/lookup', rateLimit({ bucket: 'lookup', windowSeconds: 3600, limit: 10 }));
 portalRouter.use('/consent/withdraw', rateLimit({ bucket: 'consent-withdraw', windowSeconds: 3600, limit: 10 }));
 
-function buildJourney(client: any, engs: any[], cons: any[], docs: any[], pays: any[], visaApps: any[] = [], visaMocks: any[] = []) {
+function buildJourney(client: any, engs: any[], cons: any[], docs: any[], pays: any[], visaApps: any[] = [], visaMocks: any[] = [], counselor: any = null) {
   return {
     success: true,
     client: {
       id: client.id,
       name: client.name,
       email: client.email,
+      portalToken: client.portalToken || client.id,
       createdAt: client.createdAt,
       intakeContext: client.intakeContext
+    },
+    assignedCounselor: counselor ? {
+      name: counselor.name,
+      role: counselor.role === 'super_admin' ? 'Senior Advisory Lead' : (counselor.role || 'Senior Counselor'),
+      email: counselor.email,
+    } : {
+      name: 'Central Opus Advisory Desk',
+      role: 'Dedicated Lead · Hyderabad HQ',
+      email: 'counselors@opusoverseas.com',
     },
     engagements: engs,
     consents: cons.map((x: any) => ({ consentType: x.consentType, status: x.status, grantedAt: x.grantedAt })),
@@ -138,20 +151,33 @@ portalRouter.get('/session', async (c) => {
 
   try {
     const user = sessionResult.user;
-    const clientList = await db.select().from(clients).where(eq(clients.email, user.email)).all();
+    let clientList = await db.select().from(clients).where(eq(clients.email, user.email)).all();
 
     if (clientList.some(c => c.status === 'blocked')) {
       return c.json({ error: "Access Denied: Your account has been blocked by system administrator." }, 403);
     }
 
+    // Self-heal: ensure authenticated client account has a client record & portal token
     if (clientList.length === 0) {
-      return c.json({
-        success: true,
-        authenticated: true,
+      const newId = `OP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const pToken = crypto.randomUUID().replace(/-/g, '');
+      const now = Math.floor(Date.now() / 1000);
+      const newClient = {
+        id: newId,
+        name: user.name || user.email.split('@')[0],
         email: user.email,
-        journeys: []
-      });
+        phone: '',
+        portalToken: pToken,
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
+      };
+      await db.insert(clients).values(newClient).catch(() => {});
+      clientList = [newClient as any];
     }
+
+    const allUsers = await db.select().from(users).all();
+    const userById = new Map(allUsers.map((u: any) => [u.id, u]));
 
     const journeys = [];
     for (const client of clientList) {
@@ -161,7 +187,11 @@ portalRouter.get('/session', async (c) => {
       const pays = await db.select().from(payments).where(eq(payments.clientId, client.id)).all();
       const visaApps = await db.select().from(visaApplications).where(eq(visaApplications.clientId, client.id)).all();
       const visaMocks = await db.select().from(visaMockInterviews).where(eq(visaMockInterviews.clientId, client.id)).all();
-      journeys.push(buildJourney(client, engs, cons, docs, pays, visaApps, visaMocks));
+      
+      const counselorId = engs.find((e: any) => e.counselorId)?.counselorId;
+      const assignedCounselor = counselorId ? userById.get(counselorId) : (allUsers.find((u: any) => u.role === 'counselor' || u.role === 'manager' || u.role === 'super_admin') || null);
+
+      journeys.push(buildJourney(client, engs, cons, docs, pays, visaApps, visaMocks, assignedCounselor));
     }
 
     return c.json({ success: true, authenticated: true, email: user.email, journeys });
@@ -419,6 +449,7 @@ portalRouter.put('/documents/upload', async (c) => {
       entityId: docId,
       afterState: { clientId: token, fileName: safeName, version, status: 'pending' }
     }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `client:${token}:documents`, type: 'DOCUMENT_UPLOADED', payload: { documentId: docId, fileName: safeName, version } }, (c as any).executionCtx); await publishSyncEvent(c.env as any, { channel: `staff:global:alerts`, type: 'DOCUMENT_UPLOADED', payload: { documentId: docId, clientId: token, fileName: safeName } }, (c as any).executionCtx); } catch {}
 
     await createStaffAlert(c.env as any, { division: 'visa', type: 'document_upload', title: `Document uploaded: ${safeName}`, body: `Client ${token} uploaded ${safeName} (${version})`, clientId: token, payload: { fileName: safeName, version } });
     return c.json({ success: true, docId, version, message: "Document uploaded successfully." });
@@ -687,15 +718,24 @@ portalRouter.post('/payments/verify', async (c) => {
       }).catch(() => {});
     } catch {}
 
-    // Send receipt email notification
+    // Send receipt email notification — professional template with per-kind Listmonk routing
     try {
       const client = await db.select().from(clients).where(eq(clients.id, clientId)).get();
       if (client?.email) {
+        const { subject, html } = paymentReceiptTemplate({
+          clientName: client.name || 'Valued Client',
+          amountPaise: invoiceAmount,
+          milestoneName: milestoneName || 'Visa Fee',
+          paymentId: razorpay_payment_id,
+        });
+        const amt = `₹${(invoiceAmount / 100).toLocaleString('en-IN')}`;
+        const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
         await sendNotification(c.env as any, db as any, {
           channel: 'email',
           to: client.email,
-          subject: `Opus Overseas — Payment Receipt ${razorpay_payment_id}`,
-          body: `Hi ${client.name}, we have received your payment of ₹${(invoiceAmount / 100).toLocaleString('en-IN')} for your ${milestoneName || 'Visa Fee'}. Reference ID: ${razorpay_payment_id}. Thank you — Opus Overseas.`,
+          subject, body: html,
+          templateId: getListmonkTemplateId(c.env as any, 'paymentReceipt'),
+          data: { ClientName: client.name || 'Valued Client', Amount: amt, MilestoneName: milestoneName || 'Visa Fee', PaymentId: razorpay_payment_id, DateStr: dateStr, StatusText: 'Verified & Confirmed ✓', PortalUrl: 'https://opusoverseas.com/login', Subject: subject },
           clientId,
         }).catch(() => {});
       }

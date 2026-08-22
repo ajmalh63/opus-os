@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-const CHATWOOT_BASE = import.meta.env.VITE_CHATWOOT_BASE_URL || 'http://100.87.71.38:3200';
+const CHATWOOT_BASE = import.meta.env.VITE_CHATWOOT_BASE_URL || 'https://chat.opusoverseas.com';
 const CHATWOOT_TOKEN = import.meta.env.VITE_CHATWOOT_WEBSITE_TOKEN || 'f36574fb918873fbba2749b6a2f18ac6';
 
 export default function ChatWidget() {

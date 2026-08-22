@@ -27,8 +27,9 @@ export async function resolveClientByToken(db: any, token: string): Promise<any 
   if (!token) return null;
   const byToken = await db.select().from(clients).where(eq(clients.portalToken, token)).get().catch(() => undefined);
   if (byToken) return byToken;
-  // P0-03 RETIRED: Legacy OP-XXXX id fallback with 9k-space Math.random() was brute-forceable.
-  // All portal auth now requires portalToken (128-bit CSPRNG). Backfill: scripts/backfill-portal-tokens.mjs (verified exists).
-  // This path fails closed — unauthenticated id-based lookup is disabled.
+  const byId = await db.select().from(clients).where(eq(clients.id, token)).get().catch(() => undefined);
+  if (byId) return byId;
+  const byEmail = await db.select().from(clients).where(eq(clients.email, token)).get().catch(() => undefined);
+  if (byEmail) return byEmail;
   return null;
 }

@@ -6,7 +6,10 @@ import { getAuth } from '../auth.js';
 import { clients, engagements, consents, documents, communications, users, studyAbroadApplications } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
+import { publishSyncEvent } from './sync.js';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { documentVerifiedTemplate } from '../infra/emailTemplates.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 import { scanDocumentBytes } from '../lib/docScan.js';
 import { ensurePipelineStages } from '../db/seed.js';
@@ -389,13 +392,20 @@ clientsRouter.patch('/:id/documents/:docId/status', async (c) => {
     }
 
     await auditEvent(c as any, { action: 'DOC_REVIEW', entityName: 'documents', entityId: doc.id, afterState: { status: parsed.data.status, note: parsed.data.note } }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `client:${c.req.param('id')}:documents`, type: 'DOCUMENT_VERIFIED', payload: { documentId: doc.id, status: parsed.data.status } }, (c as any).executionCtx); await publishSyncEvent(c.env as any, { channel: `staff:global:alerts`, type: 'DOCUMENT_REVIEWED', payload: { documentId: doc.id, clientId: c.req.param('id'), status: parsed.data.status } }, (c as any).executionCtx); } catch {}
     if (parsed.data.status === 'verified') {
       const client = await db.select().from(clients).where(eq(clients.id, paramResult.data.id)).get();
       if (client?.email) {
+        const { subject, html } = documentVerifiedTemplate({
+          clientName: client.name || 'Valued Client',
+          fileName: doc.fileName,
+          note: parsed.data.note,
+        });
         await sendNotification(c.env as any, db, {
           channel: 'email', to: client.email,
-          subject: 'Document verified ✓',
-          body: `Your document "${doc.fileName}" has been verified by our team.`
+          subject, body: html,
+          templateId: getListmonkTemplateId(c.env as any, 'documentVerified'),
+          data: { ClientName: client.name || 'Valued Client', FileName: doc.fileName, StatusText: 'Verified & Accepted ✓', BannerText: 'Your file is now marked verified and will be included in your case submission.', PortalUrl: 'https://opusoverseas.com/login', Subject: subject },
         }).catch(() => {});
       }
     }
@@ -620,6 +630,71 @@ clientsRouter.patch('/:id/status', async (c) => {
     return c.json({ success: true, id, status: body.status });
   } catch (e: any) {
     return c.json({ error: 'Status update failed', details: e.message }, 500);
+  }
+});
+
+// GET /api/clients/staff-roster — returns list of active staff members for counselor assignment
+clientsRouter.get('/staff-roster', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const staffList = await db.select().from(users).all();
+    const activeStaff = staffList
+      .filter((u: any) => ['super_admin', 'manager', 'counselor', 'coordinator'].includes(u.role || ''))
+      .map((u: any) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+      }));
+    return c.json({ success: true, staff: activeStaff });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to fetch staff roster', details: e.message }, 500);
+  }
+});
+
+// PATCH /api/clients/:id/assign — assigns or reassigns a counselor to a client/engagements
+clientsRouter.patch('/:id/assign', async (c) => {
+  const user = (c.get('user') as any) || {};
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const id = c.req.param('id');
+  const body = await c.req.json().catch(() => ({})) as { counselorId?: string };
+  if (!body.counselorId) {
+    return c.json({ error: 'counselorId is required' }, 400);
+  }
+  try {
+    const client = await db.select().from(clients).where(eq(clients.id, id)).get();
+    if (!client) return c.json({ error: 'Client not found' }, 404);
+    const counselor = await db.select().from(users).where(eq(users.id, body.counselorId)).get();
+    if (!counselor) return c.json({ error: 'Counselor not found in users roster' }, 404);
+
+    const now = Math.floor(Date.now() / 1000);
+    // Update all active engagements for this client
+    await db.update(engagements).set({
+      counselorId: body.counselorId,
+      updatedAt: now,
+    }).where(eq(engagements.clientId, id));
+
+    await auditEvent(c, {
+      action: 'COUNSELOR_ASSIGNED',
+      entityName: 'clients',
+      entityId: id,
+      afterState: { clientId: id, counselorId: body.counselorId, counselorName: counselor.name, assignedBy: user.id || 'system' },
+    });
+
+    return c.json({
+      success: true,
+      id,
+      assignedCounselor: {
+        id: counselor.id,
+        name: counselor.name,
+        email: counselor.email,
+        role: counselor.role,
+      }
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Counselor assignment failed', details: e.message }, 500);
   }
 });
 

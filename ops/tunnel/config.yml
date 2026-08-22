@@ -74,5 +74,47 @@ ingress:
     originRequest:
       noTLSVerify: true
 
+
+  # 9. CRM — Twenty (https://crm.opusoverseas.com)
+  - hostname: crm.opusoverseas.com
+    service: http://localhost:3001
+    originRequest:
+      noTLSVerify: true
+
+  # 10. NocoDB (https://nocodb.opusoverseas.com)
+  - hostname: nocodb.opusoverseas.com
+    service: http://localhost:3004
+    originRequest:
+      noTLSVerify: true
+
+  # 11. Postiz Social Scheduler (https://postiz.opusoverseas.com + https://social.opusoverseas.com)
+  - hostname: postiz.opusoverseas.com
+    service: http://localhost:3000
+    originRequest:
+      noTLSVerify: true
+
+  - hostname: social.opusoverseas.com
+    service: http://localhost:3000
+    originRequest:
+      noTLSVerify: true
+
+  # 12. OpenReply (https://openreply.opusoverseas.com)
+  - hostname: openreply.opusoverseas.com
+    service: http://localhost:3005
+    originRequest:
+      noTLSVerify: true
+
+  # 13. ERPNext distinct hostname alias (https://erpnext.opusoverseas.com → same ERPNext service)
+  - hostname: erpnext.opusoverseas.com
+    service: http://localhost:8080
+    originRequest:
+      noTLSVerify: true
+
+  # 14. India Post Consignment API (https://india-post.opusoverseas.com)
+  - hostname: india-post.opusoverseas.com
+    service: http://localhost:9888
+    originRequest:
+      noTLSVerify: true
+
   # Catch-all fallback: 404
   - service: http_status:404

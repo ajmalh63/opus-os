@@ -186,7 +186,7 @@ export async function summarizeResolvedConversation(
   event: ChatwootWebhookEvent
 ): Promise<void> {
   try {
-    const cwBase = env?.CHATWOOT_BASE_URL || 'http://100.87.71.38:3200';
+    const cwBase = env?.CHATWOOT_BASE_URL || 'https://chat.opusoverseas.com';
     const cwToken = env?.CHATWOOT_API_TOKEN;
     const conversationId = event.conversation?.id || event.id;
     const accountId = event.account?.id || event.conversation?.account_id || 2;

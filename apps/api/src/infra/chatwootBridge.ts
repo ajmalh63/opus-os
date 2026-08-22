@@ -25,7 +25,7 @@ export interface DispatchWhatsAppResult {
 }
 
 export type ChatwootEnv = MessagingEnv & {
-  CHATWOOT_BASE_URL?: string;       // e.g. http://100.87.71.38:3000
+  CHATWOOT_BASE_URL?: string;       // e.g. https://chat.opusoverseas.com
   CHATWOOT_API_TOKEN?: string;      // User / Agent Bot Token
   CHATWOOT_ACCOUNT_ID?: string;     // Default '1'
   CHATWOOT_INBOX_ID?: string;       // Default '1' (WhatsApp Inbox)

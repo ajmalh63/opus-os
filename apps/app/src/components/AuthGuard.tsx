@@ -1,15 +1,24 @@
-﻿import { useEffect, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useLocation } from 'wouter';
 import { useSession } from '../lib/session';
 
-// Route guard: renders children only for authenticated users; redirects to /login.
-export default function AuthGuard({ children }: { children: ReactNode }) {
+const STAFF_ROLES = ['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'];
+
+// Route guard: renders children only for authenticated staff users;
+// clients are automatically routed to the client portal (/portal).
+export default function AuthGuard({ children, allowClient = false }: { children: ReactNode; allowClient?: boolean }) {
   const { me, loading } = useSession();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!loading && !me) setLocation('/login');
-  }, [loading, me, setLocation]);
+    if (!loading) {
+      if (!me) {
+        setLocation('/login');
+      } else if (!allowClient && !STAFF_ROLES.includes(me.role)) {
+        setLocation('/portal');
+      }
+    }
+  }, [loading, me, allowClient, setLocation]);
 
   if (loading) {
     return (
@@ -22,6 +31,6 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!me) return null;
+  if (!me || (!allowClient && !STAFF_ROLES.includes(me.role))) return null;
   return <>{children}</>;
 }

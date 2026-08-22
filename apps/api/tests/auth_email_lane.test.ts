@@ -18,12 +18,12 @@ describe('Auth transactional email lane (Listmonk)', () => {
 
 const listmonkEnv = () => ({
     DB: mockD1,
-    LISTMONK_BASE_URL: 'http://100.87.71.38:9009',
+    LISTMONK_BASE_URL: 'https://listmonk.opusoverseas.com',
     LISTMONK_API_USER: 'admin@opusoverseas.com',
     LISTMONK_API_PASS: 'pw',
   });
 
-  it('reset password email â†’ delivered through Listmonk /api/tx with the link (clickable)', async () => {
+  it('reset password email → delivered through Listmonk /api/tx with the link (clickable)', async () => {
     const calls: { url: string; body: any }[] = [];
     global.fetch = vi.fn(async (url: any, opts: any) => {
       const u = String(url);
@@ -39,7 +39,7 @@ const listmonkEnv = () => ({
 
     await sendPasswordResetEmail(listmonkEnv() as any, getDb(mockD1 as any), { email: 'customer@example.com' }, 'https://app.opusoverseas.com/reset?token=abc&x=1');
     expect(calls).toHaveLength(1);
-    expect(calls[0].url).toBe('http://100.87.71.38:9009/api/tx');
+    expect(calls[0].url).toBe('https://listmonk.opusoverseas.com/api/tx');
     expect(calls[0].body.subscriber_email).toBe('customer@example.com');
     expect(calls[0].body.subject).toContain('Reset');
 // link is present AND wrapped as a clickable <a> (auto-linkify)

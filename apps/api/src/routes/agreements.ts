@@ -9,7 +9,10 @@ import { agreements, agreementTemplates, clauseLibrary, clients, consents, refer
 import { eq, inArray } from 'drizzle-orm';
 import { pickCounselorForDivision, createAssignmentTask } from '../services/leadAssignment.js';
 import { auditEvent } from '../middleware/audit.js';
+import { publishSyncEvent } from './sync.js';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { agreementSignedTemplate, otpEmailTemplate } from '../infra/emailTemplates.js';
 import { accrueIncentives } from '../services/incentiveAccrual.js';
 import { accruePartnerPoints } from '../services/partnerLoyalty.js';
 
@@ -274,6 +277,8 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
           await db.update(commissionLedger)
             .set({ amount: commissionPaise, status: 'matured' })
             .where(eq(commissionLedger.referralId, referral.id));
+          try { await publishSyncEvent(c.env as any, { channel: `partner:${referral.partnerId}:commissions`, type: 'COMMISSION_MATURED', payload: { referralId: referral.id, amount: commissionPaise, status:'matured' } }, (c as any).executionCtx); } catch {}
+          try { await publishSyncEvent(c.env as any, { channel: `client:${agreement.clientId}:bookings`, type: 'AGREEMENT_SIGNED', payload: { agreementId: agreement.id } }, (c as any).executionCtx); await publishSyncEvent(c.env as any, { channel: `staff:global:alerts`, type: 'AGREEMENT_SIGNED', payload: { agreementId: agreement.id, clientId: agreement.clientId } }, (c as any).executionCtx); } catch {}
         }
         // Thrive: client_signed loyalty points for the referring partner
         await accruePartnerPoints({ env: c.env as any, partnerId: referral.partnerId, reason: 'client_signed', referenceKey: agreement.id }).catch(() => {});
@@ -332,15 +337,21 @@ agreementsRouter.post('/:id/sign', zValidator('json', signAgreementSchema), asyn
     });
 
     // §7.6 Transactional email — signed-agreement summary to the client
-    // (fail-open; dev stub channel, prod CF Email binding).
     try {
       const client = await db.select().from(clients).where(eq(clients.id, agreement.clientId)).get();
       if (client?.email) {
+        const { subject, html } = agreementSignedTemplate({
+          clientName: client.name || 'Valued Client',
+          agreementTitle: `Service Agreement (${agreement.id})`,
+          downloadUrl: `https://opusoverseas.com/login`,
+        });
+        const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
         await sendNotification(c.env as any, db as any, {
           channel: 'email',
           to: client.email,
-          subject: `Your service agreement is signed — ${agreement.id}`,
-          body: `Hi ${client.name}, your service agreement (${agreement.id}) with Opus Overseas has been executed via ${data.esignMethod}. We are starting delivery. Thank you — Opus Overseas.`,
+          subject, body: html,
+          templateId: getListmonkTemplateId(c.env as any, 'agreementExecuted'),
+          data: { ClientName: client.name || 'Valued Client', AgreementTitle: `Service Agreement (${agreement.id})`, SignedDate: dateStr, StatusText: 'Legally Executed & Archived ✓', DownloadUrl: 'https://opusoverseas.com/login', Subject: subject },
           clientId: client.id,
         });
       }
@@ -450,11 +461,18 @@ portalAgreementsRouter.post('/:id/request-otp', async (c) => {
 
     // Fail-open: an email failure must never block the OTP flow.
     try {
+      const { subject, html } = otpEmailTemplate({
+        name: client.name,
+        otpCode: code,
+        expiresInMinutes: 10,
+      });
       await sendNotification(c.env as any, db as any, {
         channel: 'email',
         to: client.email,
         subject: 'Opus Overseas — sign your agreement',
-        body: `Dear ${client.name}, your one-time verification code to sign your service agreement (${agreementId}) is ${code}. The code is valid for 10 minutes. If you did not request this, please contact Opus Overseas immediately.`,
+        body: html,
+        templateId: getListmonkTemplateId(c.env as any, 'otp'),
+        data: { OtpCode: code, BannerText: 'This code is valid for 10 minutes. For your security, never share this code with anyone. Use it to sign your agreement.', Subject: 'Opus Overseas — sign your agreement' },
         clientId: client.id,
       });
     } catch (emailErr: any) {
@@ -560,6 +578,7 @@ portalAgreementsRouter.post('/:id/sign', zValidator('json', portalSignSchema), a
       category: 'compliance',
       afterState: { clientId: agreement.clientId, method: data.esignMethod, hash },
     });
+    try { await publishSyncEvent(c.env as any, { channel: `client:${agreement.clientId}:bookings`, type: 'AGREEMENT_SIGNED', payload: { agreementId: agreement.id, method: data.esignMethod } }, (c as any).executionCtx); } catch {}
 
     return c.json({ success: true, signedAt: now, hash });
   } catch (error: any) {

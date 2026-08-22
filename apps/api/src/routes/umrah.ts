@@ -6,6 +6,7 @@ import { groupDepartures, seatBookings, bookingPassengers, clients, engagements,
 import { eq, and, gte, lte, desc, sql, inArray } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
+import { publishSyncEvent } from './sync.js';
 import { serializePassenger } from '../lib/umrahParty.js';
 
 export const umrahRouter = new Hono<{ Bindings: { DB: D1Database } }>();
@@ -265,7 +266,8 @@ umrahRouter.post('/bookings/:id/confirm-office', zValidator('json', confirmUmrah
         createdAt: now
       });
     }
-    await auditEvent(c as any, { action: 'UMRAH_BALANCE_OFFICE', entityName: 'seat_bookings', entityId: booking.id, afterState: { amountPaise: data.amountPaise, method: data.method } }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `client:${booking.clientId}:bookings`, type: 'BOOKING_CONFIRMED', payload: { bookingId: booking.id } }, (c as any).executionCtx); } catch {}
+     await auditEvent(c as any, { action: 'UMRAH_BALANCE_OFFICE', entityName: 'seat_bookings', entityId: booking.id, afterState: { amountPaise: data.amountPaise, method: data.method } }).catch(() => {});
     await createStaffAlert(c.env as any, { division: 'umrah', type: 'booking_balance', title: 'Umrah balance settled (office)', body: `Booking ${booking.id.slice(0, 8)} — ₹${(data.amountPaise / 100).toFixed(2)} via ${data.method}`, clientId: booking.clientId, payload: { bookingId: booking.id, amountPaise: data.amountPaise } });
     return c.json({ success: true, message: 'Balance settled. Booking confirmed.' });
   } catch (e: any) {

@@ -72,7 +72,7 @@ describe('WhatsApp & Chatwoot Automation Suite', () => {
   it('dispatches unified WhatsApp with fail-open fallback', async () => {
     const res = await dispatchUnifiedWhatsApp(
       {
-        OPENWA_BASE_URL: 'http://100.87.71.38:8080',
+        OPENWA_BASE_URL: 'https://wa.opusoverseas.com',
         OPENWA_API_KEY: 'test-key',
         OPENWA_SESSION_ID: 'default',
       },

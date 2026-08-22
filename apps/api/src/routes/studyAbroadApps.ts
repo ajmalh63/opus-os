@@ -5,8 +5,11 @@ import { getDb } from '../db/client.js';
 import { clients, engagements, studyAbroadApplications, tasks, documents, consents } from '../db/schema.js';
 import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
+import { publishSyncEvent } from './sync.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { studyAbroadMilestoneTemplate } from '../infra/emailTemplates.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 import { scanDocumentBytes } from '../lib/docScan.js';
 import {
@@ -114,14 +117,25 @@ async function handleStatusSideEffects(db: any, c: any, row: any, newStatus: str
   if (newStatus === 'offer_letter') {
     const due = row.acceptanceDeadline || now + 14 * 86400;
     await createTask(db, row.clientId, `Acceptance Decision: ${uni.name}`, `Offer received for ${uni.program}. Decide accept/decline by deadline.`, 'high', due);
-    // Transactional email (stub-safe until Listmonk is live in the integration wave)
     const client = await db.select().from(clients).where(eq(clients.id, row.clientId)).get();
     if (client?.email) {
+      const { subject, html } = studyAbroadMilestoneTemplate({
+        clientName: client.name || 'Valued Student',
+        universityName: uni.name || 'University',
+        courseName: uni.program,
+        stageTitle: 'Offer Letter Received 🎉',
+        details: `Congratulations! You have received an offer from ${uni.name} for ${uni.program || 'your program'} (${uni.intake || 'upcoming intake'}). Log in to your portal to review conditions and make your decision by ${new Date(due * 1000).toLocaleDateString('en-IN')}.`,
+        portalUrl: 'https://opusoverseas.com/login',
+      });
+      const offerDetails = `Congratulations! You have received an offer from ${uni.name} for ${uni.program || 'your program'} (${uni.intake || 'upcoming intake'}). Log in to your portal to review conditions and make your decision by ${new Date(due * 1000).toLocaleDateString('en-IN')}.`;
       await sendNotification(c.env as any, db, {
-        channel: 'email', to: client.email,
-        subject: `🎉 Offer Received — ${uni.name}`,
-        body: `Congratulations! You have received an offer from ${uni.name} for ${uni.program} (${uni.intake}). Log in to your portal to accept or decline by ${new Date(due * 1000).toLocaleDateString()}.`
+        channel: 'email',
+        to: client.email,
+        subject, body: html,
+        templateId: getListmonkTemplateId(c.env as any, 'studyAbroadMilestone'),
+        data: { ClientName: client.name || 'Valued Student', UniversityName: uni.name || 'University', CourseName: uni.program || '', StageTitle: 'Offer Letter Received 🎉', Details: offerDetails, PortalUrl: 'https://opusoverseas.com/login', Subject: subject },
       }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `staff:global:alerts`, type: 'DOCUMENT_UPLOADED', payload: {} }, (c as any).executionCtx); } catch {}
     }
   }
   if (newStatus === 'deposit_paid') {
@@ -296,6 +310,7 @@ studyAbroadAppsRouter.patch('/:id/status', zValidator('json', updateApplicationS
     await handleStatusSideEffects(db, c, updated, body.status, now);
 
     await auditEvent(c as any, { action: 'APPLICATION_STATUS', entityName: 'study_abroad_applications', entityId: row.id, afterState: { oldStatus: row.status, newStatus: body.status } }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `client:${row.clientId}:applications`, type: 'APPLICATION_STATUS_CHANGED', payload: { applicationId: row.id, oldStatus: row.status, newStatus: body.status } }, (c as any).executionCtx); await publishSyncEvent(c.env as any, { channel: `staff:division:study-abroad:pipeline`, type: 'APPLICATION_STATUS_CHANGED', payload: { applicationId: row.id, newStatus: body.status } }, (c as any).executionCtx); } catch {}
     return c.json({ success: true, message: `Application moved to ${body.status}.` });
   } catch (e: any) {
     return c.json({ error: 'Status update failed', details: e?.message }, 500);
@@ -435,10 +450,19 @@ portalStudyAbroadRouter.put('/profile', zValidator('json', studentProfileSchema)
     if (afterPct === 100 && beforePct < 100) {
       await createStaffAlert(c.env as any, { division: 'study-abroad', type: 'profile_complete', title: 'Student profile complete', body: `${client.name} completed their profile (100%) — ready for counselling & shortlisting.`, clientId: token, payload: { pct: 100 } });
       if (client.email) {
+        const { subject, html } = studyAbroadMilestoneTemplate({
+          clientName: client.name || 'Valued Student',
+          universityName: 'Global Universities Advisory',
+          stageTitle: 'Profile Complete (100%) 🎓',
+          details: 'Thank you! Your study-abroad profile is 100% complete. Our senior counselor has received your file and will reach out with your personalized university shortlist shortly.',
+          portalUrl: 'https://opusoverseas.com/login',
+        });
         await sendNotification(c.env as any, db, {
-          channel: 'email', to: client.email,
-          subject: 'Your profile is complete 🎓',
-          body: 'Thank you! Your study-abroad profile is 100% complete. Our counsellor will reach out with your personalised university shortlist shortly.'
+          channel: 'email',
+          to: client.email,
+          subject, body: html,
+          templateId: getListmonkTemplateId(c.env as any, 'studyAbroadMilestone'),
+          data: { ClientName: client.name || 'Valued Student', UniversityName: 'Global Universities Advisory', CourseName: '', StageTitle: 'Profile Complete (100%) 🎓', Details: 'Thank you! Your study-abroad profile is 100% complete. Our senior counselor has received your file and will reach out with your personalized university shortlist shortly.', PortalUrl: 'https://opusoverseas.com/login', Subject: subject },
         }).catch(() => {});
       }
     }
@@ -670,6 +694,7 @@ portalStudyAbroadRouter.post('/applications/:id/accept-offer', async (c) => {
       await createStaffAlert(c.env as any, { division: 'study-abroad', type: 'offer_accepted', title: 'Offer accepted by student', body: `${parseSnapshot(row).name} — ${parseSnapshot(row).program}`, clientId: row.clientId, payload: { applicationId: row.id } });
     }
     await auditEvent(c as any, { action: 'OFFER_DECISION', entityName: 'study_abroad_applications', entityId: row.id, afterState: { decision } }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `client:${row.clientId}:applications`, type: 'OFFER_DECISION', payload: { applicationId: row.id, decision } }, (c as any).executionCtx); } catch {}
     return c.json({ success: true, message: `Offer ${decision}.` });
   } catch (e: any) {
     return c.json({ error: 'Offer decision failed', details: e?.message }, 500);

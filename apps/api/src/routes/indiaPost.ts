@@ -21,7 +21,7 @@ const now = () => Math.floor(Date.now() / 1000);
 const uid = () => `IP-${now()}-${crypto.randomUUID().slice(0, 8)}`;
 
 function base(env: any): string {
-  return (env.INDIA_POST_BASE_URL || 'http://100.87.71.38:9888').replace(/\/$/, '');
+  return (env.INDIA_POST_BASE_URL || 'https://indiapost.opusoverseas.com').replace(/\/$/, '');
 }
 function headers(env: any): Record<string, string> {
   return { 'Content-Type': 'application/json', 'x-api-key': env.INDIA_POST_API_KEY || '' };

@@ -5,8 +5,11 @@ import { getDb } from '../db/client.js';
 import { clients, engagements, attestationApplications, attestationRateCards, appSettings, tasks } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
+import { publishSyncEvent } from './sync.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { attestationProgressTemplate } from '../infra/emailTemplates.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 import { scanDocumentBytes } from '../lib/docScan.js';
 import { isDivisionEnabled } from '../lib/divisions.js';
@@ -390,10 +393,21 @@ attestationAppsRouter.patch('/applications/:id/stage', zValidator('json', update
     if (body.stage === 'quote_confirmed' && row.stage !== 'quote_confirmed') {
       const client = await db.select().from(clients).where(eq(clients.id, row.clientId)).get();
       if (client?.email) {
+        const docTitle = parseDoc(row).documentName || row.category;
+        const formattedQuote = `₹${((row.totalQuotePaise || 0) / 100).toLocaleString('en-IN')}`;
+        const { subject, html } = attestationProgressTemplate({
+          clientName: client.name || 'Valued Client',
+          documentType: `${docTitle} (${row.destinationCountry})`,
+          currentStage: `Quote Confirmed: ${formattedQuote}`,
+          country: row.destinationCountry,
+          portalUrl: 'https://opusoverseas.com/login',
+        });
         await sendNotification(c.env as any, db, {
-          channel: 'email', to: client.email,
-          subject: `Quote confirmed — ${row.destinationCountry} attestation`,
-          body: `Your quote for ${parseDoc(row).documentName || row.category} (${row.destinationCountry}) is confirmed at ₹${((row.totalQuotePaise || 0) / 100).toFixed(2)}. Log in to your portal to book the pickup and send your documents.`
+          channel: 'email',
+          to: client.email,
+          subject, body: html,
+          templateId: getListmonkTemplateId(c.env as any, 'attestationProgress'),
+          data: { ClientName: client.name || 'Valued Client', DocumentType: `${docTitle} (${row.destinationCountry})`, CurrentStage: `Quote Confirmed: ${formattedQuote}`, Country: row.destinationCountry || '', AwbNumber: '', PortalUrl: 'https://opusoverseas.com/login', Subject: subject },
         }).catch(() => {});
       }
     }
@@ -406,6 +420,7 @@ attestationAppsRouter.patch('/applications/:id/stage', zValidator('json', update
       await createTask(db, row.clientId, `Dispatch attested documents: ${parseDoc(row).documentName || row.category}`, `Attestation complete for ${row.destinationCountry}. Prepare return dispatch to client.`, 'high', now + 24 * 3600);
     }
     await auditEvent(c as any, { action: 'ATTESTATION_STAGE', entityName: 'attestation_applications', entityId: row.id, afterState: { oldStage: row.stage, newStage: body.stage } }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `client:${row.clientId}:applications`, type: 'ATTESTATION_STAGE_CHANGED', payload: { applicationId: row.id, oldStage: row.stage, newStage: body.stage } }, (c as any).executionCtx); await publishSyncEvent(c.env as any, { channel: `staff:division:attestation:pipeline`, type: 'ATTESTATION_STAGE_CHANGED', payload: { applicationId: row.id } }, (c as any).executionCtx); } catch {}
     
     // Dispatch status update to n8n
     dispatchWebhookEvent(

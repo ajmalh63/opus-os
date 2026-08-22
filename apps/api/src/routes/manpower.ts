@@ -175,7 +175,8 @@ manpowerRouter.post('/interviews/invite', async (c) => {
     const client = await db.select().from(clients).where(eq(clients.id, clientId)).get();
     if (!client) return c.json({ error: "Client not found" }, 404);
 
-    const inviteLink = `http://100.87.71.38:3000/opus-owner/consultation?ref=${clientId}`;
+    const calBase = (c.env as any)?.CAL_BASE_URL || 'https://cal.opusoverseas.com';
+    const inviteLink = `${calBase}/opus-owner/consultation?ref=${clientId}`;
     
     await auditEvent(c as any, {
       action: 'LEAD_CREATED',

@@ -6,6 +6,7 @@ import { conversations, communications } from '../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import { sendNotification } from '../infra/notify.js';
 import { auditEvent } from '../middleware/audit.js';
+import { publishSyncEvent } from './sync.js';
 import { getAuth } from '../auth.js';
 
 // Staff unified inbox (OpenWA + Chatwoot inbound surface).
@@ -106,6 +107,7 @@ inboxRouter.post('/:id/reply', zValidator('json', replySchema), async (c) => {
       status: 'open',
     }).where(eq(conversations.id, conv.id));
 
+    try { await publishSyncEvent(c.env as any, { channel: `staff:global:alerts`, type: 'INBOX_REPLY', payload: { conversationId: conv.id } }, (c as any).executionCtx); } catch {}
     await auditEvent(c, {
       action: 'INBOX_REPLY', entityName: 'conversations', entityId: conv.id,
       afterState: { contactKey: conv.contactKey, dispatched: result.ok, provider: result.provider },

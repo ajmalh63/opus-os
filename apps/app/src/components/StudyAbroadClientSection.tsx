@@ -62,6 +62,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
     queryKey: ['studyProfile', token],
     queryFn: async () => {
       const r = await fetch(`/api/public/portal/study-abroad/profile?token=${token}`);
+      if (r.status === 404) return { success: true, profile: {}, completeness: { pct: 0, missing: [] }, universitySharingConsent: false, highestQualification: null };
       if (!r.ok) throw new Error('Profile fetch failed');
       return r.json();
     }
@@ -71,6 +72,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
     queryKey: ['studyAppsClient', token],
     queryFn: async () => {
       const r = await fetch(`/api/public/portal/study-abroad/applications?token=${token}`);
+      if (r.status === 404) return { success: true, applications: [] };
       if (!r.ok) throw new Error('Applications fetch failed');
       return r.json();
     },
@@ -81,6 +83,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
     queryKey: ['studyDocsClient', token],
     queryFn: async () => {
       const r = await fetch(`/api/public/portal/study-abroad/documents?token=${token}`);
+      if (r.status === 404) return { success: true, documents: [], applications: [] };
       if (!r.ok) throw new Error('Documents fetch failed');
       return r.json();
     },

@@ -83,6 +83,19 @@ export default function DivisionsHub() {
   });
   const stats = statsData?.stats || {};
 
+  // Live division availability state
+  const { data: divData } = useQuery<{ enabled: Record<string, boolean> }>({
+    queryKey: ['publicDivisions'],
+    queryFn: async () => {
+      const r = await fetch('/api/public/divisions');
+      if (!r.ok) return { enabled: { 'study-abroad': true } };
+      return r.json();
+    },
+    staleTime: 30000
+  });
+  const enabledMap = divData?.enabled || { 'study-abroad': true };
+  const activeCount = Object.values(enabledMap).filter(Boolean).length;
+
   return (
     <div ref={rootRef} className="space-y-8 font-sans">
       {/* Header with operational status banner */}
@@ -96,14 +109,16 @@ export default function DivisionsHub() {
           <p className="text-xs text-brand-textLight mt-0.5">Specialized department command centers for admissions, visas, legalizations, and pilgrimage.</p>
         </div>
         <div className="flex items-center gap-2 rounded-2xl bg-white/80 border border-brand-navy/15 px-4 py-2 text-xs font-bold text-brand-navy shadow-xs backdrop-blur-md">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>5 Operational Desks Live</span>
+          <span className={`h-2 w-2 rounded-full ${activeCount > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+          <span>{activeCount} / {divisions.length} Operational Desks Live</span>
         </div>
       </div>
 
       {/* Grid of Elevated Division Launch Cards */}
       <div className="reveal grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {visible.map((d) => (
+        {visible.map((d) => {
+          const isLive = enabledMap[d.key] === true;
+          return (
           <div
             key={d.key}
             onClick={() => setLocation(`/divisions/${d.key}`)}
@@ -117,9 +132,16 @@ export default function DivisionsHub() {
                 <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#FAF8F4] border border-brand-navy/10 text-3xl shadow-inner group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
                   {d.icon}
                 </div>
-                <span className={`rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${d.badgeBg}`}>
-                  {d.category}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+                    isLive ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-slate-100 text-slate-500 border-slate-200'
+                  }`}>
+                    {isLive ? '● Live' : '○ Closed'}
+                  </span>
+                  <span className={`rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${d.badgeBg}`}>
+                    {d.category}
+                  </span>
+                </div>
               </div>
 
               <div>
@@ -170,7 +192,8 @@ export default function DivisionsHub() {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {visible.length === 0 && (
           <div className="col-span-full py-16 text-center rounded-2xl border border-dashed border-brand-navy/20 bg-white p-8">

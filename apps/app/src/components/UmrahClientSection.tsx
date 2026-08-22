@@ -385,6 +385,22 @@ export default function UmrahClientSection({ token }: { token: string }) {
     try { const v = JSON.parse(s); return Array.isArray(v) ? v : []; } catch { return []; }
   };
 
+  // Umrah documents upload — uses same generic vault presigned PUT as other divisions (portal.ts)
+  // Gap fix: Umrah client had no <input type=file> (StudyAbroad has 2, Visa has 2, Manpower has 1, Umrah had 0)
+  const uploadUmrahDoc = async (file: File) => {
+    try {
+      const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(file.name)}`);
+      const pData = await pRes.json();
+      if (!pRes.ok || !pData.success || !pData.url) throw new Error(pData.error || 'Failed to generate upload link');
+      const uRes = await fetch(pData.url, { method: 'PUT', body: await file.arrayBuffer() });
+      if (!uRes.ok) throw new Error('Upload failed');
+      queryClient.invalidateQueries({ queryKey: ['portalUmrahMyBookings', token] });
+      alert('✓ ' + file.name + ' uploaded — our team will verify it shortly.');
+    } catch (e: any) {
+      alert('Upload failed: ' + (e.message || 'unknown'));
+    }
+  };
+
   // ── Coming Soon state ──
   if (comingSoon || !enabled) {
     return (
@@ -629,6 +645,11 @@ export default function UmrahClientSection({ token }: { token: string }) {
                 <ul className="space-y-1 text-brand-navy/70">
                   {documents.map((d, i) => <li key={i} className="flex gap-1.5"><span className="text-brand-gold">•</span>{d}</li>)}
                 </ul>
+                <label className="mt-3 flex items-center justify-center gap-2 cursor-pointer rounded-lg border border-dashed border-brand-gold/40 bg-brand-gold/[0.06] px-3 py-2.5 text-[10px] font-bold text-brand-gold hover:bg-brand-gold/15 transition-all">
+                  📎 Upload Document for this booking
+                  <input type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" onChange={(e)=>{const f=e.target.files?.[0]; if(f) uploadUmrahDoc(f); (e.target as HTMLInputElement).value='';}} />
+                </label>
+                <div className="text-[9px] text-brand-navy/40 mt-1.5 text-center">Secure R2 vault · presigned PUT (15-min HMAC) → staff verifies live via <code className="bg-slate-100 px-1 rounded">client:{'{id}'}:documents</code></div>
               </div>
             )}
             {terms.length > 0 && (

@@ -6,9 +6,12 @@ import Logo from '../components/Logo';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import LiveWallpaper from '../components/LiveWallpaper';
+import PartnerDashboardHub from '../components/PartnerDashboardHub';
+import ChatWidget from '../components/ChatWidget';
 import { track, EVENTS } from '../lib/umami';
 import { fadeUp, staggerReveal, countUp, prefersReducedMotion, makeContext, whenFontsReady } from '../lib/motion';
 import { useVisibilityTracking } from '../lib/visibilityTracking';
+import { createSyncClient } from '../lib/syncClient';
 
 // ============================================================================
 // OPUS OVERSEAS — PARTNER & AFFILIATE COMMAND CENTER (GOLD STANDARD ARCHITECTURE)
@@ -369,6 +372,26 @@ function AnimatedNumber({ value, prefix = '', suffix = '' }: { value: number; pr
 
 function StatusChip({ status }: { status: string }) {
   const cls = statusStyles[status] || statusStyles.unmatured;
+  // Partner realtime — api_token plane, partner:{id}:* live ledger
+  // @ts-ignore
+  const _syncPartner = (() => {
+    try {
+      const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
+      if (!enabled || typeof window === 'undefined') return null;
+      const apiToken = (() => { try { return localStorage.getItem('partnerApiToken') || ''; } catch { return ''; } })();
+      const partnerId = (() => { try { return localStorage.getItem('partnerId') || ''; } catch { return ''; } })();
+      if (!apiToken || !partnerId) return null;
+      const c = createSyncClient({
+        plane: 'partner',
+        apiToken,
+        channels: [`partner:${partnerId}:commissions`, `partner:${partnerId}:referrals`, 'public:catalog:umrah'],
+        enabled,
+        onEvent: (e) => { try { const qc=(window as any).__TANSTACK_QUERY_CLIENT__; if(qc) qc.invalidateQueries({queryKey:['partner']}); } catch {} },
+      });
+      c.connect(); return c;
+    } catch { return null; }
+  })();
+
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cls}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${status === 'matured' || status === 'paid' ? 'bg-emerald-500' : status === 'pending' ? 'bg-amber-500' : 'bg-slate-400'}`} />
@@ -880,7 +903,12 @@ export default function PartnerDashboard() {
   };
 
   const handleLogout = () => {
-    fetch('/api/auth/sign-out', { method: 'POST', credentials: 'include' }).catch(() => {});
+    fetch('/api/auth/sign-out', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    }).catch(() => {});
     localStorage.removeItem('opus_partner_id');
     localStorage.removeItem('opus_partner_token');
     localStorage.removeItem('opus_partner_name');
@@ -1415,225 +1443,20 @@ export default function PartnerDashboard() {
             {/* TAB CONTENT PANELS */}
             <div className="mx-auto max-w-6xl space-y-8 px-5 py-8 md:px-8">
               {/* ============================================================ */}
-              {/* TAB 1: OVERVIEW COCKPIT                                      */}
+              {/* TAB 1: OVERVIEW COCKPIT & LIVE KANBAN HUB                    */}
               {/* ============================================================ */}
               {tab === 'overview' && (
-                <div className="space-y-8">
-                  {/* 5-DIVISION 1-CLICK LAUNCHPAD */}
-                  <section className="partner-fade clay-card p-6 md:p-8">
-                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Fast-Track Attribution</span>
-                        <h2 className="mt-0.5 font-display text-lg font-bold text-brand-navy">
-                          1-Click Division Referral Links
-                        </h2>
-                        <p className="text-xs text-brand-navy/60">Share directly with clients — your partner code is auto-embedded.</p>
-                      </div>
-                      <span className="rounded-full bg-brand-gold/10 px-3 py-1 font-mono text-xs font-extrabold text-brand-gold">
-                        ref={refCode}
-                      </span>
-                    </div>
-
-                    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {DIVISIONS.map((div) => {
-                        const targetUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${div.path}?ref=${refCode}`;
-                        return (
-                          <div key={div.id} className="flex flex-col justify-between rounded-2xl border border-brand-navy/10 bg-slate-50/60 p-5 transition hover:border-brand-gold/40 hover:bg-white hover:shadow-sm">
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <span className="rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white" style={{ backgroundColor: div.color }}>
-                                  {div.badge}
-                                </span>
-                                <span className="text-[10px] font-bold text-emerald-700">{div.avgCommission}</span>
-                              </div>
-                              <h3 className="mt-3 font-display text-sm font-bold text-brand-navy">{div.name}</h3>
-                              <p className="mt-1 text-[11px] leading-relaxed text-brand-navy/60">{div.tagline}</p>
-                            </div>
-
-                            <div className="mt-5 flex items-center gap-2 pt-3 border-t border-brand-navy/10">
-                              <button
-                                onClick={() => copyToClipboard(targetUrl, `div-${div.id}`, div.name)}
-                                className="tactile-btn flex-1 rounded-full bg-brand-navy py-2 text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy cursor-pointer"
-                              >
-                                {copiedLinkKey === `div-${div.id}` ? '✓ Copied' : 'Copy Link'}
-                              </button>
-                              <button
-                                onClick={() => openWhatsApp(div.whatsappText(targetUrl))}
-                                className="tactile-btn rounded-full bg-emerald-600 px-3 py-2 text-[10px] font-bold text-white transition hover:bg-emerald-500 cursor-pointer"
-                                title="Share on WhatsApp"
-                              >
-                                💬
-                              </button>
-                              <button
-                                onClick={() => setQrModal({ open: true, title: `${div.name} QR Code`, url: targetUrl })}
-                                className="tactile-btn rounded-full border border-brand-navy/20 bg-white px-3 py-2 text-[10px] font-bold text-brand-navy transition hover:border-brand-gold hover:text-brand-gold cursor-pointer"
-                                title="View QR Code"
-                              >
-                                ▦
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Universal Lead Form Card */}
-                      <div className="flex flex-col justify-between rounded-2xl border border-brand-gold/50 bg-brand-gold/5 p-5">
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <span className="rounded-full bg-brand-gold px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-navy">
-                              Universal
-                            </span>
-                            <span className="text-[10px] font-bold text-brand-gold">General Consultation</span>
-                          </div>
-                          <h3 className="mt-3 font-display text-sm font-bold text-brand-navy">Universal Lead & Evaluation Form</h3>
-                          <p className="mt-1 text-[11px] leading-relaxed text-brand-navy/60">
-                            Directs client to Opus comprehensive multi-service inquiry form. Perfect for general campaigns.
-                          </p>
-                        </div>
-
-                        <div className="mt-5 flex items-center gap-2 pt-3 border-t border-brand-navy/10">
-                          <button
-                            onClick={() => copyToClipboard(universalReferralLink, 'div-universal', 'Universal Form')}
-                            className="tactile-btn flex-1 rounded-full bg-brand-gold py-2 text-[10px] font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white cursor-pointer"
-                          >
-                            {copiedLinkKey === 'div-universal' ? '✓ Copied' : 'Copy Main Form'}
-                          </button>
-                          <button
-                            onClick={() => openWhatsApp(`Opus Overseas — consultation & evaluation form: ${universalReferralLink}`)}
-                            className="tactile-btn rounded-full bg-emerald-600 px-3 py-2 text-[10px] font-bold text-white transition hover:bg-emerald-500 cursor-pointer"
-                          >
-                            💬
-                          </button>
-                          <button
-                            onClick={() => setQrModal({ open: true, title: 'Universal Form QR Code', url: universalReferralLink })}
-                            className="tactile-btn rounded-full border border-brand-gold/40 bg-white px-3 py-2 text-[10px] font-bold text-brand-navy transition hover:border-brand-gold hover:text-brand-gold cursor-pointer"
-                          >
-                            ▦
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* ACTIVATION CHECKLIST & LOYALTY PROGRESS ROW */}
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                    {/* Activation Roadmap */}
-                    <section className="partner-fade clay-card p-6 lg:col-span-5">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <h3 className="font-display text-sm font-bold text-brand-navy">Activation Checklist</h3>
-                          <p className="mt-0.5 text-[10px] text-brand-navy/50">Your roadmap to first commission payout.</p>
-                        </div>
-                        <span className="rounded-full bg-brand-gold/10 px-3 py-1 font-display text-xs font-extrabold text-brand-gold">
-                          {doneCount}/{totalCount}
-                        </span>
-                      </div>
-
-                      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-brand-navy/5">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-brand-navy via-brand-blue to-brand-gold transition-all duration-700"
-                          style={{ width: `${totalCount ? Math.round((doneCount / totalCount) * 100) : 0}%` }}
-                        />
-                      </div>
-
-                      <ul className="mt-5 space-y-4">
-                        {onboardingSteps.map((s, i) => (
-                          <li key={s.key} className="flex items-start gap-3">
-                            <span
-                              className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-bold ${
-                                s.done ? 'bg-emerald-500 text-white shadow-sm' : 'border border-brand-navy/20 text-brand-navy/40'
-                              }`}
-                            >
-                              {s.done ? '✓' : i + 1}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <div className={`text-xs font-bold ${s.done ? 'text-brand-navy' : 'text-brand-navy/70'}`}>
-                                {s.label}
-                              </div>
-                              {s.hint && <div className="mt-0.5 text-[10px] leading-relaxed text-brand-navy/50">{s.hint}</div>}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-
-                    {/* VIP Loyalty Tier Summary (Thrive) */}
-                    <section className="partner-fade clay-card p-6 lg:col-span-7 flex flex-col justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                          <div className="flex items-center gap-4">
-                            <span
-                              className="grid h-14 w-14 place-items-center rounded-2xl font-display text-xl font-extrabold uppercase text-white shadow-md"
-                              style={{ background: thrive?.tier?.color || '#b87333' }}
-                            >
-                              {thrive?.tier?.key?.[0] || 'B'}
-                            </span>
-                            <div>
-                              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">VIP Loyalty Status</div>
-                              <h3 className="mt-0.5 font-display text-xl font-extrabold text-brand-navy">{thrive?.tier?.name || 'Bronze Partner'}</h3>
-                              <div className="mt-1 flex flex-wrap gap-1.5">
-                                {(thrive?.tier?.perks || ['Standard Commission', 'Attribution Tracking', 'Monthly Payouts']).map((p) => (
-                                  <span key={p} className="rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2 py-0.5 text-[9px] font-bold text-brand-navy/70">
-                                    {p}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="text-right">
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Loyalty Points</div>
-                            <div className="font-display text-3xl font-extrabold text-brand-gold">
-                              <AnimatedNumber value={thrive?.totalPoints || 0} />
-                            </div>
-                            <div className="mt-0.5 text-[10px] font-semibold text-emerald-700">
-                              {thrive?.tier?.boostPct ? `+${thrive.tier.boostPct}% Commission Boost Unlocked` : 'Base Tier Rate'}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-6">
-                          <div className="mb-1.5 flex justify-between text-[11px]">
-                            <span className="font-semibold text-slate-600">{thrive?.tier?.name || 'Bronze'}</span>
-                            <span className="text-slate-500">
-                              {thrive?.nextTier
-                                ? `Next: ${thrive.nextTier.name} (${(thrive.nextTier.minPoints / 100).toLocaleString('en-IN')} pts)`
-                                : 'Highest VIP Tier Reached'}
-                            </span>
-                          </div>
-                          <div className="h-3 overflow-hidden rounded-full bg-brand-navy/5">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-brand-navy via-brand-blue to-brand-gold transition-all duration-700"
-                              style={{ width: `${thrive?.progressPct || 0}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-navy/10 bg-slate-50 p-3.5">
-                        <span className="text-xs text-brand-navy/70">Want to explore all VIP perks & tier requirements?</span>
-                        <button onClick={() => setTab('tiers')} className="text-xs font-bold text-brand-gold hover:underline cursor-pointer">
-                          View VIP Ladder →
-                        </button>
-                      </div>
-                    </section>
-                  </div>
-
-                  {/* HOW OPUS PARTNER NETWORK WORKS */}
-                  <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    {[
-                      { step: '01 · Distribute Link', title: 'Permanent Attribution', desc: 'Share your 1-click links or QR codes. The client is cookied and permanently bound to your partner record.' },
-                      { step: '02 · Client Engages', title: 'Automatic Maturation', desc: 'When the referred client engages and signs a service agreement, your commission matures immediately in the ledger.' },
-                      { step: '03 · Receive Settlement', title: 'Direct Bank Clearance', desc: 'Request your matured balance via 1-click payout or receive automated settlements to your bank / UPI.' },
-                    ].map((item) => (
-                      <div key={item.step} className="partner-fade clay-card p-6">
-                        <div className="text-xs font-bold uppercase tracking-wider text-brand-gold">{item.step}</div>
-                        <h4 className="mt-2 font-display text-base font-bold text-brand-navy">{item.title}</h4>
-                        <p className="mt-2 text-xs leading-relaxed text-brand-navy/60">{item.desc}</p>
-                      </div>
-                    ))}
-                  </section>
-                </div>
+                <PartnerDashboardHub
+                  partnerName={effectiveSummary?.partner?.name || 'Partner Executive'}
+                  partnerCode={refCode || 'OPUS-PARTNER'}
+                  partnerTier={thrive?.tier?.name || 'Gold Partner'}
+                  totals={totals}
+                  referrals={effectiveSummary?.referrals || []}
+                  onNavigateTab={(t) => setTab(t)}
+                  onQuickReferralSubmit={async (lead) => {
+                    await manualReferralMutation.mutateAsync(lead.phone || lead.email);
+                  }}
+                />
               )}
 
               {/* ============================================================ */}
@@ -2390,6 +2213,7 @@ export default function PartnerDashboard() {
         <span className={toast.type === 'error' ? 'text-rose-400' : 'text-brand-gold'}>●</span>
         <span>{toast.msg}</span>
       </div>
+      <ChatWidget />
     </div>
   );
 }

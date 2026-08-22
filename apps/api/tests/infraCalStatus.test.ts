@@ -65,7 +65,7 @@ describe('Integrations registry — Cal.com cloud status', () => {
 
   it('legacy self-hosted CAL_BASE_URL only used as fallback when no API key', async () => {
     (fetch as any).mockResolvedValue(new Response('ok', { status: 200 }));
-    const out = await integrationsStatus({ CAL_BASE_URL: 'http://100.87.71.38:3000' }, mockD1);
+    const out = await integrationsStatus({ CAL_BASE_URL: 'https://cal.opusoverseas.com' }, mockD1);
     const cal = out.find((s) => s.key === 'calcom');
     expect(cal?.state).toBe('live');
     expect(cal?.detail).toContain('legacy self-hosted');

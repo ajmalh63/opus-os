@@ -9,6 +9,8 @@ import { nurtureTouches, erpnextSyncLog, clients, communications, consents, paym
 import { and, eq, lte } from 'drizzle-orm';
 import { erpHealth, erpUpsert } from '../infra/erpnext.js';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { nurtureTouchTemplate } from '../infra/emailTemplates.js';
 import { auditEvent } from '../middleware/audit.js';
 
 type Body = {
@@ -108,8 +110,13 @@ automationRouter.post('/nurture/:id/send', async (c) => {
     .replace(/\{\{\s*name\s*\}\}/g, client.name || 'there')
     .replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => String(context[k] ?? `{{${k}}}`));
 
+  const headingMap: Record<string, string> = { value: 'Insights for Your Journey — Opus Overseas', case_study: 'Success Story — Opus Overseas', offer: 'Your Next Step with Opus Overseas', final: 'Final Reminder — Opus Overseas' };
+  const nurtureHeading = headingMap[touch.stage] || `Update — ${touch.stage}`;
+  const nurtureSubject = nurtureHeading;
+  const nurtureHtml = isEmail ? nurtureTouchTemplate({ leadName: client.name || 'there', heading: nurtureHeading, messageBody: body }).html : body;
+  const nurtureData = isEmail ? { Heading: nurtureHeading, LeadName: client.name || 'there', MessageBody: body, Subject: nurtureSubject } : undefined;
   const res = await sendNotification(c.env as any, db as any, isEmail
-    ? { channel: 'email', to: client.email, subject: `nurture:${touch.campaignId || 'default'}:${touch.stage}`, body, clientId: client.id }
+    ? { channel: 'email', to: client.email, subject: nurtureSubject, body: nurtureHtml, templateId: getListmonkTemplateId(c.env as any, 'nurtureTouch'), data: nurtureData, clientId: client.id }
     : { channel: 'whatsapp', to: client.phone, body, clientId: client.id });
   if (!res.ok) {
     return c.json({ error: 'send failed', reason: res.reason || 'unknown', touchId: id }, 502);
@@ -122,7 +129,7 @@ automationRouter.post('/nurture/:id/send', async (c) => {
     senderId: null,
     channel: touch.channel,
     direction: 'outgoing',
-    subject: `nurture:${touch.campaignId || 'default'}:${touch.stage}`,
+    subject: touch.channel === 'email' ? nurtureSubject : `nurture:${touch.campaignId || 'default'}:${touch.stage}`,
     body,
     createdAt: now,
   }).catch(() => {});

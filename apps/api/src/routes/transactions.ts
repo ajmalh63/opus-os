@@ -474,8 +474,20 @@ export async function finalizePaymentLinkPayment(
     } catch { /* fail-open */ }
     try {
       const { sendNotification } = await import('../infra/notify.js');
+      const { paymentReceiptTemplate } = await import('../infra/emailTemplates.js');
+      const { getListmonkTemplateId } = await import('../infra/listmonk.js');
       const client = await db.select().from(clients).where(eq(clients.id, row.clientId)).get();
-      if (client?.email) await sendNotification(env, db, { channel: 'email', to: client.email, subject: `Payment received ${paymentId}`, body: `Hi ${client.name}, we received ${(amountPaise / 100).toLocaleString('en-IN')} (${milestone || row.milestoneName}). Ref: ${paymentId}.`, clientId: client.id }).catch(() => {});
+      if (client?.email) {
+        const { subject, html } = paymentReceiptTemplate({
+          clientName: client.name || 'Valued Client',
+          amountPaise,
+          milestoneName: milestone || row.milestoneName || 'Milestone Payment',
+          paymentId,
+        });
+        const amt = `₹${(amountPaise / 100).toLocaleString('en-IN')}`;
+        const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        await sendNotification(env, db, { channel: 'email', to: client.email, subject, body: html, templateId: getListmonkTemplateId(env as any, 'paymentReceipt'), data: { ClientName: client.name || 'Valued Client', Amount: amt, MilestoneName: milestone || row.milestoneName || 'Milestone Payment', PaymentId: paymentId, DateStr: dateStr, StatusText: 'Verified & Confirmed ✓', PortalUrl: 'https://opusoverseas.com/login', Subject: subject }, clientId: client.id }).catch(() => {});
+      }
     } catch { /* fail-open */ }
 
     await auditEvent(env as any, { action: 'PAYMENT_LINK_PAID', entityName: 'payments', entityId: entryId, afterState: { paymentId, amount: amountPaise } });

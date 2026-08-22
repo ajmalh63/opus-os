@@ -150,7 +150,7 @@ function JourneysView() {
                   <span className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase ${c.isPublished ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
                     {c.isPublished ? 'Live & Active' : 'Draft'}
                   </span>
-                  <a href={`http://100.87.71.38:8085/s/campaigns/view/${c.id}`} target="_blank" rel="noreferrer" className="rounded-lg bg-brand-navy px-3 py-1 text-[10px] font-bold text-brand-gold hover:bg-brand-navy/90">
+                  <a href={`https://mautic.opusoverseas.com/s/campaigns/view/${c.id}`} target="_blank" rel="noreferrer" className="rounded-lg bg-brand-navy px-3 py-1 text-[10px] font-bold text-brand-gold hover:bg-brand-navy/90">
                     Open in Mautic ↗
                   </a>
                 </div>

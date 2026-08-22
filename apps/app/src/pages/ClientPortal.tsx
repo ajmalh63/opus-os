@@ -2,12 +2,15 @@ import { useVisibilityTracking } from '../lib/visibilityTracking';
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Link } from 'wouter';
+import { useSession } from '../lib/session';
 import Logo from '../components/Logo';
-import LiveWallpaper from '../components/LiveWallpaper';
+import ChatWidget from '../components/ChatWidget';
+import ClientDashboardHub from '../components/ClientDashboardHub';
 import UmrahClientSection from '../components/UmrahClientSection';
 import StudyAbroadClientSection from '../components/StudyAbroadClientSection';
 import AttestationClientSection from '../components/AttestationClientSection';
 import ManpowerApplyWizard from '../components/manpower/ManpowerApplyWizard';
+import { createSyncClient } from '../lib/syncClient';
 
 interface Engagement {
   id: string;
@@ -95,12 +98,12 @@ const VISA_COUNTRIES = [
 ];
 
 const DEFAULT_PRODUCTS = [
-  { id: 'v1', country: 'Dubai 🇦🇪', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '3-4 Days', feePaise: 720000 },
-  { id: 'v2', country: 'Thailand 🇹🇭', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '2-3 Days', feePaise: 450000 },
-  { id: 'v3', country: 'Malaysia 🇲🇾', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '4-5 Days', feePaise: 580000 },
-  { id: 'v4', country: 'Singapore 🇸🇬', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '5-7 Days', feePaise: 850000 },
-  { id: '5', country: 'Vietnam 🇻🇳', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '3 Days', feePaise: 390000 },
-  { id: '6', country: 'Sri Lanka 🇱🇰', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '2 Days', feePaise: 250000 }
+  { id: 'v1', country: 'Dubai 🇦🇪', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '3-4 Days', feePaise: 720000, requiredDocs: ['Passport (6+ mos validity)', 'Color Photograph', 'Return Flight Booking'] },
+  { id: 'v2', country: 'Thailand 🇹🇭', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '2-3 Days', feePaise: 450000, requiredDocs: ['Passport (6+ mos validity)', 'White Background Photo', 'Hotel Reservation'] },
+  { id: 'v3', country: 'Malaysia 🇲🇾', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '4-5 Days', feePaise: 580000, requiredDocs: ['Passport Bio-page Scan', 'Passport Photo', 'Flight Itinerary'] },
+  { id: 'v4', country: 'Singapore 🇸🇬', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '5-7 Days', feePaise: 850000, requiredDocs: ['Passport front & back', 'Form 14A', 'Covering Letter', 'Bank Statement'] },
+  { id: '5', country: 'Vietnam 🇻🇳', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '3 Days', feePaise: 390000, requiredDocs: ['Passport Copy', 'Portrait Photo', 'Entry/Exit Dates'] },
+  { id: '6', country: 'Sri Lanka 🇱🇰', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '2 Days', feePaise: 250000, requiredDocs: ['Passport Bio-data Scan', 'Travel Itinerary'] }
 ];
 
 
@@ -185,21 +188,19 @@ export default function ClientPortal() {
   };
 
   // ====== Authenticated "My Journey" (Section 25.4) ======
+  const { me, loading: sessionLoading, refresh: refreshSession } = useSession();
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [claimToken, setClaimToken] = useState('');
   const [claimPhone, setClaimPhone] = useState('');
 
-  // Check existing session on mount
+  // Check and synchronize existing Better Auth session
   useEffect(() => {
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((me) => {
-        if (me?.authenticated && me?.user?.email) {
-          setAuthEmail(me.user.email);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    if (me?.authenticated && me?.email) {
+      setAuthEmail(me.email);
+    } else if (!sessionLoading && !me) {
+      setAuthEmail(null);
+    }
+  }, [me, sessionLoading]);
 
   // Fetch authenticated journeys once logged in
   const { data: sessionData, isFetching: sessionFetching, refetch: refetchSession, error: sessionError, isError: sessionIsError } =
@@ -219,10 +220,31 @@ export default function ClientPortal() {
       retry: false,
     });
 
-  const handleSignOut = () => {
-    fetch('/api/auth/sign-out', { method: 'POST', credentials: 'include' }).catch(() => {});
+  // Automatically bind the client's credential token once authenticated
+  useEffect(() => {
+    if (sessionData?.journeys && sessionData.journeys.length > 0) {
+      const firstClient = sessionData.journeys[0]?.client;
+      const tok = firstClient?.portalToken || firstClient?.id;
+      if (tok && tok !== activeToken) {
+        setActiveToken(tok);
+        setTokenInput(firstClient?.id || tok);
+      }
+    }
+  }, [sessionData, activeToken]);
+
+  const handleSignOut = async () => {
+    try {
+      await fetch('/api/auth/sign-out', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+    } catch {}
     setAuthEmail(null);
-    showToast('Signed out.');
+    setActiveToken('');
+    await refreshSession();
+    showToast('Signed out successfully.');
   };
 
   const handleClaim = async (e: React.FormEvent) => {
@@ -251,9 +273,67 @@ export default function ClientPortal() {
     }
   };
 
-// Portal section nav — 'Visa Services' is the primary entry path (Visa Phase-1).
-  // 'Journey' keeps the existing token lookup dashboard / My Journey flow intact.
-  const [portalTab, setPortalTab] = useState<'visa' | 'jobs' | 'umrah' | 'study' | 'attestation' | 'journey'>('visa');
+  const [portalTab, setPortalTab] = useState<'dashboard' | 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs' | 'journey'>('dashboard');
+
+  const { data: studyAppsData } = useQuery({
+    queryKey: ['portalStudyAppsHub', activeToken],
+    queryFn: async () => {
+      if (!activeToken) return [];
+      const res = await fetch(`/api/public/portal/study-abroad/applications?token=${encodeURIComponent(activeToken)}`);
+      if (!res.ok) return [];
+      const d = await res.json();
+      return d.applications || [];
+    },
+    enabled: !!activeToken,
+  });
+
+  const { data: visaAppsData } = useQuery({
+    queryKey: ['portalVisaAppsHub', activeToken],
+    queryFn: async () => {
+      if (!activeToken) return [];
+      const res = await fetch(`/api/public/portal/visa/applications?token=${encodeURIComponent(activeToken)}`);
+      if (!res.ok) return [];
+      const d = await res.json();
+      return d.applications || [];
+    },
+    enabled: !!activeToken,
+  });
+
+  const { data: umrahBookingsData } = useQuery({
+    queryKey: ['portalUmrahBookingsHub', activeToken],
+    queryFn: async () => {
+      if (!activeToken) return [];
+      const res = await fetch(`/api/public/portal/umrah/my-bookings?token=${encodeURIComponent(activeToken)}`);
+      if (!res.ok) return [];
+      const d = await res.json();
+      return d.bookings || [];
+    },
+    enabled: !!activeToken,
+  });
+
+  const { data: attestationAppsData } = useQuery({
+    queryKey: ['portalAttestAppsHub', activeToken],
+    queryFn: async () => {
+      if (!activeToken) return [];
+      const res = await fetch(`/api/public/portal/attestation/applications?token=${encodeURIComponent(activeToken)}`);
+      if (!res.ok) return [];
+      const d = await res.json();
+      return d.applications || [];
+    },
+    enabled: !!activeToken,
+  });
+
+  const { data: jobAppsData } = useQuery({
+    queryKey: ['portalJobAppsHub', activeToken],
+    queryFn: async () => {
+      if (!activeToken) return [];
+      const res = await fetch(`/api/public/portal/manpower/applications?token=${encodeURIComponent(activeToken)}`);
+      if (!res.ok) return [];
+      const d = await res.json();
+      return d.applications || [];
+    },
+    enabled: !!activeToken,
+  });
 
   const stages = [
     { key: 'lead', label: 'Consultation', seq: 1, desc: 'Initial counseling and profile assembly.' },
@@ -263,674 +343,415 @@ export default function ClientPortal() {
     { key: 'complete', label: 'Stamping & Transit', seq: 5, desc: 'Visa stamping, pre-departure briefing, and travel.' },
   ];
 
+  // Client realtime — portalToken plane, private client:{id}:* + departure inventory
+  // @ts-ignore
+  const _syncClient = (() => {
+    try {
+      const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
+      if (!enabled || typeof window === 'undefined') return null;
+      const token = (() => { try { return localStorage.getItem('portalToken') || new URLSearchParams(location.search).get('token') || ''; } catch { return ''; } })();
+      const clientId = (() => { try { return localStorage.getItem('clientId') || token || ''; } catch { return token || ''; } })();
+      if (!token) return null;
+      const c = createSyncClient({
+        plane: 'client',
+        token,
+        channels: [`client:${clientId}:bookings`, `client:${clientId}:documents`, `departure:*:inventory`].slice(0,5),
+        enabled,
+        onEvent: (e) => { try { const qc=(window as any).__TANSTACK_QUERY_CLIENT__; if(qc){ if(e.channel.startsWith('client:')) qc.invalidateQueries({queryKey:['portal']}); if(e.channel.startsWith('departure:')) qc.invalidateQueries({queryKey:['departures']}); } } catch {} },
+      });
+      c.connect(); return c;
+    } catch { return null; }
+  })();
+
   return (
-    <div className="relative bg-[#070B19] text-brand-cream font-sans min-h-screen flex flex-col justify-between selection:bg-brand-gold selection:text-brand-navy overflow-hidden">
-      <LiveWallpaper />
+    <div className="relative bg-[#FAF8F4] text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-brand-gold selection:text-brand-navy">
       {/* HEADER */}
-      <header className="bg-brand-navy/80 backdrop-blur-md border-b border-brand-navyLight py-4 px-8 sticky top-0 shadow-lg z-30 flex items-center justify-between">
+      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 py-3.5 px-6 md:px-10 sticky top-0 shadow-xs z-30 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Logo className="h-9 w-auto" />
+          <Logo className="h-8 w-auto" />
           <div>
-            <span className="font-display font-bold text-base tracking-wider block text-white">Opus Overseas</span>
-            <span className="text-[9px] text-brand-gold tracking-widest uppercase block leading-none">Client Status Desk</span>
+            <span className="font-display font-extrabold text-base tracking-wider block text-brand-navy">Opus Overseas</span>
+            <span className="text-[9px] text-brand-gold font-bold tracking-widest uppercase block leading-none">Client Workspace & Services</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Link href="/partner" className="text-xs text-brand-cream/80 hover:text-brand-gold font-medium transition">
-            Partner Portal
-          </Link>
-          <a href="tel:+919876543210" className="text-xs bg-brand-navyLight border border-brand-gold/20 hover:border-brand-gold hover:text-white px-3 py-1.5 rounded transition text-brand-gold font-semibold">
-            Support Desk
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200/70 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Live Workspace Sync</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== 'undefined' && (window as any).$chatwoot) {
+                (window as any).$chatwoot.toggle();
+              }
+            }}
+            className="text-xs bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white px-3.5 py-1.5 rounded-xl transition font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            <span>💬</span>
+            <span className="hidden sm:inline">Counselor Live Chat</span>
+          </button>
+
+          <a
+            href="tel:+919876543210"
+            className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300/70 text-slate-700 px-3 py-1.5 rounded-xl transition font-semibold flex items-center gap-1.5"
+          >
+            <span>📞</span>
+            <span className="hidden sm:inline">Support Hotline</span>
           </a>
+
+          {authEmail && (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-lg transition font-semibold cursor-pointer"
+            >
+              Sign Out
+            </button>
+          )}
         </div>
       </header>
 
-      {/* MAIN CONTAINER */}
-      <main className="max-w-7xl w-full mx-auto p-6 md:p-8 flex-1 flex flex-col gap-8">
-        
-        {/* LOOKUP HERO SECTION */}
-        <section className="bg-gradient-to-br from-brand-navyLight to-[#111A36] p-8 rounded-2xl border border-brand-navyLight shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-8">
-          <div className="max-w-xl space-y-3">
-            <h1 className="font-display font-extrabold text-2xl md:text-3xl text-white leading-tight">
-              Track Your Global Journey in <span className="text-brand-gold">Real Time</span>
-            </h1>
-            <p className="text-xs text-brand-cream/70 leading-relaxed">
-              Welcome to the public lookup desk. Enter your unique client token <code className="text-brand-gold font-mono font-bold bg-brand-navy/40 px-1.5 py-0.5 rounded">OP-2026-XXXX</code> to check your university application progress, legal consent status, and original document vault status.
-            </p>
-          </div>
-
-          <div className="w-full max-w-md bg-brand-navy p-6 rounded-xl border border-brand-navyLight/60 shadow-xl flex flex-col gap-4">
-            {/* ====== Unified Sign In Reference ====== */}
-            {!authEmail ? (
-              <div className="space-y-4">
-                <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-brand-gold">
-                    🔒 Client Account Vault
-                  </span>
-                  <h3 className="font-display font-bold text-white text-base mt-2">
-                    Registered Client?
-                  </h3>
-                  <p className="text-xs text-brand-cream/70 mt-1 leading-relaxed">
-                    Sign in to access your confidential document vault, verified payment receipts, and direct counselor WhatsApp desk.
-                  </p>
+      {/* MAIN LAYOUT */}
+      {authEmail || me?.authenticated ? (
+        <div className="flex flex-1 max-w-[1440px] w-full mx-auto">
+          {/* LEFT SIDEBAR NAVIGATION PANE */}
+          <aside className="w-64 shrink-0 bg-white border-r border-slate-200/80 p-4 space-y-6 flex flex-col justify-between hidden md:flex min-h-[calc(100vh-65px)] sticky top-[65px]">
+            <div className="space-y-6">
+              {/* Client Profile Header */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-brand-gold/20 text-brand-gold font-extrabold flex items-center justify-center text-xs">
+                    👤
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-slate-800 truncate">{me?.name || authEmail}</div>
+                    <div className="text-[9px] text-slate-400 font-mono">#{me?.id?.slice(0, 10) || 'CLIENT'}</div>
+                  </div>
                 </div>
+                <div className="text-[9px] bg-brand-gold/15 text-brand-navy font-bold px-2 py-0.5 rounded text-center">
+                  ✨ Verified Client Workspace
+                </div>
+              </div>
 
-                <Link
-                  href="/login"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-brand-gold hover:bg-brand-goldHover text-brand-navy py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition shadow-md tactile-btn"
+              {/* Navigation Section 1: Main Hub */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 block">
+                  Main Desk
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPortalTab('dashboard')}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'dashboard'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
                 >
-                  <span>Sign In with Email / OTP</span>
-                  <span>→</span>
-                </Link>
-
-                <div className="flex items-center justify-between text-[10px] text-brand-cream/50 pt-1 border-t border-brand-navyLight/60">
-                  <span>Don't have an account?</span>
-                  <Link href="/signup" className="text-brand-gold font-bold hover:underline">
-                    Create Client Account
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-wider text-brand-gold font-bold">
-                    Signed in as {authEmail}
+                  <span className="flex items-center gap-2">
+                    <span>📊</span>
+                    <span>Dashboard & Pipeline</span>
                   </span>
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="text-[10px] text-brand-error hover:underline font-semibold"
-                  >
-                    Sign out
-                  </button>
-                </div>
+                  {portalTab === 'dashboard' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                </button>
+              </div>
 
-                {/* Claim journey token */}
-                <form onSubmit={handleClaim} className="space-y-2 border-t border-brand-navyLight pt-3">
-                  <span className="text-[10px] uppercase tracking-wider text-brand-cream/60 font-semibold block">
-                    Link your journey token
+              {/* Navigation Section 2: Global Divisions */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 block">
+                  Enrolled Divisions
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPortalTab('study')}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'study'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>🎓</span>
+                    <span>Study Abroad</span>
                   </span>
-                  <input
-                    type="text"
-                    placeholder="Token (OP-2026-XXXX)"
-                    value={claimToken}
-                    onChange={(e) => setClaimToken(e.target.value)}
-                    className="w-full text-xs p-2.5 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Phone (as registered)"
-                    value={claimPhone}
-                    onChange={(e) => setClaimPhone(e.target.value)}
-                    className="w-full text-xs p-2.5 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold"
-                  />
-                  <button
-                    type="submit"
-                    className="w-full border border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-navy py-2 rounded text-[10px] font-bold uppercase tracking-wider transition"
-                  >
-                    Link to My Account
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
+                  {portalTab === 'study' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                </button>
 
-          <div className="w-full max-w-md bg-brand-navy/70 p-5 rounded-xl border border-brand-navyLight/40 shadow-lg">
-            <form onSubmit={handleSearchSubmit} className="space-y-3">
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-brand-gold font-bold block mb-1">
-                  Access Token ID
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. OP-2026-5555"
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  className="w-full text-xs p-3 border border-brand-navyLight rounded bg-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold"
-                />
+                <button
+                  type="button"
+                  onClick={() => setPortalTab('visa')}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'visa'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>✈️</span>
+                    <span>Visa Processing</span>
+                  </span>
+                  {portalTab === 'visa' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPortalTab('umrah')}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'umrah'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>🕋</span>
+                    <span>Umrah Pilgrimage</span>
+                  </span>
+                  {portalTab === 'umrah' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPortalTab('attestation')}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'attestation'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>📑</span>
+                    <span>Attestation Desk</span>
+                  </span>
+                  {portalTab === 'attestation' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPortalTab('jobs')}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'jobs'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>💼</span>
+                    <span>Global Careers</span>
+                  </span>
+                  {portalTab === 'jobs' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                </button>
               </div>
-              <button
-                type="submit"
-                disabled={isFetching}
-                className="w-full bg-brand-gold hover:bg-brand-goldHover text-brand-navy py-2.5 rounded text-xs font-bold uppercase tracking-wider transition disabled:opacity-50"
+
+              {/* Navigation Section 3: Records & Vault */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 block">
+                  Records & Vault
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPortalTab('journey')}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'journey'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>🗺️</span>
+                    <span>Journey Overview</span>
+                  </span>
+                  {portalTab === 'journey' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Support Widget */}
+            <div className="p-3 bg-brand-gold/10 border border-brand-gold/30 rounded-xl space-y-1.5">
+              <div className="text-[10px] font-bold text-brand-navy uppercase tracking-wider">Hyderabad HQ</div>
+              <div className="text-[11px] text-slate-600">Mon - Sat: 9:30 AM - 6:30 PM</div>
+              <a
+                href="https://wa.me/919876543210"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[10px] text-brand-navy font-extrabold hover:underline block pt-1"
               >
-                {isFetching ? 'Resolving...' : 'Lookup Journey'}
-              </button>
-            </form>
+                Direct Counselor WhatsApp →
+              </a>
+            </div>
+          </aside>
 
-            <div className="border-t border-brand-navyLight pt-3 flex justify-between items-center text-[10px] text-brand-cream/55">
-              <span>Quick Demo Token:</span>
+          {/* MAIN CONTENT AREA */}
+          <main className="flex-1 p-6 md:p-8 space-y-8 overflow-y-auto">
+            {/* Mobile Horizontal Navigation Strip */}
+            <div className="md:hidden flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-200">
               <button
                 type="button"
-                onClick={handleFillDemo}
-                className="text-brand-gold hover:text-brand-goldHover font-bold hover:underline"
+                onClick={() => setPortalTab('dashboard')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                  portalTab === 'dashboard' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
               >
-                Use OP-2026-5555
+                📊 Dashboard
+              </button>
+              <button
+                type="button"
+                onClick={() => setPortalTab('study')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                  portalTab === 'study' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                🎓 Study Abroad
+              </button>
+              <button
+                type="button"
+                onClick={() => setPortalTab('visa')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                  portalTab === 'visa' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                ✈️ Visa
+              </button>
+              <button
+                type="button"
+                onClick={() => setPortalTab('umrah')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                  portalTab === 'umrah' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                🕋 Umrah
+              </button>
+              <button
+                type="button"
+                onClick={() => setPortalTab('attestation')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                  portalTab === 'attestation' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                📑 Attestation
+              </button>
+              <button
+                type="button"
+                onClick={() => setPortalTab('jobs')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                  portalTab === 'jobs' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                💼 Careers
+              </button>
+              <button
+                type="button"
+                onClick={() => setPortalTab('journey')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                  portalTab === 'journey' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                🗺️ Journey
               </button>
             </div>
-          </div>
-        </section>
 
-        {/* PORTAL SECTION NAV — Floating Frosted Luxury Tab Bar */}
-        {activeToken && (
-          <nav className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-white/10 backdrop-blur-2xl p-1.5 w-fit border border-white/20 shadow-2xl mx-auto sm:mx-0">
-            <button
-              type="button"
-              onClick={() => setPortalTab('visa')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                portalTab === 'visa' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <span>✈️</span>
-              <span>Visa Services</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPortalTab('jobs')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                portalTab === 'jobs' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <span>💼</span>
-              <span>Jobs & Careers</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPortalTab('umrah')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                portalTab === 'umrah' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <span>🕋</span>
-              <span>Umrah Pilgrimage</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPortalTab('study')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                portalTab === 'study' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <span>🎓</span>
-              <span>Study Abroad</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPortalTab('attestation')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                portalTab === 'attestation' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <span>🧾</span>
-              <span>Attestation</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPortalTab('journey')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                portalTab === 'journey' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-md' : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <span>🗺️</span>
-              <span>Journey Overview</span>
-            </button>
-          </nav>
-        )}
+            {/* TAB 1: CLIENT DASHBOARD & LIVE KANBAN HUB */}
+            {portalTab === 'dashboard' && (
+              <ClientDashboardHub
+                clientName={me?.name || authEmail || 'Valued Client'}
+                clientEmail={authEmail || ''}
+                accountId={me?.id || activeToken || 'CLIENT'}
+                sessionData={sessionData}
+                assignedCounselor={sessionData?.journeys?.[0]?.assignedCounselor}
+                studyApps={studyAppsData || []}
+                visaApps={visaAppsData || []}
+                umrahBookings={umrahBookingsData || []}
+                attestationApps={attestationAppsData || []}
+                jobApps={jobAppsData || []}
+                onNavigateTab={(t: any) => setPortalTab(t)}
+              />
+            )}
 
-        {activeToken && portalTab === 'visa' && (
-          <VisaServices token={activeToken} />
-        )}
-
-        {activeToken && portalTab === 'jobs' && (
-          <ManpowerJobs token={activeToken} />
-        )}
-
-        {activeToken && portalTab === 'umrah' && (
-                    <UmrahClientSection token={activeToken} />
-        )}
-
-        {activeToken && portalTab === 'study' && (
-          <StudyAbroadClientSection token={activeToken} />
-        )}
-
-        {activeToken && portalTab === 'attestation' && (
-          <AttestationClientSection token={activeToken} />
-        )}
-
-        {/* LOADING & INITIAL STATES */}
-        {isFetching && !data && (
-          <div className="py-16 text-center space-y-4">
-            <div className="w-10 h-10 border-4 border-brand-gold border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-xs text-brand-cream/70 font-medium">Fetching journey logs from security servers...</p>
-          </div>
-        )}
-
-        {!activeToken && (
-          <div className="py-16 text-center border-2 border-dashed border-brand-navyLight rounded-xl p-8 bg-brand-navy/10">
-            <div className="w-12 h-12 bg-brand-navyLight/60 rounded-full flex items-center justify-center mx-auto text-brand-gold mb-3">
-              📊”
-            </div>
-            <h3 className="font-display font-semibold text-sm text-white">Awaiting Token Inquiry</h3>
-            <p className="text-[11px] text-brand-cream/50 mt-1 max-w-sm mx-auto">
-              Please enter your unique ID in the lookup box above. Demo logs are pre-loaded under token OP-2026-5555.
-            </p>
-          </div>
-        )}
-
-        {isError && (
-          <div className="p-5 bg-brand-error/10 border border-brand-error/20 text-brand-error rounded-xl text-xs flex items-center gap-3">
-            <span className="text-lg">⚠️</span>
-            <div>
-              <p className="font-bold">Lookup Unsuccessful</p>
-              <p className="text-[11px] opacity-80">{error?.message || 'Verification timed out. Check token formatting.'}</p>
-            </div>
-          </div>
-        )}
-
-        {sessionIsError && (
-          <div className="p-5 bg-brand-error/10 border border-brand-error/20 text-brand-error rounded-xl text-xs flex items-center gap-3">
-            <span className="text-lg">⚠️</span>
-            <div>
-              <p className="font-bold">My Journey Unavailable</p>
-              <p className="text-[11px] opacity-80">{sessionError?.message || 'Could not load your journeys.'}</p>
-            </div>
-          </div>
-        )}
-
-        {sessionFetching && authEmail && (
-          <div className="py-16 text-center space-y-4">
-            <div className="w-10 h-10 border-4 border-brand-gold border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-xs text-brand-cream/70 font-medium">Loading your journeys...</p>
-          </div>
-        )}
-
-{/* ====== MY JOURNEY (Authenticated, Section 25.4) ====== */}
-        {portalTab === 'journey' && sessionData && sessionData.authenticated && (
-          <div className="space-y-8">
-            <div className="border-b border-brand-navyLight pb-3">
-              <h2 className="font-display font-bold text-lg text-white flex items-center gap-2">
-                My Journey Dashboard
-                <span className="text-[9px] bg-brand-gold/15 text-brand-gold px-2 py-0.5 rounded-full uppercase tracking-wider">Authenticated</span>
-              </h2>
-              <p className="text-[11px] text-brand-cream/50 mt-1">{sessionData.email}</p>
-            </div>
-
-            {sessionData.journeys.length === 0 && (
-              <div className="text-center border-2 border-dashed border-brand-navyLight rounded-xl p-10 bg-brand-navy/10">
-                <div className="text-3xl mb-3">📊</div>
-                <h3 className="font-display font-semibold text-sm text-white">No journeys yet</h3>
-                <p className="text-[11px] text-brand-cream/50 mt-1 max-w-sm mx-auto">
-                  Use the "Link your journey token" box to attach a token to this account, or enroll through our services to begin.
-                </p>
+            {/* TAB 2: STUDY ABROAD */}
+            {portalTab === 'study' && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
+                <StudyAbroadClientSection token={activeToken || me?.id || 'client-self'} />
               </div>
             )}
 
-            {sessionData.journeys.map((journey, jIdx) => (
-              <div key={jIdx} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div className="lg:col-span-4 flex flex-col gap-6">
-                  <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl">
-                    <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest block">Client profile</span>
-                    <h3 className="font-display font-bold text-lg text-white mt-1">{journey.client.name}</h3>
-                    <p className="text-[10px] text-brand-cream/60 mt-0.5">Account ID: {journey.client.id}</p>
-                    <p className="text-[10px] text-brand-cream/50 mt-1">{journey.client.email}</p>
-                  </div>
-
-                  {/* Payments summary (Section 25.4) */}
-                  <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl">
-                    <h4 className="font-display font-semibold text-xs text-white uppercase tracking-wider">Payment Overview</h4>
-                    {journey.payments && journey.payments.length > 0 ? (
-                      <div className="mt-3 space-y-2.5">
-                        {journey.payments.map((p, i) => (
-                          <div key={i} className="flex justify-between items-center text-xs border-b border-brand-navyLight/40 pb-2">
-                            <span className="text-brand-cream/70">{p.milestoneName || p.type}</span>
-                            <span className={`font-mono font-bold ${p.type === 'receipt' ? 'text-brand-success' : 'text-brand-error'}`}>
-                              {p.type === 'receipt' ? '-' : '+'}€₹₹{(p.amount / 100).toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[10px] text-brand-cream/40 mt-2">No payments recorded.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="lg:col-span-8">
-                  {journey.engagements.map((eng) => {
-                    const currentIdx = stages.findIndex(s => s.key === eng.stageKey);
-                    return (
-                      <div key={eng.id} className="bg-brand-navy/40 border border-brand-navyLight p-6 md:p-8 rounded-2xl flex flex-col gap-6">
-                        <div className="flex justify-between items-start border-b border-brand-navyLight pb-4 flex-wrap gap-2">
-                          <div>
-                            <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest bg-brand-gold/10 px-2 py-0.5 rounded">
-                              {eng.division.replace('-', ' ')}
-                            </span>
-                            <h3 className="font-display font-extrabold text-lg text-white mt-2">{eng.title}</h3>
-                            <p className="text-[10px] text-brand-cream/60 mt-0.5">
-                              Status: <span className="font-semibold uppercase text-brand-gold">{eng.status}</span>
-                            </p>
-                          </div>
-                          {eng.outstandingBalance > 0 && (
-                            <div className="text-right">
-                              <span className="text-[9px] text-brand-cream/50 uppercase tracking-wider block">Outstanding</span>
-                              <span className="text-brand-error font-mono font-bold text-lg">€₹₹{(eng.outstandingBalance / 100).toFixed(2)}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div>
-                          <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-gold mb-5">Journey Progress</h4>
-                          <div className="relative pl-6 space-y-6 text-xs">
-                            <div className="absolute left-[7px] top-1.5 bottom-1.5 w-[2px] bg-brand-navyLight"></div>
-                            {stages.map((stage, idx) => {
-                              const isCompleted = idx < currentIdx;
-                              const isActive = idx === currentIdx;
-                              return (
-                                <div key={stage.key} className={`relative flex gap-3 flex-col transition duration-300 ${!isCompleted && !isActive ? 'opacity-40' : ''}`}>
-                                  <span className={`absolute -left-6 w-4.5 h-4.5 rounded-full text-[9px] flex items-center justify-center font-bold font-mono transition border ${
-                                    isCompleted ? 'bg-brand-success border-brand-success text-brand-navy'
-                                    : isActive ? 'bg-brand-gold border-brand-gold text-brand-navy animate-pulse'
-                                    : 'bg-[#070B19] border-brand-navyLight text-brand-cream/40'
-                                  }`}>
-                                    {isCompleted ? '€✓' : stage.seq}
-                                  </span>
-                                  <div>
-                                    <h5 className={`font-bold ${isActive ? 'text-brand-gold text-sm' : 'text-white'}`}>{stage.label}</h5>
-                                    <p className="text-[10px] text-brand-cream/60 mt-0.5">{stage.desc}</p>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <ClientVisaWidget journey={journey}  />
-                  {journey.engagements.length === 0 && (
-                    <div className="bg-brand-navy/40 border border-brand-navyLight p-8 rounded-2xl text-center">
-                      <p className="text-xs text-brand-cream/50">No active journeys for this client record.</p>
-                    </div>
-                  )}
-                </div>
+            {/* TAB 3: VISA PROCESSING */}
+            {portalTab === 'visa' && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
+                <VisaServices token={activeToken || me?.id || 'client-self'} />
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        {/* DATA PRESENTATION */}
-        {portalTab === 'journey' && data && data.success && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            {/* LEFT PROFILE CARD */}
-            <div className="lg:col-span-4 flex flex-col gap-6">
-              <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl flex flex-col gap-5">
-                <div className="pb-4 border-b border-brand-navyLight">
-                  <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest block">Client profile</span>
-                  <h3 className="font-display font-bold text-lg text-white mt-1">{data.client.name}</h3>
-                  <p className="text-[10px] text-brand-cream/60 mt-0.5">Verified Account ID: {data.client.id}</p>
-                </div>
-
-                <div className="space-y-3.5 text-xs">
-                  <div>
-                    <span className="text-[10px] text-brand-cream/50 block">Registered Email</span>
-                    <span className="font-semibold text-brand-cream/90">{data.client.email}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-brand-cream/50 block">Onboarded Since</span>
-                    <span className="font-semibold text-brand-cream/90">
-                      {new Date(data.client.createdAt * 1000).toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-2 p-3 bg-brand-success/10 border border-brand-success/20 rounded-lg text-[10px] text-brand-success flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-brand-success animate-pulse"></span>
-                  <span className="font-semibold">DPDP-2023 Compliant Journey</span>
-                </div>
+            {/* TAB 4: UMRAH PILGRIMAGE */}
+            {portalTab === 'umrah' && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
+                <UmrahClientSection token={activeToken || me?.id || 'client-self'} />
               </div>
+            )}
 
-              {/* CONSENTS LIST */}
-              <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl flex flex-col gap-4">
-                <div>
-                  <h4 className="font-display font-semibold text-xs text-white uppercase tracking-wider">
-                    DPDP Consent Matrix
-                  </h4>
-                  <p className="text-[10px] text-brand-cream/50 mt-0.5">Legal processing permissions verified at rest.</p>
-                </div>
-
-                <div className="space-y-3">
-                  {data.consents.map((consent, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`p-3 rounded-lg border text-[10px] space-y-1.5 transition ${
-                        consent.status === 'granted'
-                          ? 'bg-brand-success/5 border-brand-success/20 text-brand-cream/80'
-                          : 'bg-brand-error/5 border-brand-error/20 text-brand-error'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center font-bold">
-                        <span className="uppercase tracking-wider">
-                          {consent.consentType.replace('-', ' ')}
-                        </span>
-                        <span className={`px-1.5 py-0.2 rounded text-[8px] font-bold uppercase tracking-widest ${
-                          consent.status === 'granted' ? 'bg-brand-success/25 text-brand-success' : 'bg-brand-error/25 text-brand-error'
-                        }`}>
-                          {consent.status}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center text-[9px] text-brand-cream/40">
-                        <span>Authorized Date</span>
-                        <span>{new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
-                      </div>
-                      {consent.status === 'granted' && consent.consentType !== 'core-processing' && (
-                        <div className="flex justify-end pt-1">
-                          <button
-                            onClick={() => withdrawConsent.mutate({ token: activeToken, consentType: consent.consentType })}
-                            disabled={withdrawConsent.isPending}
-                            className="cursor-pointer rounded-full border border-brand-error/40 px-2.5 py-1 text-[8px] font-bold uppercase tracking-widest text-brand-error transition-colors hover:bg-brand-error hover:text-white disabled:opacity-40"
-                          >
-                            {withdrawConsent.isPending ? 'Withdrawing€' : 'Withdraw'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {data.consents.length === 0 && (
-                    <p className="text-[10px] text-brand-cream/40 text-center py-4">No active consents found.</p>
-                  )}
-                </div>
+            {/* TAB 5: DOCUMENT ATTESTATION */}
+            {portalTab === 'attestation' && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
+                <AttestationClientSection token={activeToken || me?.id || 'client-self'} />
               </div>
+            )}
+
+            {/* TAB 6: GLOBAL JOBS & CAREERS */}
+            {portalTab === 'jobs' && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
+                <ManpowerJobs token={activeToken || me?.id || 'client-self'} />
+              </div>
+            )}
+
+            {/* TAB 7: JOURNEY OVERVIEW */}
+            {portalTab === 'journey' && sessionData && sessionData.authenticated && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-6">
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="font-display font-bold text-base text-brand-navy">Your Verified Journey Files</h3>
+                  <p className="text-xs text-slate-500">Live milestones, verified DPDP consents, and payment receipts.</p>
+                </div>
+                {sessionData.journeys?.map((j: any, idx: number) => (
+                  <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                    <div className="font-bold text-xs text-brand-navy">Client ID: #{j.client?.id}</div>
+                    <div className="text-xs text-slate-600">Documents: {j.documents?.length || 0} files on record</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </main>
+        </div>
+      ) : (
+        <main className="max-w-6xl w-full mx-auto p-6 md:p-8 flex-1 flex flex-col gap-8">
+          <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="max-w-xl space-y-3">
+              <span className="text-[10px] bg-brand-gold/15 text-brand-navy font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                Public Journey Lookup
+              </span>
+              <h1 className="font-display font-extrabold text-2xl md:text-3xl text-brand-navy leading-tight">
+                Track Your Global Journey in <span className="text-brand-gold">Real Time</span>
+              </h1>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Enter your unique client token <code className="text-brand-gold font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded">OP-2026-XXXX</code> to check your application progress and document vault status.
+              </p>
             </div>
 
-            {/* RIGHT PROGRESS AND VAULT */}
-            <div className="lg:col-span-8 flex flex-col gap-8">
-              
-              {/* STAGE TIMELINE PROGRESSION */}
-              {data.engagements.map((eng) => {
-                const currentIdx = stages.findIndex(s => s.key === eng.stageKey);
-                
-                return (
-                  <div key={eng.id} className="bg-brand-navy/40 border border-brand-navyLight p-6 md:p-8 rounded-2xl flex flex-col gap-6">
-                    <div className="flex justify-between items-start border-b border-brand-navyLight pb-4 flex-wrap gap-2">
-                      <div>
-                        <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest bg-brand-gold/10 px-2 py-0.5 rounded">
-                          {eng.division.replace('-', ' ')}
-                        </span>
-                        <h3 className="font-display font-extrabold text-lg text-white mt-2">{eng.title}</h3>
-                        <p className="text-[10px] text-brand-cream/60 mt-0.5">
-                          Status: <span className="font-semibold uppercase text-brand-gold">{eng.status}</span>
-                        </p>
-                      </div>
-
-                      {eng.outstandingBalance > 0 && (
-                        <div className="text-right">
-                          <span className="text-[9px] text-brand-cream/50 uppercase tracking-wider block">Outstanding Fees</span>
-                          <span className="text-brand-error font-mono font-bold text-lg">
-                            €₹₹{(eng.outstandingBalance / 100).toFixed(2)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Step Timeline Graphics */}
-                    <div>
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-gold mb-5">Journey Progress</h4>
-                      
-                      <div className="relative pl-6 space-y-6 text-xs">
-                        {/* Connecting Line */}
-                        <div className="absolute left-[7px] top-1.5 bottom-1.5 w-[2px] bg-brand-navyLight"></div>
-
-                        {stages.map((stage, idx) => {
-                          const isCompleted = idx < currentIdx;
-                          const isActive = idx === currentIdx;
-                          
-                          return (
-                            <div 
-                              key={stage.key} 
-                              className={`relative flex gap-3 flex-col transition duration-300 ${
-                                !isCompleted && !isActive ? 'opacity-40' : ''
-                              }`}
-                            >
-                              {/* Bullet circle */}
-                              <span className={`absolute -left-6 w-4.5 h-4.5 rounded-full text-[9px] flex items-center justify-center font-bold font-mono transition border ${
-                                isCompleted 
-                                  ? 'bg-brand-success border-brand-success text-brand-navy' 
-                                  : isActive 
-                                    ? 'bg-brand-gold border-brand-gold text-brand-navy animate-pulse' 
-                                    : 'bg-[#070B19] border-brand-navyLight text-brand-cream/40'
-                              }`}>
-                                {isCompleted ? '€✓' : stage.seq}
-                              </span>
-
-                              <div>
-                                <h5 className={`font-bold ${isActive ? 'text-brand-gold text-sm' : 'text-white'}`}>
-                                  {stage.label}
-                                </h5>
-                                <p className="text-[10px] text-brand-cream/60 mt-0.5">{stage.desc}</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {data.engagements.length === 0 && (
-                <div className="bg-brand-navy/40 border border-brand-navyLight p-8 rounded-2xl text-center">
-                  <p className="text-xs text-brand-cream/50">No active application engagements listed for this client.</p>
-                </div>
-              )}
-
-              {/* DOCUMENT VAULT STATUS */}
-              <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl flex flex-col gap-4">
-                <div>
-                  <h3 className="font-display font-bold text-sm text-white">Cloudflare R2 Document Vault</h3>
-                  <p className="text-[10px] text-brand-cream/50 mt-0.5">Secure storage list audit of client uploads.</p>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs min-w-[500px]">
-                    <thead>
-                      <tr className="border-b border-brand-navyLight text-[10px] font-bold text-brand-cream/50 uppercase tracking-wider">
-                        <th className="py-3 px-4">Document Title</th>
-                        <th className="py-3 px-4">File Version</th>
-                        <th className="py-3 px-4">Upload Timestamp</th>
-                        <th className="py-3 px-4">Vault Audit Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.documents.map((doc) => (
-                        <tr key={doc.id} className="border-b border-brand-navyLight/40 hover:bg-brand-navyLight/15 transition">
-                          <td className="py-3 px-4 font-semibold text-white">{doc.fileName}</td>
-                          <td className="py-3 px-4 text-brand-cream/70 font-mono">{doc.version}</td>
-                          <td className="py-3 px-4 text-brand-cream/60">
-                            {new Date(doc.uploadedAt * 1000).toLocaleDateString()}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                              doc.status === 'verified'
-                                ? 'bg-brand-success/15 text-brand-success'
-                                : doc.status === 'rejected'
-                                  ? 'bg-brand-error/15 text-brand-error'
-                                  : 'bg-brand-warning/15 text-brand-warning'
-                            }`}>
-                              <span className={`w-1 h-1 rounded-full ${
-                                doc.status === 'verified' ? 'bg-brand-success' : doc.status === 'rejected' ? 'bg-brand-error' : 'bg-brand-warning'
-                              }`}></span>
-                              {doc.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-
-                      {data.documents.length === 0 && (
-                        <tr>
-                          <td colSpan={4} className="py-8 text-center text-[10px] text-brand-cream/45 border-none">
-                            No documents archived in the cloud storage vault.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Upload Form */}
-                <div className="mt-4 pt-4 border-t border-brand-navyLight flex flex-col gap-3">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">Upload New Document</h4>
-                  <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    const form = e.currentTarget;
-                    const fileInput = form.elements.namedItem('file') as HTMLInputElement;
-                    const file = fileInput.files?.[0];
-                    if (!file) return alert('Please select a file.');
-                    
-                    try {
-                      // 1. Get presigned upload URL
-                      const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(activeToken)}&filename=${encodeURIComponent(file.name)}`);
-                      const pData = await pRes.json() as any;
-                      if (!pData.success || !pData.url) throw new Error(pData.error || 'Failed to generate upload link.');
-
-                      // 2. PUT file body to the presigned URL
-                      const uRes = await fetch(pData.url, {
-                        method: 'PUT',
-                        body: file
-                      });
-                      if (!uRes.ok) throw new Error(await uRes.text() || 'Upload execution failed.');
-
-                      alert('Document uploaded successfully! It is pending counselor review.');
-                      form.reset();
-                      window.location.reload(); // refresh page to show document in list
-                    } catch (err: any) {
-                      alert(`Upload failed: ${err.message}`);
-                    }
-                  }} className="flex flex-col sm:flex-row gap-3 items-stretch">
-                    <input 
-                      type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" 
-                      name="file" 
-                      required 
-                      className="cursor-pointer flex-1 text-xs text-brand-cream/60 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-brand-navyLight file:text-brand-cream hover:file:bg-brand-navyLight/80"
-                    />
-                    <button 
-                      type="submit" 
-                      className="cursor-pointer rounded-full bg-brand-gold text-brand-navy px-5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors hover:bg-brand-gold-hover"
-                    >
-                      Upload File
-                    </button>
-                  </form>
-                </div>
+            <div className="w-full max-w-md bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
+              <div>
+                <h3 className="font-display font-bold text-brand-navy text-sm">Registered Client?</h3>
+                <p className="text-xs text-slate-500 mt-1">Sign in to access your confidential document vault and counselor desk.</p>
               </div>
 
+              <Link
+                href="/login"
+                className="w-full inline-flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-navy/90 text-white py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition shadow-xs"
+              >
+                <span>Sign In with Email / OTP</span>
+                <span>→</span>
+              </Link>
             </div>
-
-          </div>
-        )}
-
-      </main>
+          </section>
+        </main>
+      )}
 
       {/* FOOTER */}
       <footer className="bg-brand-navy border-t border-brand-navyLight py-6 mt-12 shrink-0">
@@ -949,6 +770,7 @@ export default function ClientPortal() {
           </div>
         </div>
       </footer>
+      <ChatWidget />
 
       {/* TOAST SYSTEM */}
       <div 
@@ -1966,6 +1788,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     queryFn: async () => {
       if (!token) return [];
       const r = await fetch(`/api/public/portal/visa/applications?token=${encodeURIComponent(token)}`);
+      if (r.status === 404) return [];
       if (!r.ok) throw new Error(await r.text() || 'Failed to load your applications.');
       const d = await r.json();
       return d.applications || [];
@@ -1974,7 +1797,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     retry: false,
   });
 
-  const products = productsQ.data || [];
+  const products = (productsQ.data && productsQ.data.length > 0) ? productsQ.data : DEFAULT_PRODUCTS;
   const applications = appsQ.data || [];
   const countries = Array.from(new Set(products.map((p) => p.country))).sort();
   const activeApp = applications.find((a) => a.id === activeAppId) || null;
@@ -2162,71 +1985,71 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
   /* ---------------- Catalogue ---------------- */
   const renderCatalogue = () => (
     <div className="flex flex-col gap-6">
-      <div className="bg-brand-navy/40 border border-brand-navyLight rounded-2xl p-6 flex flex-col gap-4">
+      {/* Destination Country Filter Strip */}
+      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 flex flex-col gap-4 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <span className={VISA_HEADING + ' block'}>Visa Catalogue</span>
-            <h3 className="font-display font-bold text-sm text-white mt-1">Choose your destination</h3>
+            <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest block">Visa Catalogue</span>
+            <h3 className="font-display font-extrabold text-base text-brand-navy mt-1">Choose your destination</h3>
           </div>
           <div className="w-full md:w-72">
-            <VSelect
-              label="Destination Country"
+            <select
               value={country}
-              onChange={(v) => setCountry(v)}
-              options={[{ value: '__other__', label: 'Other country…' }, ...countries.map((c) => ({ value: c, label: c }))]}
-              placeholder="All countries"
-            />
+              onChange={(e) => setCountry(e.target.value)}
+              className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 font-medium outline-none focus:border-brand-gold shadow-xs cursor-pointer"
+            >
+              <option value="">All Countries ({countries.length} Available)</option>
+              {countries.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+              <option value="__other__">Other country…</option>
+            </select>
           </div>
         </div>
-        <p className="text-[10px] text-brand-cream/50">Standard processing fees apply per product. Start an application to open the guided draft wizard — your progress is saved at every step.</p>
+        <p className="text-xs text-slate-500">Standard processing fees apply per product. Start an application to open the guided draft wizard — your progress is saved at every step.</p>
       </div>
 
       {productsQ.isLoading && (
-        <div className="py-10 flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-brand-gold border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[10px] text-brand-cream/60">Loading visa catalogue...</p>
+        <div className="py-12 flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-brand-gold border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs text-slate-500 font-medium">Loading visa catalogue...</p>
         </div>
       )}
 
       {productsQ.isError && (
-        <div className="p-5 bg-rose-500/10 border border-rose-500/25 text-rose-400 rounded-xl text-xs">
+        <div className="p-5 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs">
           <p className="font-bold">Catalogue unavailable</p>
           <p className="text-[11px] mt-0.5 opacity-80">{(productsQ.error as Error)?.message}</p>
-          <button onClick={() => productsQ.refetch()} className="mt-3 text-[10px] font-bold uppercase tracking-wider border border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-navy px-3 py-1.5 rounded-lg cursor-pointer">
+          <button onClick={() => productsQ.refetch()} className="mt-3 text-[10px] font-bold uppercase tracking-wider bg-white border border-rose-300 text-rose-700 px-3 py-1.5 rounded-lg cursor-pointer">
             Retry
           </button>
         </div>
       )}
 
       {!productsQ.isLoading && products.length === 0 && (
-        <div className="text-center border-2 border-dashed border-brand-navyLight rounded-xl p-10 bg-brand-navy/10">
-          <h3 className="font-display font-semibold text-sm text-white">No visa products available</h3>
-          <p className="text-[10px] text-brand-cream/50 mt-1">Our visa desk has not published any active products yet.</p>
-        </div>
-      )}
-
-      {appsQ.isError && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/25 text-rose-400 rounded-xl text-xs">
-          <p className="font-bold">Could not load your applications</p>
-          <p className="text-[11px] mt-0.5 opacity-80">{(appsQ.error as Error)?.message}</p>
+        <div className="text-center border-2 border-dashed border-slate-200 rounded-2xl p-10 bg-slate-50">
+          <h3 className="font-display font-bold text-sm text-brand-navy">No visa products available</h3>
+          <p className="text-xs text-slate-500 mt-1">Our visa desk has not published any active products yet.</p>
         </div>
       )}
 
       {applications.length > 0 && (
         <div className="flex flex-col gap-3">
-          <span className={VISA_HEADING + ' block'}>Your Applications</span>
+          <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest block">Your Applications</span>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {applications.map((a) => (
               <button
                 key={a.id}
                 onClick={() => openApp(a)}
-                className="text-left bg-brand-navy/40 border border-brand-navyLight hover:border-brand-gold/40 rounded-xl p-4 transition cursor-pointer hover:bg-brand-navy/60"
+                className="text-left bg-white border border-slate-200 hover:border-brand-gold rounded-2xl p-4 transition cursor-pointer shadow-xs hover:shadow-sm"
               >
                 <div className="flex justify-between items-center gap-2">
-                  <span className="font-bold text-white text-xs">{a.country} — {a.visaType}</span>
-                  <span className={visaChip(a.status)}>{a.status.replace('_', ' ')}</span>
+                  <span className="font-bold text-brand-navy text-xs">{a.country} — {a.visaType}</span>
+                  <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                    {a.status.replace('_', ' ')}
+                  </span>
                 </div>
-                <p className="text-[9px] text-brand-cream/50 mt-1.5">
+                <p className="text-[10px] text-slate-500 mt-1.5">
                   {a.status === 'draft' ? 'Draft in progress — tap to continue.' : `Last updated ${new Date(a.updatedAt * 1000).toLocaleDateString()}`}
                 </p>
               </button>
@@ -2236,34 +2059,34 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
       )}
 
       {country === '__other__' && (
-        <div className="rounded-2xl border border-brand-gold/30 bg-brand-gold/[0.06] p-6 space-y-4">
+        <div className="rounded-2xl border border-brand-gold/40 bg-amber-50/40 p-6 space-y-4 shadow-xs">
           <div>
-            <span className={VISA_HEADING + ' block'}>Country not listed?</span>
-            <h3 className="font-display font-bold text-sm text-white mt-1">Request a custom visa</h3>
-            <p className="text-[10px] text-brand-cream/60 mt-1">Tell us the country you need a visa for — our desk will get back to you with options and pricing.</p>
+            <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest block">Country not listed?</span>
+            <h3 className="font-display font-bold text-sm text-brand-navy mt-1">Request a custom visa</h3>
+            <p className="text-xs text-slate-500 mt-1">Tell us the country you need a visa for — our desk will get back to you with options and pricing.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-brand-cream/60 font-bold mb-1.5">Country you need *</label>
-              <input value={inquiryCountry} onChange={(e) => setInquiryCountry(e.target.value)} placeholder="e.g. United Kingdom" className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-white placeholder:text-white/30 focus:border-brand-gold focus:outline-none" />
+              <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">Country you need *</label>
+              <input value={inquiryCountry} onChange={(e) => setInquiryCountry(e.target.value)} placeholder="e.g. United Kingdom" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
             </div>
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-brand-cream/60 font-bold mb-1.5">Visa type (if known)</label>
-              <input value={inquiryType} onChange={(e) => setInquiryType(e.target.value)} placeholder="e.g. Tourist / Work / Student" className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-white placeholder:text-white/30 focus:border-brand-gold focus:outline-none" />
+              <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">Visa type (if known)</label>
+              <input value={inquiryType} onChange={(e) => setInquiryType(e.target.value)} placeholder="e.g. Tourist / Work / Student" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-[10px] uppercase tracking-wider text-brand-cream/60 font-bold mb-1.5">Anything else we should know?</label>
-              <textarea value={inquiryNotes} onChange={(e) => setInquiryNotes(e.target.value)} rows={2} placeholder="Travel dates, purpose, number of travellers…" className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-white placeholder:text-white/30 focus:border-brand-gold focus:outline-none" />
+              <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">Anything else we should know?</label>
+              <textarea value={inquiryNotes} onChange={(e) => setInquiryNotes(e.target.value)} rows={2} placeholder="Travel dates, purpose, number of travellers…" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
             </div>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] text-brand-cream/50">We'll contact you on your registered details.</p>
-            <button onClick={submitInquiry} disabled={inquiryBusy || !inquiryCountry.trim()} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-[11px] font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition disabled:opacity-50">
+            <p className="text-xs text-slate-500">We'll contact you on your registered details.</p>
+            <button onClick={submitInquiry} disabled={inquiryBusy || !inquiryCountry.trim()} className="bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-xs">
               {inquiryBusy ? 'Sending…' : 'Request Visa'}
             </button>
           </div>
-          {inquirySent && <p className="text-[11px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-3 py-2">✓ Request sent! Our visa desk will get back to you shortly.</p>}
-          {inquiryError && <p className="text-[11px] text-rose-300 bg-rose-500/10 border border-rose-500/25 rounded-lg px-3 py-2">{inquiryError}</p>}
+          {inquirySent && <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">✓ Request sent! Our visa desk will get back to you shortly.</p>}
+          {inquiryError && <p className="text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">{inquiryError}</p>}
         </div>
       )}
 
@@ -2272,32 +2095,40 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
           {products
             .filter((p) => !country || p.country === country)
             .map((p) => (
-              <div key={p.id} className="bg-brand-navy/40 border border-brand-navyLight hover:border-brand-gold/30 rounded-2xl p-5 flex flex-col gap-3 transition">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="font-display font-bold text-white text-sm">{p.visaType}</h4>
-                    <span className="text-[10px] text-brand-cream/60">{p.country}</span>
+              <div key={p.id} className="bg-white border border-slate-200/90 hover:border-brand-gold rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-xs hover:shadow-md group">
+                <div className="space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-display font-extrabold text-brand-navy text-sm group-hover:text-brand-gold transition-colors">{p.visaType}</h4>
+                      <span className="text-xs text-slate-500 font-semibold">{p.country}</span>
+                    </div>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0">{p.entryType}</span>
                   </div>
-                  <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 text-white/70 border border-white/10">{p.entryType}</span>
+
+                  <div className="flex items-center justify-between text-xs py-2 px-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span className="text-slate-500">⏱ Processing: <strong className="text-slate-700">{p.processingTime}</strong></span>
+                    <span className="text-brand-navy font-display font-black text-base">₹{(p.feePaise / 100).toLocaleString('en-IN')}</span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Required Documents</span>
+                    <ul className="mt-1.5 space-y-1 text-xs text-slate-600">
+                      {(p.requiredDocs || ['Passport scan', 'Color photograph']).map((doc) => (
+                        <li key={doc} className="flex items-center gap-1.5">
+                          <span className="text-emerald-500 font-bold">✓</span>
+                          <span>{doc}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-brand-cream/60">
-                  <span>⏱ {p.processingTime}</span>
-                  <span className="text-brand-gold font-bold text-sm">₹{(p.feePaise / 100).toLocaleString('en-IN')}</span>
-                </div>
-                <div>
-                  <span className={VISA_HEADING + ' block'}>Required Documents</span>
-                  <ul className="mt-1.5 space-y-1 text-[10px] text-brand-cream/70">
-                    {p.requiredDocs.map((doc) => (
-                      <li key={doc} className="flex items-center gap-1.5"><span className="text-brand-gold">•</span>{doc}</li>
-                    ))}
-                  </ul>
-                </div>
+
                 <button
                   onClick={() => startApp(p)}
                   disabled={busy}
-                  className={`${VISA_BTN} mt-auto py-2 rounded-lg text-[10px] uppercase tracking-wider cursor-pointer transition disabled:opacity-50`}
+                  className="w-full mt-2 py-2.5 rounded-xl bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-xs font-black uppercase tracking-wider transition shadow-xs cursor-pointer disabled:opacity-50 active:scale-95"
                 >
-                  {draftByProduct(p) ? 'Continue Draft' : 'Start Application'}
+                  {draftByProduct(p) ? 'Continue Draft' : 'Start Application →'}
                 </button>
               </div>
             ))}

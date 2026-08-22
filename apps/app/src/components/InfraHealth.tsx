@@ -83,8 +83,12 @@ export default function InfraHealth() {
     queryKey: ['infraHealth'],
     queryFn: async () => {
       const r = await fetch('/api/infrastructure/health', { credentials: 'include' });
+      const json = await r.json().catch(() => null);
+      if (json && Array.isArray(json.services)) {
+        return json;
+      }
       if (!r.ok) throw new Error('infra');
-      return r.json();
+      return json;
     },
     refetchInterval: 30_000, // live artifact: auto-refresh 30s
   });

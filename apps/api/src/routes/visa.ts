@@ -4,6 +4,7 @@ import { getDb } from '../db/client.js';
 import { clients, visaApplications, visaMockInterviews, engagements, tasks, visaProducts, documents } from '../db/schema.js';
 import { eq, and, ne } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
+import { publishSyncEvent } from './sync.js';
 import { visaFormSchema, missingVisaSections } from '../validation/visaForm.js';
 
 export const visaRouter = new Hono<{ Bindings: { DB: D1Database } }>();
@@ -98,6 +99,7 @@ visaRouter.post('/applications', async (c) => {
       entityId: id,
       afterState: { id, clientId, country, visaType, status: 'document_prep' }
     }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `staff:division:visa:pipeline`, type: 'VISA_STATUS_CHANGED', payload: {} }, (c as any).executionCtx); } catch {}
 
     return c.json({ success: true, id, message: "Visa application record created." });
   } catch (error: any) {

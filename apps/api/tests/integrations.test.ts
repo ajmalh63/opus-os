@@ -46,7 +46,7 @@ describe('Tool-First integrations (status + live feed)', () => {
     global.fetch = vi.fn(async () => new Response('{}', { status: 500 })) as any;
     const res = await app.request('/api/integrations/status', {
       headers: { cookie: 'better-auth.session_token=token-manager' },
-    }, { DB: mockD1, BETTER_AUTH_SECRET: 's', LISTMONK_BASE_URL: 'http://100.87.71.38:9009', LISTMONK_API_USER: 'u', LISTMONK_API_PASS: 'p' });
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 's', LISTMONK_BASE_URL: 'https://listmonk.opusoverseas.com', LISTMONK_API_USER: 'u', LISTMONK_API_PASS: 'p' });
     const d = await res.json() as any;
     const lm = d.tools.find((t: any) => t.tool === 'listmonk');
     expect(lm.status.state).toBe('error');

@@ -6,6 +6,8 @@ import { partners, commissionPlans, partnerTiers, partnerPoints, partnerLinks, r
 import { eq, desc } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { sendNotification } from '../infra/notify.js';
+import { getListmonkTemplateId } from '../infra/listmonk.js';
+import { payoutStatusTemplate } from '../infra/emailTemplates.js';
 
 // Partner Command Center — owner ceiling (mounted under /api/admin/partners).
 // Thrive-equivalent controls: registry + status, commission plans per
@@ -290,13 +292,31 @@ partnerAdminRouter.patch('/payouts/:id', async (c) => {
         const partner = await db.select().from(partners).where(eq(partners.id, req_.partnerId)).get();
         if (partner?.email) {
           const amt = (Number(req_.amountPaise || 0) / 100).toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
+          const isPaid = body.status === 'paid';
+          const { subject, html } = payoutStatusTemplate({
+            partnerName: partner.name || 'Valued Partner',
+            amountPaise: Number(req_.amountPaise || 0),
+            status: body.status as 'approved' | 'paid',
+            payoutId: String(req_.id || ''),
+          });
           await sendNotification(c.env as any, db, {
             channel: 'email',
             to: partner.email,
-            subject: body.status === 'approved' ? 'Payout approved' : 'Payout paid',
-            body: body.status === 'approved'
-              ? `Payout approved — ${amt} will be settled.`
-              : `Payout paid — ${amt} settled.`,
+            subject, body: html,
+            templateId: getListmonkTemplateId(c.env as any, 'partnerPayout'),
+            data: {
+              TitleText: isPaid ? 'Payout Settled' : 'Payout Approved',
+              PartnerName: partner.name || 'Valued Partner',
+              StatusWord: body.status,
+              Amount: amt,
+              PayoutId: String(req_.id || ''),
+              StatusText: isPaid ? 'Settled & Transferred ✓' : 'Approved — Settlement In Progress',
+              BannerText: isPaid ? 'Funds have been transferred to your registered settlement account.' : 'Settlement will be credited to your registered account shortly.',
+              BannerIcon: isPaid ? '💸' : '✅',
+              CtaLabel: isPaid ? 'View Settlement →' : 'Track Payout →',
+              PortalUrl: 'https://opusoverseas.com/partner',
+              Subject: subject,
+            },
             clientId: req_.partnerId,
           });
         }
