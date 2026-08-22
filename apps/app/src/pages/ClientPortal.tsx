@@ -1115,8 +1115,8 @@ function ClientVisaWidget({ journey }: { journey: any }) {
         </div>
 
         {selectedCatalogProduct ? (
-          /* Catalog Checkout Form Panel */
-          <div className="border border-brand-gold/30 bg-brand-navyLight/20 p-5 rounded-xl space-y-4">
+          /* Catalog Checkout Form Panel — enterprise: draft saved, progress 1/3, sticky CTA */
+          <div id="visa-checkout" className="border border-brand-gold/30 bg-brand-navyLight/20 p-5 rounded-xl space-y-4 scroll-mt-4">
             <div className="flex justify-between items-center border-b border-brand-navyLight pb-2">
               <div>
                 <h4 className="font-bold text-xs text-brand-gold uppercase tracking-wider">Confirm Visa Application Details</h4>
@@ -1282,10 +1282,11 @@ function ClientVisaWidget({ journey }: { journey: any }) {
                       setCheckoutPhone(journey.client.phone || '');
                       setCheckoutAgreed(false);
                       setCatalogFiles({});
+                      setTimeout(() => document.getElementById('visa-checkout')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
                     }}
-                    className="flex-1 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy font-bold py-1.5 rounded text-[9px] uppercase tracking-wider transition-all cursor-pointer text-center"
+                    className="flex-1 bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white font-bold py-1.5 rounded text-[9px] uppercase tracking-wider transition-all cursor-pointer text-center border border-transparent"
                   >
-                    Inquire / Apply
+                    Start Application →
                   </button>
                 </div>
               </div>
