@@ -147,8 +147,9 @@ export default function UmrahClientSection({ token }: { token: string }) {
   const [payingBalance, setPayingBalance] = useState<string | null>(null);
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
   const toggleWishlist = (id: string) => setWishlist(s => { const ns = new Set(s); if (ns.has(id)) ns.delete(id); else ns.add(id); return ns; });
+  const [openAccordion, setOpenAccordion] = useState('flight');
   // wishlist + compare + hold timer + sticky CTA — P1 Polish (spec in docs/STRATEGIC-IMPLEMENTATIONS)
-  void wishlist; void toggleWishlist;
+  void wishlist; void toggleWishlist; void openAccordion; void setOpenAccordion;
 
   // ── Party builder helpers ──
   const paxCount = paxRows.length;
