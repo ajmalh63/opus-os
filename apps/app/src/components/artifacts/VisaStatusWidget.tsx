@@ -120,13 +120,19 @@ export default function VisaStatusWidget() {
 
             <div className="border-t border-brand-navy/5 pt-2 flex items-center justify-between text-[10px] text-brand-textLight">
               <span>Updated: {currentJourney.updatedAgo || 'Just now'}</span>
-              <span className="font-semibold text-emerald-700">Est. Dispatch: 4-6 Days</span>
+              <a
+                href={`/portal?token=${encodeURIComponent(ref || currentJourney.token || 'OP-2026-US-894')}&tab=visa`}
+                className="font-bold text-brand-navy hover:text-brand-gold hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>Open Full Dossier</span>
+                <span>→</span>
+              </a>
             </div>
           </div>
         ) : (
           <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/20 p-3 text-center">
             <p className="text-[11px] text-brand-navy/80">
-              <span className="font-bold text-brand-navy">99.4% Document Precision:</span> All consular updates synchronize directly to your verified WhatsApp and client dashboard.
+              <span className="font-bold text-brand-navy">Transparent Handling:</span> All consular updates synchronize directly to your verified WhatsApp and client dashboard.
             </p>
           </div>
         )}

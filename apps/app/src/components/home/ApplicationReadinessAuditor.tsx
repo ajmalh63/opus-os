@@ -123,9 +123,9 @@ export default function ApplicationReadinessAuditor() {
         return {
           score: 91,
           badge: 'Direct Employer Match Open',
-          summary: 'Your professional credentials align with active overseas employer recruitment drives sourced through Govt. Registered MEA-Licensed Partners.',
+          summary: 'Your credentials will be reviewed against opportunities as we build our employer network.',
           mitigations: [
-            'Govt-vetted foreign employer contracts with full salary and perk transparency',
+            'Transparent employer contracts — building with care',
             'Zero extortion policy: employer-sponsored visa, airfare, and contract medical benefits',
             'Pre-departure cultural & workplace orientation session included',
           ],
@@ -152,8 +152,13 @@ export default function ApplicationReadinessAuditor() {
           </p>
         </div>
 
-        {/* Division Selector Tabs */}
-        <div className="mb-8 flex flex-wrap justify-center gap-2">
+        {/* Division Selector Tabs — swipeable on mobile */}
+        <div className="mb-2 flex items-center justify-center">
+          <span className="md:hidden inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-navy/35">
+            <span className="w-4 h-0.5 bg-brand-gold/30 rounded-full" /> Swipe divisions <span className="animate-pulse">→</span>
+          </span>
+        </div>
+        <div className="mb-8 -mx-5 px-5 flex flex-nowrap md:flex-wrap md:justify-center gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth pb-2">
           {[
             { key: 'study', label: '🎓 Study Abroad' },
             { key: 'visa', label: '✈️ Visa Filing' },
@@ -164,7 +169,7 @@ export default function ApplicationReadinessAuditor() {
             <button
               key={tab.key}
               onClick={() => { setDivision(tab.key as any); setAudited(false); }}
-              className={`cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition-all ${
+              className={`cursor-pointer shrink-0 snap-center rounded-full px-4 py-2 text-xs font-bold transition-all ${
                 division === tab.key
                   ? 'bg-brand-navy text-white shadow-md'
                   : 'bg-slate-100 text-brand-navy/70 hover:bg-slate-200 hover:text-brand-navy'

@@ -49,7 +49,7 @@ export default function DepartureCountdown() {
       caption="Custom group planning, verified hotel tiers & flight coordination from Hyderabad"
       statusLabel="Seasonal Planning"
     >
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 max-h-[300px] sm:max-h-none overflow-y-auto sm:overflow-visible pr-1 sm:pr-0">
         {PLANNED_PACKAGES.map((pkg) => (
           <div 
             key={pkg.id} 

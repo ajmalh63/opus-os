@@ -49,6 +49,8 @@ import Inbox from './pages/Inbox';
 import Settings from './pages/Settings';
 import GoRedirectPage from './pages/GoRedirectPage';
 import ChatwootDashboardWidget from './pages/ChatwootDashboardWidget';
+import BlogIndex from './pages/BlogIndex';
+import BlogPost from './pages/BlogPost';
 
 // ONE umbrella: every authenticated page renders inside the WorkspaceShell so
 // sidebar/brand/topbar persist across ALL modules. The workspace shell owns
@@ -85,6 +87,8 @@ export default function App() {
         <Route path="/terms" component={TermsOfServicePage} />
         <Route path="/refund-policy" component={RefundPolicyPage} />
         <Route path="/shipping-policy" component={ShippingPolicyPage} />
+        <Route path="/blog" component={BlogIndex} />
+        <Route path="/blog/:slug" component={BlogPost} />
 
         {/* Central auth gateway */}
         <Route path="/login" component={Login} />

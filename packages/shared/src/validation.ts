@@ -309,33 +309,61 @@ export type UpdateApplicationDocsInput = z.infer<typeof updateApplicationDocsSch
 // 8b. Student profile (portal wizard — student-owned data, canonical intakeContext keys).
 // The match engine reads these keys; the wizard writes them. Passport masked at API.
 export const studentProfileSchema = z.object({
-  // Academic history
+  // Personal — universal, regardless of country
+  fullName: z.string().max(120).optional(),
+  dob: z.string().max(20).optional(), // YYYY-MM-DD
+  gender: z.enum(['male', 'female', 'other', 'prefer_not_say']).optional(),
+  nationality: z.string().max(60).optional(),
+  phone: z.string().max(20).optional(),
+  email: z.string().email().optional(),
+  address: z.string().max(300).optional(),
+  city: z.string().max(60).optional(),
+  state: z.string().max(60).optional(),
+  pincode: z.string().max(10).optional(),
+  emergencyContact: z.string().max(120).optional(),
+  emergencyPhone: z.string().max(20).optional(),
+  languages: z.string().max(200).optional(), // comma-separated
+  // Academic history — universal
   cgpa: z.number().min(0).max(10).optional(),
   degreeName: z.string().max(120).optional(),
   graduationYear: z.number().int().min(1990).max(2100).optional(),
+  universityName: z.string().max(120).optional(),
   pct10th: z.number().min(0).max(100).optional(),
   pct12th: z.number().min(0).max(100).optional(),
+  board12th: z.string().max(60).optional(),
   backlogs: z.number().int().min(0).max(50).optional(),
   gapYears: z.number().min(0).max(20).optional(),
+  gapReason: z.string().max(300).optional(),
   workExperienceYears: z.number().min(0).max(40).optional(),
-  // Test scores (actual or planned)
-  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge']).optional(),
-  englishScore: z.number().min(0).max(9).optional(),
+  workCompany: z.string().max(120).optional(),
+  workRole: z.string().max(120).optional(),
+  // Test scores (actual or planned) — universal, any country
+  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge', 'SAT', 'ACT', 'Other']).optional(),
+  englishScore: z.number().min(0).max(160).optional(), // allow 160 for SAT, Duolingo etc.
   greScore: z.number().min(260).max(340).optional(),
   gmatScore: z.number().min(200).max(800).optional(),
+  satScore: z.number().min(400).max(1600).optional(),
+  actScore: z.number().min(1).max(36).optional(),
   testPlanned: z.boolean().default(false),
   testDate: z.number().int().optional(),
   englishWaiver: z.boolean().default(false), // English-medium education waiver (MOI)
-  // Preferences
+  // Preferences — any destination
   targetCountry: z.string().max(60).optional(),
   targetIntake: z.string().max(30).optional(),
   preferredCourse: z.string().max(120).optional(),
   tuitionBudget: z.number().min(0).max(100).optional(),
+  livingBudget: z.number().min(0).max(100).optional(),
+  fundingSource: z.enum(['self', 'parents', 'sponsor', 'loan', 'scholarship', 'other']).optional(),
+  sponsorName: z.string().max(120).optional(),
+  sponsorRelation: z.string().max(60).optional(),
   scholarshipNeeded: z.boolean().default(false),
-  // Personal / family (Indian market: parents are decision-makers)
+  // Personal / family (universal, parents are decision-makers)
   passportNumber: z.string().min(4).max(20).optional(),
   parentName: z.string().max(120).optional(),
   parentPhone: z.string().max(20).optional(),
+  parentOccupation: z.string().max(120).optional(),
+  annualFamilyIncome: z.string().max(60).optional(),
+  fundingBank: z.string().max(120).optional(),
   // DPDP: explicit consent to share profile with universities
   universitySharingConsent: z.boolean().optional()
 });
@@ -353,6 +381,19 @@ export const createShipmentSchema = z.object({
 export type CreateShipmentInput = z.infer<typeof createShipmentSchema>;
 
 // 10. Register Staff Schema
+export const feedbackSubmissionSchema = z.object({
+  clientName: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  rating: z.number().int().min(1).max(5, { message: "Rating must be between 1 and 5 stars" }),
+  division: z.enum(['study-abroad', 'visa', 'umrah', 'attestation', 'manpower', 'general']).default('general'),
+  title: z.string().max(120).optional(),
+  comment: z.string().min(5, { message: "Review or feedback must be at least 5 characters" }),
+  feedbackType: z.enum(['review', 'csat', 'bug', 'suggestion']).default('review'),
+  counselorName: z.string().max(100).optional(),
+  consentToPublish: z.boolean().default(true),
+  metadata: z.record(z.any()).optional()
+});
+export type FeedbackSubmissionInput = z.infer<typeof feedbackSubmissionSchema>;
+
 export const registerStaffSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),

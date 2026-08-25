@@ -6,10 +6,12 @@ import AlertsVisibility from '../components/AlertsVisibility';
 import AiGovernanceTab from '../components/admin/AiGovernanceTab';
 import DeveloperApiSettingsTab from '../components/admin/DeveloperApiSettingsTab';
 import DivisionControlsTab from '../components/admin/DivisionControlsTab';
+import ClientWorkspaceControlsTab from '../components/admin/ClientWorkspaceControlsTab';
+import FeedbackModerationTab from '../components/admin/FeedbackModerationTab';
 
 // Real session-driven auth — the live cookie, never a forged token.
 
-type AdminTab = 'directory' | 'onboard' | 'divisions' | 'partners' | 'alerts' | 'ai' | 'developer';
+type AdminTab = 'directory' | 'onboard' | 'divisions' | 'clientControls' | 'feedback' | 'partners' | 'alerts' | 'ai' | 'developer';
 
 interface StaffUser {
   id: string;
@@ -50,7 +52,7 @@ export default function AdminConsole() {
   const isOwner = me?.role === 'super_admin';
   const initialTab = (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) as AdminTab | null;
   const [activeTab, setActiveTab] = useState<AdminTab>(
-    initialTab && ['directory', 'onboard', 'divisions', 'partners', 'alerts', 'ai', 'developer'].includes(initialTab)
+    initialTab && ['directory', 'onboard', 'divisions', 'clientControls', 'partners', 'alerts', 'ai', 'developer'].includes(initialTab)
       ? initialTab
       : 'directory'
   );
@@ -275,6 +277,8 @@ export default function AdminConsole() {
             {[
               { key: 'directory', label: 'Staff Directory & Scoping', icon: '👥' },
               { key: 'divisions', label: 'Division Go-Live', icon: '⚡' },
+              { key: 'clientControls', label: 'Client Workspace Controls', icon: '🎛️' },
+              { key: 'feedback', label: 'Reviews & CSAT', icon: '⭐' },
               { key: 'onboard', label: 'Onboard New Staff', icon: '➕' },
               { key: 'partners', label: 'Partner Network', icon: '🤝' },
               { key: 'alerts', label: 'Staff Broadcast Alerts', icon: '📢' },
@@ -371,6 +375,9 @@ export default function AdminConsole() {
 
           {/* TAB: DIVISION GO-LIVE & KILL-SWITCH */}
           {activeTab === 'divisions' && isOwner && <DivisionControlsTab />}
+
+          {/* TAB: CLIENT WORKSPACE CONTROLS — every client form/field/dropdown/button mirrored */}
+          {activeTab === 'clientControls' && isOwner && <ClientWorkspaceControlsTab />}
 
           {/* TAB 2: REGISTER NEW STAFF */}
           {activeTab === 'onboard' && (
@@ -475,16 +482,19 @@ export default function AdminConsole() {
             </div>
           )}
 
-          {/* TAB 3: PARTNER NETWORK */}
+          {/* TAB 3: REVIEWS & CSAT FEEDBACK MODERATION */}
+          {activeTab === 'feedback' && isOwner && <FeedbackModerationTab />}
+
+          {/* TAB 4: PARTNER NETWORK */}
           {activeTab === 'partners' && isOwner && <PartnerAdminPanel />}
 
-          {/* TAB 4: STAFF BROADCAST ALERTS */}
+          {/* TAB 5: STAFF BROADCAST ALERTS */}
           {activeTab === 'alerts' && isOwner && <AlertsVisibility />}
 
-          {/* TAB 5: AI & MODEL GOVERNANCE */}
+          {/* TAB 6: AI & MODEL GOVERNANCE */}
           {activeTab === 'ai' && isOwner && <AiGovernanceTab />}
 
-          {/* TAB 6: DEVELOPER & REST API */}
+          {/* TAB 7: DEVELOPER & REST API */}
           {activeTab === 'developer' && isOwner && <DeveloperApiSettingsTab />}
         </div>
       </main>

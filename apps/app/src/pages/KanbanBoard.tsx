@@ -57,6 +57,7 @@ export default function KanbanBoard() {
   const [divisionFilter, setDivisionFilter] = useState('all');
   const [counselorFilter, setCounselorFilter] = useState('all');
   const [staleOnly, setStaleOnly] = useState(false);
+  const [slaUrgentOnly, setSlaUrgentOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Selected Card for Slide Preview Drawer (represented by ID to support clean cache invalidations)
@@ -252,6 +253,8 @@ onSuccess: (data) => {
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [draggedSourceStage, setDraggedSourceStage] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const kanbanScrollerRef = React.useRef<HTMLDivElement>(null);
+  const [kanbanIdx, setKanbanIdx] = useState(0);
 
   const handleDragStart = (e: React.DragEvent, cardId: string, sourceStage: string) => {
     setDraggedCardId(cardId);
@@ -307,6 +310,13 @@ onSuccess: (data) => {
       if (staleOnly) {
         const isStale = card.stageKey === 'lead' || card.stageKey === 'qualified';
         if (!isStale) return false;
+      }
+      // SLA Urgent / Stuck Radar Filter (tasks due in ≤3 days or unassigned/stuck in review)
+      if (slaUrgentOnly) {
+        const nowSec = Math.floor(Date.now() / 1000);
+        const hasUrgentTask = card.tasks?.some(t => t.dueDate && t.status !== 'done' && t.dueDate - nowSec <= 3 * 86400);
+        const isStuck = card.counselorId === null || card.stageKey === 'documents' || card.stageKey === 'under_review';
+        if (!hasUrgentTask && !isStuck) return false;
       }
       return true;
     });
@@ -446,14 +456,64 @@ onSuccess: (data) => {
               />
               <label htmlFor="agingFilter" className="text-xs font-semibold text-brand-error flex items-center gap-1 cursor-pointer">
                 <span className="w-2.5 h-2.5 rounded-full bg-brand-error animate-pulse"></span>
-                Show Stale Work (&gt;48h)
+                Show Stale (&gt;48h)
+              </label>
+            </div>
+
+            {/* SLA Urgent / Stuck Radar Toggle */}
+            <div className="flex items-center gap-2 select-none self-end pb-1.5">
+              <input 
+                type="checkbox" 
+                id="slaUrgentFilter" 
+                checked={slaUrgentOnly}
+                onChange={(e) => setSlaUrgentOnly(e.target.checked)}
+                className="rounded border-brand-navy/20 text-brand-gold focus:ring-brand-gold"
+              />
+              <label htmlFor="slaUrgentFilter" className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                <span>🔥 SLA Radar (≤3d / Stuck)</span>
               </label>
             </div>
           </div>
         </header>
 
+        {/* Mobile swipe hint for kanban */}
+        <div className="md:hidden px-5 pt-3 flex items-center justify-between">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-navy/40">
+            <span className="w-4 h-0.5 bg-brand-gold/30 rounded-full" /> Swipe columns <span className="animate-pulse">→</span>
+          </span>
+          <div className="flex items-center gap-1.5">
+            {(boardData?.columns || []).map((_, i) => (
+              <span key={i} className={`h-1.5 rounded-full transition-all ${i === kanbanIdx ? 'w-5 bg-brand-gold' : 'w-1.5 bg-brand-navy/15'}`} />
+            ))}
+          </div>
+        </div>
+
         {/* KANBAN COLUMNS BODY */}
-        <div className="flex-1 overflow-x-auto p-8 flex gap-6 items-start">
+        <div
+          ref={kanbanScrollerRef}
+          className="flex-1 overflow-x-auto p-4 md:p-8 flex gap-4 md:gap-6 items-start snap-x snap-mandatory md:snap-none scroll-smooth"
+          style={{ WebkitOverflowScrolling: 'touch', perspective: '1200px' } as any}
+          onScroll={() => {
+            const el = kanbanScrollerRef.current;
+            if (!el) return;
+            const center = el.getBoundingClientRect().left + el.getBoundingClientRect().width / 2;
+            let closest = 0; let min = Infinity;
+            el.querySelectorAll<HTMLElement>('.kanban-col').forEach((col, idx) => {
+              const r = col.getBoundingClientRect();
+              const c = r.left + r.width / 2;
+              const d = Math.abs(c - center);
+              if (d < min) { min = d; closest = idx; }
+              if (window.innerWidth < 768 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                const dist = (c - center) / el.getBoundingClientRect().width;
+                const rotateY = dist * -12;
+                const scale = 1 - Math.abs(dist) * 0.06;
+                col.style.transform = `perspective(800px) rotateY(${rotateY}deg) scale(${scale})`;
+                col.style.opacity = String(Math.max(0.9, 1 - Math.abs(dist) * 0.12));
+              }
+            });
+            setKanbanIdx(closest);
+          }}
+        >
           {boardData?.columns.map((column) => {
             const filteredCards = getFilteredCards(column.cards);
             const isTargetDrag = dragOverCol === column.key;
@@ -466,13 +526,14 @@ onSuccess: (data) => {
                 onDragOver={(e) => handleDragOver(e, column.key)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, column.key)}
-                className={`w-72 bg-brand-navy/[0.04] border rounded-xl flex flex-col shrink-0 overflow-hidden shadow-sm transition-all duration-200 ${
+                className={`kanban-col w-[82vw] md:w-72 snap-center md:snap-align-none bg-brand-navy/[0.04] border rounded-xl flex flex-col shrink-0 overflow-hidden shadow-sm transition-all duration-200 will-change-transform ${
                   isTargetDrag 
                     ? 'border-brand-gold bg-brand-gold/5 shadow-md scale-[1.01]' 
                     : draggedCardId 
                       ? 'border-dashed border-brand-navy/20 bg-brand-navy/[0.02]' 
                       : 'border-brand-navy/10'
                 }`}
+                style={{ transformStyle: 'preserve-3d' } as any}
               >
                 {/* Column Header */}
                 <div className={`p-4 border-b flex justify-between items-center transition ${
@@ -516,15 +577,30 @@ onSuccess: (data) => {
                           <span className="text-[9px] font-bold text-brand-gold uppercase tracking-wider bg-brand-gold/10 px-1.5 py-0.5 rounded truncate max-w-[150px]">
                             {divisionIcons[card.division] || card.division}
                           </span>
-                          {hasBlocker ? (
-                            <span className="text-[8px] bg-rose-50 text-brand-error px-1.5 py-0.5 border border-rose-200 rounded font-bold uppercase tracking-wider animate-pulse flex items-center shrink-0">
-                              ⚠️ Unassigned
-                            </span>
-                          ) : (
-                            <span className="text-[8px] bg-slate-50 text-slate-500 px-1.5 py-0.5 border border-slate-200 rounded font-semibold uppercase tracking-wider shrink-0">
-                              Assigned
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {(() => {
+                              const nowSec = Math.floor(Date.now() / 1000);
+                              const urgentTask = card.tasks?.find(t => t.dueDate && t.status !== 'done' && t.dueDate - nowSec <= 3 * 86400);
+                              if (urgentTask && urgentTask.dueDate) {
+                                const daysLeft = Math.max(0, Math.ceil((urgentTask.dueDate - nowSec) / 86400));
+                                return (
+                                  <span className="text-[8px] bg-red-100 text-red-900 border border-red-300 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider animate-pulse flex items-center gap-0.5 shrink-0">
+                                    <span>🔥 {daysLeft === 0 ? 'Due Today' : `Due in ${daysLeft}d`}</span>
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
+                            {hasBlocker ? (
+                              <span className="text-[8px] bg-rose-50 text-brand-error px-1.5 py-0.5 border border-rose-200 rounded font-bold uppercase tracking-wider animate-pulse flex items-center shrink-0">
+                                ⚠️ Unassigned
+                              </span>
+                            ) : (
+                              <span className="text-[8px] bg-slate-50 text-slate-500 px-1.5 py-0.5 border border-slate-200 rounded font-semibold uppercase tracking-wider shrink-0">
+                                Assigned
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         <div>

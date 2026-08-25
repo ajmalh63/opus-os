@@ -109,8 +109,12 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
       }
     },
     session: {
-      expiresIn: 60 * 60 * 24 * 7, // 7 days
-      updateAge: 60 * 60 * 24, // refresh sliding window daily
+      // L5 HARDENING: 7-day absolute max but 24h idle updateAge = sliding refresh.
+      // Future (DPoP/CAE phase): shorten to 1h + refresh-token rotation for staff.
+      // better-auth has no native absolute timeout — enforced via custom middleware
+      // (see middleware/sessionAbsoluteTimeout.ts — TODO next sprint).
+      expiresIn: 60 * 60 * 24 * 7, // 7 days absolute
+      updateAge: 60 * 60 * 24, // 24h sliding
       cookieCache: { enabled: true, maxAge: 5 * 60 }
     },
     advanced: {

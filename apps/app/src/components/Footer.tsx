@@ -64,6 +64,11 @@ export default function Footer() {
             <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">Quick Access</h4>
             <ul className="space-y-2.5 text-xs sm:text-sm text-white/70">
               <li>
+                <button onClick={() => setLocation('/blog')} className="cursor-pointer transition-colors hover:text-brand-gold">
+                  Blog — Guides & Insights
+                </button>
+              </li>
+              <li>
                 <button onClick={() => setLocation('/about')} className="cursor-pointer transition-colors hover:text-brand-gold">
                   About Opus Overseas
                 </button>
@@ -95,6 +100,8 @@ export default function Footer() {
           <div>
             <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">Contact & Support</h4>
             <ul className="space-y-2.5 text-xs sm:text-sm text-white/70">
+              <li className="text-white font-semibold">Nizamabad HQ</li>
+              <li className="text-white/60 text-xs leading-relaxed">Nizamabad — Telangana, India</li>
               <li>
                 <button onClick={() => setLocation('/contact')} className="cursor-pointer font-bold text-white hover:text-brand-gold transition-colors">
                   Contact Advisory Desk →
@@ -106,6 +113,7 @@ export default function Footer() {
               <li>
                 <a href="mailto:contact@opusoverseas.com" className="hover:text-brand-gold transition-colors">contact@opusoverseas.com</a>
               </li>
+              <li className="text-[11px] text-white/45">Mon–Sat 9:30 AM – 6:30 PM</li>
             </ul>
           </div>
         </div>

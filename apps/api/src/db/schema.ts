@@ -66,9 +66,85 @@ intentDivisions: text('intent_divisions'), // JSON array of division keys (multi
   exclusiveSince: integer('exclusive_since'),
   instagramHandle: text('instagram_handle'),
   status: text('status', { enum: ['active', 'blocked'] }).notNull().default('active'),
+  // Lead Command Center (Phase A) — scoring, routing, SLA
+  leadScore: integer('lead_score').notNull().default(0),
+  leadStatus: text('lead_status', { enum: ['new', 'mql', 'sql', 'opportunity', 'customer', 'recycled'] }).notNull().default('new'),
+  assignedTo: text('assigned_to').references(() => users.id),
+  slaDueAt: integer('sla_due_at'),
+  mqlAt: integer('mql_at'),
+  lastEngagementAt: integer('last_engagement_at'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });
+
+// Phase A — Family Hub (multi-contact)
+export const familyMembers = sqliteTable('family_members', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
+  relation: text('relation', { enum: ['father', 'mother', 'guardian', 'spouse', 'sibling', 'other'] }).notNull(),
+  name: text('name').notNull(),
+  phone: text('phone').notNull(),
+  email: text('email'),
+  isPrimaryContact: integer('is_primary_contact', { mode: 'boolean' }).notNull().default(false),
+  canReceiveUpdates: integer('can_receive_updates', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => [
+  index('family_members_client_idx').on(t.clientId),
+]);
+
+// Phase A — WhatsApp Native Outbox (Cloud API v21, quality-tracked)
+export const waOutbox = sqliteTable('wa_outbox', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').references(() => clients.id),
+  familyMemberId: text('family_member_id').references(() => familyMembers.id),
+  toPhone: text('to_phone').notNull(),
+  direction: text('direction', { enum: ['outbound', 'inbound'] }).notNull(),
+  type: text('type', { enum: ['text', 'template', 'interactive', 'media'] }).notNull().default('text'),
+  templateName: text('template_name'),
+  body: text('body').notNull(),
+  wamid: text('wamid'), // WhatsApp message ID
+  status: text('status', { enum: ['queued', 'sent', 'delivered', 'read', 'failed'] }).notNull().default('queued'),
+  category: text('category', { enum: ['utility', 'marketing', 'authentication', 'service'] }),
+  error: text('error'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => [
+  index('wa_outbox_client_idx').on(t.clientId),
+  index('wa_outbox_to_phone_idx').on(t.toPhone),
+]);
+
+// Phase A — Installment Schedule (booking-tied ledger)
+export const paymentSchedules = sqliteTable('payment_schedules', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
+  bookingId: text('booking_id'), // engagementId or bookings.id (Umrah)
+  installmentNo: integer('installment_no').notNull(),
+  totalInstallments: integer('total_installments').notNull(),
+  label: text('label').notNull(), // Advance / Balance / Visa Fee
+  amount: integer('amount').notNull(), // paise
+  dueAt: integer('due_at').notNull(),
+  status: text('status', { enum: ['pending', 'paid', 'overdue', 'refunded'] }).notNull().default('pending'),
+  collectedBy: text('collected_by').references(() => users.id),
+  refundReason: text('refund_reason'),
+  refundPolicyVersion: text('refund_policy_version'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => [
+  index('payment_schedules_client_idx').on(t.clientId),
+  index('payment_schedules_booking_idx').on(t.bookingId),
+]);
+
+export const leadAssignments = sqliteTable('lead_assignments', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
+  fromUserId: text('from_user_id').references(() => users.id),
+  toUserId: text('to_user_id').notNull().references(() => users.id),
+  reason: text('reason'), // manual, round_robin, territory, sla_escalation, recycled
+  createdAt: integer('created_at').notNull(),
+}, (t) => [
+  index('lead_assignments_client_idx').on(t.clientId),
+]);
 
 // ==========================================
 // 3. PIPELINE STAGES
@@ -1449,6 +1525,52 @@ export const reportSchedules = sqliteTable('report_schedules', {
 });
 
 // ==========================================
+// 62b. BLOG ENGINE — Gold Standard SEO/AEO/GEO/AIO
+// ==========================================
+export const blogPosts = sqliteTable('blog_posts', {
+  id: text('id').primaryKey(), // b_...
+  slug: text('slug').notNull().unique(), // /blog/:slug — ^[a-z0-9-]+$
+  title: text('title').notNull(), // H1
+  tldr: text('tldr'), // 2-3 sentence direct answer blockquote (AEO extractor)
+  excerpt: text('excerpt'), // 155-160c for metaDescription fallback
+  contentMarkdown: text('content_markdown').notNull(), // MD with blocks: paragraph, heading, table, faq, image, quote
+  contentHtml: text('content_html'), // cached SSR HTML
+  authorId: text('author_id').references(() => users.id),
+  authorName: text('author_name'), // override or display
+  division: text('division', { enum: ['study-abroad', 'visa-services', 'attestation', 'umrah-travel', 'manpower', 'general'] }).notNull().default('general'),
+  category: text('category'), // free tag e.g. "MBBS Abroad"
+  primaryKeyword: text('primary_keyword'), // unique across posts — cannibalization guard
+  secondaryKeywords: text('secondary_keywords'), // JSON array
+  pillarSlug: text('pillar_slug'), // cluster pillar this post belongs to
+  metaTitle: text('meta_title'),
+  metaDescription: text('meta_description'),
+  ogImage: text('og_image'),
+  canonical: text('canonical'),
+  status: text('status', { enum: ['draft', 'scheduled', 'published', 'archived'] }).notNull().default('draft'),
+  featured: integer('featured', { mode: 'boolean' }).notNull().default(false),
+  readingMinutes: integer('reading_minutes'),
+  publishedAt: integer('published_at'),
+  scheduledAt: integer('scheduled_at'),
+  dateModified: integer('date_modified'), // freshness signal for AI, bumped on publish/update
+  viewCount: integer('view_count').notNull().default(0),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => [
+  index('blog_posts_slug_idx').on(t.slug),
+  index('blog_posts_status_idx').on(t.status),
+  index('blog_posts_division_idx').on(t.division),
+  index('blog_posts_primary_keyword_idx').on(t.primaryKeyword),
+]);
+
+export const blogCategories = sqliteTable('blog_categories', {
+  id: text('id').primaryKey(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  division: text('division'),
+  createdAt: integer('created_at').notNull(),
+});
+
+// ==========================================
 // 63. CAL.COM BOOKINGS (consultation scheduling)
 // ==========================================
 export const bookings = sqliteTable('bookings', {
@@ -1532,3 +1654,78 @@ export const idempotencyKeys = sqliteTable('idempotency_keys', {
   createdAt: integer('created_at').notNull(),
   expiresAt: integer('expires_at').notNull() // 24-hour TTL
 });
+
+// ==========================================
+// 68. VISA — Gold Standard Cascade (V1-V7)
+// ==========================================
+export const visaRules = sqliteTable('visa_rules', {
+  id: text('id').primaryKey(),
+  country: text('country').notNull(),
+  visaType: text('visa_type').notNull(),
+  docs: text('docs').notNull(), // JSON checklist [{label, required, validityRule}]
+  validityRule: text('validity_rule'), // e.g. passport 6m
+  leadDays: integer('lead_days').notNull().default(21),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => [index('visa_rules_country_type_idx').on(t.country, t.visaType)]);
+
+export const visaDeadlines = sqliteTable('visa_deadlines', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
+  bookingId: text('booking_id').notNull(), // engagements.id or visaApplications.id
+  type: text('type', { enum: ['biometrics','medical','submit','LMIA_expiry','interview','document'] }).notNull(),
+  dueAt: integer('due_at').notNull(),
+  dependsOn: text('depends_on'), // id of parent deadline
+  status: text('status', { enum: ['pending','met','overdue'] }).notNull().default('pending'),
+  createdAt: integer('created_at').notNull(),
+}, (t) => [index('visa_deadlines_client_idx').on(t.clientId), index('visa_deadlines_booking_idx').on(t.bookingId)]);
+
+// ==========================================
+// 69. ATTESTATION — Gold Standard (A1-A7)
+// ==========================================
+export const attestationRules = sqliteTable('attestation_rules', {
+  id: text('id').primaryKey(),
+  docType: text('doc_type').notNull(), // degree, birth, marriage, commercial
+  destination: text('destination').notNull(), // UAE, Saudi, Qatar...
+  isHague: integer('is_hague', { mode: 'boolean' }).notNull().default(false),
+  chain: text('chain').notNull(), // JSON [HRD,MEA,Embassy] or [Notary,Apostille]
+  avgDays: integer('avg_days').notNull(),
+  fee: integer('fee'), // paise
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => [index('attestation_rules_doc_dest_idx').on(t.docType, t.destination)]);
+
+export const attestationVerifications = sqliteTable('attestation_verifications', {
+  id: text('id').primaryKey(),
+  applicationId: text('application_id').notNull(),
+  apostilleId: text('apostille_id'),
+  eRegisterUrl: text('e_register_url'),
+  verificationStatus: text('verification_status', { enum: ['pending','verified','failed','not_applicable'] }).notNull().default('pending'),
+  verifiedAt: integer('verified_at'),
+  createdAt: integer('created_at').notNull(),
+});
+
+// ==========================================
+// 70. FEEDBACK & TESTIMONIAL ENGINE
+// Collects 5-star ratings, NPS/CSAT, and verified client stories.
+// Moderated by Superadmin for public carousel display.
+// ==========================================
+export const feedbackSubmissions = sqliteTable('feedback_submissions', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').references(() => clients.id),
+  clientName: text('client_name').notNull(),
+  division: text('division', { enum: ['study-abroad', 'visa', 'umrah', 'attestation', 'manpower', 'general'] }).notNull().default('general'),
+  rating: integer('rating').notNull(), // 1 to 5 stars
+  title: text('title'),
+  comment: text('comment').notNull(),
+  feedbackType: text('feedback_type', { enum: ['review', 'csat', 'bug', 'suggestion'] }).notNull().default('review'),
+  isPublicApproved: integer('is_public_approved', { mode: 'boolean' }).notNull().default(false),
+  displayOrder: integer('display_order').notNull().default(0),
+  counselorName: text('counselor_name'),
+  metadataJson: text('metadata_json').default('{}'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => [
+  index('feedback_rating_idx').on(t.rating),
+  index('feedback_division_idx').on(t.division),
+  index('feedback_public_idx').on(t.isPublicApproved),
+]);
+

@@ -47,7 +47,7 @@ export default function EligibilityChecker() {
     <ArtifactShell 
       title="Global University Match Engine" 
       caption="Interactive profile evaluation against 1,500+ global institutions"
-      statusLabel="100% Free Guidance"
+      statusLabel="Expert Guidance — Complimentary Assessment"
     >
       <div className="space-y-3.5">
         {/* Country Quick Chips */}
@@ -141,22 +141,30 @@ export default function EligibilityChecker() {
                 No automatic matches for these exact parameters — speak with a counselor for a customized waiver list.
               </p>
             ) : (
-              result.matches.slice(0, 3).map((m: any) => (
-                <div 
-                  key={m.id} 
-                  className="flex items-center justify-between rounded-xl border border-brand-navy/5 bg-white/95 px-3.5 py-2.5 shadow-xs transition-transform hover:scale-[1.01]"
+              <>
+                {result.matches.slice(0, 3).map((m: any) => (
+                  <div 
+                    key={m.id} 
+                    className="flex items-center justify-between rounded-xl border border-brand-navy/5 bg-white/95 px-3.5 py-2.5 shadow-xs transition-transform hover:scale-[1.01]"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <p className="truncate text-xs font-bold text-brand-navy">{m.name}</p>
+                      <p className="text-[10px] text-brand-textLight font-medium">{m.country} · {m.intake}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-extrabold font-mono">
+                        {m.matchPct}% match
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                <a
+                  href="/portal?tab=study"
+                  className="block text-center rounded-xl bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-xs font-bold py-2 transition shadow-xs cursor-pointer mt-2"
                 >
-                  <div className="min-w-0 pr-2">
-                    <p className="truncate text-xs font-bold text-brand-navy">{m.name}</p>
-                    <p className="text-[10px] text-brand-textLight font-medium">{m.country} · {m.intake}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-extrabold font-mono">
-                      {m.matchPct}% match
-                    </span>
-                  </div>
-                </div>
-              ))
+                  Start Application with Matched Profile →
+                </a>
+              </>
             )}
           </div>
         )}

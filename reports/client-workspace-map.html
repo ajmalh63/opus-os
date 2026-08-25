@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opus Client Workspace — Visual Map</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{ --navy:#0A2D50; --gold:#D7A019; --cream:#FAF8F4; --line:#E5E1D6; --ink:#0F1E33; }
+  *{ box-sizing:border-box; font-family: Inter, system-ui, -apple-system, sans-serif; }
+  body{ margin:0; background:var(--cream); color:var(--ink); }
+  header{ position:sticky; top:0; z-index:10; background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .wrap{ max-width:1180px; margin:0 auto; padding:18px 20px; }
+  h1{ margin:0; font-size:18px; font-weight:900; letter-spacing:-0.02em; color:var(--navy); }
+  .sub{ font-size:12px; color:#6B7280; margin-top:4px; }
+  .legend{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .pill{ font-size:11px; font-weight:700; padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:#fff; }
+  .pill.navy{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .pill.gold{ background:var(--gold); color:var(--navy); border-color:var(--gold); }
+  .pill.cream{ background:#FFFBF0; color:#6B5E2B; border-color:#EDE8DC; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px; margin:18px 0; box-shadow:0 8px 24px rgba(10,45,80,0.06); }
+  .card h2{ margin:0 0 8px; font-size:13px; font-weight:900; letter-spacing:0.08em; text-transform:uppercase; color:var(--navy); }
+  .hint{ font-size:11px; color:#6B7280; margin-bottom:10px; }
+  .mermaid{ background:#fff; border-radius:16px; padding:12px; overflow:auto; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:900px){ .grid{ grid-template-columns:1fr; } }
+  .kpi{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
+  .kpi div{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px; text-align:center; }
+  .kpi b{ display:block; font-size:13px; color:var(--navy); }
+  .kpi span{ font-size:11px; color:#6B7280; }
+  .foot{ font-size:11px; color:#6B7280; text-align:center; padding:18px; }
+  .print{ float:right; font-size:11px; font-weight:700; background:var(--navy); color:#fff; border:0; border-radius:10px; padding:8px 12px; cursor:pointer; }
+  @media print{ header{ position:static; } .print{ display:none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <div>
+        <h1>Opus Client Workspace — Visual Map <span style="font-weight:400; color:#6B7280;">/portal</span></h1>
+        <div class="sub">One URL, 7 tabs inside. Every tap ends inside the same workspace — no new routes, except Razorpay overlay.</div>
+      </div>
+      <button class="print" onclick="window.print()">Print / Save PDF</button>
+    </div>
+    <div class="legend">
+      <span class="pill navy">Entry / Shell</span>
+      <span class="pill gold">7 Tabs — where every route ends</span>
+      <span class="pill cream">Data ends in D1/R2</span>
+      <span class="pill">Mobile thumb-zone</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>1 — How you enter (2 ways, same workspace)</h2>
+    <div class="hint">Public token OR session. Both land on the same 1440px flex shell: left 64 sidebar (md) + main <code>pb-[88px]</code> for fixed bottom nav.</div>
+    <div class="mermaid">
+flowchart LR
+  A[Browser /portal] --> B{Has token?}
+  B -- "?token=OP-2026-XXXX" --> C[Public lookup\nGET /api/public/portal/lookup?token]
+  B -- "No token, has session cookie" --> D[Session\nGET /api/public/portal/session]
+  B -- "Neither" --> E[Public lookup screen\nEnter token + Sign In / OTP\n→ /login]
+  C --> F[activeToken set\n+ 5 hub queries]
+  D --> F
+  F --> G[ClientPortal shell\nHeader: Logo + LanguagePill EN + Live Sync\nLeft 64: Dashboard | Study | Visa | Umrah | Attest | Jobs | Journey\nMobile: top pill strip + fixed 64h bottom nav]
+  E --> G
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 — The 7 tabs — where every route ends (inside same /portal)</h2>
+    <div class="hint">Tap any sidebar/bottom-nav item → <code>setPortalTab()</code> — no new URL. Only Visa cart → Razorpay opens overlay.</div>
+    <div class="mermaid">
+flowchart TD
+  G[ClientPortal\n/portal] --> TAB{portalTab state}
+  TAB --> DASH[dashboard\nClientDashboardHub]
+  TAB --> STUDY[study\nStudyAbroadClientSection]
+  TAB --> VISA[visa\nVisaServices + Cart]
+  TAB --> UMRAH[umrah\nUmrahClientSection]
+  TAB --> ATTEST[attestation\nAttestationClientSection]
+  TAB --> JOBS[jobs\nManpowerMarketplace + tracker]
+  TAB --> JOURNEY[journey\nJourney Overview]
+
+  DASH --> KANBAN[Kanban 5 cols\nintake → documents → processing → decision → transit\nCard click → onNavigateTab(type) → ends in study/visa/umrah/attest/jobs]
+  DASH --> DIVS[6 Division cards\nStudy/Visa/Umrah/Attest/Jobs/Vault\n→ ends in respective tab]
+  DASH --> CHECK[Checklist 8/4 + Stepper sticky\n→ Upload → vault]
+
+  VISA --> CART[Visa Cart → Razorpay order/verify\n→ reload → dashboard processing]
+  JOBS --> WIZ[ManpowerApplyWizard\n→ tracker timeline\nApplied→Shortlisted→Selected→Medical→Visa→Deployed]
+  STUDY --> MODAL[Study wizard modal]
+  JOURNEY --> CONSENT[Consent withdraw → POST /api/public/portal/consent/withdraw]
+
+  classDef tab fill:#D7A019,stroke:#0A2D50,color:#0A2D50,font-weight:700
+  class DASH,STUDY,VISA,UMRAH,ATTEST,JOBS,JOURNEY tab
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>3 — What the dashboard hub contains</h2>
+      <div class="mermaid">
+flowchart TD
+  H[ClientDashboardHub\nspace-y-6] --> T[TrustStrip\nBuilding in public]
+  H --> P[Pending Banner\nUpload Passport — Due 3d]
+  H --> S[Stepper sticky 52h\n4 steps endowed]
+  H --> Hero[Hero: Your workspace — launching soon]
+  H --> Met[Metrics: Enrolled / Vault / Payments / Counselor]
+  H --> List[Checklist 8/4 + Social honest\n+ OfflineBanner]
+  H --> Kan[Kanban]
+  H --> Div[Divisions hub 6 cards]
+      </div>
+    </div>
+    <div class="card">
+      <h2>4 — Data ends where (D1 / R2 / Razorpay)</h2>
+      <div class="mermaid">
+flowchart LR
+  Q[5 hub queries\n?token] --> API[Worker 8787\n/api/public/portal/*]
+  API --> DB[(D1 opusos-db\nclients / engagements / documents / payments / consents)]
+  API --> R2[(R2 opusdocs\npresigned PUT)]
+  API --> RZ[Razorpay\norder/verify]
+  DB --> Sync{{WS plane=client\nclient:{id}:bookings|:documents}}
+      </div>
+      <div class="kpi">
+        <div><b>clients</b><span>portalToken</span></div>
+        <div><b>engagements</b><span>stageKey/status</span></div>
+        <div><b>documents</b><span>fileName/status</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>5 — Shell & navigation — where taps end</h2>
+    <div class="mermaid">
+flowchart LR
+  S1[Left 64 hidden md:flex\nDashboard | Study | Visa | Umrah | Attest | Jobs | Journey] --> MAIN[Main flex-1 p-6 md:p-8 pb-[88px]]
+  S2[Mobile top pills md:hidden\nDashboard Study Visa Umrah Attest Jobs Journey] --> MAIN
+  S3[Mobile fixed bottom 64h\nHome|Study|Visa|Jobs|Umrah] --> MAIN
+  MAIN --> CHAT[ChatWidget corner only\n(header chat + floating Help removed)]
+    </div>
+    <div class="hint">Desktop Z: left 64 → top TrustStrip (F) → Pending → Stepper sticky → 8/4 → Kanban. Mobile F + thumb-zone: top pills → fixed bottom 64h (44px targets), <code>pb-[88px]</code> so last card never hides.</div>
+  </div>
+
+  <div class="foot">Honest mode: no <code>12,438</code> / <code>4.8</code> / <code>GOVT</code> / <code>ISO</code> — real stats after first clients. • File: <code>reports/client-workspace-architecture.md</code> has full tables + API list. • Print this page → PDF for quick share.</div>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad:true, theme:'base', themeVariables:{ primaryColor:'#0A2D50', primaryTextColor:'#fff', lineColor:'#0A2D50', tertiaryColor:'#FAF8F4' }, flowchart:{ curve:'basis', padding:8 } });
+</script>
+</body>
+</html>

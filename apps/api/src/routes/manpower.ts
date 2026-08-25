@@ -1,4 +1,12 @@
 import { Hono } from 'hono';
+
+function getPortalToken(c: any): string | undefined {
+  const headerToken = c.req.header('x-portal-token') || c.req.header('X-Portal-Token') || c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  if (headerToken) return headerToken.trim();
+  const queryToken = (c.req.query('token') as string | undefined) || '';
+  if (queryToken) return queryToken.trim();
+  return undefined;
+}
 import { getDb } from '../db/client.js';
 import { clients, engagements, consents, candidateProfiles, manpowerDeployments, jobPostings, membershipPlans, appSettings, tasks } from '../db/schema.js';
 import { eq } from 'drizzle-orm';

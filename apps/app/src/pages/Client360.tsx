@@ -261,6 +261,7 @@ export default function Client360() {
 
   // Navigation tabs state
   const [activeTab, setActiveTab] = useState<'tasks' | 'vault' | 'agreements' | 'payments' | 'umrah' | 'courier' | 'study-abroad' | 'visa' | 'attestation' | 'manpower'>('tasks');
+  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
 
   // Timeline Filter State
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'whatsapp' | 'email' | 'system'>('all');
@@ -926,6 +927,61 @@ export default function Client360() {
     }
   };
 
+  const handleBulkDownload = async () => {
+    if (selectedDocs.size === 0) {
+      showToast('Select at least one document to download.');
+      return;
+    }
+    showToast(`Downloading ${selectedDocs.size} document(s)...`);
+    for (const docId of Array.from(selectedDocs)) {
+      try {
+        const res = await fetch(`/api/clients/${clientId}/documents/${docId}/download`, {
+          headers: { 'Cookie': `better-auth.session_token=${sessionToken}` },
+        });
+        if (!res.ok) throw new Error(await res.text() || 'Download failed');
+        const blob = await res.blob();
+        const doc = client?.documents?.find((d) => d.id === docId);
+        const filename = doc?.fileName || `${docId}.bin`;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err: any) {
+        showToast(`Download failed for ${docId}: ${err.message}`);
+      }
+    }
+    showToast(`Downloaded ${selectedDocs.size} file(s).`);
+  };
+
+  const handleBulkVerify = async (status: 'verified' | 'rejected') => {
+    if (selectedDocs.size === 0) {
+      showToast('Select at least one document to update.');
+      return;
+    }
+    showToast(`Updating ${selectedDocs.size} document(s) to ${status}...`);
+    let successCount = 0;
+    for (const docId of Array.from(selectedDocs)) {
+      try {
+        const res = await fetch(`/api/clients/${clientId}/documents/${docId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
+          body: JSON.stringify({ status, note: `Bulk ${status} via vault` }),
+        });
+        if (!res.ok) throw new Error(await res.text() || 'Status update failed');
+        successCount++;
+      } catch (err: any) {
+        showToast(`Failed for ${docId}: ${err.message}`);
+      }
+    }
+    showToast(`${successCount}/${selectedDocs.size} document(s) marked as ${status}.`);
+    setSelectedDocs(new Set());
+    queryClient.invalidateQueries({ queryKey: ['client360', clientId] });
+  };
+
   const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     if (val === 'welcome') {
@@ -1553,27 +1609,62 @@ export default function Client360() {
                 ========================================== */}
             {activeTab === 'vault' && (
               <div className="bg-white p-6 rounded-xl border border-brand-navy/10 shadow-md flex flex-col gap-4 backdrop-blur-sm">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap gap-3">
                   <div>
                     <h3 className="font-display font-bold text-sm text-brand-gold">Document Vault</h3>
-                    <p className="text-xs text-brand-navy/50 mt-0.5">Storage compliance repository on Cloudflare R2 bucket.</p>
+                    <p className="text-xs text-brand-navy/50 mt-0.5">Storage compliance repository on Cloudflare R2 bucket. Select multiple to bulk verify/download.</p>
                   </div>
 
-                  <label className="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-4 py-2 rounded text-xs font-bold flex items-center gap-1.5 cursor-pointer transition shadow-md">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    <span>Upload Document</span>
-                    <input 
-                      type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" 
-                      onChange={handleDocumentUpload} 
-                      className="hidden" 
-                    />
-                  </label>
+                  <div className="flex items-center gap-2">
+                    {client.documents && client.documents.length > 0 && (
+                      <>
+                        <button
+                          onClick={handleBulkDownload}
+                          disabled={selectedDocs.size === 0}
+                          className="px-3 py-2 rounded-lg border border-brand-navy/15 bg-white text-brand-navy text-xs font-bold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
+                        >
+                          ⬇ Download ({selectedDocs.size})
+                        </button>
+                        <button
+                          onClick={() => handleBulkVerify('verified')}
+                          disabled={selectedDocs.size === 0}
+                          className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
+                        >
+                          ✓ Verify ({selectedDocs.size})
+                        </button>
+                      </>
+                    )}
+                    <label className="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-4 py-2 rounded text-xs font-bold flex items-center gap-1.5 cursor-pointer transition shadow-md">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                      <span>Upload Document</span>
+                      <input 
+                        type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" 
+                        onChange={handleDocumentUpload} 
+                        className="hidden" 
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-brand-navy/[0.04] text-brand-gold font-bold uppercase tracking-wider text-[10px] border-b border-brand-navy/[0.08]">
+                        <th className="p-4 w-8">
+                          <input
+                            type="checkbox"
+                            checked={client.documents ? selectedDocs.size === client.documents.length && client.documents.length > 0 : false}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedDocs(new Set((client.documents || []).map((d) => d.id)));
+                              } else {
+                                setSelectedDocs(new Set());
+                              }
+                            }}
+                            className="w-4 h-4 accent-brand-gold cursor-pointer"
+                            aria-label="Select all documents"
+                          />
+                        </th>
                         <th className="p-4">Document Name</th>
                         <th className="p-4">Version</th>
                         <th className="p-4">Upload Date</th>
@@ -1584,6 +1675,20 @@ export default function Client360() {
                     <tbody className="divide-y divide-slate-900">
                       {client.documents?.map((doc) => (
                         <tr key={doc.id} className="hover:bg-brand-navy/[0.05] transition">
+                          <td className="p-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedDocs.has(doc.id)}
+                              onChange={(e) => {
+                                const next = new Set(selectedDocs);
+                                if (e.target.checked) next.add(doc.id);
+                                else next.delete(doc.id);
+                                setSelectedDocs(next);
+                              }}
+                              className="w-4 h-4 accent-brand-gold cursor-pointer"
+                              aria-label={`Select ${doc.fileName}`}
+                            />
+                          </td>
                           <td className="p-4 font-semibold text-brand-navy">{doc.fileName}</td>
                           <td className="p-4 text-brand-navy/50 font-mono">{doc.version}</td>
                           <td className="p-4 text-brand-navy/60">{new Date(doc.uploadedAt * 1000).toLocaleDateString()}</td>
@@ -1610,8 +1715,8 @@ export default function Client360() {
 
                       {(!client.documents || client.documents.length === 0) && (
                         <tr>
-                          <td colSpan={5} className="p-8 text-center text-xs text-brand-navy/40">
-                            No Documents Uploaded in Vault
+                          <td colSpan={6} className="p-8 text-center text-xs text-brand-navy/40">
+                            No Documents Uploaded in Vault — documents uploaded in Study Abroad → Documents will appear here live.
                           </td>
                         </tr>
                       )}

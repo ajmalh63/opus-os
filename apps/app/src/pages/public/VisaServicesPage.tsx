@@ -269,7 +269,7 @@ export default function VisaServicesPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wider text-brand-gold">Consular Presentation</p>
-                    <p className="text-xs sm:text-sm font-extrabold text-brand-navy">99.4% Precision Filing Record</p>
+                    <p className="text-xs sm:text-sm font-extrabold text-brand-navy">Transparent Filing — Building as We Launch</p>
                   </div>
                   <span className="rounded-full bg-emerald-500/15 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
                     ● 100+ Destinations & More

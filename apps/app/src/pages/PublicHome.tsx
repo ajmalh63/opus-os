@@ -1,5 +1,5 @@
 import { useVisibilityTracking } from '../lib/visibilityTracking';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -27,7 +27,7 @@ const HOME_FAQS = [
   },
   {
     question: 'How do I start my application or counseling session?',
-    answer: 'You can book a 1-on-1 consultation session online through our calendar booking tool, submit an inquiry through our digital lead form, or visit our headquarters at 1-1-382, Rakasipet, Bodhan, Telangana. Our certified counselors conduct an initial profile audit and provide a transparent roadmap.',
+    answer: 'You can book a 1-on-1 consultation session online through our calendar booking tool, submit an inquiry through our digital lead form, or visit our headquarters at Nizamabad, Telangana. Our certified counselors conduct an initial profile audit and provide a transparent roadmap.',
   },
   {
     question: 'What countries are available for Study Abroad and Work Visas?',
@@ -35,7 +35,7 @@ const HOME_FAQS = [
   },
   {
     question: 'How does Opus Overseas maintain compliance and document security?',
-    answer: 'We operate under strict zero-advance fee guarantees for recruitment, timing-verified MEA / Embassy courier tracking, and ISO-grade document protection in encrypted cloud vaults with timing-safe audit logs.',
+    answer: 'We operate under strict zero-advance fee guarantees for recruitment, timing-verified MEA / Embassy courier tracking, and careful document protection in private vaults — with complete audit logs and transparent tracking.',
   },
 ];
 
@@ -79,8 +79,8 @@ const SERVICES = [
   { 
     id: 'recruitment', 
     title: 'Overseas Careers & Manpower', 
-    telemetry: '● 100% Verified Demands',
-    desc: 'Candidate sourcing partner to Govt. Registered MEA-Licensed Agencies for engineers, healthcare personnel, and skilled talent.', 
+    telemetry: '● Verified Gulf & Europe Demands',
+    desc: 'Employer-verified openings with structured triage, medical and visa milestone tracking.', 
     path: '/recruitment' 
   },
 ];
@@ -88,12 +88,7 @@ const SERVICES = [
 const FLAG_CODES = ['us', 'gb', 'ca', 'au', 'nz', 'de', 'ie', 'ae', 'fr', 'nl'];
 const FLAG_NAMES = ['USA', 'UK', 'Canada', 'Australia', 'New Zealand', 'Germany', 'Ireland', 'UAE', 'France', 'Netherlands'];
 
-const STEPS = [
-  ['Profile & Strategy', 'We audit your background, transcripts, and financial timelines to map your optimal global pathway.'],
-  ['Dossier Assembly', 'Our legal and admissions desk drafts SOPs, legalizes certificates via MEA, and formats sponsor portfolios.'],
-  ['Consular Submission', 'We secure priority VFS/Embassy biometric slots, conduct rigorous mock interviews, and monitor live queues.'],
-  ['Arrival & Settlement', 'Receive your stamped passport, flight briefings, foreign exchange support, and on-ground guidance.'],
-] as const;
+
 
 export default function PublicHome() {
   useVisibilityTracking('/');
@@ -102,9 +97,11 @@ export default function PublicHome() {
   
   const marqueeRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLElement>(null);
-  const stepsRef = useRef<HTMLElement>(null);
+  const mobileScrollerRef = useRef<HTMLDivElement>(null);
+  const [mobileIdx, setMobileIdx] = useState(0);
 
   useEffect(() => {
+    let mobileCleanup: (() => void) | null = null;
     const ctx = gsap.context(() => {
       const tween = gsap.to(marqueeRef.current, { xPercent: -50, duration: 38, ease: 'none', repeat: -1 });
       ScrollTrigger.create({
@@ -125,11 +122,50 @@ export default function PublicHome() {
       gsap.utils.toArray<HTMLElement>('.reveal').forEach((el) => {
         gsap.fromTo(el, { y: 25, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 85%', once: true } });
       });
-      gsap.utils.toArray<HTMLElement>('.step-item').forEach((el) => {
-        gsap.fromTo(el, { y: 25, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', scrollTrigger: { trigger: stepsRef.current, start: 'top 80%', once: true } });
-      });
     });
-    return () => ctx.revert();
+
+    // Mobile 3D parallax + index tracking for hints (outside gsap context to avoid TDZ)
+    const scroller = mobileScrollerRef.current;
+    if (scroller && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const cards = scroller.querySelectorAll<HTMLElement>('.svc-card-mobile');
+      const update3D = () => {
+        const rect = scroller.getBoundingClientRect();
+        const center = rect.left + rect.width / 2;
+        let closestIdx = 0;
+        let minDist = Infinity;
+        cards.forEach((card, idx) => {
+          const cRect = card.getBoundingClientRect();
+          const cCenter = cRect.left + cRect.width / 2;
+          const dist = (cCenter - center) / rect.width;
+          const rotateY = dist * -18;
+          const translateZ = -Math.abs(dist) * 40;
+          const scale = 1 - Math.abs(dist) * 0.08;
+          card.style.transform = `perspective(1000px) rotateY(${rotateY}deg) translateZ(${translateZ}px) scale(${scale})`;
+          card.style.opacity = String(Math.max(0.85, 1 - Math.abs(dist) * 0.15));
+          const abs = Math.abs(cCenter - center);
+          if (abs < minDist) { minDist = abs; closestIdx = idx; }
+        });
+        setMobileIdx(closestIdx);
+      };
+      let ticking = false;
+      const onScroll = () => {
+        if (!ticking) {
+          requestAnimationFrame(() => { update3D(); ticking = false; });
+          ticking = true;
+        }
+      };
+      scroller.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', update3D);
+      update3D();
+      mobileCleanup = () => {
+        scroller.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', update3D);
+      };
+    }
+    return () => {
+      mobileCleanup?.();
+      ctx.revert();
+    };
   }, []);
 
   return (
@@ -186,7 +222,96 @@ export default function PublicHome() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Mobile — horizontal swipe with 3D parallax (md:hidden) */}
+        <div
+          ref={mobileScrollerRef}
+          className="md:hidden -mx-5 px-5 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-6 pt-2 scroll-smooth"
+          style={{ WebkitOverflowScrolling: 'touch', perspective: '1200px', scrollbarWidth: 'none' } as any}
+        >
+          {SERVICES.map((svc) => {
+            const disabled = enabled !== null && !isEnabled(SLUG_TO_DIVISION_KEY[svc.id]);
+            return (
+              <div
+                key={`m-${svc.id}`}
+                onClick={() => !disabled && setLocation(svc.path)}
+                className={`svc-card-mobile shrink-0 snap-center min-w-[82vw] max-w-[320px] group rounded-3xl border border-brand-navy/10 bg-white p-6 shadow-xs flex flex-col justify-between will-change-transform ${
+                  disabled ? 'pointer-events-none opacity-60' : 'cursor-pointer active:scale-[0.98]'
+                }`}
+                style={{ transformStyle: 'preserve-3d' } as any}
+                aria-disabled={disabled || undefined}
+              >
+                <div>
+                  <Img src={imageFor(`hero-${svc.id}`).src} prompt={imageFor(`hero-${svc.id}`).prompt} label={svc.title} className="mb-4.5 rounded-2xl overflow-hidden shadow-2xs" />
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-bold font-mono text-emerald-800 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full">{svc.telemetry}</span>
+                    {disabled && <span className="inline-flex items-center gap-1 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-gold">Coming soon</span>}
+                  </div>
+                  <h3 className="font-display text-base font-bold text-brand-navy mb-1.5">{svc.title}</h3>
+                  <p className="text-xs leading-relaxed text-brand-textLight">{svc.desc}</p>
+                </div>
+                <div className="mt-5 pt-3.5 border-t border-brand-navy/5 flex items-center justify-between text-xs">
+                  <span className="font-bold uppercase tracking-wider text-brand-gold flex items-center gap-1 text-[11px]">{disabled ? 'Coming Soon' : 'Explore Division'} →</span>
+                  <span className="text-brand-navy/30 font-mono text-[11px]">0{SERVICES.indexOf(svc) + 1}</span>
+                </div>
+              </div>
+            );
+          })}
+          <div className="svc-card-mobile shrink-0 snap-center min-w-[82vw] max-w-[320px] rounded-3xl bg-[#061e38] text-white p-7 flex flex-col justify-between shadow-md will-change-transform" style={{ transformStyle: 'preserve-3d' } as any}>
+            <div>
+              <span className="font-mono text-[10px] uppercase font-bold text-brand-gold bg-brand-gold/15 px-2.5 py-0.5 rounded-full inline-block mb-3">● Unified Client Portal</span>
+              <h3 className="font-display text-lg font-bold text-white mb-2">Create Your Opus OS Account</h3>
+              <p className="text-xs leading-relaxed text-white/70">Unlock instant real-time tracking, direct counselor messaging, secure vaults, and personalized shortlists.</p>
+            </div>
+            <button onClick={() => setLocation('/login')} className="mt-6 cursor-pointer self-start rounded-full bg-brand-gold px-6 py-3 text-xs font-extrabold uppercase tracking-wider text-brand-navy hover:bg-brand-gold-hover hover:text-white transition-all shadow-sm">Sign Up on Opus OS →</button>
+          </div>
+        </div>
+
+        {/* Mobile swipe hints — only < md */}
+        <div className="md:hidden mt-4 flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-navy/45">
+            <span className="hidden sm:inline w-6 h-0.5 bg-brand-gold/30 rounded-full" />
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse" />
+              Swipe to explore
+            </span>
+            <span className="animate-[bounce_1.2s_infinite]">→</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              aria-label="Previous card"
+              onClick={() => mobileScrollerRef.current?.scrollBy({ left: -320, behavior: 'smooth' })}
+              className="h-8 w-8 grid place-items-center rounded-full border border-brand-navy/10 bg-white text-brand-navy/60 hover:text-brand-navy hover:border-brand-gold/40 shadow-xs active:scale-95 transition"
+            >
+              ‹
+            </button>
+            <div className="flex items-center gap-1.5 px-2">
+              {[...Array(SERVICES.length + 1)].map((_, i) => (
+                <button
+                  key={i}
+                  aria-label={`Go to card ${i + 1}`}
+                  onClick={() => {
+                    const el = mobileScrollerRef.current?.querySelectorAll('.svc-card-mobile')[i] as HTMLElement | undefined;
+                    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                  }}
+                  className={`h-1.5 rounded-full transition-all ${i === mobileIdx ? 'w-5 bg-brand-gold' : 'w-1.5 bg-brand-navy/15 hover:bg-brand-navy/25'}`}
+                />
+              ))}
+            </div>
+            <button
+              aria-label="Next card"
+              onClick={() => mobileScrollerRef.current?.scrollBy({ left: 320, behavior: 'smooth' })}
+              className="h-8 w-8 grid place-items-center rounded-full border border-brand-navy/10 bg-white text-brand-navy/60 hover:text-brand-navy hover:border-brand-gold/40 shadow-xs active:scale-95 transition"
+            >
+              ›
+            </button>
+          </div>
+        </div>
+        <div className="md:hidden mt-3 h-1 w-full rounded-full bg-brand-navy/5 overflow-hidden">
+          <div className="h-full bg-brand-gold rounded-full transition-all duration-500" style={{ width: `${((mobileIdx + 1) / (SERVICES.length + 1)) * 100}%` }} />
+        </div>
+
+        {/* Desktop — grid (unchanged, smoother) */}
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {SERVICES.map((svc) => {
             const disabled = enabled !== null && !isEnabled(SLUG_TO_DIVISION_KEY[svc.id]);
             return (
@@ -262,38 +387,13 @@ export default function PublicHome() {
       {/* 4. INTERACTIVE 60-SECOND APPLICATION READINESS AUDITOR */}
       <ApplicationReadinessAuditor />
 
-      {/* 5. INSTITUTIONAL COVENANTS RIBBON (Replaced heavy boxed cards with sleek trust bar) */}
-      <InstitutionalCovenants />
-
-      {/* 6. PROVEN CASE SPOTLIGHT (Replaced 6 generic review boxes with 1 tabbed spotlight) */}
+      {/* 5. PROVEN CASE SPOTLIGHT (Replaced 6 generic review boxes with 1 tabbed spotlight) */}
       <RealCaseVault />
 
-      {/* 7. HOW IT WORKS — CLEAN EDITORIAL TIMELINE */}
-      <section ref={stepsRef} className="py-20 sm:py-24 bg-[#fcfbf9] border-b border-brand-navy/10">
-        <div className="mx-auto max-w-6xl px-5 sm:px-6">
-          <div className="reveal mb-14 text-center space-y-2">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-brand-gold">
-              Execution Protocol
-            </span>
-            <h2 className="font-display fluid-h2 font-extrabold text-brand-navy tracking-tight">
-              Four Steps to Your Global Milestone
-            </h2>
-            <p className="text-xs sm:text-sm text-brand-textLight">Complete transparency, document tracking, and compliance at every stage.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {STEPS.map(([title, body], i) => (
-              <div key={title} className="step-item relative">
-                <span className="font-mono text-xs font-black text-brand-gold bg-brand-gold/15 px-3 py-1 rounded-lg inline-block mb-3">
-                  0{i + 1}
-                </span>
-                <h3 className="font-display text-base font-bold text-brand-navy mb-1.5">{title}</h3>
-                <p className="text-xs leading-relaxed text-brand-textLight">{body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* 6. WHY CHOOSE OPUS OVERSEAS — Trust Strip (moved right before FAQs) */}
+      <InstitutionalCovenants />
+
+
 
       {/* 8. GEO & AEO KNOWLEDGE HUB + FREQUENTLY ASKED QUESTIONS */}
       <GeoFaqSection
@@ -301,7 +401,7 @@ export default function PublicHome() {
         title="Frequently Asked Questions"
         subtitle="Clear, verified answers regarding our overseas education, visa processing, attestation, and manpower recruitment protocols."
         summaryTitle="Opus Overseas — Verified Global Consultancy"
-        summaryText="Opus Overseas is a premier global consultancy headquartered in Bodhan, Telangana, India. We operate specialized divisions in Study Abroad, Worldwide Visa Services, MEA Document Attestation, Umrah Pilgrimage Packages, and Gulf Manpower Recruitment with 100% compliant tracking and zero hidden charges."
+        summaryText="Opus Overseas is a premier global consultancy headquartered in Nizamabad, Telangana, India. We operate specialized divisions in Study Abroad, Worldwide Visa Services, MEA Document Attestation, Umrah Pilgrimage Packages, and Gulf Manpower Recruitment with 100% compliant tracking and zero hidden charges."
         faqs={HOME_FAQS}
       />
 

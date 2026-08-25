@@ -65,11 +65,12 @@ export default function RefundPolicyPage() {
             
             <div className="space-y-4">
               <div className="p-4 rounded-2xl bg-white border border-brand-navy/10">
-                <h3 className="font-display text-sm font-bold text-brand-navy mb-1">🎓 Study Abroad (100% Free Mentorship & Refundable Deposit)</h3>
+                <h3 className="font-display text-sm font-bold text-brand-navy mb-1">🎓 Study Abroad — 100% Free Guidance (Refundable Commitment)</h3>
                 <ul className="list-disc pl-5 space-y-1 text-xs text-brand-textLight">
-                  <li><strong>Free Advisory Scope:</strong> Study abroad counselling, profile shortlisting, SOP mentoring, and visa guidance are 100% free.</li>
-                  <li><strong>100% Security Deposit Refund:</strong> The initial application commitment deposit is 100% refunded to the student once the candidate successfully enrolls and commences classes on Day 1 of the official academic term at the applied university (verified via admissions management portals, provided the student does not transfer or abandon the file).</li>
-                  <li><strong>Cancellation Before Portal Submission:</strong> 100% refund of the security deposit if cancelled in writing prior to institutional dossier filing.</li>
+                  <li><strong>Free Advisory Scope:</strong> Study abroad counselling, profile shortlisting, SOP mentoring, and visa guidance are 100% free — no consulting charges.</li>
+                  <li><strong>Refundable Application Commitment — ₹5,000:</strong> To initiate formal multi-stage dossier processing and application filing, a commitment of <strong>₹5,000</strong> is collected. It is <strong>100% refunded</strong> once you attend the official orientation / commencement day at your desired university <strong>and</strong> pay the first-semester fee (verified via university admissions confirmation / enrollment verification). This ensures serious applications only.</li>
+                  <li><strong>First 50 Applicants — Fully Free (not even ₹5,000):</strong> As a launch offer, the first 50 study-abroad applicants pay <strong>₹0</strong> — the ₹5,000 commitment is waived entirely.</li>
+                  <li><strong>Cancellation Before Portal Submission:</strong> 100% refund of the ₹5,000 if cancelled in writing before institutional dossier filing.</li>
                   <li><strong>Non-Refundable:</strong> Direct university application fees or evaluation charges paid directly to foreign educational boards.</li>
                 </ul>
               </div>

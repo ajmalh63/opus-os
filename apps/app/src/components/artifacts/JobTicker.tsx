@@ -34,8 +34,8 @@ export default function JobTicker() {
   return (
     <ArtifactShell 
       title="Verified Overseas Employer Demands" 
-      caption="Active international vacancies sourced via Govt. Registered MEA-Licensed agencies"
-      statusLabel="100% Verified Demands"
+      caption="Vacancies — building verified network as we launch"
+      statusLabel="Verified Network — Building in Public"
     >
       <div className="space-y-2">
         {jobs.slice(0, 4).map((j, idx) => (
@@ -57,10 +57,10 @@ export default function JobTicker() {
 
             <div className="text-right shrink-0">
               <a 
-                href="/login"
-                className="inline-flex items-center gap-1 rounded-md bg-brand-navy/5 px-2 py-0.5 text-[10px] font-semibold text-brand-navy hover:bg-brand-gold hover:text-brand-navy transition-colors"
+                href="/portal?tab=jobs"
+                className="inline-flex items-center gap-1 rounded-md bg-brand-navy/10 px-2 py-0.5 text-[10px] font-bold text-brand-navy hover:bg-brand-gold hover:text-brand-navy transition-colors cursor-pointer"
               >
-                <span>🔒</span> Login to View
+                <span>💼</span> Apply via Portal
               </a>
               <span className="text-[9px] text-brand-textLight block mt-0.5">Employer Sponsored</span>
             </div>
@@ -69,7 +69,7 @@ export default function JobTicker() {
 
         <div className="rounded-xl bg-brand-navy/5 px-3 py-2 flex items-center justify-between text-[10px] text-brand-navy font-medium">
           <span>Candidate Sourcing Partner</span>
-          <span className="text-brand-gold font-bold">Govt. MEA Agency Network</span>
+          <span className="text-brand-gold font-bold">Verified network — building in public</span>
         </div>
       </div>
     </ArtifactShell>

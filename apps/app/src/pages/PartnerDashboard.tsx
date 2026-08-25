@@ -7,11 +7,14 @@ import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import LiveWallpaper from '../components/LiveWallpaper';
 import PartnerDashboardHub from '../components/PartnerDashboardHub';
+import PartnerMobileNav from '../components/partner/PartnerMobileNav';
 import ChatWidget from '../components/ChatWidget';
 import { track, EVENTS } from '../lib/umami';
 import { fadeUp, staggerReveal, countUp, prefersReducedMotion, makeContext, whenFontsReady } from '../lib/motion';
 import { useVisibilityTracking } from '../lib/visibilityTracking';
 import { createSyncClient } from '../lib/syncClient';
+import { BookingTower } from '../components/partner/BookingTower';
+import { CommissionPerformance } from '../components/partner/CommissionPerformance';
 
 // ============================================================================
 // OPUS OVERSEAS — PARTNER & AFFILIATE COMMAND CENTER (GOLD STANDARD ARCHITECTURE)
@@ -70,34 +73,6 @@ interface PartnerSessionPayload {
     total: number;
   };
   referrals?: CommissionRow[];
-}
-
-interface OnboardingStep {
-  key: string;
-  done: boolean;
-  label: string;
-  hint: string;
-}
-
-interface OnboardingPayload {
-  steps: OnboardingStep[];
-  doneCount: number;
-  totalCount: number;
-}
-
-interface ClickLinkRow {
-  id: string;
-  title: string;
-  catalogType: string;
-  catalogItemId: string;
-  clicks: number;
-  lastClickedAt: number | null;
-  createdAt: number;
-}
-
-interface ClicksPayload {
-  totalClicks: number;
-  links: ClickLinkRow[];
 }
 
 interface TimelineEvent {
@@ -372,25 +347,6 @@ function AnimatedNumber({ value, prefix = '', suffix = '' }: { value: number; pr
 
 function StatusChip({ status }: { status: string }) {
   const cls = statusStyles[status] || statusStyles.unmatured;
-  // Partner realtime — api_token plane, partner:{id}:* live ledger
-  // @ts-ignore
-  const _syncPartner = (() => {
-    try {
-      const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
-      if (!enabled || typeof window === 'undefined') return null;
-      const apiToken = (() => { try { return localStorage.getItem('partnerApiToken') || ''; } catch { return ''; } })();
-      const partnerId = (() => { try { return localStorage.getItem('partnerId') || ''; } catch { return ''; } })();
-      if (!apiToken || !partnerId) return null;
-      const c = createSyncClient({
-        plane: 'partner',
-        apiToken,
-        channels: [`partner:${partnerId}:commissions`, `partner:${partnerId}:referrals`, 'public:catalog:umrah'],
-        enabled,
-        onEvent: (e) => { try { const qc=(window as any).__TANSTACK_QUERY_CLIENT__; if(qc) qc.invalidateQueries({queryKey:['partner']}); } catch {} },
-      });
-      c.connect(); return c;
-    } catch { return null; }
-  })();
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cls}`}>
@@ -552,30 +508,6 @@ export default function PartnerDashboard() {
     retry: false,
   });
 
-  const { data: onboarding } = useQuery<OnboardingPayload>({
-    queryKey: ['partnerOnboarding', activePartnerId],
-    queryFn: async () => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/onboarding`, { headers: authHeaders() });
-      if (r.status === 404) return { steps: [], doneCount: 0, totalCount: 0 };
-      if (!r.ok) throw new Error(await r.text() || 'onboarding failed');
-      return r.json();
-    },
-    enabled: !!activePartnerId,
-    retry: false,
-  });
-
-  const { data: clicks } = useQuery<ClicksPayload>({
-    queryKey: ['partnerClicks', activePartnerId],
-    queryFn: async () => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/clicks`, { headers: authHeaders() });
-      if (r.status === 404) return { totalClicks: 0, links: [] };
-      if (!r.ok) throw new Error(await r.text() || 'clicks failed');
-      return r.json();
-    },
-    enabled: !!activePartnerId,
-    retry: false,
-  });
-
   const { data: referralDetail } = useQuery<ReferralDetailPayload>({
     queryKey: ['partnerReferralDetail', activePartnerId],
     queryFn: async () => {
@@ -630,6 +562,35 @@ export default function PartnerDashboard() {
     },
     enabled: !!activePartnerId && tab === 'links',
   });
+
+  // Partner realtime WebSocket sync for live commissions, leads, and payouts
+  useEffect(() => {
+    const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
+    if (!enabled || !activePartnerId) return;
+
+    const c = createSyncClient({
+      plane: 'partner',
+      apiToken: partnerToken,
+      channels: [
+        `partner:${activePartnerId}:commissions`,
+        `partner:${activePartnerId}:referrals`,
+        'public:catalog:umrah',
+      ],
+      enabled,
+      onEvent: () => {
+        queryClient.invalidateQueries({ queryKey: ['partnerSummary'] });
+        queryClient.invalidateQueries({ queryKey: ['partnerSession'] });
+        queryClient.invalidateQueries({ queryKey: ['partnerReferralDetail'] });
+        queryClient.invalidateQueries({ queryKey: ['partnerPayouts'] });
+        queryClient.invalidateQueries({ queryKey: ['partnerThrive'] });
+      },
+    });
+
+    c.connect();
+    return () => {
+      try { (c as any).disconnect?.(); } catch {}
+    };
+  }, [activePartnerId, partnerToken, queryClient]);
 
   // Effective partner state
   const effectiveSummary: PartnerSummary | undefined = sessionActive && session
@@ -690,17 +651,6 @@ export default function PartnerDashboard() {
   const totalReferredCount = ledgerRows.length;
   const maturedOrPaidCount = maturedCount + paidCount;
   const conversionRate = totalReferredCount > 0 ? Math.round((maturedOrPaidCount / totalReferredCount) * 100) : 0;
-
-  // Onboarding Checklist
-  const fallbackSteps: OnboardingStep[] = [
-    { key: 'account', done: true, label: 'Partner Hub Activated', hint: 'Your KYC and referral account are approved and live.' },
-    { key: 'link', done: (linksData?.links?.length || 0) > 0, label: 'Create 1st Division Link', hint: 'Generate your personal link for Study Abroad or Visas.' },
-    { key: 'click', done: (clicks?.totalClicks || 0) > 0, label: 'Attract First Link Click', hint: 'Share on WhatsApp, social media, or with clients.' },
-    { key: 'referral', done: totalReferredCount > 0, label: 'Land 1st Converted Client', hint: 'Commissions mature immediately upon client service agreement.' },
-  ];
-  const onboardingSteps = onboarding?.steps?.length ? onboarding.steps : fallbackSteps;
-  const doneCount = onboarding?.steps?.length ? onboarding.doneCount : fallbackSteps.filter((s) => s.done).length;
-  const totalCount = onboarding?.steps?.length ? onboarding.totalCount : fallbackSteps.length;
 
   // --------------------------------------------------------------------------
   // MUTATIONS
@@ -1466,7 +1416,11 @@ export default function PartnerDashboard() {
                   referrals={effectiveSummary?.referrals || []}
                   onNavigateTab={(t) => setTab(t)}
                   onQuickReferralSubmit={async (lead) => {
-                    await manualReferralMutation.mutateAsync(lead.phone || lead.email);
+                    await logReferralMutation.mutateAsync({
+                      partnerId: activePartnerId || '',
+                      clientId: (lead.phone || lead.email).toUpperCase(),
+                      commissionRate: manualCommissionRate,
+                    });
                   }}
                 />
               )}
@@ -1707,6 +1661,7 @@ export default function PartnerDashboard() {
               {/* ============================================================ */}
               {tab === 'referrals' && (
                 <div className="space-y-8">
+                  <BookingTower partnerId={activePartnerId || ''} token={partnerToken || ''} />
                   {/* Manual Log Referral Drawer */}
                   <section className="partner-fade clay-card p-6 md:p-8">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
@@ -1917,6 +1872,7 @@ export default function PartnerDashboard() {
               {/* ============================================================ */}
               {tab === 'payouts' && (
                 <div className="space-y-8">
+                  <CommissionPerformance partnerId={activePartnerId || ''} token={partnerToken || ''} />
                   {/* Settlement Request Card */}
                   <section className="partner-fade clay-card p-6 md:p-8">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-6">
@@ -2175,7 +2131,12 @@ export default function PartnerDashboard() {
             </div>
           </div>
         )}
+        {/* spacer for fixed bottom nav (thumb-zone) */}
+        {activePartnerId && <div className="h-[72px] md:hidden" aria-hidden />}
       </main>
+
+      {/* Mobile Bottom Nav — thumb-zone, fixed (ITA Group: bottom nav +40% engagement vs top hamburger) */}
+      {activePartnerId && <PartnerMobileNav active={tab} onChange={(t) => setTab(t)} />}
 
       <Footer />
 
@@ -2198,7 +2159,7 @@ export default function PartnerDashboard() {
               </button>
             </div>
 
-            <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-brand-navy/10">
+            <div id="partner-qr-svg-container" className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-brand-navy/10">
               <div className="p-3 bg-white rounded-xl shadow-sm">
                 <QRCodeSVG
                   value={qrModal.url}
@@ -2212,7 +2173,27 @@ export default function PartnerDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const svgEl = document.querySelector('#partner-qr-svg-container svg');
+                  if (!svgEl) return;
+                  const svgData = new XMLSerializer().serializeToString(svgEl);
+                  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                  const svgUrl = URL.createObjectURL(svgBlob);
+                  const downloadLink = document.createElement('a');
+                  downloadLink.href = svgUrl;
+                  downloadLink.download = `opus-partner-qr-${Date.now()}.svg`;
+                  document.body.appendChild(downloadLink);
+                  downloadLink.click();
+                  document.body.removeChild(downloadLink);
+                  showToast('✓ QR Code downloaded successfully as vector SVG.');
+                }}
+                className="flex-1 py-2.5 rounded-full bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                📥 Download Vector QR
+              </button>
               <button
                 onClick={() => copyToClipboard(qrModal.url, 'modal-qr', 'QR URL')}
                 className={`${navyBtn} flex-1 py-2.5`}

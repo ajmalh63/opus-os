@@ -12,10 +12,10 @@ export const BASE_ORGANIZATION_SCHEMA = {
   priceRange: '$$',
   address: {
     '@type': 'PostalAddress',
-    streetAddress: '1-1-382, Rakasipet',
-    addressLocality: 'Bodhan',
+    streetAddress: '',
+    addressLocality: 'Nizamabad',
     addressRegion: 'Telangana',
-    postalCode: '503185',
+    postalCode: '',
     addressCountry: 'IN',
   },
   geo: {

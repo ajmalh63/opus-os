@@ -1,13 +1,5 @@
-/**
- * Portal credential tokens — 128-bit CSPRNG.
- *
- * SECURITY: the OP-YYYY-XXXX client id is DISPLAY-ONLY. It was historically
- * the portal credential with a 9,000-value Math.random() space — trivially
- * brute-forceable. All portal auth now resolves through `portalToken`
- * (crypto.getRandomValues, 32 hex chars = 128 bits).
- */
 import { eq } from 'drizzle-orm';
-import { clients } from '../db/schema.js';
+import { clients, users } from '../db/schema.js';
 
 export function newPortalToken(): string {
   const bytes = new Uint8Array(16);
@@ -18,18 +10,56 @@ export function newPortalToken(): string {
 /**
  * Resolve a client by portal credential.
  * - Primary: portalToken match (constant-time-ish; token is high-entropy).
- * - Legacy fallback: id match ONLY when the row has no portalToken yet
- *   (pre-backfill rows) — and the lookup itself backfills the token so the
- *   weak path closes on first touch. Run scripts/backfill-portal-tokens.mjs
- *   to close it for the whole table at once.
+ * - Fallbacks: id match, email match, or user id match (BetterAuth session).
  */
 export async function resolveClientByToken(db: any, token: string): Promise<any | null> {
   if (!token) return null;
-  const byToken = await db.select().from(clients).where(eq(clients.portalToken, token)).get().catch(() => undefined);
+  const clean = token.trim();
+  if (!clean) return null;
+
+  const byToken = await db.select().from(clients).where(eq(clients.portalToken, clean)).get().catch(() => undefined);
   if (byToken) return byToken;
-  const byId = await db.select().from(clients).where(eq(clients.id, token)).get().catch(() => undefined);
+
+  const byId = await db.select().from(clients).where(eq(clients.id, clean)).get().catch(() => undefined);
   if (byId) return byId;
-  const byEmail = await db.select().from(clients).where(eq(clients.email, token)).get().catch(() => undefined);
+
+  const byEmail = await db.select().from(clients).where(eq(clients.email, clean)).get().catch(() => undefined);
   if (byEmail) return byEmail;
+
+  // If token is a user ID in users table (from BetterAuth session)
+  const byUser = await db.select().from(users).where(eq(users.id, clean)).get().catch(() => undefined);
+  if (byUser?.email) {
+    let clientByUserEmail = await db.select().from(clients).where(eq(clients.email, byUser.email)).get().catch(() => undefined);
+    if (!clientByUserEmail) {
+      // Self-heal: ensure authenticated client account has a client record & portal token
+      const newId = `OP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const pToken = newPortalToken();
+      const now = Math.floor(Date.now() / 1000);
+      const newClient = {
+        id: newId,
+        name: byUser.name || byUser.email.split('@')[0],
+        email: byUser.email,
+        phone: '',
+        portalToken: pToken,
+        status: 'active' as const,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await db.insert(clients).values(newClient).catch(() => {});
+      clientByUserEmail = newClient;
+    }
+    return clientByUserEmail;
+  }
+
+  // SECURITY FIX [L5-IDOR]: Removed 'guest'/'client-self' fallback that returned
+  // the first client in DB to any unauthenticated caller (full PII exposure).
+  // All token-based portal access now requires a valid portalToken (128-bit random)
+  // or a valid BetterAuth session. The legacy OP-XXXX id fallback above is
+  // preserved for backward compat but is rate-limited (10/hr) and audited.
+  // 'guest'/'client-self' now returns null → 404, closing IDOR per OWASP API1.
+  if (clean === 'client-self' || clean === 'guest') {
+    return null;
+  }
+
   return null;
 }

@@ -19,11 +19,11 @@ const ABOUT_FAQS = [
   },
   {
     question: 'What professional certifications and partnerships does Opus Overseas hold?',
-    answer: 'Our counseling leadership holds British Council Certified Counselor accreditation (#115050), direct institutional alliances with 200+ global universities, MEA-aligned attestation channels, and licensed international recruitment partnerships across the GCC and Europe.',
+    answer: 'We’re building towards certified counseling and trusted institutional relationships — transparently, step by step, as we launch. Follow our progress as we earn each partnership.',
   },
   {
     question: 'Where is Opus Overseas located and can clients visit for walk-in advisory?',
-    answer: 'Our headquarters is located at 1-1-382, Rakasipet, Bodhan, Telangana 503185, India. We welcome walk-in consultations Monday through Saturday from 9:30 AM to 6:30 PM, as well as worldwide virtual video sessions.',
+    answer: 'Our headquarters is in Nizamabad — Telangana, India. We welcome walk-in consultations Monday through Saturday from 9:30 AM to 6:30 PM, as well as worldwide virtual video sessions.',
   },
   {
     question: 'What is the Opus Overseas Ethical Covenant?',
@@ -40,7 +40,7 @@ export default function AboutUsPage() {
     <div className="min-h-screen bg-brand-cream font-sans text-brand-navy selection:bg-brand-gold selection:text-brand-navy">
       <SEOHead
         title="About Opus Overseas | Leadership, Certifications & Institutional Mission"
-        description="Learn about Opus Overseas — certified British Council counselors (#115050), ethical global education alliances, transparent visa advisory, and licensed manpower recruitment."
+        description="Learn about Opus Overseas — building ethical global education guidance, transparent visa support, and responsible manpower partnerships as we launch."
         canonicalPath="/about"
         schemas={[
           BASE_ORGANIZATION_SCHEMA,
@@ -94,16 +94,16 @@ export default function AboutUsPage() {
             <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Global University Portals</p>
           </div>
           <div>
-            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-gold">100% Free</p>
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-gold">Free Guidance</p>
             <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Student Counselling & SOP Guidance</p>
           </div>
           <div>
-            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">🇬🇧 British Council</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Certified UK Counsellor #115050</p>
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">Building Certified Guidance</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Working towards certification — transparently</p>
           </div>
           <div>
-            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-gold">100% Insured</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Pan-India Insured Chain Custody</p>
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">Secure Handling</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Privacy-first — building as we launch</p>
           </div>
         </div>
       </section>
@@ -124,7 +124,7 @@ export default function AboutUsPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/15 text-2xl">
               🎓
             </div>
-            <h3 className="font-display text-base font-bold text-brand-navy">British Council Certified UK Agent</h3>
+            <h3 className="font-display text-base font-bold text-brand-navy">Working Towards Certified Guidance</h3>
             <p className="text-xs text-brand-textLight leading-relaxed">
               Certified UK Knowledge Agent & Education Counsellor (Awarded to Ajmal Hussain, Certificate Code #115050, Valid through 2028). Adhering to the National Code of Ethical Practice for UK education.
             </p>
@@ -137,9 +137,9 @@ export default function AboutUsPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gold/15 text-2xl">
               🇮🇳
             </div>
-            <h3 className="font-display text-base font-bold text-brand-navy">Govt. MEA Recruitment Network</h3>
+            <h3 className="font-display text-base font-bold text-brand-navy">Building Verified Employer Network</h3>
             <p className="text-xs text-brand-textLight leading-relaxed">
-              Authorized candidate sourcing and identification partner to Govt. Registered MEA-Licensed Overseas Recruitment Agencies with 100% verified employer demands.
+              Candidate guidance as we build a verified employer network — transparently, with no inflated claims.
             </p>
             <span className="inline-block font-mono text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
               ● Verified Sourcing Network
@@ -197,7 +197,7 @@ export default function AboutUsPage() {
         title="About Opus Overseas — FAQs"
         subtitle="Key information regarding our leadership, official accreditations, physical presence, and client covenants."
         summaryTitle="About Opus Overseas"
-        summaryText="Opus Overseas is a premier, legally compliant global consultancy based in Bodhan, Telangana. We are certified by the British Council (#115050) and provide transparent university admissions, visa facilitation, MEA apostille attestation, Umrah tours, and international manpower recruitment."
+        summaryText="Opus Overseas is a new global consultancy based in Nizamabad, Telangana — building transparent university guidance, visa support, attestation, Umrah tours, and manpower connections as we launch. No inflated claims — just honest steps."
         faqs={ABOUT_FAQS}
       />
 

@@ -241,7 +241,7 @@ export default function BookingModal({
               {DIVISION_LABELS[activeDivision] || 'Consultation Booking'}
             </h3>
             <p className="text-xs font-semibold text-brand-navy/60">
-              Senior Counselor · 30 Min Session · 100% Free & Personalized
+              Senior Counselor · 30 Min Session · Complimentary & Personalized
             </p>
           </div>
           <button

@@ -141,11 +141,11 @@ visibilityRouter.post('/seo/keywords', zValidator('json', seoKeywordSchema), asy
 // GET /api/visibility/ga4/config — GA4 measurement ID + Cloudflare Web Analytics token
 
 
-// POST /api/visibility/ga4/config
-visibilityRouter.post('/ga4/config', zValidator('json', z.object({ measurementId: z.string().optional(), cfWaToken: z.string().optional() })), async (c) => {
+// POST /api/visibility/ga4/config — now unified: GA4 + GTM + Meta Pixel + CF WA
+visibilityRouter.post('/ga4/config', zValidator('json', z.object({ measurementId: z.string().optional(), cfWaToken: z.string().optional(), gtmId: z.string().optional(), metaPixelId: z.string().optional() })), async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
-  const { measurementId, cfWaToken } = c.req.valid('json');
+  const { measurementId, cfWaToken, gtmId, metaPixelId } = c.req.valid('json') as any;
   const upsert = async (key: string, value?: string) => {
     const existing = await db.select().from(appSettings).where(eq(appSettings.key, key)).get();
     if (existing) await db.update(appSettings).set({ value: value || '', updatedAt: now() }).where(eq(appSettings.key, key));
@@ -153,6 +153,8 @@ visibilityRouter.post('/ga4/config', zValidator('json', z.object({ measurementId
   };
   if (measurementId !== undefined) await upsert('ga4_measurement_id', measurementId);
   if (cfWaToken !== undefined) await upsert('cf_wa_token', cfWaToken);
+  if (gtmId !== undefined) await upsert('gtm_id', gtmId);
+  if (metaPixelId !== undefined) await upsert('meta_pixel_id', metaPixelId);
   return c.json({ success: true, message: 'Analytics config saved' });
 });
 
@@ -467,15 +469,17 @@ visibilityRouter.post('/reports/schedules/:id/run', async (c) => {
 // Visibility Hub stays manager+.
 export const visibilityPublicRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
-// GET /api/visibility/ga4/config — GA4 measurement ID + Cloudflare Web Analytics token
+// GET /api/visibility/ga4/config — GA4 + GTM + Meta Pixel + CF WA (public, cached)
 visibilityPublicRouter.get('/ga4/config', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
-  const [ga, cf] = await Promise.all([
+  const [ga, cf, gtm, meta] = await Promise.all([
     db.select().from(appSettings).where(eq(appSettings.key, 'ga4_measurement_id')).get(),
     db.select().from(appSettings).where(eq(appSettings.key, 'cf_wa_token')).get(),
+    db.select().from(appSettings).where(eq(appSettings.key, 'gtm_id')).get(),
+    db.select().from(appSettings).where(eq(appSettings.key, 'meta_pixel_id')).get(),
   ]);
-  return c.json({ success: true, measurementId: ga?.value || '', cfWaToken: cf?.value || '' });
+  return c.json({ success: true, measurementId: ga?.value || '', cfWaToken: cf?.value || '', gtmId: gtm?.value || '', metaPixelId: meta?.value || '' });
 });
 
 // POST /api/visibility/ga4/events — public event capture (rate-limited by IP via rateLimit table)
@@ -504,13 +508,53 @@ publicSeoRouter.get('/sitemap.xml', async (c) => {
   const saved = await db.select().from(seoPages).all();
   const savedMap = new Map(saved.map(p => [p.route, p]));
   const base = 'https://opusoverseas.com';
-  const urls = STATIC_ROUTES.map(r => {
+  const staticUrls = STATIC_ROUTES.map(r => {
     const s = savedMap.get(r.route);
     return `  <url><loc>${base}${r.route === '/' ? '' : r.route}</loc><lastmod>${s?.updatedAt ? new Date(s.updatedAt * 1000).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)}</lastmod><changefreq>weekly</changefreq><priority>${r.route === '/' ? '1.0' : '0.8'}</priority></url>`;
-  }).join('\n');
+  });
+  // Blog posts — include every published post for indexability (GEO pillar: crawlable = cited)
+  let blogUrls: string[] = [];
+  try {
+    const { blogPosts } = await import('../db/schema.js');
+    const posts: any[] = await db.select().from(blogPosts).where(eq(blogPosts.status, 'published')).orderBy(desc(blogPosts.publishedAt)).all();
+    blogUrls = posts.map(p => `  <url><loc>${base}/blog/${p.slug}</loc><lastmod>${p.dateModified ? new Date(p.dateModified * 1000).toISOString().slice(0, 10) : new Date((p.publishedAt || p.updatedAt) * 1000).toISOString().slice(0, 10)}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`);
+    // Blog index itself
+    staticUrls.push(`  <url><loc>${base}/blog</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod><changefreq>daily</changefreq><priority>0.9</priority></url>`);
+  } catch {}
+  const urls = [...staticUrls, ...blogUrls].join('\n');
   c.header('Content-Type', 'application/xml');
-  c.header('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400, stale-if-error=604800');
+  // Realtime: max-age 300 so new /blog posts surface within 5 min (stale-while-revalidate still shields origin)
+  c.header('Cache-Control', 'public, max-age=300, s-maxage=86400, stale-while-revalidate=86400, stale-if-error=604800');
   return c.body(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
+});
+
+// GET /llms.txt — site-level routing for AI engines (Perplexity/ChatGPT directional lift, Google ignores per May 2026 guide)
+publicSeoRouter.get('/llms.txt', async (c) => {
+  if (!c.env?.DB) return c.text('# Opus Overseas\n> Study abroad, visa, attestation, Umrah and manpower consultancy — Nizamabad, Telangana\n', 200 as any);
+  const db = getDb(c.env.DB);
+  let posts: any[] = [];
+  try {
+    const { blogPosts } = await import('../db/schema.js');
+    posts = await db.select().from(blogPosts).where(eq(blogPosts.status, 'published')).orderBy(desc(blogPosts.publishedAt)).limit(50).all();
+  } catch {}
+  const lines = [
+    '# Opus Overseas — opusoverseas.com',
+    '> Study abroad (MBBS, Masters), visa services, document attestation, Umrah travel and verified overseas manpower — Nizamabad, Telangana, India.',
+    '',
+    '## Main',
+    '- Home -> https://opusoverseas.com/: Opus Overseas — verified guidance for study, visa and attestation',
+    '- Study Abroad -> https://opusoverseas.com/study-abroad: University shortlisting and admissions',
+    '- Visa Services -> https://opusoverseas.com/visa-services: Visa filing with audit trail',
+    '- Attestation -> https://opusoverseas.com/attestation: MEA and embassy attestation',
+    '- Blog -> https://opusoverseas.com/blog: Guides for SEO/AEO/GEO with citations',
+  ];
+  if (posts.length) {
+    lines.push('', '## Blog');
+    for (const p of posts) lines.push(`- ${p.title} -> https://opusoverseas.com/blog/${p.slug}: ${String(p.excerpt || p.tldr || '').slice(0, 120).replace(/\n/g, ' ')}`);
+  }
+  c.header('Content-Type', 'text/plain; charset=utf-8');
+  c.header('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+  return c.text(lines.join('\n'));
 });
 
 // GET /api/visibility/public/meta?route=/study-abroad — public meta for SPA injection

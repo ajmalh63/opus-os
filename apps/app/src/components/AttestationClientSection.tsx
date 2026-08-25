@@ -31,6 +31,14 @@ const CATEGORY_LABEL: Record<string, string> = { educational: 'Educational', per
 const ROUTE_LABEL: Record<string, string> = { apostille: 'Apostille', embassy: 'Embassy Attestation' };
 const INR = (p: number) => '₹' + (p / 100).toLocaleString('en-IN');
 
+// Fallback — full service destinations (mirrors staff AttestationPortal ATTESTATION_COUNTRIES + portal rateCards)
+const ALL_SERVICE_COUNTRIES = [
+  'UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain',
+  'Malaysia', 'China', 'Thailand', 'Vietnam', 'Taiwan', 'Sri Lanka', 'Bangladesh', 'Japan', 'South Korea', 'Singapore', 'Hong Kong',
+  'USA', 'UK', 'Canada', 'Australia', 'New Zealand', 'Ireland', 'Germany', 'France', 'Netherlands', 'Sweden', 'Switzerland', 'Spain', 'Italy', 'Poland', 'Russia', 'Turkey',
+  'Egypt', 'Jordan', 'Libya', 'South Africa', 'Brazil', 'Mexico', 'Other'
+];
+
 export default function AttestationClientSection({ token }: { token: string }) {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'browse' | 'tracker'>('browse');
@@ -177,11 +185,12 @@ export default function AttestationClientSection({ token }: { token: string }) {
             <div className="font-bold text-brand-navy text-xs">Request an attestation quote</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Destination country</label>
+                <label className={labelCls}>Destination country *</label>
                 <select className={inputCls} value={country} onChange={e => setCountry(e.target.value)}>
-                  <option value="">-- Select --</option>
-                  {(rateData?.countries || []).map(c => <option key={c} value={c}>{c}</option>)}
+                  <option value="">-- Select destination --</option>
+                  {(rateData?.countries?.length ? rateData.countries : ALL_SERVICE_COUNTRIES).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
+                {!(rateData?.countries?.length) && <div className="text-[9px] text-amber-700 mt-1">All {ALL_SERVICE_COUNTRIES.length} destinations available — rate cards will refine pricing</div>}
               </div>
               <div>
                 <label className={labelCls}>Document category</label>

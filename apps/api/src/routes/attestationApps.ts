@@ -1,5 +1,13 @@
 import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
+
+function getPortalToken(c: any): string | undefined {
+  const headerToken = c.req.header('x-portal-token') || c.req.header('X-Portal-Token') || c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  if (headerToken) return headerToken.trim();
+  const queryToken = (c.req.query('token') as string | undefined) || '';
+  if (queryToken) return queryToken.trim();
+  return undefined;
+}
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { clients, engagements, attestationApplications, attestationRateCards, appSettings, tasks } from '../db/schema.js';
@@ -723,7 +731,7 @@ portalAttestationRouter.get('/rate-cards', async (c) => {
 
 // POST /api/public/portal/attestation/applications/:id/document/presigned?token= — client uploads the scan
 portalAttestationRouter.post('/applications/:id/document/presigned', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -747,7 +755,7 @@ portalAttestationRouter.post('/applications/:id/document/presigned', async (c) =
 
 // PUT /api/public/portal/attestation/applications/:id/document/upload — store scan + mark received
 portalAttestationRouter.put('/applications/:id/document/upload', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -795,7 +803,7 @@ portalAttestationRouter.put('/applications/:id/document/upload', async (c) => {
 
 // GET /api/public/portal/attestation/applications?token= — tracker with chain timeline
 portalAttestationRouter.get('/applications', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -821,7 +829,7 @@ const attestationIntakeGate = async (c: any, next: any) => {
 
 // POST /api/public/portal/attestation/applications — client creates from rate card
 portalAttestationRouter.post('/applications', attestationIntakeGate, zValidator('json', createAttestationApplicationSchema), async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   const body = c.req.valid('json');
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
@@ -881,7 +889,7 @@ portalAttestationRouter.post('/applications', attestationIntakeGate, zValidator(
 
 // POST /api/public/portal/attestation/applications/:id/pickup — client books pickup (sends docs to US)
 portalAttestationRouter.post('/applications/:id/pickup', zValidator('json', updateAttestationPickupSchema), async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   const body = c.req.valid('json');
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);

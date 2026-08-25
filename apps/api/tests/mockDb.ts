@@ -79,6 +79,7 @@ export class MockD1Database {
     attestation_rate_cards: [] as any[],
     manpower_deployments: [] as any[],
     membership_plans: [] as any[],
+    feedback_submissions: [] as any[],
     utm_events: [] as any[],
     ga_events: [] as any[],
   };

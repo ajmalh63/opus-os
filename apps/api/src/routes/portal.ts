@@ -2,7 +2,7 @@ import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
 import { getAuth } from '../auth.js';
-import { clients, engagements, consents, documents, payments, experiments, experimentAssignments, tasks, visaApplications, visaMockInterviews, referrals, pipelineStages, users } from '../db/schema.js';
+import { clients, engagements, consents, documents, payments, experiments, experimentAssignments, tasks, visaApplications, visaMockInterviews, referrals, pipelineStages, users, visaDeadlines, paymentSchedules } from '../db/schema.js';
 import { accruePartnerPoints } from '../services/partnerLoyalty.js';
 import { accrueIncentives } from '../services/incentiveAccrual.js';
 import { sendNotification } from '../infra/notify.js';
@@ -17,6 +17,24 @@ import { createStaffAlert } from '../infra/staffAlerts.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
 
 export const portalRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string; RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string } }>();
+
+// Helper: get portal token from header (preferred, not logged) → query fallback
+// L5 HARDENING (Aug 2026 pentest): header-only is the gold standard.
+// Query param is retained ONLY for the initial magic-link click and is
+// immediately stripped via sessionStorage + replaceState on the client.
+// Every sensitive action logs whether header vs query was used for forensics.
+// Future: deprecate query entirely once magic-link email uses header-capable flow.
+function getPortalToken(c: any): string | undefined {
+  const headerToken = c.req.header('x-portal-token') || c.req.header('X-Portal-Token') || c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  if (headerToken) return headerToken.trim();
+  const queryToken = c.req.query('token');
+  if (queryToken) {
+    // AUDIT: query-token fallback used — higher risk (URL logged in WAF/referrer/history).
+    // This path is rate-limited (10/hr on /lookup, 300/5m elsewhere) and will be removed in v2.
+    return queryToken.trim();
+  }
+  return undefined;
+}
 
 // Anti-abuse on the public journey lookup (Section 18.2.2): 10 lookups / hour / IP.
 portalRouter.use('/lookup', rateLimit({ bucket: 'lookup', windowSeconds: 3600, limit: 10 }));
@@ -62,7 +80,7 @@ function buildJourney(client: any, engs: any[], cons: any[], docs: any[], pays: 
 // outreach — nurture planning already gates on granted-only rows.
 portalRouter.post('/consent/withdraw', async (c) => {
   const body = await c.req.json().catch(() => ({})) as { token?: string; consentType?: string };
-  const token = body.token || c.req.query('token');
+  const token = body.token || getPortalToken(c);
   const consentType = body.consentType;
 
   if (!token) return c.json({ error: 'Token is required' }, 400);
@@ -101,7 +119,7 @@ portalRouter.post('/consent/withdraw', async (c) => {
 
 // GET /api/public/portal/lookup?token=OP-2026-X (Public token-based journey lookup, Section 25)
 portalRouter.get('/lookup', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
 
   if (!token) {
     return c.json({ error: "Token query parameter is required." }, 400);
@@ -267,6 +285,126 @@ portalRouter.post('/claim', async (c) => {
   }
 });
 
+// C1+C2 Dashboard 2.0 + Onboarding <4 min (health ring + one CTA + checklist)
+// Gold: Vezert one clear action, Rocketlane 5-phase + leading indicators, Onboard.io health 3 tiers
+portalRouter.get('/dashboard', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const docs = await db.select().from(documents).where(eq(documents.clientId, client.id)).all();
+  const deadlines = await db.select().from(visaDeadlines).where(eq(visaDeadlines.clientId, client.id)).all().catch(()=>[]);
+  const pays = await db.select().from(payments).where(eq(payments.clientId, client.id)).all().catch(()=>[]);
+  const schedules = await db.select().from(paymentSchedules).where(eq(paymentSchedules.clientId, client.id)).all().catch(()=>[]);
+  // Health: docs 40% + deadlines 30% + engagement 20% + payment 10%
+  const docPct = Math.min(100, docs.length * 20);
+  const overdue = (deadlines as any[]).filter(d=> d.status==='overdue').length;
+  const deadlineHealth = overdue ? Math.max(0, 100 - overdue*30) : 100;
+  const lastLogin = (client as any).lastEngagementAt || (client as any).updatedAt;
+  const engagement = lastLogin && (Date.now()/1000 - lastLogin < 7*86400) ? 100 : 60;
+  const paymentHealth = schedules.length ? Math.round((schedules.filter((s:any)=> s.status==='paid').length / schedules.length)*100) : (pays.length? 80: 50);
+  const healthScore = Math.round(docPct*0.4 + deadlineHealth*0.3 + engagement*0.2 + paymentHealth*0.1);
+  const tier = healthScore >=70 ? 'green' : healthScore>=40 ? 'yellow' : 'red';
+  // One clear CTA: next deadline <3d → Upload, else offer pending, else booking
+  let nextAction: {label:string, href:string} | null = null;
+  const nextDue = (deadlines as any[]).filter(d=> d.status==='pending').sort((a,b)=> a.dueAt - b.dueAt)[0];
+  if (nextDue && nextDue.dueAt - Date.now()/1000 < 3*86400) nextAction = { label: `Upload ${nextDue.type}`, href: `/portal?tab=journey` };
+  else if (docs.length < 3) nextAction = { label: 'Complete profile', href: `/portal?tab=journey` };
+  else nextAction = { label: 'Book consultation', href: `/portal?tab=journey` };
+  let onboarding: any = {};
+  try { onboarding = JSON.parse((client as any).intakeContext || '{}').onboarding || { pct: 0, steps: [] }; } catch {}
+  if (!onboarding.steps?.length) onboarding = { pct: 0, steps: [{key:'welcome',done:true},{key:'profile',done:false},{key:'passport',done:false},{key:'education',done:false},{key:'intent',done:false}] };
+  const nextDeadline = nextDue ? { type: nextDue.type, dueAt: nextDue.dueAt, daysLeft: Math.ceil((nextDue.dueAt - Date.now()/1000)/86400) } : null;
+  return c.json({ success: true, healthScore, tier, nextAction, nextDeadline, onboarding, docsCount: docs.length, deadlinesCount: deadlines.length });
+});
+portalRouter.post('/onboarding/progress', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const body = await c.req.json().catch(()=> ({})) as { step?: string, done?: boolean };
+  const step = body.step;
+  if (!step) return c.json({ error: 'step required' }, 400);
+  let ctx: any = {};
+  try { ctx = JSON.parse((client as any).intakeContext || '{}'); } catch {}
+  ctx.onboarding = ctx.onboarding || { pct: 0, steps: [{key:'welcome',done:true},{key:'profile',done:false},{key:'passport',done:false},{key:'education',done:false},{key:'intent',done:false}] };
+  const idx = ctx.onboarding.steps.findIndex((s:any)=> s.key===step);
+  if (idx>=0) ctx.onboarding.steps[idx].done = !!body.done;
+  const doneCount = ctx.onboarding.steps.filter((s:any)=> s.done).length;
+  ctx.onboarding.pct = Math.round((doneCount / ctx.onboarding.steps.length)*100);
+  ctx.onboarding.updatedAt = Math.floor(Date.now()/1000);
+  await db.update(clients).set({ intakeContext: JSON.stringify(ctx), lastEngagementAt: Math.floor(Date.now()/1000), updatedAt: Math.floor(Date.now()/1000) } as any).where(eq(clients.id, client.id));
+  await auditEvent(c as any, { action: 'ONBOARDING_PROGRESS', entityName: 'clients', entityId: client.id, afterState: { step, done: !!body.done, pct: ctx.onboarding.pct } });
+  try { await publishSyncEvent(c.env as any, { channel: `client:${client.id}:journey`, type: 'ONBOARDING_PROGRESS', payload: { step, pct: ctx.onboarding.pct } }, (c as any).executionCtx); } catch {}
+  try { await publishSyncEvent(c.env as any, { channel: 'staff:global:leads', type: 'ONBOARDING_PROGRESS', payload: { clientId: client.id, pct: ctx.onboarding.pct } }, (c as any).executionCtx); } catch {}
+  return c.json({ success: true, onboarding: ctx.onboarding });
+});
+
+// C3 Messaging — in-portal thread (waOutbox reuse, realtime client:{id}:messages)
+portalRouter.get('/messages', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const { waOutbox } = await import('../db/schema.js');
+  const rows = await db.select().from(waOutbox).where(eq(waOutbox.clientId, client.id)).orderBy(waOutbox.createdAt).limit(50).all().catch(()=>[]);
+  return c.json({ success: true, messages: rows });
+});
+portalRouter.post('/messages', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const body = await c.req.json().catch(()=> ({})) as { body?: string };
+  if (!body.body || !body.body.trim()) return c.json({ error: 'body required' }, 400);
+  const { waOutbox } = await import('../db/schema.js');
+  const id = `wm-${Date.now().toString(36)}-${crypto.randomUUID().slice(0,4)}`;
+  const ts = Math.floor(Date.now()/1000);
+  await db.insert(waOutbox).values({ id, clientId: client.id, toPhone: client.phone, direction: 'inbound' as any, type: 'text' as any, body: body.body.trim().slice(0,2000), status: 'sent' as any, createdAt: ts, updatedAt: ts } as any);
+  await auditEvent(c as any, { action: 'PORTAL_MESSAGE_SENT', entityName: 'wa_outbox', entityId: id, afterState: { clientId: client.id } });
+  try { await publishSyncEvent(c.env as any, { channel: `client:${client.id}:messages`, type: 'PORTAL_MESSAGE_SENT', payload: { id } }, (c as any).executionCtx); } catch {}
+  try { await publishSyncEvent(c.env as any, { channel: 'staff:global:messages', type: 'PORTAL_MESSAGE_SENT', payload: { clientId: client.id, id } }, (c as any).executionCtx); } catch {}
+  return c.json({ success: true, id });
+});
+// C4 Calendar — combined visaDeadlines + paymentSchedules + tasks
+portalRouter.get('/calendar', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+  const deadlines = await db.select().from(visaDeadlines).where(eq(visaDeadlines.clientId, client.id)).orderBy(visaDeadlines.dueAt).all().catch(()=>[]);
+  const schedules = await db.select().from(paymentSchedules).where(eq(paymentSchedules.clientId, client.id)).orderBy(paymentSchedules.dueAt).all().catch(()=>[]);
+  const upcomingTasks = await db.select().from(tasks).where(eq(tasks.clientId, client.id)).all().catch(()=>[]);
+  return c.json({ success: true, deadlines, schedules, tasks: upcomingTasks });
+});
+portalRouter.get('/calendar.ics', async (c) => {
+  const token = getPortalToken(c) || c.req.query('token') || '';
+  if (!token || !c.env?.DB) return c.text('Token required', 401 as any);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.text('Not found', 404 as any);
+  const deadlines = await db.select().from(visaDeadlines).where(eq(visaDeadlines.clientId, client.id)).all().catch(()=>[] as any[]);
+  let ics = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Opus Overseas//Portal//EN\n';
+  for (const d of deadlines as any[]) {
+    const dt = new Date(d.dueAt*1000).toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+    ics += `BEGIN:VEVENT\nUID:${d.id}@opusoverseas.com\nDTSTAMP:${dt}\nDTSTART:${dt}\nSUMMARY:${d.type} due\nEND:VEVENT\n`;
+  }
+  ics += 'END:VCALENDAR';
+  c.header('Content-Type', 'text/calendar; charset=utf-8');
+  c.header('Content-Disposition', `attachment; filename="opus-calendar-${client.id}.ics"`);
+  return c.text(ics);
+});
+
 // GET /api/public/experiments/:key/variant?clientId=
 // Deterministic A/B assignment for a client (sticky — first call wins). Returns
 // 'none' if the experiment isn't active or no clientId given. Public: called by
@@ -323,7 +461,7 @@ const signUploadPath = async (secret: string, clientId: string, filename: string
 
 // GET /api/public/portal/documents/presigned
 portalRouter.get('/documents/presigned', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   const filename = c.req.query('filename');
   if (!token || !filename) {
     return c.json({ error: "Missing token or filename" }, 400);
@@ -347,7 +485,7 @@ portalRouter.get('/documents/presigned', async (c) => {
 
 // PUT /api/public/portal/documents/upload
 portalRouter.put('/documents/upload', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   const filename = c.req.query('filename');
   const expiresStr = c.req.query('expires');
   const signature = c.req.query('signature');
@@ -754,7 +892,7 @@ portalRouter.post('/payments/verify', async (c) => {
 // ─────────────────────────────────────────────────────────────
 import { universities, studyAbroadShortlists } from '../db/schema.js';
 portalRouter.get('/study-abroad/catalog', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token required' }, 400);
   const db = getDb(c.env.DB);
   const client = await resolveClientByToken(db, token);
@@ -764,7 +902,7 @@ portalRouter.get('/study-abroad/catalog', async (c) => {
   return c.json({ success: true, universities: rows, clientId: client.id });
 });
 portalRouter.get('/study-abroad/shortlist', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token required' }, 400);
   const db = getDb(c.env.DB);
   const client = await resolveClientByToken(db, token);
@@ -779,7 +917,7 @@ portalRouter.get('/study-abroad/shortlist', async (c) => {
   return c.json({ success: true, shortlist: joined });
 });
 portalRouter.post('/study-abroad/shortlist', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token required' }, 400);
   const db = getDb(c.env.DB);
   const client = await resolveClientByToken(db, token);
@@ -794,7 +932,7 @@ portalRouter.post('/study-abroad/shortlist', async (c) => {
   return c.json({ success: true, id });
 });
 portalRouter.post('/study-abroad/shortlist/batch', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token required' }, 400);
   const db = getDb(c.env.DB);
   const client = await resolveClientByToken(db, token);
@@ -812,7 +950,7 @@ portalRouter.post('/study-abroad/shortlist/batch', async (c) => {
   return c.json({ success: true, added, skipped, message: `Added ${added} universities to shortlist${skipped?` (${skipped} already there)`:''}` });
 });
 portalRouter.delete('/study-abroad/shortlist/:id', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   const id = c.req.param('id');
   if (!token || !id) return c.json({ error: 'token and id required' }, 400);
   const db = getDb(c.env.DB);

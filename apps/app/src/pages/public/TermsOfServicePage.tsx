@@ -83,14 +83,17 @@ export default function TermsOfServicePage() {
 
           <div>
             <h2 className="font-display text-lg sm:text-xl font-extrabold text-brand-navy mb-2">
-              4. Fees, 100% Free Study Abroad Counselling & Refund Policy
+              4. Fees, Free Study Abroad Guidance & Refund Policy
             </h2>
             <ul className="list-disc pl-5 space-y-2 mt-2">
               <li>
-                <strong className="text-brand-navy">100% Free Study Abroad Counselling & Mentorship:</strong> Opus Overseas provides student guidance, course shortlisting, SOP mentoring, and visa preparation free of consulting charges. To initiate formal multi-stage dossier processing and application filing, a refundable commitment security deposit is collected.
+                <strong className="text-brand-navy">100% Free Study Abroad Guidance:</strong> Opus Overseas provides student guidance, course shortlisting, SOP mentoring, and visa preparation free of consulting charges. No service fee is charged for counselling.
               </li>
               <li>
-                <strong className="text-brand-navy">100% Security Deposit Refund Condition:</strong> The full security deposit is 100% refunded to the student upon successful university enrollment and attendance verification on the official semester commencement date at the applied institution (verified via institutional admissions aggregators, provided the candidate completes enrollment without unapproved institutional transfer or abandonment).
+                <strong className="text-brand-navy">Refundable Application Commitment — ₹5,000 (Policy-Only Disclosure):</strong> A commitment of <strong>₹5,000</strong> is collected to initiate formal dossier processing and application filing. It is <strong>fully refunded</strong> when you attend the orientation / commencement day at your desired university and pay the first-semester fee (verified via university confirmation). <em>This condition is disclosed only in policy pages</em> — all marketing and client workspace messaging remains “100% Free” as positioned.
+              </li>
+              <li>
+                <strong className="text-brand-navy">Launch Offer — First 50 Applicants Fully Free:</strong> The first 50 study-abroad applicants pay <strong>₹0</strong> — the ₹5,000 is waived entirely. No commitment required for early applicants.
               </li>
               <li>
                 <strong className="text-brand-navy">Statutory Government & University Charges:</strong> University application fees, foreign embassy visa fees, VFS biometric charges, and MEA apostille challans are direct disbursements and are subject to respective institutional non-refundable rules once transmitted.

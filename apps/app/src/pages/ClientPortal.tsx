@@ -1,17 +1,25 @@
 import { useVisibilityTracking } from '../lib/visibilityTracking';
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { useSession } from '../lib/session';
 import Logo from '../components/Logo';
 import ChatWidget from '../components/ChatWidget';
 import ClientDashboardHub from '../components/ClientDashboardHub';
+import ClientMobileNav from '../components/client/ClientMobileNav';
+import LanguagePill from '../components/client/LanguagePill';
 import UmrahClientSection from '../components/UmrahClientSection';
 import StudyAbroadClientSection from '../components/StudyAbroadClientSection';
 import AttestationClientSection from '../components/AttestationClientSection';
+import { PortalMessages } from '../components/client/PortalMessages';
+import { PortalCalendar } from '../components/client/PortalCalendar';
+import { VisaTracker } from '../components/client/VisaTracker';
 import ManpowerApplyWizard from '../components/manpower/ManpowerApplyWizard';
 import ManpowerMarketplace from '../components/ManpowerMarketplace';
 import { createSyncClient } from '../lib/syncClient';
+import { useDivisions } from '../lib/divisions';
+import ClientCommandPalette from '../components/client/ClientCommandPalette';
+import ClientFeedbackModal from '../components/client/ClientFeedbackModal';
 
 interface Engagement {
   id: string;
@@ -55,8 +63,16 @@ interface ClientPortalData {
     id: string;
     name: string;
     email: string;
+    phone?: string;
+    portalToken?: string;
     createdAt: number;
     intakeContext?: string;
+  };
+  assignedCounselor?: {
+    id: string;
+    name: string;
+    email: string;
+    role?: string;
   };
   engagements: Engagement[];
   consents: Consent[];
@@ -73,126 +89,58 @@ interface SessionResponse {
 
 
 
-const VISA_COUNTRIES = [
-  "Dubai 🇦🇪",
-  "Thailand 🇹🇭",
-  "Malaysia 🇲🇾",
-  "Vietnam 🇻🇳",
-  "Sri Lanka 🇱🇰",
-  "Azerbaijan 🇦🇿",
-  "Bahrain 🇧🇭",
-  "Cambodia 🇰🇭",
-  "Egypt 🇪🇬",
-  "Ethiopia 🇪🇹",
-  "Georgia 🇬🇪",
-  "Hong Kong 🇭🇰",
-  "Indonesia 🇮🇩",
-  "Kenya 🇰🇪",
-  "Morocco 🇲🇦",
-  "Myanmar 🇲🇲",
-  "Oman 🇴🇲",
-  "Qatar 🇶🇦",
-  "Russia 🇷🇺",
-  "Turkey 🇹🇷",
-  "Uzbekistan 🇺🇿",
-  "Zambia 🇿🇲"
-];
-
-const DEFAULT_PRODUCTS = [
-  { id: 'v1', country: 'Dubai 🇦🇪', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '3-4 Days', feePaise: 720000, requiredDocs: ['Passport (6+ mos validity)', 'Color Photograph', 'Return Flight Booking'] },
-  { id: 'v2', country: 'Thailand 🇹🇭', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '2-3 Days', feePaise: 450000, requiredDocs: ['Passport (6+ mos validity)', 'White Background Photo', 'Hotel Reservation'] },
-  { id: 'v3', country: 'Malaysia 🇲🇾', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '4-5 Days', feePaise: 580000, requiredDocs: ['Passport Bio-page Scan', 'Passport Photo', 'Flight Itinerary'] },
-  { id: 'v4', country: 'Singapore 🇸🇬', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '5-7 Days', feePaise: 850000, requiredDocs: ['Passport front & back', 'Form 14A', 'Covering Letter', 'Bank Statement'] },
-  { id: '5', country: 'Vietnam 🇻🇳', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '3 Days', feePaise: 390000, requiredDocs: ['Passport Copy', 'Portrait Photo', 'Entry/Exit Dates'] },
-  { id: '6', country: 'Sri Lanka 🇱🇰', visaType: 'Tourist', entryType: 'Single Entry', processingTime: '2 Days', feePaise: 250000, requiredDocs: ['Passport Bio-data Scan', 'Travel Itinerary'] }
-];
-
-
 export default function ClientPortal() {
   useVisibilityTracking('/portal');
+  const { isEnabled } = useDivisions();
   const [toast, setToast] = useState<{ show: boolean; msg: string }>({ show: false, msg: '' });
   const showToast = (msg: string) => {
     setToast({ show: true, msg });
     setTimeout(() => setToast({ show: false, msg: '' }), 3500);
   };
 
-  // Get token from URL query parameters
-  const [tokenInput, setTokenInput] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('token') || '';
-  });
-
   const [activeToken, setActiveToken] = useState(() => {
+    // Secure handling: read token from URL once, then hide it (no query exposure, no referrer leak)
+    // Token is high-entropy magic link — must not stay in URL history/logs.
     const params = new URLSearchParams(window.location.search);
-    return params.get('token') || '';
-  });
-
-  // Keep URL updated with the searched token
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (activeToken) {
-      params.set('token', activeToken);
-    } else {
+    const urlToken = params.get('token');
+    const stored = (() => {
+      try { return sessionStorage.getItem('portalToken') || ''; } catch { return ''; }
+    })();
+    const token = urlToken || stored || '';
+    if (urlToken) {
+      try { sessionStorage.setItem('portalToken', urlToken); } catch {}
+      // Remove token from URL immediately (replace, not push, so back button doesn't re-expose)
       params.delete('token');
+      const cleanUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+      window.history.replaceState(null, '', cleanUrl);
+      // Also store a short-lived flag for debugging (optional)
+      return urlToken;
     }
-    const newRelativePathQuery = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-    window.history.pushState(null, '', newRelativePathQuery);
-  }, [activeToken]);
+    if (stored) return stored;
+    return token;
+  });
 
-  // Fetch client portal details (public lookup endpoint)
-  const { data, isFetching, error, isError } = useQuery<ClientPortalData>({
-    queryKey: ['portalLookup', activeToken],
-    queryFn: async () => {
-      if (!activeToken) return null;
-      const res = await fetch(`/api/public/portal/lookup?token=${encodeURIComponent(activeToken)}`);
-      if (!res.ok) {
-        if (res.status === 404) {
-          throw new Error('No client record matches the provided token.');
-        }
-        throw new Error(await res.text() || 'Application status lookup failed.');
+  // Keep token in sessionStorage, never back in URL (prevents exposure in history/referrer/logs)
+  useEffect(() => {
+    if (activeToken) {
+      try { sessionStorage.setItem('portalToken', activeToken); } catch {}
+      // Ensure URL stays clean — remove any stray token param if it reappears
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('token')) {
+        params.delete('token');
+        const cleanUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+        window.history.replaceState(null, '', cleanUrl);
       }
-      return res.json();
-    },
-    enabled: !!activeToken,
-    retry: false,
-  });
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleaned = tokenInput.trim();
-    if (!cleaned) {
-      showToast('Please enter a valid tracking token.');
-      return;
+    } else {
+      try { sessionStorage.removeItem('portalToken'); } catch {}
     }
-    setActiveToken(cleaned);
-  };
-
-  // DPDP consent withdrawal (subject right): token-authenticated public action.
-  const withdrawConsent = useMutation({
-    mutationFn: async ({ token, consentType }: { token: string; consentType: string }) => {
-      const res = await fetch('/api/public/portal/consent/withdraw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, consentType }),
-      });
-      if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e?.error || 'Withdrawal failed'); }
-      return res.json();
-    },
-    onSuccess: () => { showToast('Consent withdrawn. Non-core outreach is now suppressed.'); },
-    onError: (e: any) => showToast((e as Error).message),
-  });
-
-  const handleFillDemo = () => {
-    setTokenInput('OP-2026-5555');
-    setActiveToken('OP-2026-5555');
-    showToast('Demo token loaded.');
-  };
+  }, [activeToken]);
 
   // ====== Authenticated "My Journey" (Section 25.4) ======
   const { me, loading: sessionLoading, refresh: refreshSession } = useSession();
   const [authEmail, setAuthEmail] = useState<string | null>(null);
-  const [claimToken, setClaimToken] = useState('');
-  const [claimPhone, setClaimPhone] = useState('');
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
   // Check and synchronize existing Better Auth session
   useEffect(() => {
@@ -204,7 +152,7 @@ export default function ClientPortal() {
   }, [me, sessionLoading]);
 
   // Fetch authenticated journeys once logged in
-  const { data: sessionData, isFetching: sessionFetching, refetch: refetchSession, error: sessionError, isError: sessionIsError } =
+  const { data: sessionData } =
     useQuery<SessionResponse>({
       queryKey: ['portalSession', authEmail],
       queryFn: async () => {
@@ -228,7 +176,6 @@ export default function ClientPortal() {
       const tok = firstClient?.portalToken || firstClient?.id;
       if (tok && tok !== activeToken) {
         setActiveToken(tok);
-        setTokenInput(firstClient?.id || tok);
       }
     }
   }, [sessionData, activeToken]);
@@ -248,39 +195,40 @@ export default function ClientPortal() {
     showToast('Signed out successfully.');
   };
 
-  const handleClaim = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!claimToken || !claimPhone) {
-      showToast('Enter your journey token and phone number.');
-      return;
-    }
-    try {
-      const res = await fetch('/api/public/portal/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ token: claimToken, phone: claimPhone }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || 'Claim failed.');
-      }
-      showToast(data.message || 'Journey linked to your account.');
-      setClaimToken('');
-      setClaimPhone('');
-      refetchSession();
-    } catch (err: any) {
-      showToast(`Claim error: ${err.message}`);
-    }
+  const [portalTab, setPortalTab] = useState<'dashboard' | 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs' | 'journey'>(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const tab = params.get('tab') as any;
+    if (tab && ['dashboard','study','visa','umrah','attestation','jobs','journey'].includes(tab)) return tab;
+    return 'dashboard';
+  });
+
+  // Sync portalTab with URL — every tab is a real link, back button works
+  const navigateTab = (tab: typeof portalTab) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.pushState(null, '', url.toString());
+    setPortalTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const [portalTab, setPortalTab] = useState<'dashboard' | 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs' | 'journey'>('dashboard');
+  // Handle browser back/forward
+  useEffect(() => {
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab') as any;
+      if (tab && ['dashboard','study','visa','umrah','attestation','jobs','journey'].includes(tab)) {
+        setPortalTab(tab);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const { data: studyAppsData } = useQuery({
     queryKey: ['portalStudyAppsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/study-abroad/applications?token=${encodeURIComponent(activeToken)}`);
+      const res = await fetch(`/api/public/portal/study-abroad/applications`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.applications || [];
@@ -292,7 +240,7 @@ export default function ClientPortal() {
     queryKey: ['portalVisaAppsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/visa/applications?token=${encodeURIComponent(activeToken)}`);
+      const res = await fetch(`/api/public/portal/visa/applications`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.applications || [];
@@ -304,7 +252,7 @@ export default function ClientPortal() {
     queryKey: ['portalUmrahBookingsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/umrah/my-bookings?token=${encodeURIComponent(activeToken)}`);
+      const res = await fetch(`/api/public/portal/umrah/my-bookings`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.bookings || [];
@@ -316,7 +264,7 @@ export default function ClientPortal() {
     queryKey: ['portalAttestAppsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/attestation/applications?token=${encodeURIComponent(activeToken)}`);
+      const res = await fetch(`/api/public/portal/attestation/applications`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.applications || [];
@@ -328,7 +276,7 @@ export default function ClientPortal() {
     queryKey: ['portalJobAppsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/manpower/applications?token=${encodeURIComponent(activeToken)}`);
+      const res = await fetch(`/api/public/portal/manpower/applications`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.applications || [];
@@ -336,33 +284,47 @@ export default function ClientPortal() {
     enabled: !!activeToken,
   });
 
-  const stages = [
-    { key: 'lead', label: 'Consultation', seq: 1, desc: 'Initial counseling and profile assembly.' },
-    { key: 'qualified', label: 'Qualification', seq: 2, desc: 'Eligibility review and documentation checklist.' },
-    { key: 'documents', label: 'Document Vault', seq: 3, desc: 'Original certificate review & compliance validation.' },
-    { key: 'processing', label: 'Processing', seq: 4, desc: 'Application submission to university/embassy.' },
-    { key: 'complete', label: 'Stamping & Transit', seq: 5, desc: 'Visa stamping, pre-departure briefing, and travel.' },
-  ];
+  const queryClient = useQueryClient();
 
-  // Client realtime — portalToken plane, private client:{id}:* + departure inventory
-  // @ts-ignore
-  const _syncClient = (() => {
-    try {
-      const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
-      if (!enabled || typeof window === 'undefined') return null;
-      const token = (() => { try { return localStorage.getItem('portalToken') || new URLSearchParams(location.search).get('token') || ''; } catch { return ''; } })();
-      const clientId = (() => { try { return localStorage.getItem('clientId') || token || ''; } catch { return token || ''; } })();
-      if (!token) return null;
-      const c = createSyncClient({
-        plane: 'client',
-        token,
-        channels: [`client:${clientId}:bookings`, `client:${clientId}:documents`, `departure:*:inventory`].slice(0,5),
-        enabled,
-        onEvent: (e) => { try { const qc=(window as any).__TANSTACK_QUERY_CLIENT__; if(qc){ if(e.channel.startsWith('client:')) qc.invalidateQueries({queryKey:['portal']}); if(e.channel.startsWith('departure:')) qc.invalidateQueries({queryKey:['departures']}); } } catch {} },
-      });
-      c.connect(); return c;
-    } catch { return null; }
-  })();
+  // Client realtime — WebSocket Durable Object sync for live stage & document updates
+  useEffect(() => {
+    const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
+    if (!enabled) return;
+    // L5 FIX: never fall back to localStorage — portalToken is sessionStorage-only
+    // (prevents persistent XSS exfiltration + history leak). Legacy localStorage
+    // value is ignored; activeToken is the single source of truth.
+    const token = activeToken || '';
+    const clientId = sessionData?.journeys?.[0]?.client?.id || token || '';
+    if (!token && !clientId) return;
+
+    const c = createSyncClient({
+      plane: 'client',
+      token,
+      channels: [
+        `client:${clientId}:bookings`,
+        `client:${clientId}:documents`,
+        `client:${clientId}:payments`,
+        `client:${clientId}:journey`,
+        `client:${clientId}:family`,
+        `departure:*:inventory`,
+      ],
+      enabled,
+      onEvent: (_e) => {
+        queryClient.invalidateQueries({ queryKey: ['portalClientSession'] });
+        queryClient.invalidateQueries({ queryKey: ['portalDashboard'] });
+        queryClient.invalidateQueries({ queryKey: ['studyAbroadApps'] });
+        queryClient.invalidateQueries({ queryKey: ['portalVisaApplications'] });
+        queryClient.invalidateQueries({ queryKey: ['portalUmrahMyBookings'] });
+        queryClient.invalidateQueries({ queryKey: ['attestationApps'] });
+        queryClient.invalidateQueries({ queryKey: ['portalManpowerApps'] });
+      },
+    });
+
+    c.connect();
+    return () => {
+      try { (c as any).disconnect?.(); } catch {}
+    };
+  }, [activeToken, sessionData, queryClient]);
 
   return (
     <div className="relative bg-[#FAF8F4] text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-brand-gold selection:text-brand-navy">
@@ -376,24 +338,24 @@ export default function ClientPortal() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200/70 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Live Workspace Sync</span>
-          </div>
-
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             type="button"
-            onClick={() => {
-              if (typeof window !== 'undefined' && (window as any).$chatwoot) {
-                (window as any).$chatwoot.toggle();
-              }
-            }}
-            className="text-xs bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white px-3.5 py-1.5 rounded-xl transition font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
+            onClick={() => setCommandPaletteOpen(true)}
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200 text-xs font-semibold text-slate-700 transition cursor-pointer"
+            title="Press Cmd+K or Ctrl+K to open search"
           >
-            <span>💬</span>
-            <span className="hidden sm:inline">Counselor Live Chat</span>
+            <span>🔍</span>
+            <span className="hidden md:inline">Quick Jump</span>
+            <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-mono text-slate-500 shadow-2xs">
+              ⌘K
+            </kbd>
           </button>
+          <LanguagePill />
+          <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200/70 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Live Sync</span>
+          </div>
 
           <a
             href="tel:+919876543210"
@@ -444,7 +406,7 @@ export default function ClientPortal() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setPortalTab('dashboard')}
+                  onClick={() => navigateTab('dashboard')}
                   className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'dashboard'
                       ? 'bg-brand-navy text-white shadow-xs'
@@ -466,7 +428,7 @@ export default function ClientPortal() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setPortalTab('study')}
+                  onClick={() => navigateTab('study')}
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'study'
                       ? 'bg-brand-navy text-white shadow-xs'
@@ -477,12 +439,15 @@ export default function ClientPortal() {
                     <span>🎓</span>
                     <span>Study Abroad</span>
                   </span>
-                  {portalTab === 'study' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1">
+                    {!isEnabled('study-abroad') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'study' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setPortalTab('visa')}
+                  onClick={() => navigateTab('visa')}
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'visa'
                       ? 'bg-brand-navy text-white shadow-xs'
@@ -493,12 +458,15 @@ export default function ClientPortal() {
                     <span>✈️</span>
                     <span>Visa Processing</span>
                   </span>
-                  {portalTab === 'visa' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1">
+                    {!isEnabled('visa') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'visa' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setPortalTab('umrah')}
+                  onClick={() => navigateTab('umrah')}
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'umrah'
                       ? 'bg-brand-navy text-white shadow-xs'
@@ -509,12 +477,15 @@ export default function ClientPortal() {
                     <span>🕋</span>
                     <span>Umrah Pilgrimage</span>
                   </span>
-                  {portalTab === 'umrah' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1">
+                    {!isEnabled('umrah') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'umrah' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setPortalTab('attestation')}
+                  onClick={() => navigateTab('attestation')}
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'attestation'
                       ? 'bg-brand-navy text-white shadow-xs'
@@ -525,12 +496,15 @@ export default function ClientPortal() {
                     <span>📑</span>
                     <span>Attestation Desk</span>
                   </span>
-                  {portalTab === 'attestation' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1">
+                    {!isEnabled('attestation') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'attestation' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setPortalTab('jobs')}
+                  onClick={() => navigateTab('jobs')}
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'jobs'
                       ? 'bg-brand-navy text-white shadow-xs'
@@ -541,7 +515,10 @@ export default function ClientPortal() {
                     <span>💼</span>
                     <span>Global Careers</span>
                   </span>
-                  {portalTab === 'jobs' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1">
+                    {!isEnabled('manpower') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'jobs' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  </div>
                 </button>
               </div>
 
@@ -552,7 +529,7 @@ export default function ClientPortal() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setPortalTab('journey')}
+                  onClick={() => navigateTab('journey')}
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'journey'
                       ? 'bg-brand-navy text-white shadow-xs'
@@ -568,29 +545,17 @@ export default function ClientPortal() {
               </div>
             </div>
 
-            {/* Bottom Support Widget */}
-            <div className="p-3 bg-brand-gold/10 border border-brand-gold/30 rounded-xl space-y-1.5">
-              <div className="text-[10px] font-bold text-brand-navy uppercase tracking-wider">Hyderabad HQ</div>
-              <div className="text-[11px] text-slate-600">Mon - Sat: 9:30 AM - 6:30 PM</div>
-              <a
-                href="https://wa.me/919876543210"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[10px] text-brand-navy font-extrabold hover:underline block pt-1"
-              >
-                Direct Counselor WhatsApp →
-              </a>
-            </div>
+
           </aside>
 
-          {/* MAIN CONTENT AREA */}
-          <main className="flex-1 p-6 md:p-8 space-y-8 overflow-y-auto">
+          {/* MAIN CONTENT AREA — pb for fixed bottom nav thumb-zone */}
+          <main className="flex-1 p-6 md:p-8 pb-[88px] md:pb-8 space-y-8 overflow-y-auto">
             {/* Mobile Horizontal Navigation Strip */}
             <div className="md:hidden flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-200">
               <button
                 type="button"
-                onClick={() => setPortalTab('dashboard')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                onClick={() => navigateTab('dashboard')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer ${
                   portalTab === 'dashboard' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
@@ -598,53 +563,58 @@ export default function ClientPortal() {
               </button>
               <button
                 type="button"
-                onClick={() => setPortalTab('study')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                onClick={() => navigateTab('study')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
                   portalTab === 'study' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
-                🎓 Study Abroad
+                <span>🎓 Study</span>
+                {!isEnabled('study-abroad') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
               </button>
               <button
                 type="button"
-                onClick={() => setPortalTab('visa')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                onClick={() => navigateTab('visa')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
                   portalTab === 'visa' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
-                ✈️ Visa
+                <span>✈️ Visa</span>
+                {!isEnabled('visa') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
               </button>
               <button
                 type="button"
-                onClick={() => setPortalTab('umrah')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                onClick={() => navigateTab('umrah')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
                   portalTab === 'umrah' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
-                🕋 Umrah
+                <span>🕋 Umrah</span>
+                {!isEnabled('umrah') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
               </button>
               <button
                 type="button"
-                onClick={() => setPortalTab('attestation')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                onClick={() => navigateTab('attestation')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
                   portalTab === 'attestation' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
-                📑 Attestation
+                <span>📑 Attest</span>
+                {!isEnabled('attestation') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
               </button>
               <button
                 type="button"
-                onClick={() => setPortalTab('jobs')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                onClick={() => navigateTab('jobs')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
                   portalTab === 'jobs' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
-                💼 Careers
+                <span>💼 Careers</span>
+                {!isEnabled('manpower') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
               </button>
               <button
                 type="button"
-                onClick={() => setPortalTab('journey')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                onClick={() => navigateTab('journey')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer ${
                   portalTab === 'journey' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
@@ -655,6 +625,7 @@ export default function ClientPortal() {
             {/* TAB 1: CLIENT DASHBOARD & LIVE KANBAN HUB */}
             {portalTab === 'dashboard' && (
               <ClientDashboardHub
+                portalToken={activeToken || sessionData?.journeys?.[0]?.client?.portalToken || ''}
                 clientName={me?.name || authEmail || 'Valued Client'}
                 clientEmail={authEmail || ''}
                 accountId={me?.id || activeToken || 'CLIENT'}
@@ -672,38 +643,43 @@ export default function ClientPortal() {
             {/* TAB 2: STUDY ABROAD */}
             {portalTab === 'study' && (
               <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
-                <StudyAbroadClientSection token={activeToken || me?.id || 'client-self'} />
+                <StudyAbroadClientSection token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
               </div>
             )}
 
-            {/* TAB 3: VISA PROCESSING */}
+            {/* TAB 3: VISA PROCESSING — C5 Anxiety-Grade Tracker (VP0) */}
             {portalTab === 'visa' && (
-              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
-                <VisaServices token={activeToken || me?.id || 'client-self'} />
+              <div className="space-y-4">
+                {visaAppsData && visaAppsData.length > 0 && (
+                  <VisaTracker bookingId={visaAppsData[0]?.id || visaAppsData[0]?.engagementId || ''} token={activeToken || ''} />
+                )}
+                <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
+                  <VisaServices token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
+                </div>
               </div>
             )}
 
             {/* TAB 4: UMRAH PILGRIMAGE */}
             {portalTab === 'umrah' && (
               <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
-                <UmrahClientSection token={activeToken || me?.id || 'client-self'} />
+                <UmrahClientSection token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
               </div>
             )}
 
             {/* TAB 5: DOCUMENT ATTESTATION */}
             {portalTab === 'attestation' && (
               <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
-                <AttestationClientSection token={activeToken || me?.id || 'client-self'} />
+                <AttestationClientSection token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
               </div>
             )}
 
             {/* TAB 6: GLOBAL JOBS & CAREERS — P0 Manpower Marketplace (Indeed gold: match + 1-click) */}
             {portalTab === 'jobs' && (
               <div className="space-y-4">
-                <ManpowerMarketplace token={activeToken || me?.id || 'client-self'} />
+                <ManpowerMarketplace token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
                 <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
                   <h4 className="font-display font-bold text-xs text-brand-navy mb-3">My Applications — Live Tracking</h4>
-                  <ManpowerJobs token={activeToken || me?.id || 'client-self'} />
+                  <ManpowerJobs token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
                 </div>
               </div>
             )}
@@ -721,6 +697,10 @@ export default function ClientPortal() {
                     <div className="text-xs text-slate-600">Documents: {j.documents?.length || 0} files on record</div>
                   </div>
                 ))}
+                <div className="grid lg:grid-cols-2 gap-4">
+                  <PortalMessages token={activeToken || ''} />
+                  <PortalCalendar token={activeToken || ''} />
+                </div>
               </div>
             )}
           </main>
@@ -758,43 +738,70 @@ export default function ClientPortal() {
         </main>
       )}
 
-      {/* FOOTER */}
-      <footer className="bg-brand-navy border-t border-brand-navyLight py-6 mt-12 shrink-0">
-        <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-brand-cream/40">
-          <div className="flex items-center gap-3">
-            <span className="border border-brand-gold/30 text-brand-gold px-2 py-0.5 rounded text-[10px] font-semibold font-display">
-              British Council Certified Agent
-            </span>
+      {/* FOOTER — Nizamabad HQ, real Footer.svg logo */}
+      <footer className="bg-brand-navy border-t border-brand-navyLight py-8 mt-12 shrink-0">
+        <div className="max-w-7xl mx-auto px-6 md:px-8">
+          <div className="flex flex-col lg:flex-row justify-between gap-6">
+            <div className="space-y-3 max-w-md">
+              <div className="flex items-center gap-3">
+                <img src="/Footer.svg" alt="Opus Overseas" className="h-10 w-auto" />
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/60">British Council Certified Agent #115050</span>
+              </div>
+              <p className="text-xs leading-relaxed text-brand-cream/60">
+                Transparent guidance for study abroad, visas, attestation, Umrah, and careers. No inflated numbers — real updates appear here when you begin. Your data stays private.
+              </p>
+              <div className="text-[11px] leading-relaxed text-brand-cream/60">
+                <div className="font-bold text-white/80">Opus Overseas — Nizamabad, Telangana</div>
+                <div>Nizamabad — Telangana, India</div>
+                <div className="mt-1"><a href="tel:+919398848376" className="hover:text-brand-gold">+91 93988 48376</a> · <a href="mailto:contact@opusoverseas.com" className="hover:text-brand-gold">contact@opusoverseas.com</a></div>
+                <div className="text-[11px] text-brand-cream/40 mt-1">Mon–Sat 9:30 AM – 6:30 PM • Support via chatbot bubble</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-8 text-xs">
+              <div className="space-y-2">
+                <p className="font-bold text-white/80 uppercase tracking-wider text-[11px]">Explore</p>
+                <a href="/" className="block text-brand-cream/60 hover:text-brand-gold transition">Home</a>
+                <a href="/about" className="block text-brand-cream/60 hover:text-brand-gold transition">About</a>
+                <a href="/contact" className="block text-brand-cream/60 hover:text-brand-gold transition">Contact</a>
+                <a href="/lead-form" className="block text-brand-cream/60 hover:text-brand-gold transition">Get in touch</a>
+              </div>
+              <div className="space-y-2">
+                <p className="font-bold text-white/80 uppercase tracking-wider text-[11px]">Legal</p>
+                <a href="/privacy" className="block text-brand-cream/60 hover:text-brand-gold transition">Privacy Policy</a>
+                <a href="/terms" className="block text-brand-cream/60 hover:text-brand-gold transition">Terms of Service</a>
+                <a href="/refund-policy" className="block text-brand-cream/60 hover:text-brand-gold transition">Refund Policy</a>
+                <a href="/shipping-policy" className="block text-brand-cream/60 hover:text-brand-gold transition">Shipping Policy</a>
+              </div>
+            </div>
           </div>
-          <div>
-            <span>© 2026 Opus Overseas (Telangana, India). All rights reserved.</span>
-          </div>
-          <div className="flex gap-4 font-semibold">
-            <a href="/" className="hover:text-brand-gold transition">Home</a>
-            <a href="/lead-form" className="hover:text-brand-gold transition">DPDP Consent</a>
+          <div className="mt-6 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-brand-cream/40">
+            <span>© 2026 Opus Overseas (Telangana, India). All rights reserved. — Honest from day one, no fake badges.</span>
+            <span className="text-[11px] text-brand-cream/30">Built transparently • Updates live when available</span>
           </div>
         </div>
       </footer>
-      {/* Mobile Bottom Nav — thumb zone (platform-design HIG, 44px) */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 flex justify-around items-center py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
-        {[
-          { k: 'dashboard', label: 'Browse', icon: '⌂' },
-          { k: 'visa', label: 'Bookings', icon: '✈' },
-          { k: 'journey', label: 'Docs', icon: '📄' },
-          { k: 'help', label: 'Help', icon: '?' },
-        ].map(i => (
-          <button key={i.k} onClick={() => i.k === 'help' ? (window as any).$chatwoot?.toggle?.() : setPortalTab(i.k as any)} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg ${portalTab===i.k?'text-brand-gold':'text-slate-400'} cursor-pointer`}>
-            <span className="text-base leading-none">{i.icon}</span><span className="text-[9px] font-bold uppercase tracking-wide">{i.label}</span>
-          </button>
-        ))}
-      </nav>
-      {/* In-product Help Center — Vezert 30% deflection */}
-      <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-30 hidden md:block">
-        <button onClick={() => (window as any).$chatwoot?.toggle?.()} className="bg-brand-navy text-white px-3.5 py-2.5 rounded-full text-xs font-bold shadow-lg hover:bg-brand-gold hover:text-brand-navy transition flex items-center gap-1.5 cursor-pointer">
-          <span>?</span> Help center — search docs, dues, refunds
-        </button>
-      </div>
+      {/* Mobile Bottom Nav — thumb zone, fixed, 44px min targets */}
+      <ClientMobileNav active={portalTab as any} onChange={(t) => setPortalTab(t as any)} />
       <ChatWidget />
+
+      {/* ENTERPRISE COMMAND PALETTE & MODALS */}
+      <ClientCommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        onNavigateTab={(tab) => setPortalTab(tab as any)}
+        onOpenUpload={() => setPortalTab('vault' as any)}
+        onOpenFeedback={() => setFeedbackModalOpen(true)}
+        counselorName={sessionData?.journeys?.[0]?.assignedCounselor?.name}
+      />
+
+      <ClientFeedbackModal
+        open={feedbackModalOpen}
+        onClose={() => setFeedbackModalOpen(false)}
+        portalToken={activeToken || sessionData?.journeys?.[0]?.client?.portalToken}
+        clientName={me?.name || authEmail || 'Valued Client'}
+        division={sessionData?.journeys?.[0]?.engagements?.[0]?.division || 'general'}
+        counselorName={sessionData?.journeys?.[0]?.assignedCounselor?.name}
+      />
 
       {/* TOAST SYSTEM */}
       <div 
@@ -804,724 +811,6 @@ export default function ClientPortal() {
       >
         <span className="font-bold text-brand-gold">PORTAL LOOKUP:</span>
         <span>{toast.msg}</span>
-      </div>
-    </div>
-  );
-}
-
-
-
-function ClientVisaWidget({ journey }: { journey: any }) {
-  const [inquiryCountry, setInquiryCountry] = useState('');
-  const [inquiryType, setInquiryType] = useState('');
-  const [inquiryNotes, setInquiryNotes] = useState('');
-  const [inquiryEmail, setInquiryEmail] = useState(journey.client.email || '');
-  const [inquiryPhone, setInquiryPhone] = useState(journey.client.phone || '');
-  const [inquiryAgreed, setInquiryAgreed] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  // Custom inquiry files state
-  const [inquiryFiles, setInquiryFiles] = useState<Record<string, File>>({});
-
-  // Catalog checkout states
-  const [selectedCatalogProduct, setSelectedCatalogProduct] = useState<any | null>(null);
-  const [checkoutEmail, setCheckoutEmail] = useState(journey.client.email || '');
-  const [checkoutPhone, setCheckoutPhone] = useState(journey.client.phone || '');
-  const [checkoutAgreed, setCheckoutAgreed] = useState(false);
-  const [catalogFiles, setCatalogFiles] = useState<Record<string, File>>({});
-  // Visa Cart (P0 RICE 230) — gold standard: eligibility + cart + sticky CTA
-  const [visaCart, setVisaCart] = useState<any[]>([]);
-  const [showVisaCart, setShowVisaCart] = useState(false);
-  const addToVisaCart = (p: any) => {
-    if (visaCart.find(v => v.id === p.id)) return;
-    setVisaCart(c => [...c, p]);
-  };
-
-  const { data: dbProducts } = useQuery<any>({
-    queryKey: ['publicVisaProducts'],
-    queryFn: async () => {
-      const r = await fetch('/api/public/visa/products');
-      if (!r.ok) return DEFAULT_PRODUCTS;
-      const d = await r.json();
-      return d.products && d.products.length > 0 ? d.products : DEFAULT_PRODUCTS;
-    }
-  });
-
-  const products = dbProducts || DEFAULT_PRODUCTS;
-
-  // Dynamically filter visa product options based on selected country
-  const filteredVisaOptions = products.filter((p: any) => 
-    inquiryCountry && p.country.toLowerCase().includes(inquiryCountry.toLowerCase()) && p.status === 'active'
-  );
-
-  const selectedInquiryProduct = products.find((p: any) => p.visaType === inquiryType && p.country === inquiryCountry);
-
-  // Retrieve active visa application from real D1 table mapped in token lookup
-  const activeApp = journey.visaApplications && journey.visaApplications.length > 0
-    ? journey.visaApplications[journey.visaApplications.length - 1]
-    : null;
-
-  // Retrieve latest mock interview prep session
-  const latestMock = journey.visaMockInterviews && journey.visaMockInterviews.length > 0
-    ? journey.visaMockInterviews[journey.visaMockInterviews.length - 1]
-    : null;
-
-  // Locate active visa engagement
-  const activeVisaEng = journey.engagements?.find((e: any) => e.division === 'visa' && e.status === 'active');
-
-  const loadRazorpay = () => {
-    return new Promise((resolve) => {
-      if ((window as any).Razorpay) {
-        resolve(true);
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const handleRazorpayCheckout = async (country: string, amountPaise: number) => {
-    const loaded = await loadRazorpay();
-    if (!loaded) {
-      alert("Razorpay checkout failed to load. Please check your internet connection.");
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/public/portal/payments/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientId: journey.client.id,
-          country,
-          amountPaise
-        })
-      });
-      const data = await res.json() as any;
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Order creation failed.");
-      }
-
-      const options = {
-        key: data.key,
-        amount: data.order.amount,
-        currency: "INR",
-        name: "Opus Overseas",
-        description: `${country} Visa Fee Payment`,
-        order_id: data.order.id,
-        handler: async function (response: any) {
-          try {
-            const vRes = await fetch('/api/public/portal/payments/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                clientId: journey.client.id,
-                engagementId: data.engagementId,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                milestoneName: `${country} Visa Processing Fee`
-              })
-            });
-            const vData = await vRes.json();
-            if (vData.success) {
-              alert(`✓ Payment successful! Recorded transaction Ref: ${response.razorpay_payment_id}`);
-              window.location.reload();
-            } else {
-              alert("Payment verification failed. Please contact support.");
-            }
-          } catch (err: any) {
-            alert(`Verification request failed: ${err.message}`);
-          }
-        },
-        prefill: {
-          name: journey.client.name,
-          email: journey.client.email
-        },
-        theme: {
-          color: "#0a2d50"
-        }
-      };
-      const rzp = new (window as any).Razorpay(options);
-      rzp.open();
-    } catch (err: any) {
-      alert(`Razorpay checkout initialization failed: ${err.message}`);
-    }
-  };
-
-  // Parse required documents list helper
-  const getRequiredDocs = (product: any): string[] => {
-    if (!product) return [];
-    try {
-      return JSON.parse(product.requiredDocsJson || '[]');
-    } catch {
-      return ["Passport scan", "Photo"];
-    }
-  };
-
-  return (
-    <div className="space-y-6 mt-6">
-      {activeApp && (
-        <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl space-y-4">
-          <div className="flex justify-between items-center border-b border-brand-navyLight pb-3">
-            <div>
-              <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest bg-brand-gold/10 px-2 py-0.5 rounded">
-                Visa Application Status
-              </span>
-              <h3 className="font-display font-bold text-base text-white mt-1">
-                {activeApp.country} {activeApp.visaType}
-              </h3>
-            </div>
-            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-brand-gold/15 text-brand-gold uppercase tracking-wider">
-              {activeApp.status.replace('_', ' ')}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-brand-cream/80">
-            {/* Checklist */}
-            <div className="space-y-2 border-r border-brand-navyLight/40 pr-4">
-              <h4 className="font-bold text-white uppercase tracking-wider text-[9px] text-brand-gold">Documents Vault</h4>
-              <div className="space-y-1.5 font-medium max-h-24 overflow-y-auto pr-1">
-                {journey.documents && journey.documents.length > 0 ? (
-                  journey.documents.map((d: any) => (
-                    <div key={d.id} className="flex justify-between items-center gap-2 text-[10px]">
-                      <span className="truncate">{d.fileName}</span>
-                      <span className={`text-[8px] font-bold uppercase px-1 rounded ${d.status === 'verified' ? 'bg-emerald-500/10 text-emerald-400' : d.status === 'rejected' ? 'bg-rose-500/10 text-rose-400' : 'bg-amber-500/10 text-amber-400'}`}>
-                        {d.status}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-brand-cream/40 italic">No files uploaded yet.</p>
-                )}
-              </div>
-              <div className="mt-2.5 pt-2 border-t border-brand-navyLight/30">
-                <input 
-                  type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" 
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(journey.client.id)}&filename=${encodeURIComponent(file.name)}`);
-                      const pData = await pRes.json() as any;
-                      if (!pData.success || !pData.url) throw new Error(pData.error || 'Failed to generate upload link.');
-
-                      const uRes = await fetch(pData.url, {
-                        method: 'PUT',
-                        body: file
-                      });
-                      if (!uRes.ok) throw new Error(await uRes.text() || 'Upload execution failed.');
-
-                      alert(`✓ ${file.name} uploaded successfully! Pending verification.`);
-                      window.location.reload();
-                    } catch (err: any) {
-                      alert(`Upload failed: ${err.message}`);
-                    }
-                  }}
-                  className="hidden" 
-                  id="visa-quick-file-upload"
-                />
-                <label 
-                  htmlFor="visa-quick-file-upload"
-                  className="w-full inline-block bg-brand-navyLight hover:bg-brand-navyLight/80 text-brand-cream font-bold py-1 px-2 rounded text-[8px] uppercase tracking-wider text-center cursor-pointer transition-all border border-brand-navyLight"
-                >
-                  📤 Upload Document
-                </label>
-              </div>
-            </div>
-
-            {/* VFS Booking Slot */}
-            <div className="space-y-2 border-r border-brand-navyLight/40 pr-4">
-              <h4 className="font-bold text-white uppercase tracking-wider text-[9px] text-brand-gold">Embassy Appointment Details</h4>
-              <div className="space-y-1">
-                <div>
-                  <span className="text-brand-cream/40 block text-[10px]">Slot Scheduled Date:</span>
-                  <span className="font-bold text-white">
-                    {activeApp.appointmentDate ? new Date(activeApp.appointmentDate * 1000).toLocaleDateString() : 'Not Scheduled yet'}
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <span className="text-brand-cream/40 block text-[10px]">Consulate Location:</span>
-                  <span className="font-semibold text-white">{activeApp.appointmentLocation || 'Awaiting Slot Allocation'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Mock Interview recommendation */}
-            <div className="space-y-2">
-              <h4 className="font-bold text-white uppercase tracking-wider text-[9px] text-brand-gold">Embassy Interview Guidance</h4>
-              <div className="space-y-1">
-                {latestMock ? (
-                  <>
-                    <div>
-                      <span className="text-brand-cream/40 block text-[10px]">Prep Session Status:</span>
-                      <span className="font-bold text-emerald-400 uppercase">{latestMock.status}</span>
-                    </div>
-                    {latestMock.status === 'completed' && (
-                      <div className="mt-1">
-                        <span className="text-brand-cream/40 block text-[10px]">Mock Prep Score:</span>
-                        <span className="font-bold text-white">{latestMock.score}/10</span>
-                      </div>
-                    )}
-                    {latestMock.feedback && (
-                      <p className="text-[11px] text-brand-cream/60 italic bg-brand-navyLight/40 p-2 rounded border border-brand-navyLight/20 mt-1.5">
-                        "${latestMock.feedback}"
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-brand-cream/40 italic">Awaiting slot allocation and mock interview prep scheduling.</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {activeVisaEng && activeVisaEng.outstandingBalance > 0 && (
-            <div className="mt-4 pt-3 border-t border-brand-navyLight/45 flex justify-between items-center gap-3">
-              <div>
-                <span className="text-[9px] text-brand-cream/50 uppercase block">Pending Payment Balance</span>
-                <span className="text-sm font-bold text-white">₹${(activeVisaEng.outstandingBalance / 100).toLocaleString('en-IN')}</span>
-              </div>
-              <button
-                onClick={() => handleRazorpayCheckout(activeApp.country, activeVisaEng.outstandingBalance)}
-                className="bg-brand-gold hover:bg-brand-gold-hover text-brand-navy font-bold py-1.5 px-4 rounded-full text-[10px] uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                💳 Pay Visa Processing Fee
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Available Visa Categories — P0 Visa Cart (Ralabs gold: eligibility + cart + sticky CTA) */}
-      <div className="bg-brand-navy/40 border border-brand-navyLight p-6 rounded-2xl space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <h3 className="font-display font-bold text-sm text-white">✈️ Browse Active Visa Offerings</h3>
-            <p className="text-[10px] text-brand-cream/50 mt-0.5">Explore standard entry visas — add to cart for family, pay once.</p>
-          </div>
-          {visaCart.length > 0 && (
-            <button onClick={() => setShowVisaCart(true)} className="inline-flex items-center gap-1.5 bg-brand-gold text-brand-navy px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer">
-              🛒 Cart ({visaCart.length}) — ₹{(visaCart.reduce((s,p)=>s+(p.feePaise||0),0)/100).toLocaleString('en-IN')}
-            </button>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-1.5 text-[10px]">
-          <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-bold">✅ Indian → Dubai Tourist Eligible · 3-4 Days</span>
-          <span className="px-2.5 py-1 rounded-full bg-white/10 text-white/70">Single-column form · 44px</span>
-        </div>
-
-        {selectedCatalogProduct ? (
-          /* Catalog Checkout Form Panel — enterprise: draft saved, progress 1/3, sticky CTA */
-          <div id="visa-checkout" className="border border-brand-gold/30 bg-brand-navyLight/20 p-5 rounded-xl space-y-4 scroll-mt-4">
-            <div className="flex justify-between items-center border-b border-brand-navyLight pb-2">
-              <div>
-                <h4 className="font-bold text-xs text-brand-gold uppercase tracking-wider">Confirm Visa Application Details</h4>
-                <div className="text-[11px] text-white font-semibold mt-0.5">{selectedCatalogProduct.country} — {selectedCatalogProduct.visaType}</div>
-              </div>
-              <button 
-                onClick={() => {
-                  setSelectedCatalogProduct(null);
-                  setCatalogFiles({});
-                }}
-                className="text-[10px] text-brand-cream/40 hover:text-white uppercase font-bold tracking-widest cursor-pointer"
-              >
-                ✕ Cancel
-              </button>
-            </div>
-
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              if (!checkoutAgreed) {
-                alert('You must agree to the Terms & Conditions to proceed.');
-                return;
-              }
-              const requiredList = getRequiredDocs(selectedCatalogProduct);
-              for (const reqDoc of requiredList) {
-                if (!catalogFiles[reqDoc]) {
-                  alert(`Please upload the required document: ${reqDoc}`);
-                  return;
-                }
-              }
-
-              try {
-                // 1. Submit inquiry details to D1
-                const res = await fetch('/api/public/portal/visa/inquiry', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    clientId: journey.client.id,
-                    country: selectedCatalogProduct.country,
-                    visaType: selectedCatalogProduct.visaType,
-                    email: checkoutEmail,
-                    registeredMobile: checkoutPhone,
-                    agreedToTerms: checkoutAgreed,
-                    notes: "Requested directly from active catalog offering (" + selectedCatalogProduct.entryType + ", processing: " + selectedCatalogProduct.processingTime + ")."
-                  })
-                });
-                if (!res.ok) throw new Error('Failed to register application details');
-
-                // 2. Upload files to Object Storage (R2) via presigned URLs
-                for (const [docName, file] of Object.entries(catalogFiles)) {
-                  const fileName = `${selectedCatalogProduct.country.replace(/\s+/g, '')}-${docName.replace(/\s+/g, '_')}-${file.name}`;
-                  const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(journey.client.id)}&filename=${encodeURIComponent(fileName)}`);
-                  const pData = await pRes.json() as any;
-                  if (!pData.success || !pData.url) throw new Error(`Failed to generate upload URL for ${docName}`);
-
-                  const uRes = await fetch(pData.url, {
-                    method: 'PUT',
-                    body: file
-                  });
-                  if (!uRes.ok) throw new Error(`Failed to upload ${docName} body to object storage.`);
-                }
-
-                // 3. Launch payment
-                await handleRazorpayCheckout(selectedCatalogProduct.country, selectedCatalogProduct.feePaise);
-                setSelectedCatalogProduct(null);
-                setCatalogFiles({});
-              } catch (err: any) {
-                alert(`Application error: ${err.message}`);
-              }
-            }} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-brand-cream/50 font-semibold block">Notification Email *</label>
-                  <input 
-                    type="email" 
-                    required 
-                    value={checkoutEmail}
-                    onChange={(e) => setCheckoutEmail(e.target.value)}
-                    className="w-full text-xs p-2 rounded bg-brand-navyLight border border-brand-navyLight text-white focus:border-brand-gold focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-brand-cream/50 font-semibold block">Registered Mobile Number *</label>
-                  <input 
-                    type="tel" 
-                    required 
-                    value={checkoutPhone}
-                    onChange={(e) => setCheckoutPhone(e.target.value)}
-                    className="w-full text-xs p-2 rounded bg-brand-navyLight border border-brand-navyLight text-white focus:border-brand-gold focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Dynamic Document Requirement Section */}
-              <div className="space-y-3 bg-brand-navyLight/20 p-4 rounded-lg border border-brand-navyLight/60">
-                <h5 className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">
-                  📋 Document Requirement for {selectedCatalogProduct.country}
-                </h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {getRequiredDocs(selectedCatalogProduct).map((docName: string) => (
-                    <div key={docName} className="space-y-1">
-                      <label className="text-[10px] text-brand-cream/60 font-semibold block">
-                        {docName} *
-                      </label>
-                      <input
-                        type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
-                        required
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setCatalogFiles(prev => ({ ...prev, [docName]: file }));
-                          }
-                        }}
-                        className="w-full text-xs text-brand-cream/60 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[9px] file:font-semibold file:bg-brand-navyLight file:text-brand-cream hover:file:bg-brand-navyLight/80 cursor-pointer"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5 pt-2">
-                <input 
-                  type="checkbox" 
-                  id="checkout-agreed-chk" 
-                  checked={checkoutAgreed}
-                  onChange={(e) => setCheckoutAgreed(e.target.checked)}
-                  className="mt-0.5 cursor-pointer accent-brand-gold"
-                />
-                <label htmlFor="checkout-agreed-chk" className="text-[10px] text-brand-cream/60 leading-relaxed cursor-pointer selection:bg-transparent">
-                  I agree to the Terms & Conditions. A copy of the terms is available for review at <a href="https://opusoverseas.com/terms" target="_blank" rel="noreferrer" className="text-brand-gold hover:underline">opusoverseas.com/terms</a>. (Visa fees are non-refundable once processed).
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-brand-gold text-brand-navy font-bold py-2 rounded text-[10px] uppercase tracking-wider hover:bg-brand-gold-hover cursor-pointer"
-              >
-                💳 Confirm & Pay Processing Fee (₹{(selectedCatalogProduct.feePaise / 100).toLocaleString('en-IN')})
-              </button>
-            </form>
-          </div>
-        ) : (
-          /* Products Grid view */
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {products.map((p: any, idx: number) => (
-              <div key={idx} className="border border-brand-navyLight/60 bg-brand-navyLight/20 hover:border-brand-gold/30 rounded-xl p-4.5 flex flex-col justify-between transition-all duration-300">
-                <div className="space-y-1">
-                  <div className="font-bold text-white text-xs">{p.country}</div>
-                  <div className="text-[9px] text-brand-cream/50">Processing: {p.processingTime}</div>
-                  <div className="text-[9px] text-brand-cream/40 font-semibold">{p.visaType} • {p.entryType}</div>
-                </div>
-                <div className="text-brand-gold font-bold text-sm mt-3 flex justify-between items-end">
-                  <span className="text-[8px] text-brand-cream/40 uppercase font-bold tracking-wider">Fee:</span>
-                  <span>₹{(p.feePaise / 100).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex gap-1.5 mt-3">
-                  <button onClick={() => addToVisaCart(p)} disabled={visaCart.some(v=>v.id===p.id)} className={`flex-1 py-1.5 rounded text-[9px] font-bold uppercase border transition cursor-pointer ${visaCart.some(v=>v.id===p.id) ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
-                    {visaCart.some(v=>v.id===p.id) ? '✓ In cart' : '+ Cart'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedCatalogProduct(p);
-                      setCheckoutEmail(journey.client.email || '');
-                      setCheckoutPhone(journey.client.phone || '');
-                      setCheckoutAgreed(false);
-                      setCatalogFiles({});
-                      setTimeout(() => document.getElementById('visa-checkout')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-                    }}
-                    className="flex-1 bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white font-bold py-1.5 rounded text-[9px] uppercase tracking-wider transition-all cursor-pointer text-center border border-transparent"
-                  >
-                    Start Application →
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {visaCart.length > 0 && (
-          <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-4 flex items-center justify-between flex-wrap gap-3">
-            <div className="text-xs text-brand-navy">
-              <span className="font-bold">Cart ({visaCart.length})</span>
-              <span className="mx-1.5 text-brand-navy/40">·</span>
-              <span>₹{(visaCart.reduce((s,p)=>s+(p.feePaise||0),0)/100).toLocaleString('en-IN')}</span>
-              <span className="hidden sm:inline text-brand-navy/40 ml-2">{visaCart.map(p=>p.country).join(' + ')}</span>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setVisaCart([])} className="px-3 py-1.5 rounded-full border border-brand-navy/15 bg-white text-xs font-bold text-brand-navy hover:bg-brand-navy/5 cursor-pointer">Clear</button>
-              <button onClick={async () => {
-                if (visaCart.length === 1) { setSelectedCatalogProduct(visaCart[0]); setShowVisaCart(false); return; }
-                // Bulk: create inquiries for each, then one cart checkout
-                const ok = confirm(`Place ${visaCart.length} visa inquiries together? Each will create a tracking entry and you can pay once.`);
-                if (!ok) return;
-                for (const item of visaCart) {
-                  try {
-                    await fetch('/api/public/portal/visa/inquiry', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientId: journey.client.id, country: item.country, visaType: item.visaType, email: journey.client.email, registeredMobile: journey.client.phone, agreedToTerms: true, notes: `Bulk cart checkout — ${item.entryType}, ${item.processingTime}` }) });
-                  } catch {}
-                }
-                const total = visaCart.reduce((s,p)=>s+(p.feePaise||0),0);
-                alert(`✓ ${visaCart.length} inquiries placed. Total fee ₹${(total/100).toLocaleString('en-IN')} — pay from Outstanding Balance or we’ll contact you.`);
-                setVisaCart([]); setShowVisaCart(false); window.location.reload();
-              }} className="px-4 py-1.5 rounded-full bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy/90 cursor-pointer">
-                Checkout Cart → Pay ₹{(visaCart.reduce((s,p)=>s+(p.feePaise||0),0)/100).toLocaleString('en-IN')}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Custom Inquiry Form */}
-        <div className="border-t border-brand-navyLight/40 pt-4 mt-2">
-          <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-gold mb-3">Custom Visa Country Inquiry</h4>
-          {submitted ? (
-            <div className="bg-emerald-500/10 text-emerald-400 p-3 rounded-lg border border-emerald-500/25 font-bold text-xs">
-              ✓ Your visa inquiry has been received. Our team will contact you shortly.
-            </div>
-          ) : (
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              if (!inquiryCountry || !inquiryType) {
-                alert('Please select both country and visa option.');
-                return;
-              }
-              if (!inquiryAgreed) {
-                alert('You must agree to the Terms & Conditions to proceed.');
-                return;
-              }
-              
-              const requiredList = getRequiredDocs(selectedInquiryProduct);
-              for (const reqDoc of requiredList) {
-                if (!inquiryFiles[reqDoc]) {
-                  alert(`Please upload the required document: &reqDoc`);
-                  return;
-                }
-              }
-
-              try {
-                const res = await fetch('/api/public/portal/visa/inquiry', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    clientId: journey.client.id,
-                    country: inquiryCountry,
-                    visaType: inquiryType,
-                    email: inquiryEmail,
-                    registeredMobile: inquiryPhone,
-                    agreedToTerms: inquiryAgreed,
-                    notes: inquiryNotes
-                  })
-                });
-                if (!res.ok) throw new Error('Inquiry failed');
-
-                // Upload files to Object Storage (R2) via presigned URLs
-                for (const [docName, file] of Object.entries(inquiryFiles)) {
-                  const fileName = `${inquiryCountry.replace(/\s+/g, '')}-&docName.replace(/\s+/g, '_')}-${file.name}`;
-                  const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(journey.client.id)}&filename=${encodeURIComponent(fileName)}`);
-                  const pData = await pRes.json() as any;
-                  if (!pData.success || !pData.url) throw new Error(`Failed to generate upload URL for ${docName}`);
-
-                  const uRes = await fetch(pData.url, {
-                    method: 'PUT',
-                    body: file
-                  });
-                  if (!uRes.ok) throw new Error(`Failed to upload ${docName} body.`);
-                }
-
-                setSubmitted(true);
-                const feeAmount = selectedInquiryProduct ? selectedInquiryProduct.feePaise : 1500000;
-                
-                if (confirm("✓ Inquiry submitted!\n\nWould you like to pay the standard visa processing fee of ₹" + (feeAmount / 100).toLocaleString('en-IN') + " now to initiate your documentation list?")) {
-                  handleRazorpayCheckout(inquiryCountry, feeAmount);
-                } else {
-                  window.location.reload();
-                }
-              } catch (err: any) {
-                alert(`Failed to submit visa inquiry: ${err.message}`);
-              }
-            }} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-brand-cream/50 font-semibold block">Destination Country</label>
-                  <select
-                    value={inquiryCountry}
-                    onChange={(e) => {
-                      setInquiryCountry(e.target.value);
-                      setInquiryType('');
-                      setInquiryFiles({});
-                    }}
-                    className="w-full text-xs p-2 rounded bg-brand-navyLight border border-brand-navyLight text-white focus:border-brand-gold focus:outline-none cursor-pointer"
-                  >
-                    <option value="">Select Target Country...</option>
-                    {VISA_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-brand-cream/50 font-semibold block">Visa Class / Duration</label>
-                  <select
-                    value={inquiryType}
-                    onChange={(e) => {
-                      setInquiryType(e.target.value);
-                      setInquiryFiles({});
-                    }}
-                    disabled={!inquiryCountry}
-                    className="w-full text-xs p-2 rounded bg-brand-navyLight border border-brand-navyLight text-white focus:border-brand-gold focus:outline-none cursor-pointer disabled:opacity-50"
-                  >
-                    <option value="">Select Visa Option...</option>
-                    {filteredVisaOptions.length > 0 ? (
-                      filteredVisaOptions.map((p: any) => (
-                        <option key={p.id} value={p.visaType}>
-                          {p.visaType.replace(p.country, '').trim()} (₹{(p.feePaise / 100).toLocaleString('en-IN')})
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option>Tourist Visa</option>
-                        <option>Business Visa</option>
-                        <option>Employment Visa</option>
-                        <option>Transit Visa</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-[10px] text-brand-cream/50 font-semibold block">Special requests or requirements...</label>
-                  <input
-                    type="text"
-                    placeholder="Enter special details..."
-                    value={inquiryNotes}
-                    onChange={(e) => setInquiryNotes(e.target.value)}
-                    className="w-full text-xs p-2 rounded bg-brand-navyLight border border-brand-navyLight text-white placeholder-brand-cream/35 focus:border-brand-gold focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {selectedInquiryProduct && (
-                /* Dynamic Document Requirement Section for Custom Inquiry Form */
-                <div className="space-y-3 bg-brand-navyLight/20 p-4 rounded-lg border border-brand-navyLight/60">
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">
-                    📋 Document Requirement for {inquiryCountry}
-                  </h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    {getRequiredDocs(selectedInquiryProduct).map((docName: string) => (
-                      <div key={docName} className="space-y-1">
-                        <label className="text-[10px] text-brand-cream/60 font-semibold block">
-                          {docName} *
-                        </label>
-                        <input
-                          type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
-                          required
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setInquiryFiles(prev => ({ ...prev, [docName]: file }));
-                            }
-                          }}
-                          className="w-full text-xs text-brand-cream/60 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[9px] file:font-semibold file:bg-brand-navyLight file:text-brand-cream hover:file:bg-brand-navyLight/80 cursor-pointer"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-brand-cream/50 font-semibold block">Notification Email *</label>
-                  <input 
-                    type="email" 
-                    required 
-                    value={inquiryEmail}
-                    onChange={(e) => setInquiryEmail(e.target.value)}
-                    className="w-full text-xs p-2 rounded bg-brand-navyLight border border-brand-navyLight text-white focus:border-brand-gold focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-brand-cream/50 font-semibold block">Registered Mobile Number *</label>
-                  <input 
-                    type="tel" 
-                    required 
-                    value={inquiryPhone}
-                    onChange={(e) => setInquiryPhone(e.target.value)}
-                    className="w-full text-xs p-2 rounded bg-brand-navyLight border border-brand-navyLight text-white focus:border-brand-gold focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5 pt-2">
-                <input 
-                  type="checkbox" 
-                  id="inquiry-agreed-chk" 
-                  checked={inquiryAgreed}
-                  onChange={(e) => setInquiryAgreed(e.target.checked)}
-                  className="mt-0.5 cursor-pointer accent-brand-gold"
-                />
-                <label htmlFor="inquiry-agreed-chk" className="text-[10px] text-brand-cream/60 leading-relaxed cursor-pointer selection:bg-transparent">
-                  I agree to the Terms & Conditions. A copy of the terms is available for review at <a href="https://opusoverseas.com/terms" target="_blank" rel="noreferrer" className="text-brand-gold hover:underline">opusoverseas.com/terms</a>.
-                </label>
-              </div>
-
-<button
-                type="submit"
-                className="w-full bg-brand-gold text-brand-navy hover:bg-brand-gold-hover py-2 rounded text-[10px] font-bold uppercase tracking-wider transition cursor-pointer"
-              >
-                Submit Inquiry
-              </button>
-            </form>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -1598,26 +887,26 @@ const VISA_FLOW: { key: string; label: string }[] = [
 
 const VISA_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const VISA_INPUT = 'w-full text-xs px-3 py-2.5 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-brand-gold outline-none';
-const VISA_LABEL = 'text-[10px] uppercase tracking-wider text-white/60';
-const VISA_HEADING = 'text-[10px] font-bold uppercase tracking-widest text-brand-gold';
-const VISA_BTN = 'bg-brand-gold text-brand-navy font-bold hover:bg-brand-gold/90';
+const VISA_INPUT = 'w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/30 outline-none transition font-medium shadow-xs';
+const VISA_LABEL = 'text-[10px] font-bold uppercase tracking-wider text-slate-500';
+const VISA_HEADING = 'text-[10px] font-extrabold uppercase tracking-widest text-brand-gold';
+const VISA_BTN = 'bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white font-bold transition shadow-xs';
 
 const visaBlockedEdit = (s: string) => ['granted', 'rejected', 'delivered', 'cancelled'].includes(s);
 
 const visaChip = (s: string) =>
   ['granted', 'delivered'].includes(s)
-    ? 'px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-brand-gold/15 text-brand-gold'
+    ? 'px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200'
     : ['rejected', 'cancelled'].includes(s)
-      ? 'px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-500/15 text-rose-400'
-      : 'px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-white/10 text-white/80';
+      ? 'px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200'
+      : 'px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200';
 
 const docBadge = (s: string) =>
   s === 'verified'
-    ? 'px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400'
+    ? 'px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200'
     : s === 'rejected'
-      ? 'px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-rose-500/15 text-rose-400'
-      : 'px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400';
+      ? 'px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200'
+      : 'px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200';
 
 function validateVisaSection(key: VisaSectionKey, s: Record<string, any> | undefined): string {
   const sec = s || {};
@@ -1759,7 +1048,7 @@ function VSelect(props: { label: string; value: string; onChange: (v: string) =>
       <select
         value={props.value ?? ''}
         onChange={(e) => props.onChange(e.target.value)}
-        className={`${VISA_INPUT} cursor-pointer [&>option]:bg-[#0D1830] ${props.className || ''}`}
+        className={`${VISA_INPUT} cursor-pointer ${props.className || ''}`}
       >
         <option value="">{props.placeholder || 'Select...'}</option>
         {props.options.map((o) => (
@@ -1773,14 +1062,14 @@ function VSelect(props: { label: string; value: string; onChange: (v: string) =>
 function VPill(props: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
   return (
     <VField label={props.label} inline>
-      <div className="flex gap-1 rounded-full bg-white/5 p-1 w-fit">
+      <div className="flex flex-wrap gap-1.5 rounded-xl bg-slate-100 p-1 w-fit border border-slate-200/80">
         {props.options.map((o) => (
           <button
             key={o.value}
             type="button"
             onClick={() => props.onChange(o.value)}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-              props.value === o.value ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+              props.value === o.value ? 'bg-brand-navy text-white shadow-xs' : 'text-slate-600 hover:text-brand-navy hover:bg-white/60'
             }`}
           >
             {o.label}
@@ -1795,12 +1084,12 @@ function VBool(props: { label: string; value: boolean | undefined; onChange: (v:
   const on = props.value === true;
   return (
     <VField label={props.label} inline>
-      <div className="flex gap-1 rounded-full bg-white/5 p-1 w-fit">
+      <div className="flex gap-1.5 rounded-xl bg-slate-100 p-1 w-fit border border-slate-200/80">
         <button
           type="button"
           onClick={() => props.onChange(true)}
-          className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-            on ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+            on ? 'bg-brand-navy text-white shadow-xs' : 'text-slate-600 hover:text-brand-navy hover:bg-white/60'
           }`}
         >
           Yes
@@ -1808,8 +1097,8 @@ function VBool(props: { label: string; value: boolean | undefined; onChange: (v:
         <button
           type="button"
           onClick={() => props.onChange(false)}
-          className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
-            !on ? 'bg-brand-gold text-brand-navy' : 'text-white/60 hover:text-white'
+          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+            !on ? 'bg-brand-navy text-white shadow-xs' : 'text-slate-600 hover:text-brand-navy hover:bg-white/60'
           }`}
         >
           No
@@ -1820,9 +1109,11 @@ function VBool(props: { label: string; value: boolean | undefined; onChange: (v:
 }
 
 function VisaServices({ token }: { token: string }) {
+  const VISA_PAUSED = true; // subtle paused — pricing will be available soon, applications via waitlist only
   const [tab, setTab] = useState<'catalogue' | 'wizard' | 'tracker'>('catalogue');
   const [activeAppId, setActiveAppId] = useState<string | null>(null);
   const [country, setCountry] = useState('');
+  const [selectedVisaByCountry, setSelectedVisaByCountry] = useState<Record<string, string>>({});
   const [inquiryCountry, setInquiryCountry] = useState('');
   const [inquiryType, setInquiryType] = useState('');
   const [inquiryNotes, setInquiryNotes] = useState('');
@@ -1864,7 +1155,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     queryKey: ['portalVisaApplications', token],
     queryFn: async () => {
       if (!token) return [];
-      const r = await fetch(`/api/public/portal/visa/applications?token=${encodeURIComponent(token)}`);
+      const r = await fetch(`/api/public/portal/visa/applications`, { headers: { 'X-Portal-Token': token } });
       if (r.status === 404) return [];
       if (!r.ok) throw new Error(await r.text() || 'Failed to load your applications.');
       const d = await r.json();
@@ -1874,9 +1165,9 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     retry: false,
   });
 
-  const products = (productsQ.data && productsQ.data.length > 0) ? productsQ.data : DEFAULT_PRODUCTS;
-  const applications = appsQ.data || [];
-  const countries = Array.from(new Set(products.map((p) => p.country))).sort();
+  const products: VisaProduct[] = productsQ.data || [];
+  const applications: VisaApplicationRow[] = appsQ.data || [];
+  const countries: string[] = Array.from(new Set(products.map((p: VisaProduct) => p.country))).sort();
   const activeApp = applications.find((a) => a.id === activeAppId) || null;
 
   const patch = (key: VisaSectionKey, p: Record<string, any>) =>
@@ -2005,7 +1296,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
       const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : '';
       const fileName = `${docName}-${Date.now()}${ext}`;
       // 1. Presigned GET: bucket grants a signed, time-limited upload URL.
-      const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(fileName)}`);
+      const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(fileName)}`, { headers: { 'X-Portal-Token': token } });
       const pData = await pRes.json() as any;
       if (!pRes.ok || !pData.success || !pData.url) throw new Error(pData.error || 'Failed to generate upload link.');
       // 2. PUT the raw file binary to the signed URL (query carries token/filename/expires/signature).
@@ -2054,6 +1345,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
 
   const draftByProduct = (p: VisaProduct) =>
     applications.some((a) => a.status === 'draft' && a.country === p.country && a.visaType === p.visaType);
+  void draftByProduct; void startApp;
 
   const reviewErrors = VISA_STEPS.slice(0, 7)
     .map((s) => ({ key: s.key, label: s.label, err: validateVisaSection(s.key as VisaSectionKey, form[s.key]) }))
@@ -2076,7 +1368,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
               className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 font-medium outline-none focus:border-brand-gold shadow-xs cursor-pointer"
             >
               <option value="">All Countries ({countries.length} Available)</option>
-              {countries.map((c) => (
+              {countries.map((c: string) => (
                 <option key={c} value={c}>{c}</option>
               ))}
               <option value="__other__">Other country…</option>
@@ -2085,6 +1377,16 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
         </div>
         <p className="text-xs text-slate-500">Standard processing fees apply per product. Start an application to open the guided draft wizard — your progress is saved at every step.</p>
       </div>
+
+      {wizardErr && (
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-bold">⚠</span>
+            <span>{wizardErr}</span>
+          </div>
+          <button onClick={() => setWizardErr('')} className="text-rose-500 hover:text-rose-800 font-bold px-2 py-1 cursor-pointer">✕</button>
+        </div>
+      )}
 
       {productsQ.isLoading && (
         <div className="py-12 flex flex-col items-center gap-3">
@@ -2114,7 +1416,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
         <div className="flex flex-col gap-3">
           <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest block">Your Applications</span>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {applications.map((a) => (
+            {applications.map((a: VisaApplicationRow) => (
               <button
                 key={a.id}
                 onClick={() => openApp(a)}
@@ -2167,50 +1469,103 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
         </div>
       )}
 
-      {!productsQ.isLoading && products.length > 0 && country !== '__other__' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products
-            .filter((p) => !country || p.country === country)
-            .map((p) => (
-              <div key={p.id} className="bg-white border border-slate-200/90 hover:border-brand-gold rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-xs hover:shadow-md group">
-                <div className="space-y-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h4 className="font-display font-extrabold text-brand-navy text-sm group-hover:text-brand-gold transition-colors">{p.visaType}</h4>
-                      <span className="text-xs text-slate-500 font-semibold">{p.country}</span>
-                    </div>
-                    <span className="text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0">{p.entryType}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs py-2 px-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="text-slate-500">⏱ Processing: <strong className="text-slate-700">{p.processingTime}</strong></span>
-                    <span className="text-brand-navy font-display font-black text-base">₹{(p.feePaise / 100).toLocaleString('en-IN')}</span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Required Documents</span>
-                    <ul className="mt-1.5 space-y-1 text-xs text-slate-600">
-                      {(p.requiredDocs || ['Passport scan', 'Color photograph']).map((doc) => (
-                        <li key={doc} className="flex items-center gap-1.5">
-                          <span className="text-emerald-500 font-bold">✓</span>
-                          <span>{doc}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => startApp(p)}
-                  disabled={busy}
-                  className="w-full mt-2 py-2.5 rounded-xl bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-xs font-black uppercase tracking-wider transition shadow-xs cursor-pointer disabled:opacity-50 active:scale-95"
-                >
-                  {draftByProduct(p) ? 'Continue Draft' : 'Start Application →'}
-                </button>
-              </div>
-            ))}
+      {/* ——— Subtle Guided Path — applications paused, pricing will be available soon ——— */}
+      <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 flex items-start gap-3">
+        <span className="text-lg">⏸️</span>
+        <div className="flex-1">
+          <p className="text-xs font-bold text-amber-900">Applications paused — pricing will be available soon</p>
+          <p className="text-[11px] text-amber-800/80 mt-0.5">We’re refining our visa processing flow for a calmer, step-by-step experience. Save your interest below — we’ll notify you the moment we go live. No fees are charged while paused.</p>
         </div>
-      )}
+        <span className="text-[10px] font-bold uppercase tracking-wider bg-white border border-amber-200 text-amber-800 px-2.5 py-1 rounded-full shrink-0">Will be available soon</span>
+      </div>
+
+      {!productsQ.isLoading && products.length > 0 && country !== '__other__' && (() => {
+        const filtered = products.filter((p: VisaProduct) => !country || p.country === country);
+        if (filtered.length === 0) return <p className="text-xs text-slate-500 text-center py-6">No visa options for this country yet — try "Other country…" below.</p>;
+        // Subtle single-selector: pick one country (from top filter) → one visa type → checklist → waitlist
+        const list = country && country !== '' ? filtered : filtered.slice(0, 12); void list;
+        // If a country filter is set, show its options in a single subtle card; otherwise show the first country's card as preview
+        const singleCountry = country && country !== '' ? country : filtered[0]?.country;
+        const countryList = filtered.filter(p => p.country === singleCountry);
+        const selectedId = selectedVisaByCountry[singleCountry] || countryList[0]?.id;
+        const selected = countryList.find(x => x.id === selectedId) || countryList[0];
+        if (!selected) return null;
+        return (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest">Your next step</span>
+                <h4 className="font-display font-bold text-brand-navy text-sm mt-1">1. Choose destination → 2. See checklist → 3. Join waitlist</h4>
+              </div>
+              <span className="text-[10px] px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-bold">{selected.entryType} · {singleCountry}</span>
+            </div>
+
+            {countryList.length > 1 && (
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Visa type for {singleCountry}</label>
+                <select
+                  value={selected.id}
+                  onChange={(e) => setSelectedVisaByCountry((m) => ({ ...m, [singleCountry]: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-700 focus:border-brand-gold focus:outline-none cursor-pointer"
+                >
+                  {countryList.map((opt) => (
+                    <option key={opt.id} value={opt.id}>{opt.visaType} • {opt.processingTime} • Will be available soon</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {countryList.length === 1 && (
+              <div className="text-xs font-bold text-brand-navy bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">{selected.visaType} · {selected.entryType}</div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Required documents — prepare early</span>
+                <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
+                  {(selected.requiredDocs || ['Passport scan', 'Color photograph', 'Supporting docs per checklist']).map((doc: string) => (
+                    <li key={doc} className="flex gap-2"><span className="text-slate-300">—</span><span>{doc}</span></li>
+                  ))}
+                </ul>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-slate-500">⏱ Processing</span>
+                  <strong className="text-slate-700">{selected.processingTime}</strong>
+                </div>
+                <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-3 flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Fee</span>
+                  <span className="text-xs font-bold text-slate-400 blur-[3px] select-none">₹••••</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 px-2 py-1 rounded-full">Will be available soon</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={async () => {
+                  setInquiryBusy(true);
+                  try {
+                    const r = await fetch('/api/public/portal/visa/inquiry', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ clientId: token, country: selected.country, visaType: selected.visaType, notes: 'Waitlist — applications paused, notify when live', agreedToTerms: true }),
+                    });
+                    const j = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(j.error || 'Waitlist failed');
+                    setNotice(`✓ You’re on the waitlist for ${selected.country} — ${selected.visaType}. We’ll notify you when applications reopen.`);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } catch (e: any) { setWizardErr(e.message); } finally { setInquiryBusy(false); }
+                }}
+                disabled={inquiryBusy}
+                className="flex-1 py-3 rounded-xl bg-brand-navy text-white text-xs font-black uppercase tracking-wider hover:bg-brand-gold hover:text-brand-navy transition shadow-xs disabled:opacity-50 cursor-pointer"
+              >
+                {inquiryBusy ? 'Joining…' : '✓ Join Waitlist — Notify Me When Live'}
+              </button>
+              <button onClick={() => setCountry('__other__')} className="px-4 py-3 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:border-brand-gold cursor-pointer">Need another country? →</button>
+            </div>
+            <p className="text-[11px] text-slate-500 text-center">No payment is taken while paused. Your checklist is saved to your portal — we’ll pre-fill it when we go live.</p>
+          </div>
+        );
+      })()}
     </div>
   );
 
@@ -2218,10 +1573,10 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
   const renderWizard = () => {
     if (!activeApp) {
       return (
-        <div className="text-center border-2 border-dashed border-brand-navyLight rounded-xl p-10 bg-brand-navy/10">
-          <h3 className="font-display font-semibold text-sm text-white">No active draft</h3>
-          <p className="text-[10px] text-brand-cream/50 mt-1">Start an application from the catalogue to open the wizard.</p>
-          <button onClick={() => setTab('catalogue')} className={`${VISA_BTN} mt-4 px-4 py-2 rounded-lg text-[10px] uppercase tracking-wider cursor-pointer`}>Back to Catalogue</button>
+        <div className="text-center border-2 border-dashed border-slate-200 rounded-2xl p-10 bg-slate-50">
+          <h3 className="font-display font-bold text-sm text-brand-navy">No active draft</h3>
+          <p className="text-xs text-slate-500 mt-1">Start an application from the catalogue to open the wizard.</p>
+          <button onClick={() => setTab('catalogue')} className={`${VISA_BTN} mt-4 px-4 py-2 rounded-xl text-xs uppercase tracking-wider cursor-pointer`}>Back to Catalogue</button>
         </div>
       );
     }
@@ -2235,31 +1590,36 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     const visaHistory = form.visaHistory || {};
 
     return (
-      <div className="bg-brand-navy/40 border border-brand-navyLight rounded-2xl p-6 flex flex-col gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-          <div>
-            <span className={VISA_HEADING + ' block'}>Draft Application</span>
-            <h3 className="font-display font-bold text-base text-white mt-1">{activeApp.country} — {activeApp.visaType}</h3>
+      <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-6 flex flex-col gap-5 shadow-xs">
+        {VISA_PAUSED && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 flex items-center gap-2 text-[11px] text-amber-800">
+            <span>⏸️</span><span className="font-bold">Applications paused — will be available soon.</span><span className="text-amber-700">You can still fill and save your draft; submit will reopen and auto-notify waitlist.</span>
           </div>
-          <button onClick={() => setTab('catalogue')} className="text-[10px] text-brand-cream/40 hover:text-white uppercase font-bold tracking-widest cursor-pointer">✕ Exit Draft</button>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+          <div>
+            <span className={VISA_HEADING + ' block'}>Draft Application {VISA_PAUSED && <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-amber-800">Paused</span>}</span>
+            <h3 className="font-display font-bold text-base text-brand-navy mt-1">{activeApp.country} — {activeApp.visaType}</h3>
+          </div>
+          <button onClick={() => setTab('catalogue')} className="text-xs text-slate-500 hover:text-brand-navy font-bold uppercase tracking-wider cursor-pointer">✕ Exit Draft</button>
         </div>
 
-        <div className="flex gap-1 overflow-x-auto pb-1">
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
           {VISA_STEPS.map((s, i) => (
             <button
               key={s.key}
               onClick={() => { if (i <= step) setStep(i); }}
-              className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider whitespace-nowrap transition cursor-pointer ${
-                i === step ? 'bg-brand-gold text-brand-navy'
-                : i < step ? 'bg-brand-gold/15 text-brand-gold'
-                : 'bg-white/5 text-white/40'
+              className={`px-3 py-1.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap transition cursor-pointer ${
+                i === step ? 'bg-brand-navy text-white shadow-xs'
+                : i < step ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-white border border-slate-200 text-slate-400'
               }`}
             >
               {i + 1}. {s.label}
             </button>
           ))}
         </div>
-        <div className="h-1 rounded-full bg-white/10 overflow-hidden">
+        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
           <div className="h-full bg-brand-gold transition-all duration-300" style={{ width: `${(step / (VISA_STEPS.length - 1)) * 100}%` }}></div>
         </div>
 
@@ -2279,14 +1639,14 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
           {/* Passport */}
           {step === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <VInput label="Passport Number *" value={passport.number} onChange={(v) => patch('passport', { number: v.toUpperCase() })} placeholder="e.g. N1234567 (letters & digits only)" className="md:col-span-2" />
+              <VInput label="Passport Number *" value={passport.number} onChange={(v) => patch('passport', { number: v.toUpperCase() })} placeholder="e.g. Z1234567" />
+              <VInput label="Place of Issue *" value={passport.placeOfIssue} onChange={(v) => patch('passport', { placeOfIssue: v })} placeholder="e.g. Hyderabad" />
               <VInput label="Issue Date *" type="date" value={passport.issueDate} onChange={(v) => patch('passport', { issueDate: v })} />
               <VInput label="Expiry Date *" type="date" value={passport.expiryDate} onChange={(v) => patch('passport', { expiryDate: v })} />
-              <VInput label="Place of Issue *" value={passport.placeOfIssue} onChange={(v) => patch('passport', { placeOfIssue: v })} placeholder="e.g. Hyderabad" />
-              <VInput label="Country of Issue" value={passport.countryOfIssue} onChange={(v) => patch('passport', { countryOfIssue: v })} placeholder="India" />
-              <VBool label="Previous Passport?" value={passport.hasPreviousPassport} onChange={(v) => patch('passport', { hasPreviousPassport: v })} />
+              <VInput label="Country of Issue *" value={passport.countryOfIssue} onChange={(v) => patch('passport', { countryOfIssue: v })} placeholder="India" />
+              <VBool label="Do you have a previous passport? *" value={passport.hasPreviousPassport} onChange={(v) => patch('passport', { hasPreviousPassport: v })} />
               {passport.hasPreviousPassport && (
-                <VInput label="Previous Passport Number" value={passport.previousPassportNumber} onChange={(v) => patch('passport', { previousPassportNumber: v.toUpperCase() })} placeholder="Required if you hold one" />
+                <VInput label="Previous Passport Number *" value={passport.previousPassportNumber} onChange={(v) => patch('passport', { previousPassportNumber: v.toUpperCase() })} className="md:col-span-2" />
               )}
             </div>
           )}
@@ -2294,14 +1654,14 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
           {/* Contact */}
           {step === 2 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <VInput label="Residential Address *" value={contact.address} onChange={(v) => patch('contact', { address: v })} className="md:col-span-2" placeholder="House, street, area" />
+              <VInput label="Residential Address *" value={contact.address} onChange={(v) => patch('contact', { address: v })} className="md:col-span-2" />
               <VInput label="City *" value={contact.city} onChange={(v) => patch('contact', { city: v })} />
               <VInput label="State *" value={contact.state} onChange={(v) => patch('contact', { state: v })} />
-              <VInput label="PIN Code *" value={contact.pincode} onChange={(v) => patch('contact', { pincode: v })} placeholder="6 digits" />
-              <VInput label="Phone (WhatsApp)" value={contact.phone} onChange={(v) => patch('contact', { phone: v })} placeholder="Optional" />
-              <VInput label="Alternate Phone" value={contact.alternatePhone} onChange={(v) => patch('contact', { alternatePhone: v })} placeholder="Optional" />
-              <VInput label="Emergency Contact *" value={contact.emergencyContact} onChange={(v) => patch('contact', { emergencyContact: v })} placeholder="Name of next of kin" />
-              <VInput label="Emergency Phone *" value={contact.emergencyPhone} onChange={(v) => patch('contact', { emergencyPhone: v })} placeholder="With country code" />
+              <VInput label="PIN Code *" value={contact.pincode} onChange={(v) => patch('contact', { pincode: v })} />
+              <VInput label="Primary Phone *" value={contact.phone} onChange={(v) => patch('contact', { phone: v })} />
+              <VInput label="Alternate Phone" value={contact.alternatePhone} onChange={(v) => patch('contact', { alternatePhone: v })} />
+              <VInput label="Emergency Contact Name *" value={contact.emergencyContact} onChange={(v) => patch('contact', { emergencyContact: v })} />
+              <VInput label="Emergency Phone *" value={contact.emergencyPhone} onChange={(v) => patch('contact', { emergencyPhone: v })} />
             </div>
           )}
 
@@ -2313,23 +1673,25 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                 value={employment.status || ''}
                 onChange={(v) => patch('employment', { status: v })}
                 options={[
-                  { value: 'salaried', label: 'Salaried' },
-                  { value: 'self_employed', label: 'Self Employed' },
+                  { value: 'salaried', label: 'Salaried Employee' },
+                  { value: 'self_employed', label: 'Self-Employed / Business' },
                   { value: 'student', label: 'Student' },
-                  { value: 'retired', label: 'Retired' },
                   { value: 'unemployed', label: 'Unemployed' },
+                  { value: 'retired', label: 'Retired' },
                   { value: 'homemaker', label: 'Homemaker' },
                 ]}
                 className="md:col-span-2"
               />
               {(employment.status === 'salaried' || employment.status === 'self_employed') && (
                 <>
-                  <VInput label="Occupation *" value={employment.occupation} onChange={(v) => patch('employment', { occupation: v })} />
-                  {employment.status === 'salaried' && <VInput label="Employer Name *" value={employment.employerName} onChange={(v) => patch('employment', { employerName: v })} />}
-                  <VInput label="Designation" value={employment.designation} onChange={(v) => patch('employment', { designation: v })} placeholder="Optional" />
-                  <VInput label="Employer Phone" value={employment.employerPhone} onChange={(v) => patch('employment', { employerPhone: v })} placeholder="Optional" />
-                  <VInput label="Employer Address" value={employment.employerAddress} onChange={(v) => patch('employment', { employerAddress: v })} placeholder="Optional" className="md:col-span-2" />
+                  <VInput label="Occupation / Job Title *" value={employment.occupation} onChange={(v) => patch('employment', { occupation: v })} />
+                  {employment.status === 'salaried' && (
+                    <VInput label="Employer / Company Name *" value={employment.employerName} onChange={(v) => patch('employment', { employerName: v })} />
+                  )}
+                  <VInput label="Designation" value={employment.designation} onChange={(v) => patch('employment', { designation: v })} />
                   <VNumber label="Years Employed" value={employment.yearsEmployed} onChange={(v) => patch('employment', { yearsEmployed: v })} />
+                  <VInput label="Employer Address" value={employment.employerAddress} onChange={(v) => patch('employment', { employerAddress: v })} className="md:col-span-2" />
+                  <VInput label="Employer Phone" value={employment.employerPhone} onChange={(v) => patch('employment', { employerPhone: v })} />
                   <VNumber label="Monthly Income (₹)" value={employment.monthlyIncome} onChange={(v) => patch('employment', { monthlyIncome: v })} />
                 </>
               )}
@@ -2340,31 +1702,36 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
           {step === 4 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <VSelect
-                label="Travel Purpose *"
+                label="Purpose of Travel *"
                 value={travel.purpose || ''}
                 onChange={(v) => patch('travel', { purpose: v })}
                 options={[
-                  { value: 'tourism', label: 'Tourism' },
-                  { value: 'business', label: 'Business' },
-                  { value: 'medical', label: 'Medical' },
-                  { value: 'visiting_family', label: 'Visiting Family' },
+                  { value: 'tourism', label: 'Tourism & Sightseeing' },
+                  { value: 'business', label: 'Business Meeting / Conference' },
+                  { value: 'family_visit', label: 'Visiting Family / Friends' },
+                  { value: 'transit', label: 'Airport Transit' },
+                  { value: 'medical', label: 'Medical Treatment' },
                   { value: 'other', label: 'Other' },
                 ]}
                 className="md:col-span-2"
               />
-              <VInput label="Intended Arrival *" type="date" value={travel.intendedArrival} onChange={(v) => patch('travel', { intendedArrival: v })} />
-              <VInput label="Intended Departure *" type="date" value={travel.intendedDeparture} onChange={(v) => patch('travel', { intendedDeparture: v })} />
-              <VPill
-                label="Accommodation *"
+              <VInput label="Intended Arrival Date *" type="date" value={travel.intendedArrival} onChange={(v) => patch('travel', { intendedArrival: v })} />
+              <VInput label="Intended Departure Date *" type="date" value={travel.intendedDeparture} onChange={(v) => patch('travel', { intendedDeparture: v })} />
+              <VSelect
+                label="Accommodation Type *"
                 value={travel.accommodation || ''}
                 onChange={(v) => patch('travel', { accommodation: v })}
-                options={[{ value: 'hotel', label: 'Hotel' }, { value: 'family', label: 'Family' }, { value: 'friend', label: 'Friend' }, { value: 'other', label: 'Other' }]}
+                options={[
+                  { value: 'hotel', label: 'Hotel / Resort' },
+                  { value: 'host', label: 'Staying with Host / Family' },
+                  { value: 'other', label: 'Other Accommodation' },
+                ]}
               />
               {travel.accommodation === 'hotel' && (
-                <VInput label="Hotel Name *" value={travel.accommodationName} onChange={(v) => patch('travel', { accommodationName: v })} />
+                <VInput label="Hotel / Booking Name *" value={travel.accommodationName} onChange={(v) => patch('travel', { accommodationName: v })} />
               )}
-              <VBool label="Return Ticket Booked?" value={travel.returnTicketBooked} onChange={(v) => patch('travel', { returnTicketBooked: v })} />
-              <VBool label="Travelling With Companions?" value={travel.hasCompanions} onChange={(v) => patch('travel', { hasCompanions: v })} />
+              <VBool label="Return Flight Ticket Booked? *" value={travel.returnTicketBooked} onChange={(v) => patch('travel', { returnTicketBooked: v })} />
+              <VBool label="Travelling with Companions? *" value={travel.hasCompanions} onChange={(v) => patch('travel', { hasCompanions: v })} />
               {travel.hasCompanions && (
                 <VNumber label="Number of Companions" value={travel.companions} onChange={(v) => patch('travel', { companions: v })} />
               )}
@@ -2379,88 +1746,80 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                 value={financial.fundingSource || ''}
                 onChange={(v) => patch('financial', { fundingSource: v })}
                 options={[
-                  { value: 'salary', label: 'Salary' },
-                  { value: 'savings', label: 'Savings' },
-                  { value: 'sponsor', label: 'Sponsor' },
-                  { value: 'family', label: 'Family' },
+                  { value: 'self', label: 'Self-Funded' },
+                  { value: 'sponsor', label: 'Sponsored by Family / Company' },
+                  { value: 'employer', label: 'Employer-Funded' },
                 ]}
                 className="md:col-span-2"
               />
-              <VNumber label="Bank Balance (₹)" value={financial.bankBalanceInr} onChange={(v) => patch('financial', { bankBalanceInr: v })} />
+              <VNumber label="Estimated Bank Balance (₹)" value={financial.bankBalanceInr} onChange={(v) => patch('financial', { bankBalanceInr: v })} />
               {financial.fundingSource === 'sponsor' && (
                 <>
-                  <VInput label="Sponsor Name" value={financial.sponsorName} onChange={(v) => patch('financial', { sponsorName: v })} />
-                  <VInput label="Sponsor Relation" value={financial.sponsorRelation} onChange={(v) => patch('financial', { sponsorRelation: v })} />
-                  <VInput label="Sponsor Contact" value={financial.sponsorContact} onChange={(v) => patch('financial', { sponsorContact: v })} />
+                  <VInput label="Sponsor Full Name *" value={financial.sponsorName} onChange={(v) => patch('financial', { sponsorName: v })} />
+                  <VInput label="Relationship with Sponsor" value={financial.sponsorRelation} onChange={(v) => patch('financial', { sponsorRelation: v })} />
+                  <VInput label="Sponsor Phone" value={financial.sponsorContact} onChange={(v) => patch('financial', { sponsorContact: v })} />
                 </>
               )}
-              <VBool label="Employment Letter Available?" value={financial.employmentLetterAvailable} onChange={(v) => patch('financial', { employmentLetterAvailable: v })} />
-              <VBool label="ITR Filed?" value={financial.itrFiled} onChange={(v) => patch('financial', { itrFiled: v })} />
+              <VBool label="Employment Letter Available? *" value={financial.employmentLetterAvailable} onChange={(v) => patch('financial', { employmentLetterAvailable: v })} />
+              <VBool label="ITR (Income Tax Returns) Filed? *" value={financial.itrFiled} onChange={(v) => patch('financial', { itrFiled: v })} />
             </div>
           )}
 
           {/* Visa History */}
           {step === 6 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <VBool label="Held US / UK / Schengen Visa?" value={visaHistory.hasUsUkSchengen} onChange={(v) => patch('visaHistory', { hasUsUkSchengen: v })} />
-              <VInput
-                label="Previously Visited Countries"
-                value={(visaHistory.previousCountries || []).join(', ')}
-                onChange={(v) => patch('visaHistory', { previousCountries: v.split(',').map((x) => x.trim()).filter(Boolean) })}
-                placeholder="e.g. UAE, Qatar, Malaysia"
-                className="md:col-span-2"
-              />
-              <VBool label="Ever Had a Visa Rejection?" value={visaHistory.everRejected} onChange={(v) => patch('visaHistory', { everRejected: v })} />
+            <div className="grid grid-cols-1 gap-4">
+              <VBool label="Have you travelled to US, UK, Canada, or Schengen area in the last 5 years? *" value={visaHistory.hasUsUkSchengen} onChange={(v) => patch('visaHistory', { hasUsUkSchengen: v })} />
+              <VInput label="Previous countries visited (comma-separated)" value={Array.isArray(visaHistory.previousCountries) ? visaHistory.previousCountries.join(', ') : (visaHistory.previousCountries || '')} onChange={(v) => patch('visaHistory', { previousCountries: v.split(',').map((s) => s.trim()).filter(Boolean) })} placeholder="e.g. Singapore, UAE, Thailand" />
+              <VBool label="Have you ever had a visa application rejected? *" value={visaHistory.everRejected} onChange={(v) => patch('visaHistory', { everRejected: v })} />
               {visaHistory.everRejected && (
-                <VInput label="Rejection Country *" value={visaHistory.rejectionCountry} onChange={(v) => patch('visaHistory', { rejectionCountry: v })} />
+                <VInput label="Country of rejection *" value={visaHistory.rejectionCountry} onChange={(v) => patch('visaHistory', { rejectionCountry: v })} placeholder="e.g. United Kingdom" />
               )}
-              <VBool label="Ever Overstayed a Visa?" value={visaHistory.everOverstayed} onChange={(v) => patch('visaHistory', { everOverstayed: v })} />
+              <VBool label="Have you ever overstayed a visa in any country? *" value={visaHistory.everOverstayed} onChange={(v) => patch('visaHistory', { everOverstayed: v })} />
             </div>
           )}
 
-          {/* Documents checklist */}
+          {/* Document Uploads */}
           {step === 7 && (
             <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
+              <div>
                 <span className={VISA_HEADING + ' block'}>Required Documents</span>
-                <span className="text-[10px] text-brand-cream/50">
-                  {(activeApp.requiredDocs || []).filter((d) => latestDoc(d)).length}/{activeApp.requiredDocs.length} uploaded
-                </span>
+                <p className="text-xs text-slate-500 mt-1">Upload clear scans or photos of the required documents for your {activeApp.country} {activeApp.visaType}.</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+              <div className="grid grid-cols-1 gap-3">
                 {(activeApp.requiredDocs || []).map((docName) => {
                   const doc = latestDoc(docName);
                   return (
-                    <div key={docName} className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-white">{docName}</span>
+                    <div key={docName} className="bg-white border border-slate-200/90 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs">
+                      <div>
+                        <span className="font-bold text-xs text-brand-navy block">{docName}</span>
                         {doc ? (
-                          <span className={docBadge(doc.status)}>{doc.status === 'pending' ? 'Uploaded' : doc.status === 'verified' ? 'Verified' : 'Rejected'}</span>
+                          <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">{doc.fileName} · v{doc.version} · {doc.status}</span>
                         ) : (
-                          <span className="text-[8px] uppercase tracking-wider text-white/40 border border-white/10 rounded-full px-2 py-0.5">Not uploaded</span>
+                          <span className="text-[10px] text-slate-400 italic mt-0.5 block">Not uploaded yet</span>
                         )}
                       </div>
-                      {doc && <p className="text-[9px] text-brand-cream/50 font-mono truncate">{doc.fileName}</p>}
-                      <label className={`${VISA_BTN} text-center py-1.5 rounded-lg text-[9px] uppercase tracking-wider cursor-pointer transition disabled:opacity-50`}>
-                        {doc?.status === 'rejected' ? '↻ Re-upload Document' : doc ? 'Replace Document' : 'Upload Document'}
-                        <input
-                          type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
-                          className="hidden"
-                          disabled={busy}
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) uploadDoc(docName, f);
-                            e.currentTarget.value = '';
-                          }}
-                        />
-                      </label>
+                      <div className="flex items-center gap-2">
+                        {doc && <span className={docBadge(doc.status)}>{doc.status}</span>}
+                        <label className="bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg transition cursor-pointer shadow-xs">
+                          {doc ? 'Re-upload' : 'Upload File'}
+                          <input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+                            className="hidden"
+                            disabled={busy}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) uploadDoc(docName, f);
+                              e.currentTarget.value = '';
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
                   );
                 })}
               </div>
-              <p className="text-[10px] text-brand-cream/50">
-                Files are uploaded to our secure R2 vault and reviewed by the visa desk. Rejected files can be re-uploaded from the tracker later.
-              </p>
             </div>
           )}
 
@@ -2469,11 +1828,11 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
             <div className="flex flex-col gap-5">
               <div className="flex items-center justify-between">
                 <span className={VISA_HEADING + ' block'}>Review & Submit</span>
-                <span className="text-[10px] text-brand-cream/50">{activeApp.country} — {activeApp.visaType}</span>
+                <span className="text-xs text-slate-500 font-semibold">{activeApp.country} — {activeApp.visaType}</span>
               </div>
 
               {reviewErrors.length > 0 && (
-                <div className="bg-amber-500/10 border border-amber-500/25 text-amber-400 rounded-lg px-3 py-2.5 text-[11px]">
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-xs shadow-xs">
                   <p className="font-bold uppercase tracking-wider text-[10px] mb-1">Incomplete before submission</p>
                   {reviewErrors.map((e) => (
                     <p key={e.key}>• {e.label}: {e.err}</p>
@@ -2483,13 +1842,13 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {VISA_STEPS.slice(0, 7).map((s) => (
-                  <div key={s.key} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div key={s.key} className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs">
                     <span className={VISA_HEADING + ' block mb-2'}>{s.label}</span>
-                    <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[10px]">
+                    <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                       {visaReviewRows(s.key as VisaSectionKey, form).map(([k, v]) => (
-                        <div key={k} className="col-span-2 flex justify-between gap-3 border-b border-white/5 pb-1">
-                          <dt className="text-white/45">{k}</dt>
-                          <dd className="font-semibold text-white/90 text-right">{v}</dd>
+                        <div key={k} className="col-span-2 flex justify-between gap-3 border-b border-slate-100 pb-1">
+                          <dt className="text-slate-500">{k}</dt>
+                          <dd className="font-semibold text-slate-800 text-right">{v}</dd>
                         </div>
                       ))}
                     </dl>
@@ -2497,25 +1856,35 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                 ))}
               </div>
 
-              <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
-                <label className="flex items-start gap-2.5 text-[10px] text-brand-cream/60 cursor-pointer">
+              <div className="border-t border-slate-200 pt-4 flex flex-col gap-3">
+                <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
                   <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 accent-brand-gold cursor-pointer" />
                   <span>
                     I confirm the information above is accurate, and I agree to the Terms & Conditions for visa processing.
-                    <a href="https://opusoverseas.com/terms" target="_blank" rel="noreferrer" className="text-brand-gold hover:underline ml-1">Terms</a>
+                    <a href="https://opusoverseas.com/terms" target="_blank" rel="noreferrer" className="text-brand-gold font-bold hover:underline ml-1">Terms</a>
                   </span>
                 </label>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setStep(7)} disabled={busy} className="border border-white/15 text-white/70 hover:text-white hover:border-white/30 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer">
-                    ← Back
-                  </button>
-                  <button
-                    onClick={submitApp}
-                    disabled={!agreed || reviewErrors.length > 0 || busy}
-                    className={`${VISA_BTN} flex-1 py-2.5 rounded-lg text-[10px] uppercase tracking-wider cursor-pointer transition disabled:opacity-40 disabled:cursor-not-allowed`}
-                  >
-                    {busy ? 'Submitting...' : 'Submit Application'}
-                  </button>
+                <div className="flex flex-col gap-2">
+                  {VISA_PAUSED ? (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center">
+                      <p className="text-xs font-bold text-amber-800">Submit paused — will be available soon</p>
+                      <p className="text-[11px] text-amber-700 mt-1">Your draft is saved. Join the waitlist from the catalogue and we’ll submit it for you when we go live — no re-entry needed.</p>
+                      <button onClick={() => setTab('catalogue')} className="mt-2 px-4 py-2 rounded-xl bg-brand-navy text-white text-xs font-bold hover:bg-brand-gold hover:text-brand-navy cursor-pointer">Go to Waitlist →</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setStep(7)} disabled={busy} className="border border-slate-200 bg-white text-slate-600 hover:text-brand-navy hover:border-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer shadow-xs">
+                        ← Back
+                      </button>
+                      <button
+                        onClick={submitApp}
+                        disabled={!agreed || reviewErrors.length > 0 || busy}
+                        className={`${VISA_BTN} flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition disabled:opacity-40 disabled:cursor-not-allowed`}
+                      >
+                        {busy ? 'Submitting...' : 'Submit Application'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -2523,19 +1892,19 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
         </div>
 
         {wizardErr && (
-          <div className="flex items-start gap-2 bg-rose-500/10 border border-rose-500/25 text-rose-400 text-[11px] rounded-lg px-3 py-2">
-            <span>⚠</span><span>{wizardErr}</span>
+          <div className="flex items-start gap-2 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl p-3 shadow-xs">
+            <span className="font-bold">⚠</span><span>{wizardErr}</span>
           </div>
         )}
 
         {step < 8 && (
-          <div className="flex justify-between gap-3 pt-4 border-t border-white/10">
+          <div className="flex justify-between gap-3 pt-4 border-t border-slate-200">
             {step > 0 ? (
-              <button onClick={() => { setWizardErr(''); setStep(step - 1); }} disabled={busy} className="border border-white/15 text-white/70 hover:text-white hover:border-white/30 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer">
+              <button onClick={() => { setWizardErr(''); setStep(step - 1); }} disabled={busy} className="border border-slate-200 bg-white text-slate-600 hover:text-brand-navy hover:border-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer shadow-xs">
                 ← Back
               </button>
             ) : <span />}
-            <button onClick={handleNext} disabled={busy} className={`${VISA_BTN} px-6 py-2 rounded-lg text-[10px] uppercase tracking-wider cursor-pointer transition disabled:opacity-50`}>
+            <button onClick={handleNext} disabled={busy} className={`${VISA_BTN} px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider cursor-pointer transition disabled:opacity-50`}>
               {busy ? 'Saving...' : step === 7 ? 'Continue to Review →' : 'Save & Continue →'}
             </button>
           </div>
@@ -2548,10 +1917,10 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
   const renderTracker = () => {
     if (!activeApp) {
       return (
-        <div className="text-center border-2 border-dashed border-brand-navyLight rounded-xl p-10 bg-brand-navy/10">
-          <h3 className="font-display font-semibold text-sm text-white">No application selected</h3>
-          <p className="text-[10px] text-brand-cream/50 mt-1">Pick an application from the catalogue or start a new one.</p>
-          <button onClick={() => setTab('catalogue')} className={`${VISA_BTN} mt-4 px-4 py-2 rounded-lg text-[10px] uppercase tracking-wider cursor-pointer`}>Back to Catalogue</button>
+        <div className="text-center border-2 border-dashed border-slate-200 rounded-2xl p-10 bg-slate-50">
+          <h3 className="font-display font-bold text-sm text-brand-navy">No application selected</h3>
+          <p className="text-xs text-slate-500 mt-1">Pick an application from the catalogue or start a new one.</p>
+          <button onClick={() => setTab('catalogue')} className={`${VISA_BTN} mt-4 px-4 py-2 rounded-xl text-xs uppercase tracking-wider cursor-pointer`}>Back to Catalogue</button>
         </div>
       );
     }
@@ -2561,11 +1930,11 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
 
     return (
       <div className="flex flex-col gap-6">
-        <div className="bg-brand-navy/40 border border-brand-navyLight rounded-2xl p-6 flex flex-col gap-5">
+        <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-6 flex flex-col gap-5 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <span className={VISA_HEADING + ' block'}>Visa Application</span>
-              <h3 className="font-display font-bold text-base text-white mt-1">{activeApp.country} — {activeApp.visaType}</h3>
+              <h3 className="font-display font-bold text-base text-brand-navy mt-1">{activeApp.country} — {activeApp.visaType}</h3>
             </div>
             <span className={visaChip(activeApp.status)}>{activeApp.status.replace('_', ' ')}</span>
           </div>
@@ -2577,34 +1946,34 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
               const current = curIdx === i;
               return (
                 <div key={f.key} className="flex items-center gap-1.5">
-                  <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border ${
-                    done ? 'bg-brand-gold text-brand-navy border-brand-gold'
-                    : current ? 'text-white border-brand-gold bg-brand-gold/15'
-                    : 'bg-white/5 text-white/40 border-white/10'
+                  <span className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border ${
+                    done ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-extrabold'
+                    : current ? 'text-brand-navy border-brand-gold bg-amber-50 font-extrabold shadow-xs'
+                    : 'bg-white text-slate-400 border-slate-200'
                   }`}>
                     {f.label}
                   </span>
-                  {i < VISA_FLOW.length - 1 && <span className="text-white/20 text-[10px]">→</span>}
+                  {i < VISA_FLOW.length - 1 && <span className="text-slate-300 text-[10px]">→</span>}
                 </div>
               );
             })}
             {isRejected && (
-              <span className="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border border-rose-500/40 bg-rose-500/15 text-rose-400">
+              <span className="px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border border-rose-200 bg-rose-50 text-rose-700">
                 {activeApp.status.replace('_', ' ')}
               </span>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-[9px] uppercase tracking-wider text-brand-cream/40">
-            <span>Submitted {activeApp.submittedAt ? new Date(activeApp.submittedAt * 1000).toLocaleString() : '—'}</span>
-            <span>Decision {activeApp.decisionAt ? new Date(activeApp.decisionAt * 1000).toLocaleString() : '—'}</span>
-            <span>Delivered {activeApp.deliveredAt ? new Date(activeApp.deliveredAt * 1000).toLocaleString() : '—'}</span>
-            <span>Created {new Date(activeApp.createdAt * 1000).toLocaleDateString()}</span>
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-[10px] uppercase tracking-wider text-slate-500">
+            <span>Submitted: {activeApp.submittedAt ? new Date(activeApp.submittedAt * 1000).toLocaleString() : '—'}</span>
+            <span>Decision: {activeApp.decisionAt ? new Date(activeApp.decisionAt * 1000).toLocaleString() : '—'}</span>
+            <span>Delivered: {activeApp.deliveredAt ? new Date(activeApp.deliveredAt * 1000).toLocaleString() : '—'}</span>
+            <span>Created: {new Date(activeApp.createdAt * 1000).toLocaleDateString()}</span>
           </div>
         </div>
 
         {activeApp.rejectionReason && (
-          <div className="flex items-start gap-2 bg-rose-500/10 border border-rose-500/25 text-rose-400 rounded-lg px-4 py-3 text-[11px]">
+          <div className="flex items-start gap-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-xs shadow-xs">
             <span>⛔</span>
             <div>
               <p className="font-bold uppercase tracking-wider text-[10px]">Application {activeApp.status === 'cancelled' ? 'Cancelled' : 'Rejected'}</p>
@@ -2614,32 +1983,32 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs">
             <span className={VISA_HEADING + ' block mb-2'}>Embassy Appointment</span>
             {activeApp.appointmentDate ? (
-              <div className="space-y-1.5 text-xs text-brand-cream/80">
-                <p><span className="text-white/50 block text-[10px]">Slot Scheduled Date</span><span className="font-bold text-white">{new Date(activeApp.appointmentDate * 1000).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span></p>
-                <p><span className="text-white/50 block text-[10px]">Consulate Location</span><span className="font-semibold text-white">{activeApp.appointmentLocation || 'To be confirmed'}</span></p>
+              <div className="space-y-1.5 text-xs text-slate-700">
+                <p><span className="text-slate-400 block text-[10px]">Slot Scheduled Date</span><span className="font-bold text-brand-navy">{new Date(activeApp.appointmentDate * 1000).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span></p>
+                <p><span className="text-slate-400 block text-[10px]">Consulate Location</span><span className="font-semibold text-brand-navy">{activeApp.appointmentLocation || 'To be confirmed'}</span></p>
               </div>
             ) : (
-              <p className="text-[10px] text-brand-cream/50 italic">No slot scheduled yet. Our visa desk will book your embassy slot and update it here.</p>
+              <p className="text-xs text-slate-400 italic">No slot scheduled yet. Our visa desk will book your embassy slot and update it here.</p>
             )}
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs">
             <span className={VISA_HEADING + ' block mb-2'}>Staff Notes</span>
             {activeApp.notes ? (
-              <p className="text-[11px] text-brand-cream/80 leading-relaxed whitespace-pre-wrap">{activeApp.notes}</p>
+              <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{activeApp.notes}</p>
             ) : (
-              <p className="text-[10px] text-brand-cream/50 italic">No notes from the visa desk yet.</p>
+              <p className="text-xs text-slate-400 italic">No notes from the visa desk yet.</p>
             )}
           </div>
         </div>
 
         <div className="flex flex-col gap-3">
           <span className={VISA_HEADING + ' block'}>Document Status</span>
-          <div className="bg-white/5 border border-white/10 rounded-xl overflow-x-auto">
-            <table className="w-full text-left text-[10px] min-w-[560px]">
-              <thead className="border-b border-white/10 text-white/50 uppercase tracking-wider text-[9px]">
+          <div className="bg-white border border-slate-200/90 rounded-xl overflow-x-auto shadow-xs">
+            <table className="w-full text-left text-xs min-w-[560px]">
+              <thead className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[9px] bg-slate-50">
                 <tr>
                   <th className="py-2.5 px-3">Document</th>
                   <th className="py-2.5 px-3">File</th>
@@ -2649,25 +2018,25 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                   <th className="py-2.5 px-3">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-slate-100">
                 {(activeApp.requiredDocs || []).map((docName) => {
                   const doc = latestDoc(docName);
                   return (
-                    <tr key={docName} className="hover:bg-white/5">
-                      <td className="py-2.5 px-3 font-semibold text-white whitespace-nowrap">{docName}</td>
-                      <td className="py-2.5 px-3 text-brand-cream/60 font-mono max-w-[220px] truncate">{doc ? doc.fileName : '—'}</td>
-                      <td className="py-2.5 px-3 text-brand-cream/50 font-mono">{doc?.version || '—'}</td>
-                      <td className="py-2.5 px-3 text-brand-cream/50 whitespace-nowrap">{doc?.uploadedAt ? new Date(doc.uploadedAt * 1000).toLocaleDateString() : '—'}</td>
+                    <tr key={docName} className="hover:bg-slate-50/80">
+                      <td className="py-2.5 px-3 font-semibold text-brand-navy whitespace-nowrap">{docName}</td>
+                      <td className="py-2.5 px-3 text-slate-600 font-mono max-w-[220px] truncate">{doc ? doc.fileName : '—'}</td>
+                      <td className="py-2.5 px-3 text-slate-400 font-mono">{doc?.version || '—'}</td>
+                      <td className="py-2.5 px-3 text-slate-400 whitespace-nowrap">{doc?.uploadedAt ? new Date(doc.uploadedAt * 1000).toLocaleDateString() : '—'}</td>
                       <td className="py-2.5 px-3">
                         {doc ? (
                           <span className={docBadge(doc.status)}>{doc.status === 'pending' ? 'Uploaded' : doc.status === 'verified' ? 'Verified' : 'Rejected'}</span>
                         ) : (
-                          <span className="text-[8px] uppercase tracking-wider text-white/30">Not uploaded</span>
+                          <span className="text-[8px] uppercase tracking-wider text-slate-400">Not uploaded</span>
                         )}
                       </td>
                       <td className="py-2.5 px-3">
                         {(!doc || doc.status === 'rejected') ? (
-                          <label className="inline-block cursor-pointer border border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-navy px-2.5 py-1 rounded text-[8px] font-bold uppercase tracking-wider transition">
+                          <label className="inline-block cursor-pointer bg-slate-100 hover:bg-brand-navy hover:text-white text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider transition shadow-xs">
                             {doc?.status === 'rejected' ? '↻ Re-upload' : '↑ Upload'}
                             <input
                               type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
@@ -2681,7 +2050,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                             />
                           </label>
                         ) : (
-                          <span className="text-[8px] uppercase tracking-wider text-white/35">{doc.status === 'verified' ? 'Verified ✓' : 'Awaiting review'}</span>
+                          <span className="text-[9px] uppercase tracking-wider text-emerald-600 font-bold">{doc.status === 'verified' ? 'Verified ✓' : 'Awaiting review'}</span>
                         )}
                       </td>
                     </tr>
@@ -2694,7 +2063,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
 
         {!visaBlockedEdit(activeApp.status) && (
           <div className="flex justify-end">
-            <button onClick={editApplication} className={`${VISA_BTN} px-4 py-2 rounded-lg text-[10px] uppercase tracking-wider cursor-pointer transition`}>
+            <button onClick={editApplication} className={`${VISA_BTN} px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider cursor-pointer transition`}>
               Edit Application
             </button>
           </div>
@@ -2706,13 +2075,13 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="font-display font-bold text-lg text-white">✈️ Visa Services</h2>
-        <p className="text-[10px] text-brand-cream/50 mt-0.5">Apply for, draft, and track your embassy visa applications — end to end.</p>
+        <h2 className="font-display font-bold text-lg text-brand-navy">✈️ Visa Services</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Apply for, draft, and track your embassy visa applications — end to end.</p>
       </div>
 
       {notice && (
-        <div className="flex items-center gap-2 bg-brand-gold/10 border border-brand-gold/25 text-brand-gold text-[11px] rounded-lg px-3 py-2">
-          <span>✓</span><span>{notice}</span>
+        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl px-3.5 py-2.5 shadow-xs">
+          <span className="font-bold">✓</span><span>{notice}</span>
         </div>
       )}
 
@@ -2782,11 +2151,19 @@ function ManpowerJobs({ token }: { token: string }) {
   const { data: jobsData, refetch: refetchJobs } = useQuery<{ jobs: JobRow[] }>({
     queryKey: ['portalManpowerJobs', token],
     staleTime: 60_000,
-    queryFn: async () => { const r = await fetch(`/api/public/portal/manpower/jobs${token ? `?token=${encodeURIComponent(token)}` : ''}`); if (!r.ok) throw new Error('jobs'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`/api/public/portal/manpower/jobs`, { headers: token ? { 'X-Portal-Token': token } : {} }); if (!r.ok) throw new Error('jobs'); return r.json(); },
   });
   const jobs = jobsData?.jobs || [];
   const [exclusiveFilter, setExclusiveFilter] = useState<'all' | 'exclusive'>('all');
-  const visibleJobs = exclusiveFilter === 'exclusive' ? jobs.filter((j) => j.exclusive) : jobs;
+  const visibleJobs = (() => {
+    const filtered = exclusiveFilter === 'exclusive' ? jobs.filter((j) => j.exclusive) : jobs;
+    const seen = new Set<string>();
+    return filtered.filter((j) => {
+      if (seen.has(j.id)) return false;
+      seen.add(j.id);
+      return true;
+    });
+  })();
 
   const { data: appsData, refetch: refetchApps } = useQuery<{ applications: JobApplication[]; activeCount?: number; maxQuota?: number }>({
     queryKey: ['portalManpowerApps', token],
@@ -2869,7 +2246,7 @@ function ManpowerJobs({ token }: { token: string }) {
   const { data: membershipData, refetch: refetchMembership } = useQuery<{ enabled: boolean; comingSoon: boolean; membership: { isMember: boolean; expiresAt: number | null; plan: string | null }; plans: { key: string; name: string; description?: string; pricePaise: number; durationDays: number; tier: string; perks: string[] }[] }>({
     queryKey: ['portalManpowerMembership', token],
     staleTime: 60_000,
-    queryFn: async () => { const r = await fetch(`/api/public/portal/manpower/membership?token=${encodeURIComponent(token)}`); if (!r.ok) throw new Error('membership'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`/api/public/portal/manpower/membership`, { headers: { 'X-Portal-Token': token } }); if (!r.ok) throw new Error('membership'); return r.json(); },
     enabled: !!token,
   });
   const membership = membershipData?.membership;
@@ -3023,22 +2400,22 @@ function ManpowerJobs({ token }: { token: string }) {
           </div>
         )}
 
-        {/* Enterprise KPI Strip — F-pattern Level 1 (NN/g 2026) — 3-second decision */}
+        {/* Enterprise KPI Strip — Honest, visible on light */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3.5 backdrop-blur">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/50">Open Vacancies</p>
-            <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-white">{jobs.length}<span className="ml-2 text-xs font-bold text-emerald-300">● Live</span></p>
-            <p className="text-xs text-white/60">{visibleJobs.length} showing · {jobs.filter(j=>j.featured).length} featured</p>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Open Vacancies</p>
+            <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-slate-800">{jobs.length}<span className="ml-2 text-xs font-bold text-emerald-600">● Live</span></p>
+            <p className="text-xs text-slate-500">{visibleJobs.length} showing · {jobs.filter(j=>j.featured).length} featured</p>
           </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3.5 backdrop-blur">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/50">Exclusive Access</p>
-            <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-white">{membership?.isMember ? 'Unlocked' : `${jobs.filter(j=>j.exclusive).length} locked`}</p>
-            <p className="text-xs text-white/60">{membership?.isMember ? 'Secret jobs visible' : 'Join community to unlock'}</p>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Exclusive Access</p>
+            <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-slate-800">{membership?.isMember ? 'Unlocked' : `${jobs.filter(j=>j.exclusive).length} locked`}</p>
+            <p className="text-xs text-slate-500">{membership?.isMember ? 'Secret jobs visible' : 'Join community to unlock'}</p>
           </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3.5 backdrop-blur">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/50">My Active Quota</p>
-            <p className={`mt-1 font-display text-2xl font-extrabold tracking-tight ${activeCount >= maxQuota ? 'text-amber-300' : 'text-white'}`}>{activeCount}/{maxQuota}</p>
-            <p className="text-xs text-white/60">{activeCount >= maxQuota ? 'Await decisions' : `${maxQuota - activeCount} slots remaining`}</p>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">My Active Quota</p>
+            <p className={`mt-1 font-display text-2xl font-extrabold tracking-tight ${activeCount >= maxQuota ? 'text-amber-600' : 'text-slate-800'}`}>{activeCount}/{maxQuota}</p>
+            <p className="text-xs text-slate-500">{activeCount >= maxQuota ? 'Await decisions' : `${maxQuota - activeCount} slots remaining`}</p>
           </div>
         </div>
 
@@ -3049,31 +2426,31 @@ function ManpowerJobs({ token }: { token: string }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {visibleJobs.map((j) => (
-            <div key={j.id} className="group rounded-2xl border border-white/15 bg-white/[0.06] p-5 flex flex-col justify-between gap-4 backdrop-blur hover:bg-white/[0.08] hover:border-brand-gold/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.25)] transition-all duration-300">
+            <div key={j.id} className="group rounded-2xl border border-slate-200 bg-white p-5 flex flex-col justify-between gap-4 shadow-sm hover:border-brand-gold/30 hover:shadow-md transition-all duration-300">
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-display font-bold text-sm text-white leading-snug">{j.title}</h3>
+                  <h3 className="font-display font-bold text-sm text-slate-800 leading-snug">{j.title}</h3>
                   {j.featured && <span className="shrink-0 bg-brand-gold/15 text-brand-gold text-[9px] font-bold uppercase px-2 py-0.5 rounded">Featured</span>}
                   {j.exclusive && <span className="shrink-0 bg-rose-500/15 text-rose-300 text-[9px] font-bold uppercase px-2 py-0.5 rounded">🔒 Exclusive</span>}
                 </div>
                 <div className="flex flex-wrap gap-2 text-[10px]">
-                  <span className="bg-white/10 text-white/70 rounded px-2 py-0.5 font-mono border border-white/10">{j.country}</span>
-                  <span className="bg-white/10 text-white/70 rounded px-2 py-0.5">{j.sector}</span>
+                  <span className="bg-slate-100 text-slate-600 rounded px-2 py-0.5 font-mono border border-slate-200">{j.country}</span>
+                  <span className="bg-slate-100 text-slate-600 rounded px-2 py-0.5">{j.sector}</span>
                   <span className="bg-brand-gold/10 text-brand-gold rounded px-2 py-0.5 font-bold capitalize">{COLLAR[j.collar] || j.collar}</span>
                 </div>
-                {j.employer && <p className="text-[11px] text-white/50">Employer: <span className="text-white/80 font-medium">{j.employer}</span></p>}
-                {j.description && <p className="text-[11px] text-white/50 leading-relaxed line-clamp-3">{j.description}</p>}
+                {j.employer && <p className="text-[11px] text-slate-500">Employer: <span className="text-slate-700 font-medium">{j.employer}</span></p>}
+                {j.description && <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">{j.description}</p>}
                 {(j.benefits?.length || 0) > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    {j.benefits!.slice(0, 4).map((b, i) => <span key={i} className="bg-emerald-500/10 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded">{b}</span>)}
+                    {j.benefits!.slice(0, 4).map((b, i) => <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] px-1.5 py-0.5 rounded">{b}</span>)}
                   </div>
                 )}
                 {(j.requirements?.length || 0) > 0 && (
-                  <p className="text-[10px] text-white/40">Requires: {j.requirements!.slice(0, 4).join(', ')}</p>
+                  <p className="text-[10px] text-slate-500">Requires: {j.requirements!.slice(0, 4).join(', ')}</p>
                 )}
-                {j.experienceYearsMin ? <p className="text-[10px] text-white/40">Min {j.experienceYearsMin}+ yrs experience · {j.vacancies} opening{j.vacancies === 1 ? '' : 's'}</p> : null}
+                {j.experienceYearsMin ? <p className="text-[10px] text-slate-500">Min {j.experienceYearsMin}+ yrs experience · {j.vacancies} opening{j.vacancies === 1 ? '' : 's'}</p> : null}
               </div>
-              <div className="flex items-center justify-between border-t border-white/10 pt-3">
+              <div className="flex items-center justify-between border-t border-slate-100 pt-3">
                 <span className="text-brand-gold font-bold text-sm">{j.salaryText}</span>
                 <button
                   disabled={activeCount >= maxQuota}
@@ -3085,30 +2462,30 @@ function ManpowerJobs({ token }: { token: string }) {
               </div>
             </div>
           ))}
-          {visibleJobs.length === 0 && <p className="col-span-full py-10 text-center text-xs text-white/40">No open vacancies right now — check back soon.</p>}
+          {visibleJobs.length === 0 && <p className="col-span-full py-10 text-center text-xs text-slate-500">No open vacancies right now — check back soon.</p>}
         </div>
         </>
       )}
 
       {view === 'vas' && (
         <div className="space-y-5">
-          {/* Trust & Realtime Activity Strip */}
+          {/* Honest Activity Strip — no fake numbers, building in public */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Active Candidates</p>
-              <p className="text-sm font-bold text-white mt-0.5">🔥 142 This Month</p>
+              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Nizamabad HQ</p>
+              <p className="text-sm font-bold text-white mt-0.5">Trusted Guidance</p>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Delivery Turnaround</p>
-              <p className="text-sm font-bold text-emerald-400 mt-0.5">⚡ 24h–72h SLA</p>
+              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Our Aim</p>
+              <p className="text-sm font-bold text-emerald-400 mt-0.5">Transparent steps</p>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Recruiter Deliverable</p>
-              <p className="text-sm font-bold text-brand-gold mt-0.5">🛡️ 100% Verified</p>
+              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Your Data</p>
+              <p className="text-sm font-bold text-brand-gold mt-0.5">Handled with care</p>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Standard Applications</p>
-              <p className="text-sm font-bold text-white/80 mt-0.5">⚖️ Always 100% Free</p>
+              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">To Apply</p>
+              <p className="text-sm font-bold text-white/80 mt-0.5">Free to start</p>
             </div>
           </div>
 

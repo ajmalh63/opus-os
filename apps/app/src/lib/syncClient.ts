@@ -28,7 +28,6 @@ export function createSyncClient(opts: Opts) {
   let ws: WebSocket | null = null;
   let delay = 1000;
   let lastTs = Number(localStorage.getItem('opus_sync_lastTs') || '0');
-  let lastId = localStorage.getItem('opus_sync_lastId') || '';
   let shouldReconnect = true;
   let heartbeat: any = null;
 
@@ -75,7 +74,6 @@ export function createSyncClient(opts: Opts) {
           localStorage.setItem('opus_sync_lastTs', String(lastTs));
         }
         if (e.id) {
-          lastId = e.id;
           localStorage.setItem('opus_sync_lastId', e.id);
         }
         opts.onEvent?.(e);

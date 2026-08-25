@@ -1,5 +1,13 @@
 import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
+
+function getPortalToken(c: any): string | undefined {
+  const headerToken = c.req.header('x-portal-token') || c.req.header('X-Portal-Token') || c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  if (headerToken) return headerToken.trim();
+  const queryToken = (c.req.query('token') as string | undefined) || '';
+  if (queryToken) return queryToken.trim();
+  return undefined;
+}
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { clients, groupDepartures, seatBookings, bookingPassengers, umrahPackages, appSettings, engagements, payments } from '../db/schema.js';
@@ -194,7 +202,7 @@ const umrahIntakeGate = async (c: any, next: any) => {
 
 portalUmrahRouter.post('/departures/:id/book', umrahIntakeGate, zValidator('json', bookUmrahSlotSchema), async (c) => {
   const body = c.req.valid('json');
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   if (!c.env.RAZORPAY_KEY_ID || !c.env.RAZORPAY_KEY_SECRET) {
@@ -524,7 +532,7 @@ portalUmrahRouter.post('/bookings/:id/verify-balance', zValidator('json', payUmr
 
 // GET /api/public/portal/umrah/my-bookings?token= — this client's tracker
 portalUmrahRouter.get('/my-bookings', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);

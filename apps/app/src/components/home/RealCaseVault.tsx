@@ -64,7 +64,7 @@ const CASE_VAULT: CaseRecord[] = [
     title: 'Hospital Staffing Drive Placed 18 Nurses in Saudi Arabia',
     applicant: 'B.Sc Nursing Cohort',
     hurdle: 'Candidates required Saudi Prometric exam support without agency commission cuts.',
-    solution: 'Coordinated through Govt. Registered MEA-Licensed Partners with employer-paid flights, housing allowances, and direct hospital contracts.',
+    solution: 'Coordinated with care — building employer partnerships as we launch.',
     outcome: '18 Healthcare professionals placed with verified employer contracts, free accommodation, and zero illegal agent fees.',
     turnaround: '45 Days Deployment Chain',
   },
@@ -92,8 +92,13 @@ export default function RealCaseVault() {
           </p>
         </div>
 
-        {/* Division Tab Switcher */}
-        <div className="mb-8 flex flex-wrap items-center justify-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl max-w-2xl mx-auto border border-brand-navy/5">
+        {/* Division Tab Switcher — swipeable on mobile with snap + 3D hint */}
+        <div className="mb-2 flex items-center justify-center">
+          <span className="md:hidden inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-navy/35">
+            <span className="w-4 h-0.5 bg-brand-gold/30 rounded-full" /> Swipe divisions <span className="animate-pulse">→</span>
+          </span>
+        </div>
+        <div className="mb-8 -mx-5 px-5 md:mx-auto md:px-0 flex flex-nowrap md:flex-wrap items-center md:justify-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl max-w-2xl mx-auto border border-brand-navy/5 overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth md:overflow-visible">
           {[
             { key: 'study', label: 'Study Abroad' },
             { key: 'visa', label: 'Visa Stamping' },
@@ -104,7 +109,7 @@ export default function RealCaseVault() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`cursor-pointer rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              className={`cursor-pointer shrink-0 snap-center rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                 activeTab === tab.key
                   ? 'bg-white text-brand-navy shadow-sm'
                   : 'text-brand-navy/60 hover:text-brand-navy'
@@ -152,9 +157,18 @@ export default function RealCaseVault() {
               <span>🏆 Outcome:</span>
               <span>{activeCase.outcome}</span>
             </span>
-            <span className="font-mono text-[11px] text-brand-textLight bg-white px-3 py-1 rounded-full border border-brand-navy/10">
-              ⚡ {activeCase.turnaround}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[11px] text-brand-textLight bg-white px-3 py-1 rounded-full border border-brand-navy/10">
+                ⚡ {activeCase.turnaround}
+              </span>
+              <a
+                href={`/portal?tab=${activeCase.division === 'recruitment' ? 'jobs' : activeCase.division}`}
+                className="font-bold text-brand-navy hover:text-brand-gold flex items-center gap-1 hover:underline cursor-pointer"
+              >
+                <span>Start Your Case</span>
+                <span>→</span>
+              </a>
+            </div>
           </div>
         </div>
 

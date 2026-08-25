@@ -3,10 +3,11 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { getDb } from '../db/client.js';
 import { getAuth } from '../auth.js';
-import { clients, engagements, consents, documents, communications, users, studyAbroadApplications } from '../db/schema.js';
+import { clients, engagements, consents, documents, communications, users, studyAbroadApplications, tasks, leadAssignments } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { publishSyncEvent } from './sync.js';
+import { scoreLead, nextSlaDueAt } from '../lib/leadScoring.js';
 import { sendNotification } from '../infra/notify.js';
 import { getListmonkTemplateId } from '../infra/listmonk.js';
 import { documentVerifiedTemplate } from '../infra/emailTemplates.js';
@@ -519,6 +520,42 @@ clientsRouter.post('/', async (c) => {
       createdAt: now,
       updatedAt: now
     });
+
+    // Lead Command Center — scoring, routing, SLA (gold standard: <30min, 21×)
+    try {
+      let ctx: any = {};
+      try { ctx = JSON.parse(body.intakeContext || '{}'); } catch {}
+      const { score, isMql } = scoreLead({ email: body.email, phone: body.phone, intakeContext: ctx, notes: body.intakeContext });
+      const leadStatus = isMql ? 'mql' : 'new';
+      const slaDueAt = isMql ? nextSlaDueAt() : null;
+      const mqlAt = isMql ? now : null;
+      // Territory routing: pick counselor with division match, least loaded
+      let assignedTo: string | null = null;
+      try {
+        const allUsers = await db.select().from(users).all();
+        const candidates = allUsers.filter((u:any) => ['counselor','manager','super_admin'].includes(u.role) && (()=>{ try{ const divs = JSON.parse(u.userDivisions||'[]'); return divs.includes(body.primaryDivision||'study-abroad') || divs.length===0; } catch{ return true; }})());
+        if (candidates.length) {
+          // least loaded (fewest clients assigned)
+          const counts: Record<string,number> = {};
+          for (const u of candidates) counts[u.id]=0;
+          const assignedRows = await db.select().from(clients).where(eq(clients.status, 'active')).all();
+          for (const r of assignedRows as any[]) if (r.assignedTo && counts[r.assignedTo]!==undefined) counts[r.assignedTo]++;
+          candidates.sort((a:any,b:any)=> (counts[a.id]||0)-(counts[b.id]||0));
+          assignedTo = candidates[0].id;
+        }
+      } catch {}
+      await db.update(clients).set({ leadScore: score, leadStatus: leadStatus as any, slaDueAt: slaDueAt as any, mqlAt: mqlAt as any, assignedTo: assignedTo as any, lastEngagementAt: now } as any).where(eq(clients.id, token));
+      if (assignedTo) {
+        try { await db.insert(leadAssignments).values({ id: crypto.randomUUID(), clientId: token, fromUserId: null, toUserId: assignedTo, reason: 'round_robin_territory', createdAt: now } as any); } catch {}
+        // SLA task
+        if (isMql) {
+          try { await db.insert(tasks).values({ id: crypto.randomUUID(), clientId: token, engagementId, title: `MQL Follow-up: ${body.name}`, description: `Score ${score} — contact within 4hr SLA (isMql)`, priority: 'high', status: 'open', cos: 'standard', createdAt: now, updatedAt: now } as any); } catch {}
+        }
+      }
+      try { await publishSyncEvent(c.env as any, { channel: 'public:leads', type: 'LEAD_CREATED', payload: { id: token, score, leadStatus, assignedTo } }, (c as any).executionCtx); } catch {}
+      try { await publishSyncEvent(c.env as any, { channel: 'staff:global:leads', type: 'LEAD_CREATED', payload: { id: token, score, leadStatus, assignedTo } }, (c as any).executionCtx); } catch {}
+      try { await auditEvent(c as any, { action: 'LEAD_SCORED', entityName: 'clients', entityId: token, afterState: { score, leadStatus, assignedTo } }); } catch {}
+    } catch {}
 
     return c.json({ success: true, client: { id: token, name: body.name, phone: body.phone, email: body.email, primaryDivision: body.primaryDivision } });
   } catch (error: any) {

@@ -1,5 +1,13 @@
 import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
+
+function getPortalToken(c: any): string | undefined {
+  const headerToken = c.req.header('x-portal-token') || c.req.header('X-Portal-Token') || c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  if (headerToken) return headerToken.trim();
+  const queryToken = (c.req.query('token') as string | undefined) || '';
+  if (queryToken) return queryToken.trim();
+  return undefined;
+}
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
 import { clients, engagements, studyAbroadApplications, tasks, documents, consents } from '../db/schema.js';
@@ -388,7 +396,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 
 // GET /api/public/portal/study-abroad/profile?token= — profile + completeness + consent
 portalStudyAbroadRouter.get('/profile', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -412,7 +420,7 @@ portalStudyAbroadRouter.get('/profile', async (c) => {
 
 // PUT /api/public/portal/study-abroad/profile?token= — student writes their own data
 portalStudyAbroadRouter.put('/profile', zValidator('json', studentProfileSchema), async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   const body = c.req.valid('json');
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
@@ -476,7 +484,7 @@ portalStudyAbroadRouter.put('/profile', zValidator('json', studentProfileSchema)
 
 // GET /api/public/portal/study-abroad/documents?token= — vault + per-application checklist
 portalStudyAbroadRouter.get('/documents', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -495,7 +503,7 @@ portalStudyAbroadRouter.get('/documents', async (c) => {
 
 // GET /api/public/portal/study-abroad/documents/:docId/download?token= — owner-only
 portalStudyAbroadRouter.get('/documents/:docId/download', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -523,7 +531,7 @@ portalStudyAbroadRouter.get('/documents/:docId/download', async (c) => {
 // POST /api/public/portal/study-abroad/applications/:id/docs/:key/presigned?token=
 // Filename convention: {key}-{appId}-{original} → upload endpoint syncs the checklist.
 portalStudyAbroadRouter.post('/applications/:id/docs/:key/presigned', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   const appId = c.req.param('id');
   const key = c.req.param('key');
   const original = c.req.query('filename');
@@ -551,7 +559,7 @@ portalStudyAbroadRouter.post('/applications/:id/docs/:key/presigned', async (c) 
 
 // PUT /api/public/portal/study-abroad/documents/upload — hardened upload + checklist sync
 portalStudyAbroadRouter.put('/documents/upload', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   const filename = c.req.query('filename');
   const expiresStr = c.req.query('expires');
   const signature = c.req.query('signature');
@@ -655,7 +663,7 @@ portalStudyAbroadRouter.put('/documents/upload', async (c) => {
 
 // GET /api/public/portal/study-abroad/applications?token= — student tracker
 portalStudyAbroadRouter.get('/applications', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -672,7 +680,7 @@ portalStudyAbroadRouter.get('/applications', async (c) => {
 
 // POST /api/public/portal/study-abroad/applications/:id/accept-offer?token=
 portalStudyAbroadRouter.post('/applications/:id/accept-offer', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);

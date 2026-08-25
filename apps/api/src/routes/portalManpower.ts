@@ -401,6 +401,114 @@ portalManpowerRouter.get('/applications', async (c) => {
   }
 });
 
+// ─── Candidate profile (StudyAbroad parity: wizard + realtime sync) ───
+function getPortalTokenManpower(c: any): string | undefined {
+  const h = c.req.header('x-portal-token') || c.req.header('X-Portal-Token') || c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  if (h) return h.trim();
+  const q = c.req.query('token');
+  if (q) return q.trim();
+  return undefined;
+}
+
+// GET /profile — returns manpowerProfile + completeness (shared with kanban/staff via clients.intakeContext)
+portalManpowerRouter.get('/profile', async (c) => {
+  const token = getPortalTokenManpower(c);
+  if (!token) return c.json({ error: 'token is required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const client = await resolveClientByToken(db, token);
+    if (!client) return c.json({ error: 'Client not found' }, 404);
+    let ctx: any = {};
+    try { ctx = client.intakeContext ? JSON.parse(client.intakeContext) : {}; } catch {}
+    const profile = ctx.manpowerProfile || {};
+    const completeness = calculateProfileCompleteness(profile);
+    return c.json({ success: true, profile, completeness, pct: completeness.pct });
+  } catch (e: any) {
+    return c.json({ error: 'Profile fetch failed', details: e?.message }, 500);
+  }
+});
+
+// PUT /profile — candidate self-serve save (mirrors StudyAbroad wizard: merges, audits, staff alert at 100%)
+portalManpowerRouter.put('/profile', async (c) => {
+  const token = getPortalTokenManpower(c);
+  if (!token) return c.json({ error: 'token is required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const body = await c.req.json().catch(() => ({}));
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    const client = await resolveClientByToken(db, token);
+    if (!client) return c.json({ error: 'Client not found' }, 404);
+    let ctx: any = {};
+    try { ctx = client.intakeContext ? JSON.parse(client.intakeContext) : {}; } catch {}
+    const before = calculateProfileCompleteness(ctx.manpowerProfile || {}).pct;
+    const merged = { ...(ctx.manpowerProfile || {}), ...body };
+    ctx.manpowerProfile = merged;
+    await db.update(clients).set({ intakeContext: JSON.stringify(ctx), updatedAt: now }).where(eq(clients.id, token));
+    const after = calculateProfileCompleteness(merged).pct;
+    if (after === 100 && before < 100) {
+      await createStaffAlert(c.env as any, { division: 'manpower', type: 'profile_complete', title: 'Candidate profile complete (100%)', body: `${client.name} completed manpower profile — ready for matching & dispatch.`, clientId: token, payload: { pct: 100 } });
+    }
+    await auditEvent(c as any, { action: 'PROFILE_UPDATED', entityName: 'clients', entityId: token, afterState: { division: 'manpower', pct: after } }).catch(() => {});
+    return c.json({ success: true, profile: merged, completeness: calculateProfileCompleteness(merged), message: after === 100 ? 'Profile complete — Match% now live!' : `Profile ${after}% complete.` });
+  } catch (e: any) {
+    return c.json({ error: 'Profile save failed', details: e?.message }, 500);
+  }
+});
+
+// POST /resume/presigned — R2 presigned PUT for resume (reuses studyAbroad signing)
+portalManpowerRouter.post('/resume/presigned', async (c) => {
+  const token = getPortalTokenManpower(c);
+  const filename = c.req.query('filename');
+  if (!token || !filename) return c.json({ error: 'token and filename required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const secret = (c.env as any).BETTER_AUTH_SECRET;
+  if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
+  const expires = Math.floor(Date.now() / 1000) + 900;
+  const safe = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const sigSafe = `${token}:${safe}:${expires}:manpower:resume`;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(sigSafe));
+  const signature = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const url = `/api/public/portal/manpower/resume/upload?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(safe)}&expires=${expires}&signature=${signature}`;
+  return c.json({ success: true, url, expires, filename: safe });
+});
+
+portalManpowerRouter.put('/resume/upload', async (c) => {
+  const token = c.req.query('token') || getPortalTokenManpower(c);
+  const filename = c.req.query('filename');
+  const expiresStr = c.req.query('expires');
+  const signature = c.req.query('signature');
+  if (!token || !filename || !expiresStr || !signature) return c.json({ error: 'Missing upload params' }, 400);
+  if (Math.floor(Date.now() / 1000) > Number(expiresStr)) return c.json({ error: 'Upload URL expired' }, 400);
+  const secret = (c.env as any).BETTER_AUTH_SECRET;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sigSafe = `${token}:${filename}:${expiresStr}:manpower:resume`;
+  const expected = await crypto.subtle.sign('HMAC', key, enc.encode(sigSafe));
+  const expectedHex = Array.from(new Uint8Array(expected)).map(b => b.toString(16).padStart(2, '0')).join('');
+  let ok = expectedHex.length === signature.length;
+  if (ok) { let d=0; for (let i=0;i<expectedHex.length;i++) d|=expectedHex.charCodeAt(i)^signature.charCodeAt(i); ok=d===0; }
+  if (!ok) return c.json({ error: 'Invalid signature' }, 400);
+  const buf = await c.req.arrayBuffer();
+  const bucket = (c.env as any).BUCKET;
+  if (!bucket) return c.json({ error: 'Storage not configured' }, 500);
+  const r2Key = `${crypto.randomUUID()}-${filename}`;
+  await bucket.put(r2Key, buf);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  let ctx: any = {};
+  try { const cl = await resolveClientByToken(db, token); if (cl?.intakeContext) ctx = JSON.parse(cl.intakeContext); } catch {}
+  const mp = ctx.manpowerProfile || {};
+  mp.resumeKey = r2Key; mp.resumeName = filename;
+  ctx.manpowerProfile = mp;
+  await db.update(clients).set({ intakeContext: JSON.stringify(ctx), updatedAt: now }).where(eq(clients.id, token));
+  await db.insert((await import('../db/schema.js')).documents).values({ id: crypto.randomUUID(), clientId: token, fileName: filename, r2Key, version: 'v1.0', status: 'pending', uploadedAt: now, sizeBytes: buf.byteLength, mimeType: 'application/octet-stream', uploadedBy: 'client', docLabel: 'Resume', scanStatus: 'clean' }).catch(()=>{});
+  return c.json({ success: true, fileName: filename, r2Key });
+});
+
 // POST /applications — apply to a public job (anyone) or a secret job (members only)
 portalManpowerRouter.post('/applications', async (c) => {
   if (!(await isDivisionEnabled(c.env, 'manpower'))) {

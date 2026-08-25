@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+import BlogManager from './BlogManager';
 
 
 const rs = (n?: number) => `₹${((n || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -8,6 +9,7 @@ const rs = (n?: number) => `₹${((n || 0) / 100).toLocaleString('en-IN', { maxi
 const TABS = [
   { key: 'seo', label: '🔍 SEO Hub' },
   { key: 'aeo', label: '🤖 AEO Monitor' },
+  { key: 'blog', label: '📝 Blog Studio' },
   { key: 'ga', label: '📊 Analytics' },
   { key: 'gbp', label: '📍 Google Business' },
   { key: 'gsc', label: '🖥️ Search Console' },
@@ -229,9 +231,11 @@ function GaTab() {
   const { data: events } = useQuery<any>({ queryKey: ['ga4Events'], queryFn: async () => (await fetch('/api/visibility/ga4/events', { credentials: 'include' })).json() });
   const [mid, setMid] = useState('');
   const [cfToken, setCfToken] = useState('');
+  const [gtmId, setGtmId] = useState('');
+  const [metaPixelId, setMetaPixelId] = useState('');
   const saveCfg = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/ga4/config', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ measurementId: mid, cfWaToken: cfToken }) });
+      const r = await fetch('/api/visibility/ga4/config', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ measurementId: mid, cfWaToken: cfToken, gtmId, metaPixelId }) });
       if (!r.ok) throw new Error('cfg');
       return r.json();
     },
@@ -242,11 +246,19 @@ function GaTab() {
 
   return (
     <div className="space-y-5">
-      <Section title="Analytics Configuration — GA4 + Cloudflare Web Analytics">
+      <Section title="Analytics Configuration — GA4 + GTM + Meta Pixel + Cloudflare Web Analytics">
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[220px]">
-            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">GA4 Measurement ID (optional)</label>
+            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">GA4 Measurement ID</label>
             <input value={mid || cfg?.measurementId || ''} onChange={e => setMid(e.target.value)} placeholder="G-XXXXXXXXXX" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
+          </div>
+          <div className="flex-1 min-w-[220px]">
+            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Google Tag Manager ID</label>
+            <input value={gtmId || cfg?.gtmId || ''} onChange={e => setGtmId(e.target.value)} placeholder="GTM-XXXXXXX" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
+          </div>
+          <div className="flex-1 min-w-[220px]">
+            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Meta Pixel ID</label>
+            <input value={metaPixelId || cfg?.metaPixelId || ''} onChange={e => setMetaPixelId(e.target.value)} placeholder="123456789012345" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
           </div>
           <div className="flex-1 min-w-[220px]">
             <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Cloudflare Web Analytics token (free)</label>
@@ -254,7 +266,7 @@ function GaTab() {
           </div>
           <button onClick={() => saveCfg.mutate()} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded text-xs font-bold cursor-pointer">Save</button>
         </div>
-        <p className="text-[10px] text-brand-navy/40">Option A: the CF Web Analytics beacon (cookie-free, bot-filtered) is injected on public pages when the token is set — real traffic lives in your Cloudflare dashboard. Local events (lead form, payments, portal) stay here for goals + attribution.</p>
+        <p className="text-[10px] text-brand-navy/40">GA4 + GTM + Meta Pixel fire from one config — no redeploy needed. D1-local events (lead form, payments, portal) stay here for goals + attribution; CF beacon is cookie-free, bot-filtered. GTM orchestrates all tags; dataLayer is source of truth.</p>
       </Section>
 
       <Section title={`Traffic Events — last 30 days (${events?.total ?? 0} total)`}>
@@ -603,6 +615,7 @@ export default function VisibilityHub() {
 
       {tab === 'seo' && <SeoTab />}
       {tab === 'aeo' && <AeoTab />}
+      {tab === 'blog' && <BlogManager />}
       {tab === 'ga' && <GaTab />}
       {tab === 'gbp' && <GbpTab />}
       {tab === 'gsc' && <GscTab />}

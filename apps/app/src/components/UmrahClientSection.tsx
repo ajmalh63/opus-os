@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import UmrahCalendar, { UmrahCalendarDay, TIER_INFO } from './UmrahCalendar';
+import { useDivisions } from '../lib/divisions';
 
 interface UmrahPackage {
   id: string;
@@ -148,6 +149,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
   const toggleWishlist = (id: string) => setWishlist(s => { const ns = new Set(s); if (ns.has(id)) ns.delete(id); else ns.add(id); return ns; });
   const [openAccordion, setOpenAccordion] = useState('flight');
+  const { isEnabled: isDivisionEnabled } = useDivisions();
   // wishlist + compare + hold timer + sticky CTA — P1 Polish (spec in docs/STRATEGIC-IMPLEMENTATIONS)
   void wishlist; void toggleWishlist; void openAccordion; void setOpenAccordion;
 
@@ -212,6 +214,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
       return r.json();
     }
   });
+  const umrahLive = isDivisionEnabled('umrah') && calData?.enabled !== false && !calData?.comingSoon;
 
   const { data: detailData } = useQuery<{ success: boolean; package: UmrahPackage; departures: Departure[] }>({
     queryKey: ['portalUmrahPkgDetail', selectedPkg?.id],
@@ -226,7 +229,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
   const { data: myBookings } = useQuery<{ success: boolean; bookings: MyBooking[] }>({
     queryKey: ['portalUmrahMyBookings', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/umrah/my-bookings?token=${token}`);
+      const r = await fetch(`/api/public/portal/umrah/my-bookings`, { headers: { 'X-Portal-Token': token } });
       if (!r.ok) throw new Error('Bookings failed');
       return r.json();
     },
@@ -242,9 +245,9 @@ export default function UmrahClientSection({ token }: { token: string }) {
   // ── Mutations ──
   const bookMutation = useMutation({
     mutationFn: async (departureId: string) => {
-      const r = await fetch(`/api/public/portal/umrah/departures/${departureId}/book?token=${token}`, {
+      const r = await fetch(`/api/public/portal/umrah/departures/${departureId}/book`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Portal-Token': token },
         body: JSON.stringify({ departureId })
       });
       const data = await r.json();
@@ -318,9 +321,9 @@ export default function UmrahClientSection({ token }: { token: string }) {
         alert('Please enter a name for every traveller.');
         return;
       }
-      const res = await fetch(`/api/public/portal/umrah/departures/${dep.id}/book?token=${token}`, {
+      const res = await fetch(`/api/public/portal/umrah/departures/${dep.id}/book`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Portal-Token': token },
         body: JSON.stringify({ departureId: dep.id, occupancy, roomConfig: room || undefined, passengers })
       });
       const data = await res.json();
@@ -394,7 +397,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
   // Gap fix: Umrah client had no <input type=file> (StudyAbroad has 2, Visa has 2, Manpower has 1, Umrah had 0)
   const uploadUmrahDoc = async (file: File) => {
     try {
-      const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(file.name)}`);
+      const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(file.name)}`, { headers: { 'X-Portal-Token': token } });
       const pData = await pRes.json();
       if (!pRes.ok || !pData.success || !pData.url) throw new Error(pData.error || 'Failed to generate upload link');
       const uRes = await fetch(pData.url, { method: 'PUT', body: await file.arrayBuffer() });
@@ -868,58 +871,68 @@ export default function UmrahClientSection({ token }: { token: string }) {
         ))}
       </div>
 
-      {/* Availability calendar */}
-      <UmrahCalendar
-        days={calData?.days || []}
-        month={calMonth}
-        onMonthChange={setCalMonth}
-        onSelectDay={(d) => {
-          const pkg = packages.find(p => p.id === d.packageId);
-          if (pkg) { setSelectedPkg(pkg); setView('detail'); }
-        }}
-        mode="client"
-        futureOnly
-      />
+      {umrahLive ? (
+        <>
+          {/* Availability calendar */}
+          <UmrahCalendar
+            days={calData?.days || []}
+            month={calMonth}
+            onMonthChange={setCalMonth}
+            onSelectDay={(d) => {
+              const pkg = packages.find(p => p.id === d.packageId);
+              if (pkg) { setSelectedPkg(pkg); setView('detail'); }
+            }}
+            mode="client"
+            futureOnly
+          />
 
-      {isLoading ? (
-        <p className="text-xs text-brand-navy/50 italic">Loading packages…</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {packages.map(p => (
-            <div key={p.id} className="rounded-xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-3 hover:border-brand-gold/60 hover:bg-brand-navy/[0.04] backdrop-blur-sm transition-all duration-300 cursor-pointer" onClick={() => { setSelectedPkg(p); setView('detail'); }}>
-              <div className="flex items-center justify-between">
-                <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${p.tier === 'premium' ? 'bg-brand-gold/15 text-brand-gold' : p.tier === 'luxury' ? 'bg-purple-500/15 text-purple-700' : p.tier === 'standard' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{TIER_LABEL[p.tier]}</span>
-                {p.featured && <span className="text-[9px] font-bold uppercase text-brand-gold">★ Featured</span>}
-              </div>
-              <div>
-                <div className="text-brand-navy font-bold text-sm">{p.name}</div>
-                <div className="text-[10px] text-brand-navy/40 mt-0.5">
-                  {p.totalDays} days · {p.makkahNights}N Makkah / {p.madinahNights}N Madinah · {FLIGHT[p.flightType] || p.flightType}
-                  {p.departureCity ? ` · from ${p.departureCity}` : ''}
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-brand-gold font-display font-extrabold text-lg">{INR(p.retailPricePaise)}</div>
-                  <div className="text-[9px] text-brand-navy/40">per person · {ROOM[p.roomSharing]} sharing</div>
-                </div>
-                {p.nextDeparture && (
-                  <div className="text-right text-[9px] text-brand-navy/40">
-                    <div>Next departure</div>
-                    <div className="font-bold text-brand-navy">{fmtDate(p.nextDeparture)}</div>
+          {isLoading ? (
+            <p className="text-xs text-brand-navy/50 italic">Loading packages…</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {packages.map(p => (
+                <div key={p.id} className="rounded-xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-3 hover:border-brand-gold/60 hover:bg-brand-navy/[0.04] backdrop-blur-sm transition-all duration-300 cursor-pointer" onClick={() => { setSelectedPkg(p); setView('detail'); }}>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${p.tier === 'premium' ? 'bg-brand-gold/15 text-brand-gold' : p.tier === 'luxury' ? 'bg-purple-500/15 text-purple-700' : p.tier === 'standard' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{TIER_LABEL[p.tier]}</span>
+                    {p.featured && <span className="text-[9px] font-bold uppercase text-brand-gold">★ Featured</span>}
                   </div>
-                )}
-              </div>
-              <div className="text-[9px] text-brand-navy/40">
-                Advance {INR(p.advanceFeePaise)} (non-refundable) · {MEALS[p.mealsPlan] || p.mealsPlan}
-              </div>
-            </div>
-          ))}
-          {packages.length === 0 && (
-            <div className="col-span-full rounded-xl border border-dashed border-brand-navy/15 bg-white/60 p-10 text-center text-xs text-brand-navy/40">
-              No packages available yet. Check back soon.
+                  <div>
+                    <div className="text-brand-navy font-bold text-sm">{p.name}</div>
+                    <div className="text-[10px] text-brand-navy/40 mt-0.5">
+                      {p.totalDays} days · {p.makkahNights}N Makkah / {p.madinahNights}N Madinah · {FLIGHT[p.flightType] || p.flightType}
+                      {p.departureCity ? ` · from ${p.departureCity}` : ''}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-brand-gold font-display font-extrabold text-lg">{INR(p.retailPricePaise)}</div>
+                      <div className="text-[9px] text-brand-navy/40">per person · {ROOM[p.roomSharing]} sharing</div>
+                    </div>
+                    {p.nextDeparture && (
+                      <div className="text-right text-[9px] text-brand-navy/40">
+                        <div>Next departure</div>
+                        <div className="font-bold text-brand-navy">{fmtDate(p.nextDeparture)}</div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-[9px] text-brand-navy/40">
+                    Advance {INR(p.advanceFeePaise)} (non-refundable) · {MEALS[p.mealsPlan] || p.mealsPlan}
+                  </div>
+                </div>
+              ))}
+              {packages.length === 0 && (
+                <div className="col-span-full rounded-xl border border-dashed border-brand-navy/15 bg-white/60 p-10 text-center text-xs text-brand-navy/40">
+                  No packages available yet. Check back soon.
+                </div>
+              )}
             </div>
           )}
+        </>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
+          <h3 className="font-display font-bold text-brand-navy">Umrah — Tailored Departures</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-[48ch] mx-auto">This division is not live yet. Calendar dates and packages will appear here when Umrah goes live. Meanwhile, explore Study Abroad, Visa, and Global Careers.</p>
+          <p className="text-[11px] text-slate-400 mt-2">Admin can enable it via <code className="bg-slate-100 px-1.5 py-0.5 rounded">/admin → Divisions</code> when ready.</p>
         </div>
       )}
     </div>

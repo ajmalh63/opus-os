@@ -1,8 +1,16 @@
 import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
+
+function getPortalToken(c: any): string | undefined {
+  const headerToken = c.req.header('x-portal-token') || c.req.header('X-Portal-Token') || c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  if (headerToken) return headerToken.trim();
+  const queryToken = (c.req.query('token') as string | undefined) || '';
+  if (queryToken) return queryToken.trim();
+  return undefined;
+}
 import { getDb } from '../db/client.js';
 import { clients, visaApplications, visaProducts, documents, tasks } from '../db/schema.js';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, or } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
 import { isDivisionEnabled } from '../lib/divisions.js';
@@ -45,13 +53,13 @@ portalVisaRouter.get('/products', async (c) => {
     }));
     return c.json({ success: true, products });
   } catch (error: any) {
-    return c.json({ error: 'Failed to fetch visa products',  }, 500);
+    return c.json({ error: 'Failed to fetch visa products' }, 500);
   }
 });
 
 // GET /api/public/portal/visa/applications?token= — this client's applications
 portalVisaRouter.get('/applications', async (c) => {
-  const token = c.req.query('token');
+  const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'Token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -59,8 +67,18 @@ portalVisaRouter.get('/applications', async (c) => {
     const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
 
-    const apps = await db.select().from(visaApplications).where(eq(visaApplications.clientId, client.id)).orderBy(desc(visaApplications.createdAt)).all();
-    const docs = await db.select().from(documents).where(eq(documents.clientId, client.id)).all();
+    const apps = await db.select().from(visaApplications)
+      .where(or(
+        eq(visaApplications.clientId, client.id),
+        eq(visaApplications.clientId, client.portalToken || client.id),
+        eq(visaApplications.clientId, token)
+      ))
+      .orderBy(desc(visaApplications.createdAt))
+      .all();
+    const docs = await db.select().from(documents).where(or(
+      eq(documents.clientId, client.id),
+      eq(documents.clientId, token)
+    )).all();
 
     const applications = [];
     for (const app of apps) {
@@ -105,7 +123,7 @@ portalVisaRouter.get('/applications', async (c) => {
     }
     return c.json({ success: true, applications });
   } catch (error: any) {
-    return c.json({ error: 'Failed to fetch visa applications',  }, 500);
+    return c.json({ error: 'Failed to fetch visa applications' }, 500);
   }
 });
 
@@ -133,7 +151,11 @@ portalVisaRouter.post('/applications', async (c) => {
 
     // Idempotent per product: a client's existing draft for the same product is returned.
     const existingDrafts = await db.select().from(visaApplications)
-      .where(eq(visaApplications.clientId, token))
+      .where(or(
+        eq(visaApplications.clientId, client.id),
+        eq(visaApplications.clientId, client.portalToken || client.id),
+        eq(visaApplications.clientId, token)
+      ))
       .all();
     const existing = existingDrafts.find(
       (a) => a.status === 'draft' && a.country === product.country && a.visaType === product.visaType
@@ -145,7 +167,7 @@ portalVisaRouter.post('/applications', async (c) => {
     const id = crypto.randomUUID();
     await db.insert(visaApplications).values({
       id,
-      clientId: token,
+      clientId: client.id,
       country: product.country,
       visaType: product.visaType,
       status: 'draft',
@@ -158,12 +180,12 @@ portalVisaRouter.post('/applications', async (c) => {
       action: 'VISA_DRAFT_CREATED',
       entityName: 'visa_applications',
       entityId: id,
-      afterState: { id, clientId: token, country: product.country, visaType: product.visaType, status: 'draft' },
+      afterState: { id, clientId: client.id, country: product.country, visaType: product.visaType, status: 'draft' },
     }).catch(() => {});
 
     return c.json({ success: true, id, message: 'Visa application draft created.' });
   } catch (error: any) {
-    return c.json({ error: 'Failed to create visa application',  }, 500);
+    return c.json({ error: 'Failed to create visa application' }, 500);
   }
 });
 
@@ -180,9 +202,14 @@ portalVisaRouter.put('/applications/:id', async (c) => {
   const db = getDb(c.env.DB);
 
   try {
+    const client = await resolveClientByToken(db, token);
+    if (!client) return c.json({ error: 'Client not found for token' }, 404);
+
     const entry = await db.select().from(visaApplications).where(eq(visaApplications.id, id)).get();
     if (!entry) return c.json({ error: 'Visa application not found' }, 404);
-    if (entry.clientId !== token) return c.json({ error: 'Not your application' }, 403);
+    if (entry.clientId !== client.id && entry.clientId !== client.portalToken && entry.clientId !== token) {
+      return c.json({ error: 'Not your application' }, 403);
+    }
     if (BLOCKED_EDIT_STATUSES.includes(entry.status)) {
       return c.json({ error: `Cannot edit an application in status ${entry.status}` }, 403);
     }
@@ -222,7 +249,7 @@ portalVisaRouter.put('/applications/:id', async (c) => {
 
     return c.json({ success: true, id, message: 'Application form updated.' });
   } catch (error: any) {
-    return c.json({ error: 'Failed to update application form',  }, 500);
+    return c.json({ error: 'Failed to update application form' }, 500);
   }
 });
 
@@ -242,9 +269,14 @@ portalVisaRouter.post('/applications/:id/submit', async (c) => {
   const now = Math.floor(Date.now() / 1000);
 
   try {
+    const client = await resolveClientByToken(db, token);
+    if (!client) return c.json({ error: 'Client not found for token' }, 404);
+
     const entry = await db.select().from(visaApplications).where(eq(visaApplications.id, id)).get();
     if (!entry) return c.json({ error: 'Visa application not found' }, 404);
-    if (entry.clientId !== token) return c.json({ error: 'Not your application' }, 403);
+    if (entry.clientId !== client.id && entry.clientId !== client.portalToken && entry.clientId !== token) {
+      return c.json({ error: 'Not your application' }, 403);
+    }
     if (BLOCKED_EDIT_STATUSES.includes(entry.status)) {
       return c.json({ error: `Cannot submit an application in status ${entry.status}` }, 403);
     }

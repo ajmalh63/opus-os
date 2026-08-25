@@ -29,10 +29,10 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 ## A0. Tool-First Control Panel & Integrations
 - [x] **A0.1 Mautic (`100.87.71.38:8085`)** — ✅ LIVE & VERIFIED
   - Admin login verified (`opusadmin` / `MauticOps2026!`).
-  - `.dev.vars` configured (`MAUTIC_URL="http://100.87.71.38:8085"`, `MAUTIC_USER`, `MAUTIC_PASS`).
+  - `.dev.vars` configured (`MAUTIC_URL="https://mautic.opusoverseas.com"`, `MAUTIC_USER`, `MAUTIC_PASS`).
   - Integration adapter reports `OK` status in Superadmin Marketing Suite.
 - [x] **A0.2 Listmonk (`100.87.71.38:9009`)** — ✅ LIVE & VERIFIED
-  - `.dev.vars` configured (`LISTMONK_BASE_URL="http://100.87.71.38:9009"`, `LISTMONK_API_USER="admin"`).
+  - `.dev.vars` configured (`LISTMONK_BASE_URL="https://listmonk.opusoverseas.com"`, `LISTMONK_API_USER="admin"`).
   - Integration adapter reports `OK` status in Superadmin Marketing Suite.
   - Consumer webhook & suppression table operational.
 - [x] **A0.3 Chatwoot (`100.87.71.38:3200`)** — ✅ LIVE & WIRED
@@ -131,18 +131,18 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 - `POST /api/v1/accounts/1/inboxes/1/webhooks` â†’ 404 on this build (webhooks API disabled),
   same as the `register_webhook` 400 noted earlier. **Manual step remains:** Chatwoot â†’
   Inbox settings (Opus Website Chat) â†’ Webhooks â†’ add
-  `http://100.95.139.47:8787/api/webhooks/chatwoot` (secretâ€‘verified route exists).
+  `https://api.opusoverseas.com/api/webhooks/chatwoot` (secretâ€‘verified route exists).
 
 ## â³ Cal.diy â€” booking URL pending wizard click
 - `/opus-owner/consultation` and `/book/opus-owner/consultation` â†’ 404 until SSG onboarding
   wizard is completed in-browser with `owner@opusoverseas.com`. Set
-  `VITE_BOOKING_URL=http://100.87.71.38:3000/opus-owner/consultation` afterwards
+  `VITE_BOOKING_URL=https://cal.opusoverseas.com/opus-owner/consultation` afterwards
   (verify slug; else `/book/...`).
 
 ## Original historic records (kept for continuity)
 
 ## â˜… ERPNext â€” integrated in OS (commit 457617c), LIVE END-TO-END VERIFIED
-- **ERP node:** `http://100.87.71.38:8080` (tailnet only; publicly closed âœ“).
+- **ERP node:** `https://erp.opusoverseas.com` (tailnet only; publicly closed âœ“).
   Containers: `erpnext-backend-1` (bench Â· api on MariaDB), `-frontend-1` (nginxâ†’8080),
   `-queue-long/short`, `-scheduler`, `-websocket`, `-redis-cache/queue`, `-db-1` (mariadb:11).
 - **Credentials:** Admin `Administrator` / `admin` (default docker stack). OS API user:
@@ -164,11 +164,11 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 
 | App | URL | Role in OS | Setup status |
 |---|---|---|---|
-| **Listmonk** | `http://100.87.71.38:9009` | Email marketing + nurture campaigns (SMTP) | Installed (listmonk+db on its own postgres) â€” create admin + SMTP in its wizard; wire Listmonk SMTP into nurture later |
-| **Umami** | `http://100.87.71.38:3002` | Analytics (views/read-time, Â§26.4/27.6) | Fresh install â€” create account â†’ API token â†’ add tracking snippet to public pages when ready |
-| **n8n** | `http://100.87.71.38:5678` | Workflow glue (VPC-DR runbooks, adapters) | Fresh â€” run its `/setup` wizard; optional later |
-| **Uptime Kuma** | `http://100.87.71.38:3003` | Monitor `/api/infrastructure/health` + DR runbook | Fresh â€” add push/HTTP monitors after setup |
-| **Twenty CRM** | `http://100.87.71.38:3001` | (Optional) CRM bridge | Already running; not wired into OS (OS has its own client 360) |
+| **Listmonk** | `https://listmonk.opusoverseas.com` | Email marketing + nurture campaigns (SMTP) | Installed (listmonk+db on its own postgres) â€” create admin + SMTP in its wizard; wire Listmonk SMTP into nurture later |
+| **Umami** | `https://umami.opusoverseas.com` | Analytics (views/read-time, Â§26.4/27.6) | Fresh install â€” create account â†’ API token â†’ add tracking snippet to public pages when ready |
+| **n8n** | `https://n8n.opusoverseas.com` | Workflow glue (VPC-DR runbooks, adapters) | Fresh â€” run its `/setup` wizard; optional later |
+| **Uptime Kuma** | `https://kuma.opusoverseas.com` | Monitor `/api/infrastructure/health` + DR runbook | Fresh â€” add push/HTTP monitors after setup |
+| **Twenty CRM** | `https://crm.opusoverseas.com` | (Optional) CRM bridge | Already running; not wired into OS (OS has its own client 360) |
 
 **Firewall matrix (verified 2026-08-08):** 8080/9009/5678/3002/3003 â†’ tailnet OPEN, public CLOSED (iptables DOCKER-USER tail-scale-only, as designed).
 
@@ -192,33 +192,33 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
   - Platform token (superadmin scope): `CWF9xBB6o6M2X1BKyWKRZZHX`
   - **Widget inbox:** "Opus Website Chat" (inbox_id 1) â€” channel is
     `Channel::WebWidget`, **website_token = `f36574fb918873fbba2749b6a2f18ac6`**
-  - `FRONTEND_URL` fixed to `http://100.87.71.38:3200` (was localhost)
-  - SDK reachable: `http://100.87.71.38:3200/packs/js/sdk.js` (HTTP 200)
+  - `FRONTEND_URL` fixed to `https://chat.opusoverseas.com` (was localhost)
+  - SDK reachable: `https://chat.opusoverseas.com/packs/js/sdk.js` (HTTP 200)
 - **Frontend:** `ChatWidget.tsx` injects the official SDK on PublicHome +
   division pages; token/base URL overridable via
   `VITE_CHATWOOT_BASE_URL` / `VITE_CHATWOOT_WEBSITE_TOKEN`.
 - **TODO (one-time UI step):** open Chatwoot â†’ Inbox Settings â†’ **Webhooks** â†’
-  add `http://100.69.139.47:8787/api/webhooks/chatwoot` (the API route
+  add `https://api.opusoverseas.com/api/webhooks/chatwoot` (the API route
   `POST /api/webhooks/chatwoot` exists + secret-verified + persists to
   `conversations`; `register_webhook` API 400'd on this build â€” easiest via UI).
 
 ## âœ… Cal.diy â€” PROVISIONED end-to-end (login verified, one UI click left)
-- Web `http://100.87.71.38:3000` Â· API v2 `:3201` Â· studio `:5555` (verified).
+- Web `https://cal.opusoverseas.com` Â· API v2 `:3201` Â· studio `:5555` (verified).
 - **Bootstrapped via API + postgres:**
   - Super admin: `owner@opusoverseas.com` / `CalDiyOwner2026!` (username `opus-owner`, id 1)
   - `emailVerified`, `completedOnboarding`, `defaultScheduleId=1`, `timeZone=Asia/Kolkata`
   - **EventType 1:** "Free Consultation" Â· slug `consultation` Â· 30 min
   - Schedule "Working hours" (Monâ€“Fri 9â€“17) + availability row present
-  - Env: `NEXT_PUBLIC_WEBAPP_URL=http://100.87.71.38:3000`,
+  - Env: `NEXT_PUBLIC_WEBAPP_URL=https://cal.opusoverseas.com`,
     `NEXTAUTH_URL` reverted to `http://localhost:3000/api/auth` (server-side must stay
     container-local; a tailnet NEXTAUTH_URL broke next-auth fetch â†’ fixed)
   - Login verified: `POST /api/auth/callback/credentials` â†’ **302**
 - **Frontend:** "Pick a Time" gold CTA in home CTA band renders when
   `VITE_BOOKING_URL` is set.
 - **TODO (one browser click â€” resolves the wizard 404):** open
-  `http://100.87.71.38:3000`, sign in with the creds above (Cal's onboarding adds
+  `https://cal.opusoverseas.com`, sign in with the creds above (Cal's onboarding adds
   what the DB seed can't), then set
-  `VITE_BOOKING_URL=http://100.200.71.38:3000/opus-owner/consultation` (verify slug â€”
+  `VITE_BOOKING_URL=https://cal.opusoverseas.com/opus-owner/consultation` (verify slug â€”
   may be `/book/opus-owner/consultation` in this Cal version) in the app .env.
 
 ## 0 âœ… VPS lockdown (committed to the box, verified)
@@ -233,16 +233,16 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 - VPS tailscale: **`100.87.71.38`** (cordial-local, always-on, offers exit node).
 - Windows machine peer: `100.69.139.47` (`asimhsn`) â€” **must be ONLINE for tests**.
 - Reachable over the tailnet (verified HTTP 200/307):
-  - OpenWA gateway `http://100.87.71.38:2785` (v0.14.2, health OK, API key `owa_k1_â€¦` live, **no WA session linked yet**)
+  - OpenWA gateway `https://wa.opusoverseas.com` (v0.14.2, health OK, API key `owa_k1_â€¦` live, **no WA session linked yet**)
   - Cal.diy web `:3000` Â· API v2 `:3201` Â· studio `:5555`
   - Chatwoot rails `:3200` Â· Loki `:3100` Â· Mermaid `:8180`
-- Repo env wired (wrangler.toml `[vars]`): `WA_PROVIDER=openwa`, `OPENWA_BASE_URL=http://100.87.71.38:2785`, `OPENWA_API_KEY=â€¦`, `OPENWA_SESSION_ID=main`, `WA_WEBHOOK_SECRET=devâ€¦` â†’ swap to production secrets later.
+- Repo env wired (wrangler.toml `[vars]`): `WA_PROVIDER=openwa`, `OPENWA_BASE_URL=https://wa.opusoverseas.com`, `OPENWA_API_KEY=â€¦`, `OPENWA_SESSION_ID=main`, `WA_WEBHOOK_SECRET=devâ€¦` â†’ swap to production secrets later.
 - Client fixed to OpenWA v0.14.2 contract: `X-API-Key` + `POST /api/sessions/{sessionId}/messages/send-text` `{chatId, text}` (commit `a8e67f4`).
 
 ## Next steps (testing)
-1. **Link a WhatsApp number**: open `http://100.87.71.38:2785` dashboard â†’ create session `main` â†’ scan QR. (No session â‡’ `send-text` returns 4xx.)
+1. **Link a WhatsApp number**: open `https://wa.opusoverseas.com` dashboard â†’ create session `main` â†’ scan QR. (No session â‡’ `send-text` returns 4xx.)
 2. **Bring Windows machine online** in Tailscale, then dev Worker at 8787 can reach VPS; register OpenWA webhook:
-   `POST http://100.87.71.38:2785/api/sessions/main/webhooks` with `{url: http://100.69.139.47:8787/api/webhooks/wa, events:[message.received], secret: <WA_WEBHOOK_SECRET>}`.
+   `POST https://wa.opusoverseas.com/api/sessions/main/webhooks` with `{url: https://api.opusoverseas.com/api/webhooks/wa, events:[message.received], secret: <WA_WEBHOOK_SECRET>}`.
 3. Chatwoot wiring: add its webhook â†’ `/api/webhooks/chatwoot` (params per your Chatwoot inbox).
 
 ## 2 âœ… Decision (resolved)
@@ -315,4 +315,33 @@ All technical, infrastructure, domain, database, security, and integration confi
    - Full disclosure across all 5 policy pages (`Terms`, `Privacy`, `Refund`, `Shipping`, `Contact`), clean branded footer, and ILO C181 / Indian Emigration Act compliant free candidate intake.
 
 > **Status:** 0 blocking technical configurations remaining. Production repository is 100% verified (99 test files, 642 tests passing).
+
+---
+
+## ★ CYBER HARDENING — L5/L6/L7 Pentest Remediation (2026-08-25)
+**Context:** Deep pentest of Layer 5 (Session), 6 (Presentation), 7 (Application) server + client side — `100 tests / 647 passing` still green. Code fixes shipped; infra scope below is manual-owner. Artifacts: `infra/terraform/cloudflare-waf.tf`, `infra/hunting-queries.sql`, `infra/CLOUDFLARE_SETUP.md`. Discovery: Zone `opusoverseas.com` = `b5a528ef0851baea75cb7fbd80909549` (Free plan) on Account `b66f3697a847cba87b1fd44bc8a13827`.
+
+### ✅ SHIPPED IN CODE (no action needed)
+- [x] **P1 L5 IDOR `guest`/`client-self` → `404`** — `apps/api/src/lib/clientToken.ts` guest branch removed (was returning first client PII to any unauthenticated caller)
+- [x] **P2 L5 `portalToken` sessionStorage-only** — `apps/app/src/pages/ClientPortal.tsx:286` removed `localStorage` fallback (prevents persistent XSS exfiltration)
+- [x] **P2 L6 DOM-XSS `motion.ts` `innerHTML`** — `apps/app/src/lib/motion.ts` now `createElement + textContent` escaped
+- [x] **P2 L6 Security Headers** — `apps/api/src/index.ts` added `HSTS max-age=31536000; includeSubDomains; preload` + `X-Frame-Options: DENY` + `X-Content-Type-Options: nosniff` + `Referrer-Policy: strict-origin-when-cross-origin` + `frame-ancestors 'none'`
+- [x] **P2 L5 Query-token audit** — `apps/api/src/routes/portal.ts` header-preferred + audit note (query fallback kept only for initial magic-link click)
+
+### ⏳ PENDING — OWNER MANUAL (do after WAF token created)
+- [ ] **H1. Create Cloudflare API Token (Firewall Services:Edit)** — Link: https://dash.cloudflare.com/profile/api-tokens → `Create Custom Token` → Permissions `Zone:Zone Read` + `Zone:Zone Settings Edit` + `Zone:Firewall Services Edit` scoped to `opusoverseas.com` → paste `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ZONE_ID=b5a528ef0851baea75cb7fbd80909549` back here; I will push immediately
+- [ ] **H2. Push WAF as Code** — `infra/terraform/cloudflare-waf.tf` contains: (a) Rate Limit `10/60s challenge` on `/api/auth/*` (L5 brute force), (b) Rate Limit `10/3600s ban` on `/api/public/portal/lookup*` (City-Forum enumeration), (c) Custom Block `file://|gopher://|dict://|169.254.169.254` (6 SSRF CVEs), (d) Block `POST /api/session/reset_password + user-id` (Metabase CVE-2026-72898), (e) Block `token=guest|client-self` (P1 defense-in-depth). Push via `cloudflare.request()` OR `terraform apply -var="zone_id=b5a528ef0851baea75cb7fbd80909549"`
+- [ ] **H3. Enable Zone HSTS at Edge** — Dashboard → SSL/TLS → Edge Certificates → HTTP Strict Transport Security (HSTS) → Enable → `Max-Age 31536000`, `Include subdomains`, `Preload` (redundant with Worker header, survives cache hit)
+- [ ] **H4. Verify WAF Blocks** — `curl "https://opusoverseas.com/api/public/portal/lookup?token=guest"` → expect `blocked` (WAF) + origin `404`; `curl "...?token=169.254.169.254"` → `blocked`
+- [ ] **H5. Hunting Queries Pack** — Run D1 hunts from `infra/hunting-queries.sql`: `ACCESS_DENIED guest%` + `rate_limit bucket=lookup HAVING hits>5` + `afterState LIKE 169.254%` + Metabase probe `ClientRequestURI LIKE /api/session/reset_password`. No Athena/S3 needed — D1 is source of truth; add Logpush → R2 later if wanted
+- [ ] **H6. Turnstile on Visa Inquiry** — Add `turnstileVerify` to `POST /api/public/portal/visa/inquiry` in `apps/api/src/routes/portal.ts` (currently only on `/portal/umrah/departures/*/book` + `/cal/public/book`)
+- [ ] **H7. Partner Token HttpOnly Rotation** — Move `PartnerDashboard.tsx` `opus_partner_token` (Bearer `opus_live_sk_`) from `localStorage` to `HttpOnly Secure` cookie + 15m expiry + refresh; scope to `partner:{id}` + IP binding (prevents island-hop like Salesloft/Drift 2026)
+- [ ] **H8. DPoP Proof-of-Possession for Portal Token (30d)** — Bind `X-Portal-Token` to browser key (`DPoP` header + `cnf.jkt` claim), reject replay without private key (stops AiTM token theft post-MFA)
+- [ ] **H9. Continuous Access Evaluation (CAE)** — Wire `auditDenied` → `SyncHub` kill signal: `ACCESS_DENIED` or impossible travel → `publishSyncEvent(channel: client:{id}:auth, type: SESSION_REVOKED)` → client `queryClient.clear()` + redirect; terminate stolen session <5m
+- [ ] **H10. Session Absolute Timeout Middleware** — Add `middleware/sessionAbsoluteTimeout.ts` (better-auth has no native absolute): 7d absolute cap even if `updateAge 24h` sliding keeps refreshing
+- [ ] **H11. CSP Nonce Upgrade** — Currently `styleSrc 'unsafe-inline'` for Tailwind; migrate to `nonce-{random}` per request for both `scriptSrc` + `styleSrc` (removes inline XSS vector)
+- [ ] **H12. WAF Logpush → R2 + Analytics** — Enable Cloudflare Logpush `http_requests` → R2 `waf-logs` bucket + Workers Analytics Engine for `Action=block` dashboards (replaces Athena if on Cloudflare-native)
+- [ ] **H13. Token Lifetime Hardening** — Shorten `portalToken` from sessionStorage-lifetime to `15m` absolute + refresh rotation for `studyAbroad`/`manpower` sensitive doc uploads; partner `opus_live_sk_` short-lived scoped per `thrive` call
+- [ ] **H14. OP-XXXX Enumeration Hardening** — Keep `OP-XXXX` display-only; ensure no payment/order path accepts `OP-XXXX` without Razorpay `order.notes.clientId` server check (already enforced in `POST /payments/verify`)
+
 

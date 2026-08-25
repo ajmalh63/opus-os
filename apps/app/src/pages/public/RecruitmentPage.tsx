@@ -1,5 +1,5 @@
 import InteractiveFunnelModal from '../../components/funnel/InteractiveFunnelModal';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import Nav from '../../components/Nav';
@@ -155,6 +155,43 @@ export default function RecruitmentPage() {
     });
   }, [jobs, selectedSector, searchQuery]);
 
+  const mobileJobsRef = useRef<HTMLDivElement>(null);
+  const [mobileJobsIdx, setMobileJobsIdx] = useState(0);
+  useEffect(() => {
+    const scroller = mobileJobsRef.current;
+    if (!scroller || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const cards = scroller.querySelectorAll<HTMLElement>('.job-card-mobile');
+    const update3D = () => {
+      const rect = scroller.getBoundingClientRect();
+      const center = rect.left + rect.width / 2;
+      let closest = 0; let min = Infinity;
+      cards.forEach((card, idx) => {
+        const cRect = card.getBoundingClientRect();
+        const cCenter = cRect.left + cRect.width / 2;
+        const dist = (cCenter - center) / rect.width;
+        const rotateY = dist * -16;
+        const translateZ = -Math.abs(dist) * 30;
+        const scale = 1 - Math.abs(dist) * 0.06;
+        card.style.transform = `perspective(1000px) rotateY(${rotateY}deg) translateZ(${translateZ}px) scale(${scale})`;
+        card.style.opacity = String(Math.max(0.88, 1 - Math.abs(dist) * 0.12));
+        const abs = Math.abs(cCenter - center);
+        if (abs < min) { min = abs; closest = idx; }
+      });
+      setMobileJobsIdx(closest);
+    };
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) { requestAnimationFrame(() => { update3D(); ticking = false; }); ticking = true; }
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', update3D);
+    update3D();
+    return () => {
+      scroller.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', update3D);
+    };
+  }, [filteredJobs.length]);
+
   // Submit Candidate Job Application
   const handleApplyJob = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,8 +326,8 @@ export default function RecruitmentPage() {
                 <div className="absolute bottom-4 left-4 right-4 glass-light p-4 rounded-2xl text-brand-navy">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-display text-xs font-bold uppercase tracking-wider text-brand-gold">Govt. MEA Sourcing Network</p>
-                      <p className="font-display text-sm font-extrabold text-brand-navy">100% Verified Demands</p>
+                      <p className="font-display text-xs font-bold uppercase tracking-wider text-brand-gold">Building Verified Network</p>
+                      <p className="font-display text-sm font-extrabold text-brand-navy">Building Verified Network</p>
                     </div>
                     <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
                       ● Active Drives
@@ -308,13 +345,13 @@ export default function RecruitmentPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div>
             <span className="text-2xl mb-1 block">📜</span>
-            <p className="font-display font-extrabold text-sm text-brand-navy">Govt. MEA Agency Network</p>
+            <p className="font-display font-extrabold text-sm text-brand-navy">Verified Network — Building in Public</p>
             <p className="text-[11px] text-brand-textLight mt-0.5">Licensed Sourcing Partner</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">💰</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Zero Fake Listings</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">100% Verified Employer Demands</p>
+            <p className="text-[11px] text-brand-textLight mt-0.5">Building Verified Network</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">🏥</span>
@@ -344,7 +381,7 @@ export default function RecruitmentPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wider text-brand-gold">MEA Licensed Agency Network</p>
-                    <p className="text-xs sm:text-sm font-extrabold text-brand-navy">100% Verified Employer Demands</p>
+                    <p className="text-xs sm:text-sm font-extrabold text-brand-navy">Building Verified Network</p>
                   </div>
                   <span className="rounded-full bg-rose-500/15 text-rose-800 px-2.5 py-1 text-[10px] font-bold font-mono">
                     ● Zero Advance Fee
@@ -454,57 +491,107 @@ export default function RecruitmentPage() {
             <p className="text-xs text-brand-textLight">Interview drives for this category are actively being scheduled. Submit your CV below for immediate priority matching.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredJobs.map((j) => (
-              <div
-                key={j.id}
-                className="clay-card p-6 flex flex-col justify-between hover:border-brand-gold/50 transition-all group"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-display text-base font-bold text-brand-navy group-hover:text-brand-gold-hover transition-colors">
-                          {j.title}
-                        </h3>
-                      </div>
-                      <p className="text-xs text-brand-textLight mt-0.5">
-                        📍 {j.country} · <span className="font-medium text-brand-navy">{j.sector}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-brand-textLight leading-relaxed bg-slate-50 p-3 rounded-xl border border-brand-navy/5 mb-3">
-                    <span className="font-bold text-brand-navy">Role Criteria:</span> {j.requirements}
-                  </p>
-
+          <>
+            {/* Mobile — 3D swipe deck */}
+            <div
+              ref={mobileJobsRef}
+              className="md:hidden -mx-5 px-5 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-6 pt-2 scroll-smooth"
+              style={{ WebkitOverflowScrolling: 'touch', perspective: '1200px', scrollbarWidth: 'none' } as any}
+            >
+              {filteredJobs.map((j) => (
+                <div
+                  key={`m-${j.id}`}
+                  className="job-card-mobile shrink-0 snap-center min-w-[82vw] max-w-[320px] clay-card p-6 flex flex-col justify-between will-change-transform"
+                  style={{ transformStyle: 'preserve-3d' } as any}
+                >
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Included Benefits:</p>
+                    <h3 className="font-display text-base font-bold text-brand-navy">{j.title}</h3>
+                    <p className="text-xs text-brand-textLight mt-0.5">📍 {j.country} · <span className="font-medium text-brand-navy">{j.sector}</span></p>
+                    <p className="text-xs text-brand-textLight leading-relaxed bg-slate-50 p-3 rounded-xl border border-brand-navy/5 my-3">
+                      <span className="font-bold text-brand-navy">Role Criteria:</span> {j.requirements}
+                    </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {(j.perks || []).map((p, i) => (
-                        <span key={i} className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold">
-                          ✓ {p}
-                        </span>
+                      {(j.perks || []).slice(0, 3).map((p, i) => (
+                        <span key={i} className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold">✓ {p}</span>
                       ))}
                     </div>
                   </div>
+                  <div className="mt-6 pt-4 border-t border-brand-navy/5 flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-emerald-700">● Immediate Visa Processing</span>
+                    <button
+                      onClick={() => { setSelectedJob(j); document.getElementById('apply-form')?.scrollIntoView({ behavior: 'smooth' }); }}
+                      className="cursor-pointer rounded-full bg-brand-navy px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all shadow-xs"
+                    >
+                      Apply →
+                    </button>
+                  </div>
                 </div>
-
-                <div className="mt-6 pt-4 border-t border-brand-navy/5 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-emerald-700">● Immediate Visa Processing</span>
-                  <button
-                    onClick={() => {
-                      setSelectedJob(j);
-                      document.getElementById('apply-form')?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="min-h-11 cursor-pointer rounded-full bg-brand-navy px-5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all shadow-xs tactile-btn sm:min-h-0"
-                  >
-                    Apply for Position →
-                  </button>
-                </div>
+              ))}
+            </div>
+            <div className="md:hidden -mt-2 mb-2 flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-navy/35">
+                <span className="w-4 h-0.5 bg-brand-gold/30 rounded-full" /> Swipe to explore <span className="animate-pulse">→</span>
+              </span>
+              <div className="flex items-center gap-1.5">
+                {filteredJobs.slice(0, 6).map((_, i) => (
+                  <span key={i} className={`h-1.5 rounded-full transition-all ${i === mobileJobsIdx ? 'w-5 bg-brand-gold' : 'w-1.5 bg-brand-navy/15'}`} />
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+
+            {/* Desktop — grid */}
+            <div className="hidden md:grid md:grid-cols-2 gap-6">
+              {filteredJobs.map((j) => (
+                <div
+                  key={j.id}
+                  className="clay-card p-6 flex flex-col justify-between hover:border-brand-gold/50 transition-all group"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-display text-base font-bold text-brand-navy group-hover:text-brand-gold-hover transition-colors">
+                            {j.title}
+                          </h3>
+                        </div>
+                        <p className="text-xs text-brand-textLight mt-0.5">
+                          📍 {j.country} · <span className="font-medium text-brand-navy">{j.sector}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-brand-textLight leading-relaxed bg-slate-50 p-3 rounded-xl border border-brand-navy/5 mb-3">
+                      <span className="font-bold text-brand-navy">Role Criteria:</span> {j.requirements}
+                    </p>
+
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Included Benefits:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(j.perks || []).map((p, i) => (
+                          <span key={i} className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold">
+                            ✓ {p}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-brand-navy/5 flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-emerald-700">● Immediate Visa Processing</span>
+                    <button
+                      onClick={() => {
+                        setSelectedJob(j);
+                        document.getElementById('apply-form')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="min-h-11 cursor-pointer rounded-full bg-brand-navy px-5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all shadow-xs tactile-btn sm:min-h-0"
+                    >
+                      Apply for Position →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </section>
 

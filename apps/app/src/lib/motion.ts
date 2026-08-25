@@ -38,15 +38,28 @@ export function staggerReveal(
 }
 
 // Split a headline into word spans (idempotent via data-split). Returns the word spans.
+// SECURITY [L6-XSS]: textContent + createElement avoids innerHTML injection —
+// even though headlines are developer-controlled today, defense-in-depth
+// prevents DOM-XSS if any dynamic content ever flows here (OWASP A03).
 export function splitHeadline(el: HTMLElement): HTMLElement[] {
   if (el.getAttribute('data-split')) {
     return Array.from(el.querySelectorAll<HTMLElement>('.hw')) || [];
   }
   const text = el.textContent ?? '';
-  const words = text.trim().split(/\s+/);
-  el.innerHTML = words
-    .map((w) => `<span class="hw inline-block overflow-hidden"><span class="hw-i inline-block will-change-transform">${w}</span></span>`)
-    .join(' ');
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  // Clear via safe DOM API (no HTML parsing)
+  el.textContent = '';
+  for (const w of words) {
+    const outer = document.createElement('span');
+    outer.className = 'hw inline-block overflow-hidden';
+    const inner = document.createElement('span');
+    inner.className = 'hw-i inline-block will-change-transform';
+    inner.textContent = w; // auto-escaped
+    outer.appendChild(inner);
+    el.appendChild(outer);
+    // Preserve inter-word space via text node (prevents words merging)
+    el.appendChild(document.createTextNode(' '));
+  }
   el.setAttribute('data-split', '1');
   return Array.from(el.querySelectorAll<HTMLElement>('.hw-i'));
 }

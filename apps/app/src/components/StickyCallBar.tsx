@@ -26,15 +26,15 @@ export default function StickyCallBar({ division, hookText }: Props) {
     if (hookText) return hookText;
     switch (activeDivision) {
       case 'study-abroad':
-        return '🎓 Fall 2026 Admissions Open · 100% Free Study Abroad Counselling & Scholarship Assistance';
+        return '🎓 Fall 2026 Admissions Open · Complimentary Profile Assessment';
       case 'visa':
-        return '✈️ Express Consular Fast-Track · 99.4% Verified Document Stack';
+        return '✈️ Express Consular Fast-Track · Transparent Document Handling';
       case 'umrah':
         return '🕋 Customized Umrah Packages · Premium Hotel Stays & Guided Logistics';
       case 'attestation':
         return '📜 MEA & Embassy Apostille · Insured Door-to-Door Courier Across India';
       case 'manpower':
-        return '💼 100% Verified Employer Demands in Gulf & Europe · Zero Hidden Charges';
+        return '💼 Verified Gulf & Europe Employer Network';
       default:
         return '🌟 Opus Overseas · Your Trusted Gateway to Global Opportunities';
     }

@@ -263,7 +263,7 @@ export default function ManpowerApplyWizard({ job, token, turnstileToken, active
               </div>
               <div>
                 <label htmlFor="mp-city" className={labelCls}>Current city</label>
-                <input id="mp-city" autoComplete="address-level2" placeholder="Bodhan" value={form.personal.currentCity} onChange={(e) => up('personal', 'currentCity', e.target.value)} className={`${inputBase} ${inputOk}`} />
+                <input id="mp-city" autoComplete="address-level2" placeholder="Nizamabad" value={form.personal.currentCity} onChange={(e) => up('personal', 'currentCity', e.target.value)} className={`${inputBase} ${inputOk}`} />
                 <p className="mt-1 text-xs text-brand-navy/50">Optional — helps with nearest departure city.</p>
               </div>
             </div>

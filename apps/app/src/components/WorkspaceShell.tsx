@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useStaffAlerts } from '../lib/useStaffAlerts';
 import { useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession, type Me } from '../lib/session';
 import WorkspaceLogo from './WorkspaceLogo';
 import CommandPalette from './CommandPalette';
@@ -125,50 +125,49 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
+  const queryClient = useQueryClient();
+
   // Mobile pass: auto-collapse the sidebar on narrow screens
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)');
     if (mq.matches) setCollapsed(true);
     const handler = (e: any) => setCollapsed(e.matches);
     mq.addEventListener('change', handler);
-    // Staff realtime sync — Hibernatable WS, tenant-prefixed channels, progressive enhancement
-  // Feature flag: VITE_SYNC_ENABLED=false keeps WS disabled (REST poll fallback)
-  // This effect is safe behind flag and does not block render
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const _syncStaff = (() => {
-    try {
-      const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
-      if (!enabled || typeof window === 'undefined') return null;
-      // WorkspaceShell mounts once per staff session — one WS multiplexes all staff channels
-      const c = createSyncClient({
-        plane: 'staff',
-        channels: ['staff:global:alerts', 'staff:division:umrah:pipeline', 'staff:division:visa:pipeline', 'public:catalog:umrah'],
-        enabled,
-        onEvent: (e) => {
-          // Invalidate TanStack queries where needed — staff sees pipeline + inventory live
-          try {
-            // @ts-ignore — global queryClient if available
-            const qc = (window as any).__TANSTACK_QUERY_CLIENT__;
-            if (qc) {
-              if (e.channel.startsWith('departure:')) qc.invalidateQueries({ queryKey: ['departures'] });
-              if (e.channel.startsWith('staff:')) qc.invalidateQueries({ queryKey: ['kanban'] });
-            }
-          } catch {}
-        },
-      });
-      c.connect();
-      return c;
-    } catch { return null; }
-  })();
-  // cleanup on unmount
-  // @ts-ignore
-  if (typeof React !== 'undefined' && (React as any).useEffect) {
-    // This will be no-op if React not in scope here — fallback to window unload
-    try { window.addEventListener('beforeunload', () => { try { (_syncStaff as any)?.disconnect?.(); } catch {} }); } catch {}
-  }
-
-  return () => mq.removeEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
+
+  // Staff realtime sync — Hibernatable WS, tenant-prefixed channels, progressive enhancement
+  useEffect(() => {
+    const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
+    if (!enabled || typeof window === 'undefined') return;
+
+    const c = createSyncClient({
+      plane: 'staff',
+      channels: [
+        'staff:global:alerts',
+        'staff:division:umrah:pipeline',
+        'staff:division:visa:pipeline',
+        'staff:division:study:pipeline',
+        'staff:division:attestation:pipeline',
+        'staff:division:manpower:pipeline',
+        'public:catalog:umrah',
+      ],
+      enabled,
+      onEvent: (e) => {
+        if (e.channel.startsWith('departure:')) queryClient.invalidateQueries({ queryKey: ['departures'] });
+        if (e.channel.startsWith('staff:')) {
+          queryClient.invalidateQueries({ queryKey: ['kanban'] });
+          queryClient.invalidateQueries({ queryKey: ['staffAlerts'] });
+          queryClient.invalidateQueries({ queryKey: ['myOpenTasks'] });
+          queryClient.invalidateQueries({ queryKey: ['teamMetrics'] });
+        }
+      },
+    });
+    c.connect();
+    return () => {
+      try { (c as any).disconnect?.(); } catch {}
+    };
+  }, [queryClient]);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const { alerts, newCount, markAllSeen } = useStaffAlerts();

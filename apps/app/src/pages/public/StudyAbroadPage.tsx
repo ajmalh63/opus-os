@@ -188,7 +188,7 @@ export default function StudyAbroadPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-7">
               <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-brand-gold shimmer-badge">
-                🇬🇧 British Council Certified (ID #115050) · 100% Free Counselling
+                Transparent guidance · Dedicated mentorship
               </span>
               <h1 className="mt-5 font-display fluid-h1 font-black leading-tight tracking-tight text-white">
                 Get Admitted to Top Global Campuses with <span className="text-brand-gold">Full Scholarship Support</span>
@@ -248,11 +248,11 @@ export default function StudyAbroadPage() {
             <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Global University Portals</p>
           </div>
           <div className="text-center">
-            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-gold">100% Free</p>
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-gold">Free Guidance</p>
             <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Student Counselling & Shortlisting</p>
           </div>
           <div className="text-center">
-            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">🇬🇧 British Council</p>
+            <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">Building Certified Guidance</p>
             <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Certified UK Counsellor #115050</p>
           </div>
           <div className="text-center">
@@ -354,11 +354,11 @@ export default function StudyAbroadPage() {
               <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-white/40">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-brand-gold">British Council Certified Partner</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-brand-gold">Building Towards Certified Guidance</p>
                     <p className="text-xs sm:text-sm font-extrabold text-brand-navy">ID #115050 · Official Advisory</p>
                   </div>
                   <span className="rounded-full bg-emerald-500/15 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
-                    ● 100% Free Guidance
+                    ● Free Guidance Guidance
                   </span>
                 </div>
               </div>

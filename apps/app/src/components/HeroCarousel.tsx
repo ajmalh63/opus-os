@@ -89,7 +89,7 @@ export default function HeroCarousel() {
   return (
     <section
       ref={stageRef}
-      className="relative flex min-h-[100dvh] items-center overflow-hidden bg-[#061e38] text-white pt-24 pb-16 sm:pt-28 sm:pb-20"
+      className="relative flex min-h-[920px] sm:min-h-[940px] lg:min-h-[100dvh] h-auto items-center overflow-hidden bg-[#061e38] text-white pt-24 pb-16 sm:pt-28 sm:pb-20"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -104,14 +104,14 @@ export default function HeroCarousel() {
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-6 md:px-8">
         {/* 2-COLUMN MAIN HERO STAGE */}
-        <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-14">
-          {/* Left: Copy column */}
-          <div className="lg:col-span-6 flex flex-col justify-center min-h-[380px] sm:min-h-[420px]">
+        <div className="grid items-center gap-6 lg:grid-cols-12 lg:gap-14">
+          {/* Left: Copy column — fixed height on mobile, auto on desktop, no clipping */}
+          <div className="lg:col-span-6 relative flex flex-col justify-center h-[320px] sm:h-[340px] lg:h-auto lg:min-h-[420px] overflow-visible">
             {visibleMeta.map((m, i) => (
               <div
                 key={m.key}
                 data-idx={i}
-                className={`slide-panel ${i === active ? 'block opacity-100' : 'hidden opacity-0'} transition-opacity duration-400`}
+                className={`slide-panel absolute inset-0 flex flex-col justify-center overflow-visible ${i === active ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-400`}
                 aria-hidden={i !== active}
               >
                 <SlideCopy go={go} meta={m} />
@@ -119,15 +119,19 @@ export default function HeroCarousel() {
             ))}
           </div>
 
-          {/* Right: Live Interactive Artifact stage */}
-          <div className="lg:col-span-6 flex flex-col justify-center">
+          {/* Right: Live Interactive Artifact stage — standard size, no scaling, no clipping */}
+          <div className="lg:col-span-6 relative h-[420px] sm:h-[440px] lg:h-[420px] flex flex-col justify-center overflow-visible">
             {visibleMeta.map((m, i) => (
               <div
                 key={`artifact-${m.key}`}
-                className={`${i === active ? 'block opacity-100 scale-100' : 'hidden opacity-0 scale-95'} transition-all duration-400`}
+                className={`absolute inset-0 flex items-start justify-center p-2 sm:p-2 overflow-visible ${i === active ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'} transition-all duration-400`}
                 aria-hidden={i !== active}
               >
-                {i === active && <Artifact metaKey={m.key} />}
+                <div className="w-full flex items-start justify-center">
+                  <div className="w-full">
+                    <Artifact metaKey={m.key} />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -138,17 +142,17 @@ export default function HeroCarousel() {
           <div className="flex items-center gap-3 sm:gap-6 flex-wrap justify-center sm:justify-start">
             <span className="inline-flex items-center gap-2 text-white/85 font-semibold">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              🇬🇧 British Council Certified #115050
+              British Council Certified Agent #115050 — Ajmal Hussain (Valid 2028)
             </span>
             <span className="hidden sm:inline text-white/30">·</span>
-            <span className="inline-flex items-center gap-2 text-white/85 font-semibold">
+            <span className="hidden sm:inline-flex items-center gap-2 text-white/85 font-semibold">
               <span className="h-2 w-2 rounded-full bg-brand-gold" />
-              🏛️ Govt. MEA Sourcing Network
+              Nizamabad — Telangana
             </span>
             <span className="hidden sm:inline text-white/30">·</span>
-            <span className="inline-flex items-center gap-2 text-white/85 font-semibold">
+            <span className="hidden sm:inline-flex items-center gap-2 text-white/85 font-semibold">
               <span className="h-2 w-2 rounded-full bg-sky-400" />
-              🔒 Pan-India Insured Logistics
+              Privacy-first handling
             </span>
           </div>
 
@@ -214,8 +218,8 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
     case 'study':
       return (
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-brand-gold shimmer-badge">
-            🇬🇧 British Council Certified (ID #115050) · 100% Free Mentorship
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
+            University Shortlisting & Scholarship Mentorship
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
             Your Gateway to <span className="text-brand-gold">1,500+ Global</span> Campuses
@@ -232,8 +236,8 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
     case 'visa':
       return (
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-300 shimmer-badge">
-            <span className="live-pulse-dot text-emerald-400 !h-1.5 !w-1.5" /> ✈️ Express Consular Fast-Track · 99.4% Precision
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
+            Consular Filing · Biometric Scheduling
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
             Global Visas, <span className="text-brand-gold">Handled End-to-End</span>
@@ -250,8 +254,8 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
     case 'umrah':
       return (
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-brand-gold shimmer-badge">
-            🕋 Tailored Spiritual Journeys · Hyderabad Departures
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-brand-gold shimmer-badge mt-6 sm:mt-0">
+            🕋 Sacred Pilgrimage · Proximity Stays
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
             Your Sacred Journey, <span className="text-brand-gold">Planned with Care</span>
@@ -268,8 +272,8 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
     case 'attestation':
       return (
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/40 bg-sky-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-sky-300 shimmer-badge">
-            📜 State HRD, MEA & Embassy Legalization
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/40 bg-sky-500/10 px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-sky-300 shimmer-badge mt-6 sm:mt-0">
+            Document Legalization · Insured Courier
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
             Globally Recognized <span className="text-brand-gold">Legal Documents</span>
@@ -287,14 +291,14 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
     default:
       return (
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-rose-400/40 bg-rose-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-rose-300 shimmer-badge">
-            💼 Govt. MEA Sourcing Partner · 100% Verified Demands
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
+            Verified Overseas Careers
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
             Verified Global <span className="text-brand-gold">Career Openings</span>
           </h1>
           <p className="hero-sub mt-4 max-w-xl text-sm sm:text-base leading-relaxed text-white/80">
-            Connecting skilled Indian professionals to verified Gulf & European employers through Govt. Registered MEA-Licensed overseas recruitment agencies.
+            Connecting skilled professionals to overseas opportunities — building a verified employer network as we launch.
           </p>
           <div className="hero-ctas mt-8 flex flex-wrap items-center gap-3.5">
             <CtaBtn label={meta.cta} onClick={() => go(meta.goTo)} />

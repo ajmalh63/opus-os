@@ -64,7 +64,14 @@ import { indexingRouter } from './routes/indexing.js';
 import { adminAiRouter } from './routes/adminAi.js';
 import { staffAiRouter } from './routes/staffAi.js';
 import { chatwootContextRouter } from './routes/chatwootContext.js';
+import { publicBlogRouter, adminBlogRouter } from './routes/blog.js';
+import { familyRouter } from './routes/family.js';
+import { ledgerRouter } from './routes/ledger.js';
+import { visaGoldRouter } from './routes/visaGold.js';
+import { attestationGoldRouter } from './routes/attestationGold.js';
+import { partnerGoldRouter } from './routes/partnerGold.js';
 import { v1ApiRouter } from './routes/v1/index.js';
+import { feedbackRouter } from './routes/feedback.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
@@ -73,6 +80,10 @@ const app = new Hono<{ Bindings: OpusEnv }>();
 // CSP: default-src 'self' + the external origins the app legitimately needs
 // (Turnstile, Razorpay checkout, Google Fonts, GA4 beacon). No inline script
 // is needed by the SPA (Vite bundles) — blocks injected script execution.
+// LAYER 6 HARDENING (Aug 2026 pentest): + HSTS 1yr + includeSubDomains +
+// preload, X-Frame-Options DENY, tightened frame-ancestors, and explicit
+// referrer. styleSrc unsafe-inline retained only for Tailwind runtime
+// (no script inline) — future nonce upgrade tracked.
 app.use('*', secureHeaders({
   contentSecurityPolicy: {
     defaultSrc: ["'self'"],
@@ -84,7 +95,12 @@ app.use('*', secureHeaders({
     frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://checkout.razorpay.com'],
     objectSrc: ["'none'"],
     baseUri: ["'self'"],
+    frameAncestors: ["'none'"],
   },
+  strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload',
+  xFrameOptions: 'DENY',
+  xContentTypeOptions: 'nosniff',
+  referrerPolicy: 'strict-origin-when-cross-origin',
   permissionsPolicy: { camera: [], microphone: [], geolocation: [], payment: [] },
 }));
 
@@ -395,6 +411,25 @@ app.route('/api/visibility', visibilityPublicRouter);
 app.use('/api/visibility', rbacMiddleware(['super_admin', 'manager'], true));
 app.use('/api/visibility/*', rbacMiddleware(['super_admin', 'manager'], true));
 app.route('/api/visibility', visibilityRouter);
+
+// Blog Engine (Gold Standard SEO/AEO/GEO/AIO) — public reads, manager+ writes
+app.use('/api/blog/posts', rateLimit({ bucket: 'blog-public', windowSeconds: 60, limit: 60 }));
+app.route('/api/blog', publicBlogRouter);
+app.use('/api/blog/admin', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/blog/admin/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.route('/api/blog/admin', adminBlogRouter);
+
+// Phase A — Family Hub (multi-contact) — public for client token, manager+ for staff writes (handled inside router)
+app.route('/api/family', familyRouter);
+
+// Phase A — Installment & Refund Ledger (booking-tied) — public for client token reads, manager+ for writes (handled inside router)
+app.route('/api/ledger', ledgerRouter);
+
+// Visa Gold Standard (V1-V7) + Attestation Gold (A1-A7) — manager+ writes, public reads for client portal (handled inside routers)
+app.route('/api/visa', visaGoldRouter);
+app.route('/api/attestation', attestationGoldRouter);
+app.route('/api/partner', partnerGoldRouter);
+app.route('', feedbackRouter);
 
 // Cal.com public booking API (no auth) — MUST precede the RBAC mount.
 // Anti-spam gates: slots are rate-limited; booking creation requires Turnstile

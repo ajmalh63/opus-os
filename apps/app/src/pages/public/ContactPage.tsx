@@ -14,7 +14,7 @@ import { track, EVENTS } from '../../lib/umami';
 const CONTACT_FAQS = [
   {
     question: 'Where is the official physical office of Opus Overseas located?',
-    answer: 'Our main office is located at 1-1-382, Rakasipet, Bodhan, Nizamabad District, Telangana 503185, India. We are easily accessible from Nizamabad, Hyderabad, and surrounding areas.',
+    answer: 'Our main office is in Nizamabad — Telangana, India. We are easily accessible from Nizamabad and surrounding areas.',
   },
   {
     question: 'What are your operational working days and office hours?',
@@ -100,8 +100,8 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-brand-cream font-sans text-brand-navy selection:bg-brand-gold selection:text-brand-navy">
       <SEOHead
-        title="Contact Opus Overseas | Bodhan, Telangana Office & Global Advisory Desk"
-        description="Contact Opus Overseas in Bodhan, Telangana. Reach our certified study abroad counselors, visa specialists, and attestation team via phone, WhatsApp, or in-person visit."
+        title="Contact Opus Overseas | Nizamabad, Telangana Office & Global Advisory Desk"
+        description="Contact Opus Overseas in Nizamabad, Telangana. Reach our certified study abroad counselors, visa specialists, and attestation team via phone, WhatsApp, or in-person visit."
         canonicalPath="/contact"
         schemas={[
           BASE_ORGANIZATION_SCHEMA,
@@ -110,7 +110,7 @@ export default function ContactPage() {
             '@id': 'https://opusoverseas.com/contact#contactpage',
             url: 'https://opusoverseas.com/contact',
             name: 'Contact Opus Overseas',
-            description: 'Direct contact details, office location in Bodhan, opening hours, and digital appointment booking.',
+            description: 'Direct contact details, office location in Nizamabad, opening hours, and digital appointment booking.',
             mainEntity: {
               '@id': 'https://opusoverseas.com/#organization',
             },
@@ -231,18 +231,7 @@ export default function ContactPage() {
               </ul>
             </div>
 
-            {/* Legal Entity & Merchant Registration Card */}
-            <div className="clay-card p-6 space-y-2 border border-brand-gold/30 bg-brand-gold/5">
-              <h3 className="font-display text-xs font-bold uppercase tracking-wider text-brand-navy flex items-center gap-1.5">
-                <span>🏛️</span> Registered Business Entity
-              </h3>
-              <p className="text-xs text-brand-navy/80 leading-relaxed">
-                <strong>Opus Overseas</strong> is a registered commercial brand owned and operated by <strong>Cordial Crafts</strong>.
-              </p>
-              <p className="text-[11px] text-brand-textLight">
-                Headquarters: 1-1-382, Rakasipet, Bodhan, Nizamabad District, Telangana 503185, India.
-              </p>
-            </div>
+
           </div>
 
           {/* Right Column: Contact & Inquiry Form */}
@@ -385,7 +374,7 @@ export default function ContactPage() {
         title="Contact & Location Frequently Asked Questions"
         subtitle="Helpful information regarding directions, working hours, and response time guarantees."
         summaryTitle="Connect with Opus Overseas"
-        summaryText="Visit our Bodhan headquarters at 1-1-382, Rakasipet, Bodhan, Telangana 503185 or connect via phone (+91 9398848376) and email (contact@opusoverseas.com). We provide transparent guidance across education, visas, attestation, and manpower recruitment."
+        summaryText="Visit our headquarters in Nizamabad — Telangana or connect via phone (+91 9398848376) and email (contact@opusoverseas.com). We provide transparent guidance across education, visas, attestation, and manpower recruitment."
         faqs={CONTACT_FAQS}
       />
 

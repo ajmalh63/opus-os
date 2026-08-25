@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import EarningsHero from './partner/EarningsHero';
+import NextBestAction from './partner/NextBestAction';
+import ResourceStageTabs from './partner/ResourceStageTabs';
+import OfflineBanner from './shared/OfflineBanner';
 
 export interface PartnerDashboardHubProps {
   partnerName: string;
@@ -26,18 +30,44 @@ export default function PartnerDashboardHub({
   onQuickReferralSubmit,
 }: PartnerDashboardHubProps) {
   const [copied, setCopied] = useState(false);
+  const [subId, setSubId] = useState('');
   const [leadForm, setLeadForm] = useState({ name: '', email: '', phone: '', service: 'study_abroad' });
   const [submitting, setSubmitting] = useState(false);
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
 
-  const referralUrl = typeof window !== 'undefined' 
+  const baseUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/?ref=${partnerCode || 'OPUS-PARTNER'}`
     : `https://opusoverseas.com/?ref=${partnerCode || 'OPUS-PARTNER'}`;
+
+  const referralUrl = subId.trim() ? `${baseUrl}&subid=${encodeURIComponent(subId.trim())}` : baseUrl;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
+  };
+
+  const handleDownloadQrSvg = () => {
+    const svgEl = document.getElementById('partner-qr-svg');
+    if (!svgEl) return;
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svgEl);
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `opus-partner-${partnerCode || 'referral'}-qr.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = encodeURIComponent(
+      `Plan your Study Abroad, Visa Stamping, or Umrah journey with Opus Overseas. Get verified counseling and fast-track processing: ${referralUrl}`
+    );
+    window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
@@ -76,126 +106,87 @@ export default function PartnerDashboardHub({
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* 1. PARTNER METRICS CARDS */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Earned */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-brand-gold/40 transition">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Commissions</span>
-            <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs">
-              💰
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-extrabold text-brand-navy font-display">₹{(totals.total / 100).toLocaleString('en-IN')}</div>
-            <div className="text-xs text-slate-500 mt-0.5">Lifetime earned commissions</div>
-          </div>
-        </div>
+    <div className="space-y-6 animate-fadeIn">
+      {/* 0. OFFLINE / STALE — never show stale as live */}
+      <OfflineBanner />
 
-        {/* Ready to Payout (Matured) */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-brand-gold/40 transition">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ready for Payout</span>
-            <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base font-bold shadow-xs">
-              ⚡
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-extrabold text-emerald-600 font-display">₹{(totals.matured / 100).toLocaleString('en-IN')}</div>
-            <div className="text-xs text-slate-500 mt-0.5">Matured balance ready for bank transfer</div>
-          </div>
+      {/* 0. EARNINGS HERO — Z endpoint top, goal gradient (Cockpit) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-8">
+          <EarningsHero
+            availablePaise={totals.matured}
+            pendingPaise={totals.pending}
+            paidPaise={totals.paid}
+            tier={partnerTier}
+            progressPct={72}
+            nextTier="Platinum"
+            onWithdraw={() => onNavigateTab('payouts')}
+            onViewRewards={() => onNavigateTab('tiers')}
+          />
         </div>
-
-        {/* Active Candidates */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-brand-gold/40 transition">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Referred Candidates</span>
-            <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base font-bold shadow-xs">
-              👥
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-extrabold text-brand-navy font-display">{referrals.length}</div>
-            <div className="text-xs text-slate-500 mt-0.5">Leads submitted & tracking</div>
-          </div>
+        <div className="lg:col-span-4">
+          <NextBestAction
+            title={`Welcome back, ${partnerName || 'Partner'}!`}
+            hint="Share your 90-day tracking link to capture incoming admissions and visas."
+            cta="Generate Campaign Link →"
+            onAction={() => onNavigateTab('links')}
+          />
         </div>
+      </div>
 
-        {/* Partner Tier Card */}
-        <div className="bg-gradient-to-br from-brand-navy to-[#111A36] text-white rounded-2xl p-5 border border-brand-navy shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">Affiliate Tier</span>
-            <span className="text-[10px] bg-brand-gold/20 text-brand-gold font-bold px-2 py-0.5 rounded-md border border-brand-gold/30">
-              {partnerTier}
-            </span>
-          </div>
-          <div className="mt-2">
-            <div className="font-bold text-sm text-white">{partnerName || 'Partner Desk'}</div>
-            <div className="text-[11px] text-white/70 font-mono">Code: {partnerCode || 'OPUS-PARTNER'}</div>
+      {/* 1. RESOURCE / DIVISION TABS */}
+      <ResourceStageTabs />
+
+      {/* 2. LIVE 5-COLUMN REFERRAL KANBAN STREAM */}
+      <section className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div>
+            <h3 className="font-display font-bold text-base text-brand-navy flex items-center gap-2">
+              <span>🎯 Live Candidate Progression Stream</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                {referrals.length} Active Leads
+              </span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Track your referred applicants in real time from initial consultation to commission maturity.
+            </p>
           </div>
           <button
             type="button"
-            onClick={() => onNavigateTab('payouts')}
-            className="mt-3 w-full text-center bg-brand-gold hover:bg-brand-goldHover text-brand-navy py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition shadow-xs cursor-pointer"
+            onClick={() => onNavigateTab('referrals')}
+            className="text-xs text-brand-navy font-bold hover:text-brand-gold transition self-start sm:self-auto cursor-pointer"
           >
-            Request Settlement →
+            View full ledger →
           </button>
         </div>
-      </section>
 
-      {/* 2. LIVE REFERRAL KANBAN BOARD */}
-      <section className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="font-display font-extrabold text-lg text-brand-navy">Live Referral Pipeline</h2>
-              <span className="text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold">
-                Auto-Synced with Counselor Desk
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Live progression of your referred candidates as our counseling team guides them through admissions, visas, and enrollment.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onNavigateTab('referrals')}
-              className="text-xs bg-brand-navy hover:bg-brand-navy/90 text-white font-bold px-3.5 py-2 rounded-xl transition cursor-pointer shadow-xs"
-            >
-              + Submit Referral
-            </button>
-          </div>
-        </div>
-
-        {/* Kanban Board Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {kanbanColumns.map((col) => {
-            const itemsInCol = referrals.filter((r) => getStageForReferral(r) === col.id);
+            const colReferrals = referrals.filter((r) => getStageForReferral(r) === col.id);
             return (
-              <div key={col.id} className="bg-slate-50/90 rounded-xl p-3.5 border border-slate-200/70 flex flex-col gap-2.5 min-h-[280px]">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs">{col.icon}</span>
-                    <span className="text-[11px] font-bold text-slate-700">{col.label}</span>
-                  </div>
-                  <span className="text-[10px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.2 rounded-full">
-                    {itemsInCol.length}
+              <div key={col.id} className={`rounded-2xl p-3 border ${col.color} space-y-3 min-h-[180px]`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                    <span>{col.icon}</span>
+                    <span className="truncate">{col.label}</span>
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-white text-slate-700 shadow-2xs">
+                    {colReferrals.length}
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-2.5 flex-1">
-                  {itemsInCol.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-3 border-2 border-dashed border-slate-200/50 rounded-lg">
-                      <span className="text-slate-400 text-[11px] font-medium">No candidates</span>
+                <div className="space-y-2">
+                  {colReferrals.length === 0 ? (
+                    <div className="py-8 text-center text-[10px] text-slate-400">
+                      No candidates in this stage
                     </div>
                   ) : (
-                    itemsInCol.map((r, idx) => (
-                      <div
-                        key={r.referralId || idx}
+                    colReferrals.map((r, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
                         onClick={() => onNavigateTab('referrals')}
-                        className="bg-white hover:bg-slate-50 rounded-xl p-3 border border-slate-200 hover:border-brand-gold/60 shadow-xs transition cursor-pointer space-y-1.5"
+                        className="w-full text-left p-2.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-brand-gold hover:shadow-xs transition space-y-1.5 cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
@@ -206,12 +197,12 @@ export default function PartnerDashboardHub({
                           </span>
                         </div>
                         <div className="text-[11px] font-bold text-slate-800">
-                          Commission Rate: {r.ratePct || 10}%
+                          Commission: {r.ratePct || 10}%
                         </div>
                         <div className="text-[9px] text-slate-400 capitalize">
                           Status: {r.status || 'Active in pipeline'}
                         </div>
-                      </div>
+                      </button>
                     ))
                   )}
                 </div>
@@ -223,20 +214,34 @@ export default function PartnerDashboardHub({
 
       {/* 3. QUICK REFERRAL ENGINE & SHARE LINKS */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Shareable Link Generator */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        {/* Shareable Link & Campaign Studio */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-display font-bold text-base text-brand-navy">Your Master Tracking Link</h3>
-            <span className="text-[10px] bg-brand-gold/15 text-brand-navy font-bold px-2 py-0.5 rounded-full border border-brand-gold/30">
+            <h3 className="font-display font-bold text-base text-brand-navy">Deep-Link & Campaign Studio</h3>
+            <span className="text-[10px] bg-brand-gold/15 text-brand-navy font-bold px-2.5 py-0.5 rounded-full border border-brand-gold/30">
               Cookie 90-Days Active
             </span>
           </div>
 
           <p className="text-xs text-slate-500">
-            Share this link with students, pilgrims, and job seekers. Any lead who signs up or submits an inquiry is permanently attributed to your commission wallet.
+            Share your attribution link across WhatsApp, social media, and offline print ads. Leads are permanently tagged to your wallet.
           </p>
 
-          <div className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          {/* SubID Tagging Input */}
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 shrink-0">
+              Campaign Tag (SubID):
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. whatsapp_story, seminar_march"
+              value={subId}
+              onChange={(e) => setSubId(e.target.value.replace(/\s+/g, '_'))}
+              className="flex-1 text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 font-mono outline-none focus:border-brand-gold"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
             <input
               type="text"
               readOnly
@@ -246,20 +251,35 @@ export default function PartnerDashboardHub({
             <button
               type="button"
               onClick={handleCopyLink}
-              className="shrink-0 bg-brand-gold hover:bg-brand-goldHover text-brand-navy font-bold text-xs px-3.5 py-1.5 rounded-lg transition uppercase tracking-wider cursor-pointer shadow-xs"
+              className="shrink-0 bg-brand-gold hover:bg-brand-goldHover text-brand-navy font-bold text-xs px-3.5 py-2 rounded-xl transition uppercase tracking-wider cursor-pointer shadow-xs"
             >
-              {copied ? 'Copied! ✓' : 'Copy Link'}
+              {copied ? 'Copied! ✓' : 'Copy'}
+            </button>
+            <button
+              type="button"
+              onClick={handleShareWhatsApp}
+              className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-2 rounded-xl transition cursor-pointer shadow-xs flex items-center gap-1"
+              title="Share directly on WhatsApp"
+            >
+              <span>💬</span>
+              <span className="hidden sm:inline">WhatsApp</span>
             </button>
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-white rounded-lg border border-slate-200">
-                <QRCodeSVG value={referralUrl} size={64} />
+              <div className="p-2 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                <QRCodeSVG id="partner-qr-svg" value={referralUrl} size={64} />
               </div>
-              <div>
-                <div className="text-xs font-bold text-slate-800">Scan & Share QR Code</div>
-                <div className="text-[10px] text-slate-500">Print or share on WhatsApp status & brochures</div>
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-slate-800">Printable Vector QR Code</div>
+                <button
+                  type="button"
+                  onClick={handleDownloadQrSvg}
+                  className="text-[10px] text-brand-navy font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>📥 Download Vector SVG</span>
+                </button>
               </div>
             </div>
             <button
@@ -273,7 +293,7 @@ export default function PartnerDashboardHub({
         </div>
 
         {/* Quick Candidate Intake Form */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-display font-bold text-base text-brand-navy">Fast Candidate Referral</h3>
             <span className="text-[10px] text-slate-400">Direct desk handoff</span>

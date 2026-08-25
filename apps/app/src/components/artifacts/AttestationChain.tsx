@@ -88,7 +88,7 @@ export default function AttestationChain() {
       caption="Transparent step-by-step government authentication breakdown"
       statusLabel="MEA Verified"
     >
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-[300px] sm:max-h-none overflow-y-auto sm:overflow-visible pr-1 sm:pr-0">
         {/* Country Selector */}
         <div>
           <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">

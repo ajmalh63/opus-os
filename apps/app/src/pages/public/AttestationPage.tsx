@@ -299,7 +299,50 @@ export default function AttestationPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:hidden -mx-5 px-5 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' } as any}>
+          {DOCUMENT_CATEGORIES.map((cat) => {
+            const isSelected = selectedDocCategory === cat.category.toLowerCase().split(' ')[0];
+            return (
+              <div 
+                key={cat.category} 
+                onClick={() => setSelectedDocCategory(cat.category.toLowerCase().split(' ')[0])}
+                className={`shrink-0 snap-center min-w-[82vw] max-w-[320px] clay-card p-6 flex flex-col justify-between transition-all group cursor-pointer will-change-transform ${isSelected ? 'border-brand-gold ring-2 ring-brand-gold/30' : 'hover:border-brand-gold/40'}`}
+                style={{ transformStyle: 'preserve-3d' } as any}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{cat.icon}</span>
+                      <h3 className="font-display text-base font-bold text-brand-navy group-hover:text-brand-gold-hover transition-colors">
+                        {cat.category}
+                      </h3>
+                    </div>
+                    {isSelected && (
+                      <span className="rounded-full bg-brand-gold/20 text-brand-gold text-[10px] font-bold px-2 py-0.5 font-mono">Selected</span>
+                    )}
+                  </div>
+                  <p className="text-xs font-semibold text-brand-gold mb-3">{cat.purpose}</p>
+                  <div className="space-y-1.5 text-xs text-brand-textLight mb-4">
+                    <p className="font-bold text-brand-navy text-[11px] uppercase tracking-wider">Covered Documents:</p>
+                    <ul className="space-y-1 text-[11px]">
+                      {cat.docs.map((d, i) => (
+                        <li key={i} className="flex items-center gap-1.5 truncate"><span className="w-1 h-1 rounded-full bg-brand-gold shrink-0" />{d}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-brand-gold group-hover:text-brand-navy flex items-center gap-1">Explore →</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="md:hidden mt-3 flex items-center justify-center gap-1.5">
+          {DOCUMENT_CATEGORIES.map((_, i) => (
+            <span key={i} className="h-1.5 w-1.5 rounded-full bg-brand-navy/15" />
+          ))}
+          <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-brand-navy/35 flex items-center gap-1">Swipe to explore <span className="animate-pulse">→</span></span>
+        </div>
+        <div className="hidden md:grid md:grid-cols-3 gap-6">
           {DOCUMENT_CATEGORIES.map((cat) => {
             const isSelected = selectedDocCategory === cat.category.toLowerCase().split(' ')[0];
             return (
