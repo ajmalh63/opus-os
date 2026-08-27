@@ -34,13 +34,14 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
     secret: env.BETTER_AUTH_SECRET,
     baseURL,
     trustedOrigins: [
-      // Local dev (kept out of any production deployment by ENVIRONMENT gate below)
+      // Local dev
       "http://127.0.0.1:5173", "http://localhost:5173",
       "http://127.0.0.1:8787", "http://localhost:8787",
       "http://127.0.0.1", "http://localhost",
-      // Production origins — apex + www + app (both apex and www MUST reach the
-      // worker for cal.com webhooks and cookie auth to work)
+      // Production origins — apex + www + app
       "https://opusoverseas.com", "https://www.opusoverseas.com", "https://app.opusoverseas.com",
+      // Pages preview deployments (QA)
+      "https://opusos-app.pages.dev", "https://*.opusos-app.pages.dev",
       ...(env.BETTER_AUTH_URL ? [env.BETTER_AUTH_URL] : []),
     ],
     database: drizzleAdapter(db, {
@@ -126,9 +127,14 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
       disableOriginCheck: (env as any)?.ENVIRONMENT !== 'production',
       defaultCookieAttributes: {
         httpOnly: true,
-        // Secure cookies behind HTTPS only (prod sets ENVIRONMENT=production).
         secure: (env as any).ENVIRONMENT === 'production',
-        sameSite: "lax"
+        // Cross-site API (opusoverseas.com -> workers.dev) needs None so
+        // fetch(credentials:'include') sends cookies; Lax blocks third-party.
+        // None requires Secure, so production only. Dev stays Lax.
+        // Partitioned (CHIPS) allows third-party cookies even with
+        // third-party blocking in Chrome Incognito.
+        sameSite: (env as any).ENVIRONMENT === 'production' ? "none" as const : "lax" as const,
+        partitioned: (env as any).ENVIRONMENT === 'production',
       }
     },
     logger: {

@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { bodyLimit } from 'hono/body-limit';
 import { leadsRouter } from './routes/leads.js';
@@ -107,6 +108,19 @@ app.use('*', secureHeaders({
   permissionsPolicy: { camera: [], microphone: [], geolocation: [], payment: [] },
 }));
 
+app.use('/api/*', cors({
+  origin: (origin) => {
+    const allowed = ['https://opusoverseas.com','https://www.opusoverseas.com','https://app.opusoverseas.com','http://127.0.0.1:5173','http://localhost:5173'];
+    if (!origin) return origin;
+    if (allowed.includes(origin)) return origin;
+    if (origin.endsWith('.opusos-app.pages.dev')) return origin;
+    if (origin.endsWith('.pages.dev')) return origin;
+    return null;
+  },
+  allowHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'cf-turnstile-response', 'X-Portal-Token', 'X-Session-Token'],
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  credentials: true,
+}));
 app.use('/api/*', idempotency());
 
 // Global Error Handler — gold-standard shape:

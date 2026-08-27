@@ -49,7 +49,7 @@ export default function Login() {
     setCapsLockActive(e.getModifierState('CapsLock'));
   };
 
-  const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+  const API = (import.meta as any).env?.VITE_API_URL || 'https://api.opusoverseas.com';
 
   async function post(path: string, body: unknown): Promise<any> {
     const res = await fetch(`${API}/api/auth${path}`, {

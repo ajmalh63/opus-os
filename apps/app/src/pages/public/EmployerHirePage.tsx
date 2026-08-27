@@ -14,7 +14,7 @@ export default function EmployerHirePage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
-  const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+  const API = (import.meta as any).env?.VITE_API_URL || 'https://api.opusoverseas.com';
 
   const handleSubmit = async () => {
     setFeedback(null);

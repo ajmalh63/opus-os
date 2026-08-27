@@ -80,6 +80,10 @@ INDIA_POST_BASE_URL = "https://india-post.opusoverseas.com"
 
 account_id = "b66f3697a847cba87b1fd44bc8a13827"
 
+[[routes]]
+pattern = "api.opusoverseas.com/*"
+zone_name = "opusoverseas.com"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "opusos-db"
@@ -168,7 +172,6 @@ workers_dev = false
   [env.production.vars]
   ENVIRONMENT = "production"
 
-  # Routes to activate after the domain is added to Cloudflare:
   # [[env.production.routes]]
   # pattern = "opusoverseas.com/*"
   # zone_name = "opusoverseas.com"

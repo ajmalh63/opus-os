@@ -27,9 +27,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
   const refresh = async () => {
     try {
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      const res = await fetch(`${API}/api/auth/me`, { credentials: 'include' });
       if (!res.ok) { setMe(null); return; }
       const data = await res.json();
       setMe(data.authenticated ? data : null);
