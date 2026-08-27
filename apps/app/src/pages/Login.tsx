@@ -49,8 +49,10 @@ export default function Login() {
     setCapsLockActive(e.getModifierState('CapsLock'));
   };
 
+  const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+
   async function post(path: string, body: unknown): Promise<any> {
-    const res = await fetch(`/api/auth${path}`, {
+    const res = await fetch(`${API}/api/auth${path}`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -62,12 +64,12 @@ export default function Login() {
 
   const finish = async () => {
     // Role-aware hub: partners → partner portal; staff → workspace dashboard; clients → client workspace portal.
-    const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+    const meRes = await fetch(`${API}/api/auth/me`, { credentials: 'include' });
     const me = await meRes.json().catch(() => null);
     await refresh();
     if (!me?.authenticated) { setLocation('/login'); return; }
     try {
-      const p = await fetch('/api/public/partners/session', { credentials: 'include' }).then(r => r.json()).catch(() => ({}));
+      const p = await fetch(`${API}/api/public/partners/session`, { credentials: 'include' }).then(r => r.json()).catch(() => ({}));
       if (p?.authenticated === true && p?.partner) { setLocation('/partner'); return; }
     } catch { /* not a partner — fall through */ }
     const staff = ['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'];

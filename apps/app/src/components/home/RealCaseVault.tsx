@@ -102,7 +102,7 @@ export default function RealCaseVault() {
           {[
             { key: 'study', label: 'Study Abroad' },
             { key: 'visa', label: 'Visa Stamping' },
-            { key: 'umrah', label: 'Umrah Travel' },
+            { key: 'umrah', label: 'Tours & Travels' },
             { key: 'attestation', label: 'Attestation' },
             { key: 'recruitment', label: 'Manpower' },
           ].map(tab => (

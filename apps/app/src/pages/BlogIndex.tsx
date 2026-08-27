@@ -38,7 +38,7 @@ export default function BlogIndex() {
               <option value="study-abroad">Study Abroad</option>
               <option value="visa-services">Visa Services</option>
               <option value="attestation">Attestation</option>
-              <option value="umrah-travel">Umrah Travel</option>
+              <option value="umrah-travel">Tours & Travels</option>
               <option value="manpower">Manpower</option>
               <option value="general">General</option>
             </select>

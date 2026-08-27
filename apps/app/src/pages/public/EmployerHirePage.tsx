@@ -14,6 +14,8 @@ export default function EmployerHirePage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
+  const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+
   const handleSubmit = async () => {
     setFeedback(null);
     if (!form.company || !form.contact || !form.email || !form.phone || !form.industry || !form.positions || !form.urgency || !form.engagement || !form.payRange || !form.description) {
@@ -26,7 +28,7 @@ export default function EmployerHirePage() {
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/public/employer-demands', {
+      const res = await fetch(`${API}/api/public/employer-demands`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(turnstileToken ? { 'cf-turnstile-response': turnstileToken } : {}) },
         body: JSON.stringify({
@@ -61,7 +63,7 @@ export default function EmployerHirePage() {
     <div className="min-h-screen bg-brand-cream font-sans text-brand-navy">
       <SEOHead
         title="Hire Verified Talent — For Employers | Opus Overseas"
-        description="Hire vetted Indian talent in 21 days — POE/GAMCA compliant, trade-tested, zero advance from candidates. Submit your manpower demand and get a shortlist in 7 days."
+        description="Hire vetted Indian talent — structured JD-matched screening, document & credential checks, employer-paid ethical sourcing. Submit demand, get a sector-aligned shortlist."
         canonicalPath="/manpower/hire"
         schemas={[
           BASE_ORGANIZATION_SCHEMA,
@@ -73,12 +75,12 @@ export default function EmployerHirePage() {
         <DomainBackdrop theme="manpower" />
         <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">For Employers — Hire Talent</span>
-          <h1 className="mt-4 font-display fluid-h1 font-black leading-tight">Hire Verified Indian Talent in <span className="text-brand-gold">21 Days</span></h1>
-          <p className="mt-3 max-w-2xl text-white/80">POE/GAMCA compliant • Trade-tested • Zero advance from candidates • Dedicated sector recruiter • Time-to-shortlist 7 days</p>
+          <h1 className="mt-4 font-display fluid-h1 font-black leading-tight">Hire Verified Indian Talent — <span className="text-brand-gold">Document-Verified & Skill-Aligned</span></h1>
+          <p className="mt-3 max-w-2xl text-white/80">Structured screening • Document & credential checks • Employer-paid, ethical sourcing • Dedicated sector coordinator • Transparent shortlist process</p>
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-4"><div className="text-sm font-bold text-white">7 Days</div><div className="text-xs text-white/60">Shortlist delivery</div></div>
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-4"><div className="text-sm font-bold text-white">40+ GCC Clients</div><div className="text-xs text-white/60">Retention 12mo</div></div>
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-4"><div className="text-sm font-bold text-white">POE Licensed</div><div className="text-xs text-white/60">MEA Approved</div></div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4"><div className="text-sm font-bold text-white">Document-Verified</div><div className="text-xs text-white/60">Credentials checked per role</div></div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4"><div className="text-sm font-bold text-white">Skill-Aligned</div><div className="text-xs text-white/60">JD-matched screening</div></div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4"><div className="text-sm font-bold text-white">Employer-Paid</div><div className="text-xs text-white/60">No candidate placement fee</div></div>
           </div>
         </div>
       </section>
@@ -103,28 +105,30 @@ export default function EmployerHirePage() {
             <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken(null)} />
             {feedback && <p className="rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs font-semibold text-rose-700 text-center">{feedback}</p>}
             <button onClick={handleSubmit} disabled={submitting} className="mt-6 w-full rounded-full bg-brand-navy px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all disabled:opacity-50">
-              {submitting ? 'Submitting…' : sent ? '✓ Demand Captured — Our BD team will call today' : 'Submit Demand — Get Shortlist in 7 Days →'}
+              {submitting ? 'Submitting…' : sent ? '✓ Demand Captured — Our team will respond today' : 'Submit Demand — Get a Structured Shortlist →'}
             </button>
-            {sent && <p className="mt-3 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-3">✓ Demand received — our BD team will call today. Time-to-shortlist: 7 days. Check your email for confirmation.</p>}
+            {sent && <p className="mt-3 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-3">✓ Demand received — our team will respond today with next steps. Check your email for confirmation.</p>}
           </div>
         </div>
         <div className="lg:col-span-5 space-y-4">
           <div className="clay-card p-6">
-            <h3 className="font-display font-bold text-brand-navy">How we work</h3>
+            <h3 className="font-display font-bold text-brand-navy">How we work — professional, transparent</h3>
             <ol className="mt-3 space-y-2 text-sm text-brand-navy/70 list-decimal list-inside">
-              <li>Trade Test → Interview → POE clearance</li>
-              <li>Shortlist of 3–5 vetted candidates per role</li>
-              <li>Feedback SLA 48h, replacement guarantee</li>
+              <li>Demand → JD alignment → targeted sourcing</li>
+              <li>Screening → skill-matched shortlist (3–5 per role, where feasible)</li>
+              <li>Interview coordination → feedback loop → offer & documentation support</li>
             </ol>
-            <div className="mt-4 rounded-xl bg-brand-gold/10 border border-brand-gold/20 p-3 text-xs">Sector pages • Salary guides • Consultant profiles • Live `Manpower` jobs filtered per sector — all on `/manpower`.</div>
+            <div className="mt-4 rounded-xl bg-brand-navy/5 border border-brand-navy/10 p-3 text-xs">Professional practices: document & credential checks per employer spec, reference checks where applicable, employer-paid sourcing, interview scheduling, and audit trail in Opus OS. Statutory medical/travel formalities remain employer-advised and transparent.</div>
           </div>
           <div className="clay-card p-6">
             <h3 className="font-display font-bold text-brand-navy">Why employers choose Opus</h3>
             <ul className="mt-2 space-y-1.5 text-sm text-brand-navy/70 list-disc list-inside">
-              <li>MEA Licensed, POE compliant</li>
-              <li>Zero advance from candidates — ethical sourcing</li>
-              <li>40+ GCC clients, retention 12mo</li>
+              <li>Structured, JD-matched screening — no bulk CV dump</li>
+              <li>Document & credential checks per role (employer-spec)</li>
+              <li>Employer-paid, ethical sourcing — no candidate placement fee</li>
+              <li>Dedicated coordinator + audit trail in Opus OS</li>
             </ul>
+            <p className="mt-3 text-[11px] text-brand-navy/50">We do not claim MEA/POE licensing or guaranteed timelines. We follow industry-recognized, employer-paid sourcing and transparent verification — statutory clearances remain employer-advised.</p>
           </div>
         </div>
       </section>

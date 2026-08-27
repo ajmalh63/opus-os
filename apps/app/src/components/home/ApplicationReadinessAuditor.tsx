@@ -162,7 +162,7 @@ export default function ApplicationReadinessAuditor() {
           {[
             { key: 'study', label: '🎓 Study Abroad' },
             { key: 'visa', label: '🛂 Visa Filing' },
-            { key: 'umrah', label: '🕌 Umrah & Travel' },
+            { key: 'umrah', label: '🧳 Tours & Travels' },
             { key: 'attestation', label: '📜 Attestation' },
             { key: 'recruitment', label: '💼 Overseas Manpower' },
           ].map(tab => (

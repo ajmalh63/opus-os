@@ -224,7 +224,7 @@ export default function ClientFeedbackModal({
                   <option value="general">General Advisory</option>
                   <option value="study-abroad">Study Abroad Admissions</option>
                   <option value="visa">Visa Filing & Prep</option>
-                  <option value="umrah">Umrah & Travel</option>
+                  <option value="umrah">Tours & Travels</option>
                   <option value="attestation">Document Attestation</option>
                   <option value="manpower">Manpower Placement</option>
                 </select>

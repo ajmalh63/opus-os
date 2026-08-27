@@ -13,7 +13,7 @@ const ROOMS = [
   { id: 'ops', label: 'Operations', icon: 'M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10' },
   { id: 'sales', label: 'Sales & Funnel', icon: 'M3 3v18h18M7 14l4-4 3 3 5-6' },
   { id: 'finance', label: 'Finance & Compliance', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { id: 'umrah', label: 'Umrah & Travel', icon: 'M12 3v18M3 12h18M12 12l-3-3m3 3l3-3' },
+  { id: 'umrah', label: 'Tours & Travels', icon: 'M12 3v18M3 12h18M12 12l-3-3m3 3l3-3' },
 ];
 
 export default function TeamHub() {

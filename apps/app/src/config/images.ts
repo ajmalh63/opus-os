@@ -34,7 +34,7 @@ export const IMAGES: Record<string, ImageSpec> = {
       'Serene low-angle view of the Kaaba at dusk with warm lantern glow and soft haze, reverent and calm, cinematic color grade with gold and deep blue, 16:9 editorial photography',
   },
   'hero-umrah-travel': {
-    label: 'Umrah & Travel',
+    label: 'Tours & Travels',
     ratio: '16/9',
     src: '/img/hero-umrah-travel.jpg',
     prompt:

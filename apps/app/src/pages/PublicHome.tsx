@@ -23,19 +23,19 @@ gsap.registerPlugin(ScrollTrigger);
 const HOME_FAQS = [
   {
     question: 'What comprehensive overseas services does Opus Overseas offer?',
-    answer: 'Opus Overseas is a licensed full-spectrum consultancy delivering top-tier Study Abroad university admissions, Global Visa processing (Student, Tourist, Work, Business), MEA Apostille & Document Attestation, curated Tours & Travels (including verified Umrah pilgrimage logistics from Hyderabad), and international Manpower Recruitment.',
+    answer: 'Opus Overseas is a growing global consultancy based in Nizamabad, Telangana — offering Study Abroad admissions, worldwide visa support, document attestation (State + MEA + embassy), Tours & Travels (international holidays & Umrah from Hyderabad), and manpower sourcing with structured screening and transparent tracking in Opus OS.',
   },
   {
     question: 'How do I start my application or counseling session?',
-    answer: 'You can book a 1-on-1 consultation session online through our calendar booking tool, submit an inquiry through our digital lead form, or visit our headquarters at Nizamabad, Telangana. Our certified counselors conduct an initial profile audit and provide a transparent roadmap.',
+    answer: 'You can book a 1-on-1 consultation online, submit an inquiry via the lead form, or visit us in Nizamabad, Telangana. We do a profile audit, share an honest roadmap, and give you a portal token to track every step — no hidden fees.',
   },
   {
     question: 'What countries are available for Study Abroad and Work Visas?',
-    answer: 'We represent and process applications for top destinations worldwide including the United Kingdom, United States, Canada, Germany, Australia, Ireland, New Zealand, Saudi Arabia, the United Arab Emirates, Qatar, and other European and GCC nations.',
+    answer: 'We guide admissions and visa filings for the UK, USA, Canada, Germany, Australia, Ireland, New Zealand, Saudi Arabia, UAE, Qatar and other EU/GCC destinations — destination choice depends on your profile, budget and timeline.',
   },
   {
-    question: 'How does Opus Overseas maintain compliance and document security?',
-    answer: 'We operate under strict zero-advance fee guarantees for recruitment, timing-verified MEA / Embassy courier tracking, and careful document protection in private vaults — with complete audit logs and transparent tracking.',
+    question: 'How does Opus Overseas handle documents and compliance?',
+    answer: 'We use structured checklists, document & credential verification per employer/university spec, secure vaults, and audit trails in Opus OS. Statutory steps (HRD, MEA, embassy, medical) are coordinated transparently — timelines are honest estimates, never guarantees.',
   },
 ];
 
@@ -53,35 +53,35 @@ const SERVICES = [
     id: 'study-abroad', 
     title: 'Study Abroad Consulting', 
     telemetry: '● Fall & Spring Admissions Open',
-    desc: 'University applications, scholarship evaluations, SOP mentoring, and 1-on-1 consular visa mock drills across 50+ countries.', 
+    desc: 'University shortlists, scholarship checks, SOP mentoring, and visa mock guidance across 50+ countries — honest profile audit first.', 
     path: '/study-abroad' 
   },
   { 
     id: 'visa-services', 
     title: 'Global Visa Services', 
-    telemetry: '● 24–48h Express Queue Active',
-    desc: 'Tourist, business, work, and family residency visas with verified embassy document preparation and queue tracking.', 
+    telemetry: '● Guided Filing & Queue Tracking',
+    desc: 'Tourist, business, work and family visas with guided document prep and step tracking in Opus OS.', 
     path: '/visa-services' 
   },
   { 
     id: 'tours-travels', 
     title: 'Tours & Travels (Holidays & Umrah)', 
-    telemetry: '● Scheduled Flights & Group Tours',
-    desc: 'Curated international holidays, 5-Star Umrah packages from Hyderabad, domestic getaways, pre-vetted luxury hotels, direct flights, and visa support.', 
+    telemetry: '● Curated Holidays & Group Departures',
+    desc: 'International holidays, domestic getaways and Umrah from Hyderabad — curated stays, direct flights where feasible, and visa support.', 
     path: '/tours-travels' 
   },
   { 
     id: 'attestation', 
     title: 'Document Attestation & Apostille', 
-    telemetry: '● MEA New Delhi Stamping 3–5d',
-    desc: 'State HRD, Home Dept (SDM), MEA Apostille, and destination embassy legalizations with insured courier custody.', 
+    telemetry: '● State → MEA → Embassy Flow',
+    desc: 'State HRD/Home Dept, SDM where required, MEA/embassy legalization with tracked courier and audit trail.', 
     path: '/attestation' 
   },
   { 
     id: 'recruitment', 
-    title: 'Overseas Manpower & Manpower', 
-    telemetry: '● Verified Gulf & Europe Demands',
-    desc: 'Employer-verified openings with structured triage, medical and visa milestone tracking.', 
+    title: 'Overseas Manpower & Recruitment', 
+    telemetry: '● Employer-Verified Openings',
+    desc: 'Structured screening and sector-aligned shortlists as we build our employer network — transparent, employer-paid.', 
     path: '/manpower' 
   },
 ];
@@ -213,13 +213,13 @@ export default function PublicHome() {
       <section id="services-grid" ref={gridRef} className="mx-auto max-w-7xl px-5 sm:px-6 py-20 sm:py-24">
         <div className="reveal mb-14 space-y-2.5 text-center">
           <span className="font-mono text-sm font-bold uppercase tracking-[0.2em] text-brand-gold">
-            Authorized Desks
+            Active Desks
           </span>
           <h2 className="font-display fluid-h2 font-extrabold text-brand-navy tracking-tight">
-            Our Specialized Global Mobility Divisions
+            Our Global Mobility Divisions
           </h2>
           <p className="mx-auto max-w-md text-xs sm:text-sm text-brand-textLight">
-            Dedicated consulting units operating under direct sovereign licensing and institutional quotas.
+            Dedicated desks with structured screening, document checks and transparent tracking in Opus OS — no hidden fees, no false guarantees.
           </p>
         </div>
 
