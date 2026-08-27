@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useRoute, useLocation } from 'wouter';
 import { createSyncClient } from '../../lib/syncClient';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 type FleetItem = {
   key: string; name: string; host: string; port: number; kind: string;
@@ -31,17 +32,17 @@ export default function FleetConsole() {
   // Fleet + integrations + overview (three sources, one screen)
   const { data: fleetData, isLoading: fleetLoading, refetch: refFleet } = useQuery<{ fleet: FleetItem[]; summary: any }>({
     queryKey:['fleetMap'],
-    queryFn: async()=>{ const r=await fetch('/api/infrastructure/fleet',{credentials:'include'}); if(!r.ok) throw new Error('fleet'); return r.json(); },
+    queryFn: async()=>{ const r=await fetch(`${API}/api/infrastructure/fleet`,{credentials:'include'}); if(!r.ok) throw new Error('fleet'); return r.json(); },
     refetchInterval: 20_000,
   });
   const { data: docker } = useQuery<{ overview:any }>({
     queryKey:['fleetDockerOverview'],
-    queryFn: async()=>{ const r=await fetch('/api/infrastructure/docker-overview',{credentials:'include'}); if(!r.ok) throw new Error('docker'); return r.json(); },
+    queryFn: async()=>{ const r=await fetch(`${API}/api/infrastructure/docker-overview`,{credentials:'include'}); if(!r.ok) throw new Error('docker'); return r.json(); },
     refetchInterval: 20_000,
   });
   const { data: intData } = useQuery<{ integrations:any[]; summary:any }>({
     queryKey:['fleetIntegrations'],
-    queryFn: async()=>{ const r=await fetch('/api/infrastructure/integrations',{credentials:'include'}); if(!r.ok) throw new Error('int'); return r.json(); },
+    queryFn: async()=>{ const r=await fetch(`${API}/api/infrastructure/integrations`,{credentials:'include'}); if(!r.ok) throw new Error('int'); return r.json(); },
     refetchInterval: 20_000,
   });
 
@@ -171,7 +172,7 @@ function FleetAppDetail({ item, fleet, onBack }: { item?: FleetItem; fleet: Flee
 
   const { data: appData } = useQuery<{ overview:any }>({
     queryKey:['fleetApp', key],
-    queryFn: async()=>{ const r=await fetch('/api/infrastructure/docker-overview',{credentials:'include'}); if(!r.ok) throw new Error('overview'); const j=await r.json(); return { overview: j.overview[key] }; },
+    queryFn: async()=>{ const r=await fetch(`${API}/api/infrastructure/docker-overview`,{credentials:'include'}); if(!r.ok) throw new Error('overview'); const j=await r.json(); return { overview: j.overview[key] }; },
     refetchInterval: 10_000,
   });
 
@@ -182,7 +183,7 @@ function FleetAppDetail({ item, fleet, onBack }: { item?: FleetItem; fleet: Flee
 
   const fleetAction = useMutation({
     mutationFn: async (payload:any)=>{
-      const res=await fetch(`/api/infrastructure/fleet/${key}/action`,{
+      const res=await fetch(`${API}/api/infrastructure/fleet/${key}/action`,{
         method:'POST',
         headers:{ 'Content-Type':'application/json', 'Idempotency-Key': crypto.randomUUID() },
         credentials:'include',

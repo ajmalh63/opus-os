@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -134,7 +135,7 @@ export default function InfraHealth() {
   const { data, isLoading, isError, refetch } = useQuery<HealthReport>({
     queryKey: ['infraHealth'],
     queryFn: async () => {
-      const r = await fetch('/api/infrastructure/health', { credentials: 'include' });
+      const r = await fetch(`${API}/api/infrastructure/health`, { credentials: 'include' });
       const json = await r.json().catch(() => null);
       if (json && Array.isArray(json.services)) return json;
       if (!r.ok) throw new Error('infra');
@@ -146,7 +147,7 @@ export default function InfraHealth() {
   const { data: intData } = useQuery<{ integrations: IntegrationRow[]; summary: { live: number; down: number; stub: number; total: number } }>({
     queryKey: ['infraIntegrations'],
     queryFn: async () => {
-      const r = await fetch('/api/infrastructure/integrations', { credentials: 'include' });
+      const r = await fetch(`${API}/api/infrastructure/integrations`, { credentials: 'include' });
       if (!r.ok) throw new Error('integrations');
       return r.json();
     },
@@ -156,7 +157,7 @@ export default function InfraHealth() {
   const { data: dockerData, refetch: refetchDocker } = useQuery<{ success: boolean; overview: DockerOverview }>({
     queryKey: ['infraDockerOverview'],
     queryFn: async () => {
-      const r = await fetch('/api/infrastructure/docker-overview', { credentials: 'include' });
+      const r = await fetch(`${API}/api/infrastructure/docker-overview`, { credentials: 'include' });
       if (!r.ok) throw new Error('docker');
       return r.json();
     },
@@ -166,7 +167,7 @@ export default function InfraHealth() {
   // Mutations
   const waActionMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const res = await fetch('/api/infrastructure/openwa/action', {
+      const res = await fetch(`${API}/api/infrastructure/openwa/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -186,7 +187,7 @@ export default function InfraHealth() {
 
   const erpSyncMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/erpnext/sync/pending', { method: 'POST' });
+      const res = await fetch(`${API}/api/erpnext/sync/pending`, { method: 'POST' });
       return res.json();
     },
     onSuccess: (d) => {
@@ -202,7 +203,7 @@ export default function InfraHealth() {
 
   const emailActionMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const res = await fetch('/api/infrastructure/listmonk/action', {
+      const res = await fetch(`${API}/api/infrastructure/listmonk/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
