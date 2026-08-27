@@ -28,20 +28,20 @@ export function PortalMessages({ token }: { token: string }) {
     <div className="rounded-2xl border border-brand-navy/10 bg-white p-4 space-y-3">
       <div className="text-xs font-bold text-brand-navy">Messages — Counselor thread (realtime)</div>
       <div className="max-h-64 overflow-y-auto space-y-2 bg-brand-navy/[0.02] rounded-xl p-3">
-        {(data?.messages || []).length === 0 && <div className="text-[11px] text-brand-navy/40 text-center py-6">No messages yet — say hello, your counselor replies here (not WhatsApp).</div>}
+        {(data?.messages || []).length === 0 && <div className="text-sm text-brand-navy/40 text-center py-6">No messages yet — say hello, your counselor replies here (not WhatsApp).</div>}
         {(data?.messages || []).map((m:any)=> (
           <div key={m.id} className={`max-w-[85%] rounded-xl px-3 py-2 text-xs ${m.direction==='inbound' ? 'bg-brand-navy text-white ml-auto' : 'bg-white border border-brand-navy/10'}`}>
             <div>{m.body}</div>
-            <div className="text-[9px] opacity-60 mt-1">{new Date(m.createdAt*1000).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })}</div>
+            <div className="text-xs opacity-60 mt-1">{new Date(m.createdAt*1000).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })}</div>
           </div>
         ))}
-        {isLoading && <div className="text-[10px] text-brand-navy/30">Loading…</div>}
+        {isLoading && <div className="text-[13px] text-brand-navy/30">Loading…</div>}
       </div>
       <div className="flex gap-2">
         <input value={body} onChange={e=>setBody(e.target.value)} onKeyDown={e=> e.key==='Enter' && !e.shiftKey && (e.preventDefault(), send())} placeholder="Type a message… (Shift+Enter newline)" className="flex-1 border border-brand-navy/10 rounded-full px-4 py-2 text-xs" />
         <button onClick={send} className="bg-brand-navy text-white px-4 py-2 rounded-full text-xs font-bold">Send</button>
       </div>
-      <p className="text-[10px] text-brand-navy/40">Staff sees this in Inbox → `staff:global:messages` realtime. No email needed.</p>
+      <p className="text-[13px] text-brand-navy/40">Staff sees this in Inbox → `staff:global:messages` realtime. No email needed.</p>
     </div>
   );
 }

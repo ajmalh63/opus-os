@@ -91,16 +91,18 @@ binding = "BUCKET"
 bucket_name = "opusdocs"
 preview_bucket_name = "opusdocs"
 
-# [[queues.producers]]
-# queue = "opusos-jobs-queue"
-# binding = "JOBS_QUEUE"
+[[queues.producers]]
+queue = "opusos-jobs-queue"
+binding = "JOBS_QUEUE"
 
-# [[queues.producers]]
-# queue = "opusos-dlq"
-# binding = "DLQ"
+[[queues.producers]]
+queue = "opusos-dlq"
+binding = "DLQ"
 
-# [[queues.consumers]]
+# [[queues.consumers]] — enable after queue() handler lands (fleet audit H1)
 # queue = "opusos-jobs-queue"
+# max_batch_size = 10
+# max_batch_timeout = 5
 # max_retries = 5
 # dead_letter_queue = "opusos-dlq"
 

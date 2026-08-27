@@ -57,15 +57,15 @@ export default function DepartureCountdown() {
           >
             <div className="min-w-0 pr-2">
               <p className="text-xs font-bold text-brand-navy truncate">{pkg.name}</p>
-              <p className="text-[10px] text-brand-textLight truncate mt-0.5">{pkg.stayInfo}</p>
+              <p className="text-[13px] text-brand-textLight truncate mt-0.5">{pkg.stayInfo}</p>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-[11px] font-semibold text-brand-gold">{pkg.estPrice}</span>
-                <span className="text-[9px] text-brand-textLight">· {pkg.duration}</span>
+                <span className="text-sm font-semibold text-brand-gold">{pkg.estPrice}</span>
+                <span className="text-xs text-brand-textLight">· {pkg.duration}</span>
               </div>
             </div>
 
             <div className="shrink-0 text-right">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2.5 py-0.5 text-[10px] font-bold text-brand-navy">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2.5 py-0.5 text-[13px] font-bold text-brand-navy">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
                 {pkg.statusBadge}
               </span>
@@ -73,7 +73,7 @@ export default function DepartureCountdown() {
           </div>
         ))}
 
-        <div className="rounded-xl bg-brand-navy/5 border border-brand-navy/10 px-3 py-2 flex items-center justify-between text-[10px] text-brand-textLight">
+        <div className="rounded-xl bg-brand-navy/5 border border-brand-navy/10 px-3 py-2 flex items-center justify-between text-[13px] text-brand-textLight">
           <span>Hotel bookings & flight schedules subject to seasonal availability</span>
           <span className="font-bold text-brand-navy">Hyderabad Hub</span>
         </div>

@@ -145,7 +145,7 @@ Your booking for the *${v.packageName || 'Executive Umrah Package'}* has been co
 📅 *Departure Date:* ${v.departureDate || 'Confirmed Departure'}
 👥 *Travellers (Pax):* ${v.paxCount || '1'}
 🏨 *Makkah Hotel:* ${v.hotel || 'Luxury 5-Star (0-100m from Haram)'}
-✈️ *Visa Status:* Processing Under Ministry of Hajj Quota
+🛂 *Visa Status:* Processing Under Ministry of Hajj Quota
 
 Our pilgrim care desk will share your flight tickets and visa documents 7 days before departure.`,
   },

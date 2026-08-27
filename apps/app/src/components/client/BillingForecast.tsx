@@ -38,7 +38,7 @@ export function BillingForecast({
             Financial Ledger & Milestone Settlement
           </span>
           {totalDueRupees > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[10px]">
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[13px]">
               Payment Due
             </span>
           )}
@@ -52,7 +52,7 @@ export function BillingForecast({
 
       <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-brand-navy/10">
         <div className="text-left md:text-right">
-          <div className="text-[10px] text-brand-navy/60 font-semibold uppercase tracking-wider">
+          <div className="text-[13px] text-brand-navy/60 font-semibold uppercase tracking-wider">
             {totalDueRupees > 0 ? 'Amount Payable' : 'Account Balance'}
           </div>
           <div className="text-lg sm:text-xl font-bold font-mono text-brand-navy">

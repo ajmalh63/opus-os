@@ -166,14 +166,14 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
 
       <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
         <div className="space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <h3 className="font-display font-bold text-brand-navy text-sm">🌍 Global Careers</h3>
-              <span className="text-[10px] px-2 py-1 rounded-full bg-brand-navy/[0.06] text-brand-navy/60">Profile → Jobs → Applications</span>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2.5">
+              <h3 className="font-display font-bold text-brand-navy text-base sm:text-lg">🌍 Global Careers</h3>
+              <span className="text-xs px-2.5 py-1 rounded-full bg-brand-navy/[0.06] text-brand-navy/70 font-semibold">Profile → Jobs → Applications</span>
             </div>
-            <div className="flex gap-1 bg-brand-navy/[0.05] p-1 rounded-xl text-[10px] font-bold text-brand-navy/60">
+            <div className="flex gap-1.5 bg-brand-navy/[0.05] p-1.5 rounded-xl text-xs sm:text-sm font-bold text-brand-navy/70">
               {(['profile','jobs','applications'] as const).map(t => (
-                <button key={t} onClick={() => setTab(t)} className={`px-2.5 py-1.5 rounded-lg cursor-pointer transition-all ${tab===t ? 'bg-brand-gold text-brand-navy shadow-sm' : 'hover:text-brand-navy'}`}>
+                <button key={t} onClick={() => setTab(t)} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${tab===t ? 'bg-brand-gold text-brand-navy shadow-sm font-black' : 'hover:text-brand-navy'}`}>
                   {t==='profile' ? `My Profile ${completeness.pct<100 ? `(${completeness.pct}%)` : '✓'}` : t==='jobs' ? 'Open Jobs' : `My Applications ${appsData?.applications?.length ? `(${appsData.applications.length})` : ''}`}
                 </button>
               ))}
@@ -181,80 +181,80 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
           </div>
 
           {tab === 'profile' ? (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {completeness.pct < 100 && (
-                <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3 text-[10px] text-brand-navy/70">
-                  <b>Your career profile is {completeness.pct}% complete.</b> 60%+ unlocks real Match% (not the random demo score) — computed live from <b>Experience (35)</b> + <b>Skills (35)</b> + <b>Trade (15)</b> + <b>Passport/Medical (15)</b>.
-                  {completeness.missing.length>0 && <div className="mt-1 text-brand-navy/50">Missing: {completeness.missing.join(' · ')}</div>}
+                <div className="rounded-2xl border border-brand-gold/40 bg-brand-gold/[0.08] p-4 text-xs sm:text-sm text-brand-navy/80 space-y-1">
+                  <div><b>Your career profile is {completeness.pct}% complete.</b> 60%+ unlocks real Match% (not the random demo score) — computed live from <b>Experience (35)</b> + <b>Skills (35)</b> + <b>Trade (15)</b> + <b>Passport/Medical (15)</b>.</div>
+                  {completeness.missing.length>0 && <div className="text-brand-navy/60">Missing: {completeness.missing.join(' · ')}</div>}
                 </div>
               )}
               <ManpowerProfileWizard initial={profile} onSave={p => saveProfileMutation.mutate(p)} saving={saveProfileMutation.isPending} />
-              <div className="rounded-xl border border-dashed border-brand-navy/15 p-4 space-y-2 bg-brand-navy/[0.02]">
-                <div className="text-[11px] font-bold text-brand-navy">📄 Resume vault (realtime sync)</div>
-                <p className="text-[10px] text-brand-navy/50">Upload once — visible instantly to recruiters, staff desk, and your Documents workspace. Max 5MB, PDF/DOCX/JPG.</p>
-                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-navy text-white text-xs font-bold cursor-pointer hover:bg-brand-navy/90">
+              <div className="rounded-2xl border border-dashed border-brand-navy/15 p-5 space-y-3 bg-brand-navy/[0.02]">
+                <div className="text-sm font-bold text-brand-navy">📄 Resume vault (realtime sync)</div>
+                <p className="text-xs sm:text-sm text-brand-navy/60">Upload once — visible instantly to recruiters, staff desk, and your Documents workspace. Max 5MB, PDF/DOCX/JPG.</p>
+                <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-xs sm:text-sm font-bold cursor-pointer hover:bg-brand-navy/90 transition-all">
                   <input type="file" className="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={e => { const f=e.target.files?.[0]; if (f) uploadResume(f); }} />
                   {profile.resumeName ? `↻ Replace resume (${profile.resumeName})` : '+ Upload resume'}
                 </label>
-                {profile.resumeName && <div className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1 inline-block ml-2">✓ {profile.resumeName}</div>}
+                {profile.resumeName && <div className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 inline-block ml-3">✓ {profile.resumeName}</div>}
               </div>
             </div>
           ) : tab === 'applications' ? (
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {(appsData?.applications || []).length===0 ? (
-                <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-8 text-center text-xs text-brand-navy/40">No applications yet — complete your profile and apply to an opening. Staff dispatch & kanban sync in realtime (30s poll + invalidations).</div>
+                <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-10 text-center text-sm text-brand-navy/50">No applications yet — complete your profile and apply to an opening. Staff dispatch & kanban sync in realtime (30s poll + invalidations).</div>
               ) : (appsData!.applications.map((a:any) => (
-                <div key={a.id} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-2 text-xs">
-                  <div className="flex items-start justify-between gap-2">
-                    <div><div className="font-bold text-brand-navy">{a.jobTitle}</div><div className="text-[10px] text-brand-navy/40">{a.jobCountry} · {a.selectionStatus} · Match {a.matchScore}% ({a.matchTier})</div></div>
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${a.matchTier==='top_match'?'bg-emerald-500/15 text-emerald-700':a.matchTier==='standard'?'bg-amber-500/15 text-amber-700':'bg-slate-100 text-slate-500'}`}>{a.matchTier.replace('_',' ')}</span>
+                <div key={a.id} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-2.5 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div><div className="font-bold text-brand-navy text-base">{a.jobTitle}</div><div className="text-xs text-brand-navy/50 mt-0.5">{a.jobCountry} · {a.selectionStatus} · Match {a.matchScore}% ({a.matchTier})</div></div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${a.matchTier==='top_match'?'bg-emerald-500/15 text-emerald-700':a.matchTier==='standard'?'bg-amber-500/15 text-amber-700':'bg-slate-100 text-slate-600'}`}>{a.matchTier.replace('_',' ')}</span>
                   </div>
-                  {(a.matchStrengths?.length || a.matchGaps?.length) ? <div className="text-[10px] text-brand-navy/60 bg-brand-navy/[0.03] rounded-lg px-2.5 py-1.5">{a.matchStrengths?.length ? <span className="text-emerald-700">✓ {a.matchStrengths.join(' · ')}</span> : null}{a.matchGaps?.length ? <span className="text-amber-700 ml-2">○ {a.matchGaps.join(' · ')}</span> : null}</div> : null}
+                  {(a.matchStrengths?.length || a.matchGaps?.length) ? <div className="text-xs text-brand-navy/70 bg-brand-navy/[0.03] rounded-xl px-3 py-2">{a.matchStrengths?.length ? <span className="text-emerald-700 font-semibold">✓ {a.matchStrengths.join(' · ')}</span> : null}{a.matchGaps?.length ? <span className="text-amber-700 font-semibold ml-3">○ {a.matchGaps.join(' · ')}</span> : null}</div> : null}
                 </div>
               )))}
             </div>
           ) : (
             <>
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <p className="text-[11px] text-slate-500">Direct hiring · Zero sub-agents · Real Match% computed live from your profile</p>
-              <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold">Live</span>
+              <p className="text-xs sm:text-sm text-slate-600">Direct hiring · Zero sub-agents · Real Match% computed live from your profile</p>
+              <span className="text-xs px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold">Live</span>
             </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <input
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Search role or trade, e.g. Welder, Nurse, Driver"
-              className="rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs text-brand-navy placeholder:text-slate-400 outline-none focus:border-brand-gold focus:bg-white"
+              className="rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-brand-navy placeholder:text-slate-400 outline-none focus:border-brand-gold focus:bg-white"
             />
             <select
               value={country}
               onChange={e => setCountry(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-brand-navy cursor-pointer focus:border-brand-gold outline-none"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-brand-navy cursor-pointer focus:border-brand-gold outline-none"
             >
               <option value="">All countries ({countries.length})</option>
               {countries.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <div className="text-[11px] text-slate-500 flex items-center bg-slate-50 border border-slate-200/80 rounded-xl px-3">
+            <div className="text-xs text-slate-600 flex items-center bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2">
               <span>Direct Hiring · Zero Unofficial Sub-Agents</span>
             </div>
           </div>
 
           {!isProfileReady && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 flex items-center justify-between gap-3">
-              <div className="text-[11px] text-amber-800"><b>Complete your profile ({completeness.pct}%) to see real Match%.</b> Right now cards show a demo estimate (35%). <span className="text-amber-700">Takes 2 mins — same wizard as Study Abroad.</span></div>
-              <button onClick={() => setTab('profile')} className="shrink-0 px-4 py-2 rounded-lg bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy/90 cursor-pointer">Complete profile →</button>
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-center justify-between gap-4">
+              <div className="text-xs sm:text-sm text-amber-800"><b>Complete your profile ({completeness.pct}%) to see real Match%.</b> Right now cards show a demo estimate (35%). <span className="text-amber-700">Takes 2 mins — same wizard as Study Abroad.</span></div>
+              <button onClick={() => setTab('profile')} className="shrink-0 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-xs sm:text-sm font-bold hover:bg-brand-navy/90 cursor-pointer transition-all">Complete profile →</button>
             </div>
           )}
 
 {isLoading ? (
-              <div className="py-8 text-center text-xs text-slate-400">Loading live openings…</div>
+              <div className="py-10 text-center text-sm text-slate-400">Loading live openings…</div>
             ) : jobs.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-xs text-slate-500">
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
                 No jobs match your filter. Try broader terms or check back shortly.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {jobs.map((j: any) => {
                 const real = computeManpowerMatchFrontend(profile, j);
                 const match = isProfileReady ? real.score : 35;
@@ -271,37 +271,37 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
                   return null;
                 })();
                 return (
-                  <div key={j.id} className="group rounded-2xl border border-slate-200 bg-white p-5 flex flex-col justify-between gap-4 shadow-sm hover:border-brand-gold/30 hover:shadow-md transition-all duration-300">
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-display font-bold text-sm text-slate-800 leading-snug min-w-0 flex-1">{j.title}</h3>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border shrink-0 ${tier==='top_match' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : tier==='standard' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`} title={isProfileReady ? real.tier : 'Complete profile for real score'}>Match {match}%</span>
+                  <div key={j.id} className="group rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 flex flex-col justify-between gap-4 shadow-sm hover:border-brand-gold/30 hover:shadow-md transition-all duration-300">
+                    <div className="space-y-2.5">
+                      <div className="flex items-start justify-between gap-2.5">
+                        <h3 className="font-display font-bold text-base sm:text-lg text-slate-800 leading-snug min-w-0 flex-1">{j.title}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-extrabold border shrink-0 ${tier==='top_match' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : tier==='standard' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`} title={isProfileReady ? real.tier : 'Complete profile for real score'}>Match {match}%</span>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-[10px]">
-                        <span className="bg-slate-100 text-slate-600 rounded px-2 py-0.5 font-mono border border-slate-200">{j.country}</span>
-                        <span className="bg-slate-100 text-slate-600 rounded px-2 py-0.5">{j.sector}</span>
-                        <span className="bg-brand-gold/10 text-amber-700 rounded px-2 py-0.5 font-bold capitalize border border-amber-200">{collarLabel}</span>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="bg-slate-100 text-slate-700 rounded-md px-2.5 py-1 font-mono border border-slate-200">{j.country}</span>
+                        <span className="bg-slate-100 text-slate-700 rounded-md px-2.5 py-1 font-medium">{j.sector}</span>
+                        <span className="bg-brand-gold/10 text-amber-800 rounded-md px-2.5 py-1 font-bold capitalize border border-amber-200">{collarLabel}</span>
                       </div>
                       {j.description && (
-                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{j.description}</p>
+                        <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed">{j.description}</p>
                       )}
                     </div>
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-3 gap-2">
-                      <span className="text-brand-gold font-bold text-sm truncate">
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-3.5 gap-3">
+                      <span className="text-brand-gold font-bold text-sm sm:text-base truncate">
                         {j.salaryText || 'Salary on appointment'}
-                        {salaryINR && <span className="font-medium text-slate-500 text-[11px]">{salaryINR}</span>}
+                        {salaryINR && <span className="font-medium text-slate-500 text-xs sm:text-sm ml-1.5">{salaryINR}</span>}
                       </span>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2.5 shrink-0">
                         <button
                           onClick={() => setSelectedJob(j)}
-                          className="hidden sm:inline-flex px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[11px] font-bold text-brand-navy hover:bg-white hover:border-brand-gold transition cursor-pointer"
+                          className="hidden sm:inline-flex px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-brand-navy hover:bg-white hover:border-brand-gold transition cursor-pointer"
                         >
                           View Details
                         </button>
                         <button
                           onClick={() => applyMutation.mutate({ jobId: j.id })}
                           disabled={applyMutation.isPending}
-                          className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-[11px] font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30 cursor-pointer shadow-sm"
+                          className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-xs font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30 cursor-pointer shadow-sm"
                         >
                           {applyMutation.isPending ? 'Submitting…' : '⚡ Quick Apply'}
                         </button>
@@ -310,7 +310,7 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
                     <div className="sm:hidden flex gap-2">
                       <button
                         onClick={() => setSelectedJob(j)}
-                        className="flex-1 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[11px] font-bold text-brand-navy hover:bg-white transition cursor-pointer"
+                        className="flex-1 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-brand-navy hover:bg-white transition cursor-pointer"
                       >
                         View Details
                       </button>
@@ -328,19 +328,19 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
       {/* Detailed Job Modal */}
       {selectedJob && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-fadeIn">
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
-                <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest block">Position Overview</span>
-                <h3 className="font-display font-black text-base text-brand-navy mt-1">{selectedJob.title}</h3>
-                <div className="text-xs text-slate-500 font-medium mt-0.5">{selectedJob.country} · {selectedJob.sector}</div>
+                <span className="text-xs font-bold text-brand-gold uppercase tracking-widest block">Position Overview</span>
+                <h3 className="font-display font-black text-lg sm:text-xl text-brand-navy mt-1">{selectedJob.title}</h3>
+                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">{selectedJob.country} · {selectedJob.sector}</div>
               </div>
-              <button onClick={() => setSelectedJob(null)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold hover:bg-slate-200 flex items-center justify-center cursor-pointer">✕</button>
+              <button onClick={() => setSelectedJob(null)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold hover:bg-slate-200 flex items-center justify-center cursor-pointer text-base">✕</button>
             </div>
 
-            <div className="space-y-3 text-xs text-slate-600">
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5">
-                <div className="font-bold text-brand-navy">Compensation & Contract</div>
+            <div className="space-y-4 text-xs sm:text-sm text-slate-600">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                <div className="font-bold text-brand-navy text-sm">Compensation & Contract</div>
                 <div>Salary: <strong className="text-slate-800">{selectedJob.salaryText || 'Standard Industry Grade'}</strong></div>
                 <div>Visa & Medical: <strong className="text-slate-800">Employer Sponsored</strong></div>
                 <div>Accommodation: <strong className="text-slate-800">Provided / Allowance Included</strong></div>
@@ -348,23 +348,23 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
 
               {selectedJob.description && (
                 <div>
-                  <div className="font-bold text-brand-navy mb-1">Job Description</div>
-                  <p className="leading-relaxed whitespace-pre-line">{selectedJob.description}</p>
+                  <div className="font-bold text-brand-navy text-sm mb-1.5">Job Description</div>
+                  <p className="leading-relaxed whitespace-pre-line text-slate-700">{selectedJob.description}</p>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
               <button
                 onClick={() => setSelectedJob(null)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Close
               </button>
               <button
                 onClick={() => applyMutation.mutate({ jobId: selectedJob.id })}
                 disabled={applyMutation.isPending}
-                className="px-5 py-2.5 rounded-xl bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-xs sm:text-sm font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {applyMutation.isPending ? 'Submitting Application…' : 'Submit Application →'}
               </button>
@@ -373,7 +373,7 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
         </div>
       )}
 
-      <div className="text-[11px] text-slate-400">
+      <div className="text-xs text-slate-500">
         All placements comply with MEA Overseas Employment norms. No unauthorized fees are charged to job seekers.
       </div>
     </div>

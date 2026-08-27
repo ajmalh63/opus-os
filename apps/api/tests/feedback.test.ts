@@ -150,5 +150,42 @@ describe('Feedback, 5-Star Ratings & Moderation Engine (§70)', () => {
     expect(data.reviews.length).toBeGreaterThanOrEqual(1);
     expect(data.reviews[0].clientName).toContain('Aarav P.');
     expect(data.reviews[0].rating).toBe(5);
+    expect(data.summary).toBeDefined();
+    expect(data.schemaJsonLd).toBeDefined();
+    expect(data.schemaJsonLd['@type']).toBe('EducationalOrganization');
+    expect(data.schemaJsonLd.aggregateRating).toBeDefined();
+  });
+
+  it('PATCH /api/admin/feedback/:id/feature allows Superadmin to toggle featured status', async () => {
+    const res = await app.request(`/api/admin/feedback/${createdFeedbackId}/feature`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        cookie: 'better-auth.session_token=token-admin',
+      },
+      body: JSON.stringify({ isFeatured: true }),
+    }, env);
+
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(data.isFeatured).toBe(true);
+  });
+
+  it('POST /api/admin/reviews/sync gracefully handles sync requests and informs about missing secrets', async () => {
+    const res = await app.request('/api/admin/reviews/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        cookie: 'better-auth.session_token=token-admin',
+      },
+      body: JSON.stringify({ minRating: 4, limit: 20 }),
+    }, env);
+
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(data.results).toBeDefined();
   });
 });
+

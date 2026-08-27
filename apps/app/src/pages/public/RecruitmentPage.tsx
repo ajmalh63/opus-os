@@ -329,7 +329,7 @@ export default function RecruitmentPage() {
                       <p className="font-display text-xs font-bold uppercase tracking-wider text-brand-gold">Building Verified Network</p>
                       <p className="font-display text-sm font-extrabold text-brand-navy">Building Verified Network</p>
                     </div>
-                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
+                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-2.5 py-1 text-[13px] font-bold font-mono">
                       ● Active Drives
                     </span>
                   </div>
@@ -346,22 +346,22 @@ export default function RecruitmentPage() {
           <div>
             <span className="text-2xl mb-1 block">📜</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Verified Network — Building in Public</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Licensed Sourcing Partner</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Licensed Sourcing Partner</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">💰</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Zero Fake Listings</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Building Verified Network</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Building Verified Network</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">🏥</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Contract Benefit Packages</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Housing, Travel & Visa Sourced</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Housing, Travel & Visa Sourced</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">🤝</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Pre-Departure Training</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Workplace & Cultural Orientation</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Workplace & Cultural Orientation</p>
           </div>
         </div>
       </section>
@@ -380,10 +380,10 @@ export default function RecruitmentPage() {
               <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-white/40">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-brand-gold">MEA Licensed Agency Network</p>
+                    <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">MEA Licensed Agency Network</p>
                     <p className="text-xs sm:text-sm font-extrabold text-brand-navy">Building Verified Network</p>
                   </div>
-                  <span className="rounded-full bg-rose-500/15 text-rose-800 px-2.5 py-1 text-[10px] font-bold font-mono">
+                  <span className="rounded-full bg-rose-500/15 text-rose-800 px-2.5 py-1 text-[13px] font-bold font-mono">
                     ● Zero Advance Fee
                   </span>
                 </div>
@@ -422,7 +422,7 @@ export default function RecruitmentPage() {
               </div>
 
               <div className="clay-card p-4 flex items-start gap-3.5 border-l-4 border-l-emerald-600">
-                <span className="text-xl">✈️</span>
+                <span className="text-xl">🧳</span>
                 <div>
                   <h3 className="font-display text-sm font-bold text-brand-navy">POE Emigration & Complete Deployment Support</h3>
                   <p className="text-xs text-brand-textLight leading-relaxed mt-0.5">Protector of Emigrants (POE) clearance, GAMCA medicals, visa stamping, and pre-departure workplace orientation.</p>
@@ -436,7 +436,7 @@ export default function RecruitmentPage() {
       {/* LIVE GLOBAL JOB BOARD (Connected to /api/public/jobs) */}
       <section id="job-board" className="mx-auto max-w-7xl px-5 sm:px-6 py-20 sm:py-24">
         <div className="mb-12 text-center space-y-3">
-          <span className="rounded-full bg-brand-gold/15 border border-brand-gold/30 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-gold font-mono">
+          <span className="rounded-full bg-brand-gold/15 border border-brand-gold/30 px-3.5 py-1 text-sm font-bold uppercase tracking-wider text-brand-gold font-mono">
             Active Employer Demands
           </span>
           <h2 className="font-display fluid-h2 font-bold text-brand-navy">
@@ -484,7 +484,7 @@ export default function RecruitmentPage() {
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="clay-card p-12 text-center text-brand-textLight max-w-lg mx-auto space-y-2">
-            <span className="inline-block rounded-full bg-brand-gold/15 text-brand-navy px-3 py-1 font-mono text-[10px] font-bold">
+            <span className="inline-block rounded-full bg-brand-gold/15 text-brand-navy px-3 py-1 font-mono text-[13px] font-bold">
               ● Live Employer Drives Scheduling
             </span>
             <p className="font-bold text-brand-navy text-sm">Direct Employer Quotas Opening for This Sector</p>
@@ -512,12 +512,12 @@ export default function RecruitmentPage() {
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {(j.perks || []).slice(0, 3).map((p, i) => (
-                        <span key={i} className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold">✓ {p}</span>
+                        <span key={i} className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[13px] font-semibold">✓ {p}</span>
                       ))}
                     </div>
                   </div>
                   <div className="mt-6 pt-4 border-t border-brand-navy/5 flex items-center justify-between">
-                    <span className="text-[11px] font-medium text-emerald-700">● Immediate Visa Processing</span>
+                    <span className="text-sm font-medium text-emerald-700">● Immediate Visa Processing</span>
                     <button
                       onClick={() => { setSelectedJob(j); document.getElementById('apply-form')?.scrollIntoView({ behavior: 'smooth' }); }}
                       className="cursor-pointer rounded-full bg-brand-navy px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all shadow-xs"
@@ -529,7 +529,7 @@ export default function RecruitmentPage() {
               ))}
             </div>
             <div className="md:hidden -mt-2 mb-2 flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-navy/35">
+              <span className="inline-flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wider text-brand-navy/35">
                 <span className="w-4 h-0.5 bg-brand-gold/30 rounded-full" /> Swipe to explore <span className="animate-pulse">→</span>
               </span>
               <div className="flex items-center gap-1.5">
@@ -565,10 +565,10 @@ export default function RecruitmentPage() {
                     </p>
 
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Included Benefits:</p>
+                      <p className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Included Benefits:</p>
                       <div className="flex flex-wrap gap-1.5">
                         {(j.perks || []).map((p, i) => (
-                          <span key={i} className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold">
+                          <span key={i} className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[13px] font-semibold">
                             ✓ {p}
                           </span>
                         ))}
@@ -577,7 +577,7 @@ export default function RecruitmentPage() {
                   </div>
 
                   <div className="mt-6 pt-4 border-t border-brand-navy/5 flex items-center justify-between">
-                    <span className="text-[11px] font-medium text-emerald-700">● Immediate Visa Processing</span>
+                    <span className="text-sm font-medium text-emerald-700">● Immediate Visa Processing</span>
                     <button
                       onClick={() => {
                         setSelectedJob(j);
@@ -612,22 +612,22 @@ export default function RecruitmentPage() {
             <form onSubmit={handleApplyJob} className="space-y-4 lead-form-wrap">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Candidate Full Name</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Candidate Full Name</label>
                   <input required placeholder="As shown on Passport / Aadhaar" value={candidateName} onChange={(e) => setCandidateName(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">WhatsApp Mobile Number</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">WhatsApp Mobile Number</label>
                   <input required type="tel" placeholder="+91 98765 00001" value={candidatePhone} onChange={(e) => setCandidatePhone(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
                   <input required type="email" placeholder="you@example.com" value={candidateEmail} onChange={(e) => setCandidateEmail(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Years of Experience</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Years of Experience</label>
                   <select value={experienceYears} onChange={(e) => setExperienceYears(e.target.value)}>
                     <option>0-1 year (Fresh Graduate)</option>
                     <option>2-4 years</option>
@@ -636,7 +636,7 @@ export default function RecruitmentPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Highest Qualification</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Highest Qualification</label>
                   <select value={qualification} onChange={(e) => setQualification(e.target.value)}>
                     <option value="diploma">Diploma / ITI Technical</option>
                     <option value="bachelor">Bachelor's Degree (BE / B.Sc)</option>
@@ -646,7 +646,7 @@ export default function RecruitmentPage() {
               </div>
 
               <div className="pt-2">
-                <label className="flex items-start gap-3 text-[11px] leading-relaxed text-brand-textLight cursor-pointer">
+                <label className="flex items-start gap-3 text-sm leading-relaxed text-brand-textLight cursor-pointer">
                   <input
                     type="checkbox"
                     checked={consent}

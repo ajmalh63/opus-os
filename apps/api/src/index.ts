@@ -72,6 +72,7 @@ import { attestationGoldRouter } from './routes/attestationGold.js';
 import { partnerGoldRouter } from './routes/partnerGold.js';
 import { v1ApiRouter } from './routes/v1/index.js';
 import { feedbackRouter } from './routes/feedback.js';
+import { standardOrderRouter, standardVerifyRouter } from './routes/razorpayStandard.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
@@ -171,8 +172,11 @@ app.use('/api/public/portal/manpower/*', rateLimit({ bucket: 'portal-manpower', 
 app.route('/api/public/portal/manpower', portalManpowerRouter);
 // Client-portal Umrah services (Phase 3): package inventory, calendar, ₹500 advance booking
 app.use('/api/public/portal/umrah/*', rateLimit({ bucket: 'portal-umrah', windowSeconds: 300, limit: 300 }));
+app.use('/api/public/portal/tours/*', rateLimit({ bucket: 'portal-umrah', windowSeconds: 300, limit: 300 }));
 app.use('/api/public/portal/umrah/departures/*/book', turnstileVerify);
+app.use('/api/public/portal/tours/departures/*/book', turnstileVerify);
 app.route('/api/public/portal/umrah', portalUmrahRouter);
+app.route('/api/public/portal/tours', portalUmrahRouter);
 // Client self-service agreement e-sign (Phase A §3 — token-based, no session):
 // list agreements, request OTP, sign (typed / wet_ink / otp)
 // Public agreement e-sign (OTP + sign) — rate-limited (anti brute-force on the
@@ -201,6 +205,14 @@ app.route('/api/webhooks/listmonk', listmonkWebhookRouter);
 app.route('/api/webhooks/mautic', mauticWebhookRouter);
 // Razorpay webhook (Section 44) - gateway POSTs here with HMAC; no session auth
 app.route('/api/public/payments/razorpay/webhook', razorpayWebhookRouter);
+
+// Razorpay Standard Web Checkout (generic orders + verification)
+app.use('/api/create-order', rateLimit({ bucket: 'razorpay-orders', windowSeconds: 300, limit: 120 }));
+app.route('/api/create-order', standardOrderRouter);
+app.route('/api/payments/create-order', standardOrderRouter);
+app.use('/api/verify-payment', rateLimit({ bucket: 'razorpay-verify', windowSeconds: 300, limit: 120 }));
+app.route('/api/verify-payment', standardVerifyRouter);
+app.route('/api/payments/verify-payment', standardVerifyRouter);
 // Cal.com webhook (consultation scheduling) - public, secret-verified
 // Cal.com webhook — rate-limited (anti-flood) + HMAC-verified.
 // Rate limit MUST be registered before the router mount or it never fires.
@@ -222,8 +234,28 @@ app.use('/api/agreements/*', rbacMiddleware(['super_admin', 'manager', 'counselo
 app.use('/api/payments', rbacMiddleware(['super_admin', 'manager'], true));
 app.use('/api/payments/*', rbacMiddleware(['super_admin', 'manager'], true, ['payments:enter']));
 
-app.use('/api/umrah', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
-app.use('/api/umrah/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+// Tours & Travels alias — canonical is /api/tours, /api/umrah kept as fallback (zero DB churn, umrah key retained)
+// Partner can READ live pricing/manifests (GET), writes remain staff-only
+app.use('/api/umrah', async (c: any, next: any) => {
+  const isRead = c.req.method === 'GET';
+  const roles = isRead ? ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator', 'partner'] : ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'];
+  return (rbacMiddleware as any)(roles, true)(c, next);
+});
+app.use('/api/umrah/*', async (c: any, next: any) => {
+  const isRead = c.req.method === 'GET';
+  const roles = isRead ? ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator', 'partner'] : ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'];
+  return (rbacMiddleware as any)(roles, true)(c, next);
+});
+app.use('/api/tours', async (c: any, next: any) => {
+  const isRead = c.req.method === 'GET';
+  const roles = isRead ? ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator', 'partner'] : ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'];
+  return (rbacMiddleware as any)(roles, true)(c, next);
+});
+app.use('/api/tours/*', async (c: any, next: any) => {
+  const isRead = c.req.method === 'GET';
+  const roles = isRead ? ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator', 'partner'] : ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'];
+  return (rbacMiddleware as any)(roles, true)(c, next);
+});
 
 app.use('/api/transit', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/transit/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
@@ -281,6 +313,7 @@ app.use('/api/transactions', rbacMiddleware(['super_admin', 'manager', 'counselo
 app.use('/api/transactions/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true, ['billing:enter']));
 app.route('/api/transactions', transactionsRouter);
 app.route('/api/umrah', umrahRouter);
+app.route('/api/tours', umrahRouter);
 app.route('/api/transit', transitRouter);
 app.route('/api/manpower', manpowerRouter);
 
@@ -361,8 +394,6 @@ app.get('/api/health', async (c) => {
   return c.json({ status: 'healthy', timestamp: Date.now() });
 });
 
-export default app;
-export type AppType = typeof app;
 // Durable Object for Team Hub chat rooms (A5.5) — must be exported for wrangler
 // to route DO traffic to the class.
 export { TeamHubRoom } from './routes/teamHub.js';
@@ -560,3 +591,5 @@ app.route('/api/v1', v1ApiRouter);
 };
 type HeartbeatEnvLike = Parameters<typeof runHeartbeat>[0];
 
+export default app;
+export type AppType = typeof app;

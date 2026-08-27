@@ -28,6 +28,7 @@ v1ApiRouter.route('/clients', v1ClientsRouter);
 v1ApiRouter.route('/study-abroad', v1StudyAbroadRouter);
 v1ApiRouter.route('/visas', v1VisasRouter);
 v1ApiRouter.route('/umrah', v1UmrahRouter);
+v1ApiRouter.route('/tours', v1UmrahRouter);
 v1ApiRouter.route('/attestation', v1AttestationRouter);
 v1ApiRouter.route('/recruitment', v1RecruitmentRouter);
 v1ApiRouter.route('/bookings', v1BookingsRouter);
@@ -44,9 +45,9 @@ v1ApiRouter.get('/openapi.json', (c) => {
     openapi: '3.1.0',
     info: {
       title: 'Opus OS Complete Enterprise REST API',
-      version: '1.0.0',
+      version: '1.1.0',
       description:
-        'Official REST API covering 100% of Opus OS applications: Admissions, Visas, Sacred Umrah, Attestation, Recruitment, Client 360, Appointments, Payments, Documents, Affiliates, Messaging, and Webhooks.',
+        'Official REST API covering 100% of Opus OS applications: Admissions (Gate 80% + 9 English tests), Visas, Tours & Travels (Umrah alias), Attestation, Recruitment, Client 360, Appointments, Payments, Documents, Affiliates, Messaging, Tours Quotations, and Webhooks. Umrah ↔ Tours alias (backward compat).',
       contact: { name: 'Opus Overseas API Desk', email: 'info@opusoverseas.com' },
     },
     servers: [{ url: 'https://app.opusoverseas.com/api/v1', description: 'Production Gateway' }],
@@ -73,11 +74,14 @@ v1ApiRouter.get('/openapi.json', (c) => {
         patch: { summary: 'Advance client pipeline stage', tags: ['CRM & Leads'] },
       },
       '/study-abroad/match': {
-        post: { summary: 'Live university profile match engine', tags: ['Study Abroad'] },
+        post: { summary: 'Live university profile match engine (9 English tests: IELTS/TOEFL/PTE/Duolingo/Cambridge/LanguageCert/OET/TOEIC/Other, normalized to IELTS bands)', tags: ['Study Abroad'] },
       },
       '/study-abroad/applications': {
         get: { summary: 'List university applications', tags: ['Study Abroad'] },
-        post: { summary: 'Submit application snapshot', tags: ['Study Abroad'] },
+        post: { summary: 'Submit application snapshot (gate: 80% profile + booked Strategy Session required for docs_ready/submitted)', tags: ['Study Abroad'] },
+      },
+      '/study-abroad/gate': {
+        get: { summary: 'Get Strategy Session gate state (80% + booking status + prefilled Cal URL)', tags: ['Study Abroad'] },
       },
       '/visas/applications': {
         get: { summary: 'List visa applications', tags: ['Visas & Immigration'] },
@@ -86,13 +90,25 @@ v1ApiRouter.get('/openapi.json', (c) => {
         patch: { summary: 'Update visa application status', tags: ['Visas & Immigration'] },
       },
       '/umrah/packages': {
-        get: { summary: 'List Umrah packages with room tiers', tags: ['Umrah Pilgrimage'] },
+        get: { summary: 'List Umrah packages with room tiers (alias: /tours/packages)', tags: ['Tours & Travels'] },
       },
       '/umrah/departures': {
-        get: { summary: 'List group departure seat availability', tags: ['Umrah Pilgrimage'] },
+        get: { summary: 'List group departure seat availability (alias: /tours/departures)', tags: ['Tours & Travels'] },
       },
       '/umrah/bookings': {
-        post: { summary: 'Create party booking and hold seats', tags: ['Umrah Pilgrimage'] },
+        post: { summary: 'Create party booking and hold seats (alias: /tours/bookings)', tags: ['Tours & Travels'] },
+      },
+      '/tours/packages': {
+        get: { summary: 'List Tours & Travels packages with room tiers (canonical, Umrah alias)', tags: ['Tours & Travels'] },
+      },
+      '/tours/departures': {
+        get: { summary: 'List group departure seat availability (canonical)', tags: ['Tours & Travels'] },
+      },
+      '/tours/bookings': {
+        post: { summary: 'Create party booking and hold seats (canonical)', tags: ['Tours & Travels'] },
+      },
+      '/tours/quote': {
+        post: { summary: 'Dispatch official Pax & Rooming quotation on WhatsApp (Utility template, waOutbox)', tags: ['Tours & Travels'] },
       },
       '/attestation/rate-cards': {
         get: { summary: 'List indicative rate cards by destination country', tags: ['Attestation'] },

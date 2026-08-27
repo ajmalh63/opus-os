@@ -20,7 +20,7 @@ const TABS = [
 
 function ScoreBadge({ score }: { score: number }) {
   const cls = score >= 80 ? 'bg-emerald-500/15 text-emerald-700' : score >= 50 ? 'bg-amber-500/15 text-amber-700' : 'bg-rose-500/15 text-rose-600';
-  return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${cls}`}>{score}/100</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-[13px] font-bold ${cls}`}>{score}/100</span>;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -77,14 +77,14 @@ function SeoTab() {
               </div>
               <div className="mt-1.5 flex flex-wrap gap-1">
                 {p.issues.map((i: any, idx: number) => (
-                  <span key={idx} className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${i.level === 'critical' ? 'bg-rose-500/15 text-rose-600' : i.level === 'high' ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{i.label}</span>
+                  <span key={idx} className={`px-1.5 py-0.5 rounded text-sm font-bold uppercase ${i.level === 'critical' ? 'bg-rose-500/15 text-rose-600' : i.level === 'high' ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{i.label}</span>
                 ))}
-                {p.issues.length === 0 && <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-emerald-500/15 text-emerald-700">✓ All good</span>}
+                {p.issues.length === 0 && <span className="px-1.5 py-0.5 rounded text-sm font-bold uppercase bg-emerald-500/15 text-emerald-700">✓ All good</span>}
               </div>
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-brand-navy/40">Gold-standard checks: title ≤70 chars · meta ≤165 · OG tags · valid JSON-LD. Sitemap: <code className="font-mono">/sitemap.xml</code> · Robots: <code className="font-mono">/robots.txt</code> (AI crawlers allowed, training crawlers blocked).</p>
+        <p className="text-[13px] text-brand-navy/40">Gold-standard checks: title ≤70 chars · meta ≤165 · OG tags · valid JSON-LD. Sitemap: <code className="font-mono">/sitemap.xml</code> · Robots: <code className="font-mono">/robots.txt</code> (AI crawlers allowed, training crawlers blocked).</p>
       </Section>
 
       <Section title="Page Meta & Structured Data Manager">
@@ -94,9 +94,9 @@ function SeoTab() {
               <button key={p.route} onClick={() => { setEditing(p); setForm({ title: p.title, metaDescription: p.metaDescription, ogTitle: p.ogTitle, ogImage: p.ogImage, schemaJson: p.schemaJson }); }} className="text-left rounded-xl border border-brand-navy/10 p-3 hover:border-brand-gold/50 transition-all cursor-pointer">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-brand-navy">{p.label}</span>
-                  <span className={`text-[9px] font-bold ${p.hasMeta && p.hasSchema ? 'text-emerald-600' : 'text-amber-600'}`}>{p.hasMeta && p.hasSchema ? '✓ Complete' : '⚠ Incomplete'}</span>
+                  <span className={`text-xs font-bold ${p.hasMeta && p.hasSchema ? 'text-emerald-600' : 'text-amber-600'}`}>{p.hasMeta && p.hasSchema ? '✓ Complete' : '⚠ Incomplete'}</span>
                 </div>
-                <div className="text-[10px] text-brand-navy/40 mt-0.5 truncate">{p.title || 'No title yet — click to edit'}</div>
+                <div className="text-[13px] text-brand-navy/40 mt-0.5 truncate">{p.title || 'No title yet — click to edit'}</div>
               </button>
             ))}
           </div>
@@ -104,7 +104,7 @@ function SeoTab() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-brand-navy">Editing: {editing.label} <span className="font-mono text-brand-navy/40">{editing.route}</span></span>
-              <button onClick={() => setEditing(null)} className="text-[10px] font-bold text-brand-navy/50 hover:text-brand-navy cursor-pointer">✕ Cancel</button>
+              <button onClick={() => setEditing(null)} className="text-[13px] font-bold text-brand-navy/50 hover:text-brand-navy cursor-pointer">✕ Cancel</button>
             </div>
             <input value={form.title || ''} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Title tag (≤70 chars)" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
             <textarea value={form.metaDescription || ''} onChange={e => setForm({ ...form, metaDescription: e.target.value })} placeholder="Meta description (≤165 chars)" rows={2} className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
@@ -130,11 +130,11 @@ function SeoTab() {
               <span className="text-brand-navy font-semibold">{k.keyword} <span className="text-brand-navy/40">· {k.targetUrl || '—'}</span></span>
               <span className="flex items-center gap-2">
                 {k.volume ? <span className="text-brand-navy/40">vol {k.volume}</span> : null}
-                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${k.position && k.position <= 10 ? 'bg-emerald-500/15 text-emerald-700' : k.position ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{k.position ? `#${k.position}` : 'untracked'}</span>
+                <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${k.position && k.position <= 10 ? 'bg-emerald-500/15 text-emerald-700' : k.position ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{k.position ? `#${k.position}` : 'untracked'}</span>
               </span>
             </div>
           ))}
-          {(kw?.keywords || []).length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-2">No keywords tracked yet.</p>}
+          {(kw?.keywords || []).length === 0 && <p className="text-[13px] text-brand-navy/40 text-center py-2">No keywords tracked yet.</p>}
         </div>
       </Section>
     </div>
@@ -194,11 +194,11 @@ function AeoTab() {
               <span className={`mt-0.5 text-sm ${c.mentioned ? '' : 'grayscale opacity-40'}`}>{c.mentioned ? '✅' : '❌'}</span>
               <div className="flex-1">
                 <div className="text-brand-navy font-semibold">{c.query} <span className="text-brand-navy/40">· {c.engine} · {new Date(c.checkedAt * 1000).toLocaleString()}</span></div>
-                <div className="text-[10px] text-brand-navy/50 mt-0.5">{c.snippet}</div>
+                <div className="text-[13px] text-brand-navy/50 mt-0.5">{c.snippet}</div>
               </div>
             </div>
           ))}
-          {(checks?.checks || []).length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-2">No checks yet — run your first citation check above.</p>}
+          {(checks?.checks || []).length === 0 && <p className="text-[13px] text-brand-navy/40 text-center py-2">No checks yet — run your first citation check above.</p>}
         </div>
       </Section>
 
@@ -214,8 +214,8 @@ function AeoTab() {
           {(passages?.passages || []).map((p: any) => (
             <div key={p.id} className="bg-brand-navy/[0.06] border border-brand-navy/10 rounded px-3 py-2 text-xs">
               <div className="text-brand-navy font-semibold">{p.title} <span className="text-brand-navy/40">→ {p.targetQuery}</span></div>
-              <div className="text-[10px] text-brand-navy/50 mt-0.5 line-clamp-2">{p.passage}</div>
-              {p.stats && <div className="text-[9px] text-emerald-700 mt-0.5">📊 {p.stats}</div>}
+              <div className="text-[13px] text-brand-navy/50 mt-0.5 line-clamp-2">{p.passage}</div>
+              {p.stats && <div className="text-xs text-emerald-700 mt-0.5">📊 {p.stats}</div>}
             </div>
           ))}
         </div>
@@ -249,33 +249,33 @@ function GaTab() {
       <Section title="Analytics Configuration — GA4 + GTM + Meta Pixel + Cloudflare Web Analytics">
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[220px]">
-            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">GA4 Measurement ID</label>
+            <label className="text-[13px] text-brand-navy/40 font-bold uppercase block mb-1">GA4 Measurement ID</label>
             <input value={mid || cfg?.measurementId || ''} onChange={e => setMid(e.target.value)} placeholder="G-XXXXXXXXXX" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
           </div>
           <div className="flex-1 min-w-[220px]">
-            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Google Tag Manager ID</label>
+            <label className="text-[13px] text-brand-navy/40 font-bold uppercase block mb-1">Google Tag Manager ID</label>
             <input value={gtmId || cfg?.gtmId || ''} onChange={e => setGtmId(e.target.value)} placeholder="GTM-XXXXXXX" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
           </div>
           <div className="flex-1 min-w-[220px]">
-            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Meta Pixel ID</label>
+            <label className="text-[13px] text-brand-navy/40 font-bold uppercase block mb-1">Meta Pixel ID</label>
             <input value={metaPixelId || cfg?.metaPixelId || ''} onChange={e => setMetaPixelId(e.target.value)} placeholder="123456789012345" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
           </div>
           <div className="flex-1 min-w-[220px]">
-            <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Cloudflare Web Analytics token (free)</label>
+            <label className="text-[13px] text-brand-navy/40 font-bold uppercase block mb-1">Cloudflare Web Analytics token (free)</label>
             <input value={cfToken || cfg?.cfWaToken || ''} onChange={e => setCfToken(e.target.value)} placeholder="Paste token from Cloudflare dashboard → Web Analytics" className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
           </div>
           <button onClick={() => saveCfg.mutate()} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded text-xs font-bold cursor-pointer">Save</button>
         </div>
-        <p className="text-[10px] text-brand-navy/40">GA4 + GTM + Meta Pixel fire from one config — no redeploy needed. D1-local events (lead form, payments, portal) stay here for goals + attribution; CF beacon is cookie-free, bot-filtered. GTM orchestrates all tags; dataLayer is source of truth.</p>
+        <p className="text-[13px] text-brand-navy/40">GA4 + GTM + Meta Pixel fire from one config — no redeploy needed. D1-local events (lead form, payments, portal) stay here for goals + attribution; CF beacon is cookie-free, bot-filtered. GTM orchestrates all tags; dataLayer is source of truth.</p>
       </Section>
 
       <Section title={`Traffic Events — last 30 days (${events?.total ?? 0} total)`}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <div className="text-[9px] font-bold uppercase text-brand-navy/40 mb-2">By event</div>
+            <div className="text-xs font-bold uppercase text-brand-navy/40 mb-2">By event</div>
             <div className="space-y-1.5">
               {Object.entries(events?.byEvent || {}).map(([k, v]: any) => (
-                <div key={k} className="flex items-center gap-2 text-[10px]">
+                <div key={k} className="flex items-center gap-2 text-[13px]">
                   <span className="w-28 truncate text-brand-navy font-semibold">{k}</span>
                   <div className="flex-1 h-2 rounded-full bg-brand-navy/[0.06] overflow-hidden"><div className="h-full bg-brand-gold rounded-full" style={{ width: `${(v / maxEvent) * 100}%` }} /></div>
                   <span className="text-brand-navy/40 font-mono">{v}</span>
@@ -284,10 +284,10 @@ function GaTab() {
             </div>
           </div>
           <div>
-            <div className="text-[9px] font-bold uppercase text-brand-navy/40 mb-2">By page</div>
+            <div className="text-xs font-bold uppercase text-brand-navy/40 mb-2">By page</div>
             <div className="space-y-1.5">
               {Object.entries(events?.byPage || {}).map(([k, v]: any) => (
-                <div key={k} className="flex items-center gap-2 text-[10px]">
+                <div key={k} className="flex items-center gap-2 text-[13px]">
                   <span className="w-28 truncate text-brand-navy font-semibold">{k}</span>
                   <div className="flex-1 h-2 rounded-full bg-brand-navy/[0.06] overflow-hidden"><div className="h-full bg-brand-gold rounded-full" style={{ width: `${(v / maxEvent) * 100}%` }} /></div>
                   <span className="text-brand-navy/40 font-mono">{v}</span>
@@ -296,10 +296,10 @@ function GaTab() {
             </div>
           </div>
           <div>
-            <div className="text-[9px] font-bold uppercase text-brand-navy/40 mb-2">By source</div>
+            <div className="text-xs font-bold uppercase text-brand-navy/40 mb-2">By source</div>
             <div className="space-y-1.5">
               {Object.entries(events?.bySource || {}).map(([k, v]: any) => (
-                <div key={k} className="flex items-center gap-2 text-[10px]">
+                <div key={k} className="flex items-center gap-2 text-[13px]">
                   <span className="w-28 truncate text-brand-navy font-semibold">{k}</span>
                   <div className="flex-1 h-2 rounded-full bg-brand-navy/[0.06] overflow-hidden"><div className="h-full bg-brand-gold rounded-full" style={{ width: `${(v / maxEvent) * 100}%` }} /></div>
                   <span className="text-brand-navy/40 font-mono">{v}</span>
@@ -346,7 +346,7 @@ function GbpTab() {
       <Section title={`Google Business Profile — ${prof?.completeness ?? 0}/100 completeness (the #1 AI Overviews signal)`}>
         <div className="flex flex-wrap gap-1.5 mb-3">
           {checks.map((ch: any) => (
-            <span key={ch.key} className={`px-2 py-1 rounded-full text-[9px] font-bold ${ch.filled ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-600'}`}>{ch.filled ? '✓' : '✗'} {ch.label}</span>
+            <span key={ch.key} className={`px-2 py-1 rounded-full text-xs font-bold ${ch.filled ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-600'}`}>{ch.filled ? '✓' : '✗'} {ch.label}</span>
           ))}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -378,7 +378,7 @@ function GbpTab() {
           {(posts?.posts || []).map((pst: any) => (
             <div key={pst.id} className="flex justify-between items-center bg-brand-navy/[0.06] border border-brand-navy/10 rounded px-3 py-2 text-xs">
               <span className="text-brand-navy font-semibold">{pst.title}</span>
-              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${pst.status === 'published' ? 'bg-emerald-500/15 text-emerald-700' : pst.status === 'scheduled' ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{pst.status}</span>
+              <span className={`px-1.5 py-0.5 rounded text-xs font-bold uppercase ${pst.status === 'published' ? 'bg-emerald-500/15 text-emerald-700' : pst.status === 'scheduled' ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{pst.status}</span>
             </div>
           ))}
         </div>
@@ -404,7 +404,7 @@ function GscTab() {
   return (
     <div className="space-y-5">
       <Section title={`Search Console — ${data?.totalImpressions ?? 0} impressions · ${data?.totalClicks ?? 0} clicks · ${data?.ctr ?? 0}% CTR`}>
-        <p className="text-[10px] text-brand-navy/40">Enter query data from Google Search Console (or the AI Overviews performance report). Connect the real GSC API later via OAuth.</p>
+        <p className="text-[13px] text-brand-navy/40">Enter query data from Google Search Console (or the AI Overviews performance report). Connect the real GSC API later via OAuth.</p>
         <div className="flex flex-wrap gap-2">
           <input value={form.keyword} onChange={e => setForm({ ...form, keyword: e.target.value })} placeholder="Query" className="w-44 bg-white border border-brand-navy/10 rounded px-2 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
           <input value={form.impressions} onChange={e => setForm({ ...form, impressions: e.target.value })} placeholder="Impressions" className="w-24 bg-white border border-brand-navy/10 rounded px-2 py-2 text-xs text-brand-navy placeholder:text-brand-navy/40" />
@@ -419,11 +419,11 @@ function GscTab() {
               <span className="flex items-center gap-3 text-brand-navy/40 font-mono">
                 <span>{q.impressions || 0} imp</span>
                 <span>{q.clicks || 0} clk</span>
-                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${q.position && q.position <= 10 ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{q.position ? `#${q.position}` : '—'}</span>
+                <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${q.position && q.position <= 10 ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{q.position ? `#${q.position}` : '—'}</span>
               </span>
             </div>
           ))}
-          {(data?.queries || []).length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-2">No query data yet.</p>}
+          {(data?.queries || []).length === 0 && <p className="text-[13px] text-brand-navy/40 text-center py-2">No query data yet.</p>}
         </div>
       </Section>
     </div>
@@ -476,18 +476,18 @@ function ReviewsTab() {
             <div key={r.id} className="bg-brand-navy/[0.06] border border-brand-navy/10 rounded px-3 py-2 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-brand-navy font-semibold">{'⭐'.repeat(r.rating)} <span className="text-brand-navy/40">· {r.author || 'Anonymous'} · {r.source}</span></span>
-                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${r.responded ? 'bg-emerald-500/15 text-emerald-700' : 'bg-amber-500/15 text-amber-700'}`}>{r.responded ? '✓ Responded' : 'Needs response'}</span>
+                <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${r.responded ? 'bg-emerald-500/15 text-emerald-700' : 'bg-amber-500/15 text-amber-700'}`}>{r.responded ? '✓ Responded' : 'Needs response'}</span>
               </div>
-              {r.text && <div className="text-[10px] text-brand-navy/50 mt-1">{r.text}</div>}
+              {r.text && <div className="text-[13px] text-brand-navy/50 mt-1">{r.text}</div>}
               {!r.responded && (
                 <div className="flex gap-2 mt-2">
-                  <input value={drafts[r.id] || ''} onChange={e => setDrafts({ ...drafts, [r.id]: e.target.value })} placeholder="Draft a response…" className="flex-1 bg-white border border-brand-navy/10 rounded px-2 py-1.5 text-[10px] text-brand-navy placeholder:text-brand-navy/40" />
-                  <button onClick={() => respond.mutate(r.id)} className="bg-brand-navy text-white px-3 py-1.5 rounded text-[10px] font-bold cursor-pointer">Save Draft</button>
+                  <input value={drafts[r.id] || ''} onChange={e => setDrafts({ ...drafts, [r.id]: e.target.value })} placeholder="Draft a response…" className="flex-1 bg-white border border-brand-navy/10 rounded px-2 py-1.5 text-[13px] text-brand-navy placeholder:text-brand-navy/40" />
+                  <button onClick={() => respond.mutate(r.id)} className="bg-brand-navy text-white px-3 py-1.5 rounded text-[13px] font-bold cursor-pointer">Save Draft</button>
                 </div>
               )}
             </div>
           ))}
-          {(data?.reviews || []).length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-2">No reviews recorded yet. Negative reviews (≤2⭐) trigger staff alerts automatically.</p>}
+          {(data?.reviews || []).length === 0 && <p className="text-[13px] text-brand-navy/40 text-center py-2">No reviews recorded yet. Negative reviews (≤2⭐) trigger staff alerts automatically.</p>}
         </div>
       </Section>
     </div>
@@ -501,7 +501,7 @@ function AttributionTab() {
   return (
     <div className="space-y-5">
       <Section title="Channel Attribution — lead source → conversion → revenue">
-        <p className="text-[10px] text-brand-navy/40">Every client's <code className="font-mono">leadSource</code> (website, whatsapp, walk-in, partner, referral, UTM) is mapped to revenue. UTM capture on the public site feeds this automatically.</p>
+        <p className="text-[13px] text-brand-navy/40">Every client's <code className="font-mono">leadSource</code> (website, whatsapp, walk-in, partner, referral, UTM) is mapped to revenue. UTM capture on the public site feeds this automatically.</p>
         <div className="space-y-3">
           {(data?.channels || []).map((c: any) => (
             <div key={c.channel} className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.03] p-3">
@@ -510,7 +510,7 @@ function AttributionTab() {
                 <span className="text-brand-gold font-mono font-bold">{rs(c.revenue)}</span>
               </div>
               <div className="h-2 rounded-full bg-brand-navy/[0.06] overflow-hidden mb-2"><div className="h-full bg-brand-gold rounded-full" style={{ width: `${(c.revenue / maxRev) * 100}%` }} /></div>
-              <div className="flex gap-3 text-[10px] text-brand-navy/50">
+              <div className="flex gap-3 text-[13px] text-brand-navy/50">
                 <span>{c.leads} leads</span>
                 <span>{c.converted} converted</span>
                 <span className="text-emerald-700 font-bold">{c.conversionPct}% conv</span>
@@ -518,7 +518,7 @@ function AttributionTab() {
               </div>
             </div>
           ))}
-          {(data?.channels || []).length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-2">No client data yet.</p>}
+          {(data?.channels || []).length === 0 && <p className="text-[13px] text-brand-navy/40 text-center py-2">No client data yet.</p>}
         </div>
       </Section>
     </div>
@@ -576,12 +576,12 @@ function ReportsTab() {
                 {s.lastRunAt && <span className="text-brand-navy/30"> · last run {new Date(s.lastRunAt * 1000).toLocaleDateString()}</span>}
               </div>
               <div className="flex items-center gap-2">
-                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${s.enabled ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{s.enabled ? 'ON' : 'OFF'}</span>
-                <button onClick={() => runNow.mutate(s.id)} className="border border-brand-navy/15 px-2 py-1 rounded text-[9px] font-bold text-brand-navy hover:border-brand-gold/50 cursor-pointer">▶ Run now</button>
+                <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${s.enabled ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{s.enabled ? 'ON' : 'OFF'}</span>
+                <button onClick={() => runNow.mutate(s.id)} className="border border-brand-navy/15 px-2 py-1 rounded text-xs font-bold text-brand-navy hover:border-brand-gold/50 cursor-pointer">▶ Run now</button>
               </div>
             </div>
           ))}
-          {(data?.schedules || []).length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-2">No schedules yet. Each run is audit-logged; email delivery needs SMTP config (TODO).</p>}
+          {(data?.schedules || []).length === 0 && <p className="text-[13px] text-brand-navy/40 text-center py-2">No schedules yet. Each run is audit-logged; email delivery needs SMTP config (TODO).</p>}
         </div>
       </Section>
     </div>
@@ -599,13 +599,13 @@ export default function VisibilityHub() {
         <div>
           <div className="flex items-center gap-2">
             <span className="gold-dot" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Visibility Hub</span>
+            <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Visibility Hub</span>
           </div>
           <h2 className="font-display font-bold text-base text-brand-navy">SEO · AEO/GEO · Analytics · Google Business · Reviews · Attribution</h2>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-1 text-[10px] font-bold uppercase">
+      <div className="flex flex-wrap gap-1 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-1 text-[13px] font-bold uppercase">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${tab === t.key ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-navy'}`}>
             {t.label}

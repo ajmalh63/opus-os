@@ -1,5 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
-import { useLocation } from 'wouter';
+import { type ReactNode } from 'react';
+import { Redirect } from 'wouter';
 import { useSession } from '../lib/session';
 
 const STAFF_ROLES = ['super_admin', 'manager', 'counselor', 'coordinator', 'receptionist'];
@@ -8,17 +8,6 @@ const STAFF_ROLES = ['super_admin', 'manager', 'counselor', 'coordinator', 'rece
 // clients are automatically routed to the client portal (/portal).
 export default function AuthGuard({ children, allowClient = false }: { children: ReactNode; allowClient?: boolean }) {
   const { me, loading } = useSession();
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!loading) {
-      if (!me) {
-        setLocation('/login');
-      } else if (!allowClient && !STAFF_ROLES.includes(me.role)) {
-        setLocation('/portal');
-      }
-    }
-  }, [loading, me, allowClient, setLocation]);
 
   if (loading) {
     return (
@@ -31,6 +20,13 @@ export default function AuthGuard({ children, allowClient = false }: { children:
     );
   }
 
-  if (!me || (!allowClient && !STAFF_ROLES.includes(me.role))) return null;
+  if (!me) {
+    return <Redirect to="/login" />;
+  }
+
+  if (!allowClient && !STAFF_ROLES.includes(me.role)) {
+    return <Redirect to="/portal" />;
+  }
+
   return <>{children}</>;
 }

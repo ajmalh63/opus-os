@@ -318,19 +318,19 @@ export default function ClientsList() {
       {/* ADMIN METRICS PANEL */}
       <div className="reveal grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-brand-navy/10 p-5 shadow-sm">
-          <span className="text-[10px] text-brand-navy/45 font-bold uppercase tracking-wider block">Total Profiles</span>
+          <span className="text-[13px] text-brand-navy/45 font-bold uppercase tracking-wider block">Total Profiles</span>
           <span className="text-2xl font-extrabold text-brand-navy mt-1 block">{totalProfiles}</span>
         </div>
         <div className="bg-white rounded-2xl border border-brand-navy/10 p-5 shadow-sm">
-          <span className="text-[10px] text-brand-navy/45 font-bold uppercase tracking-wider block">Active Accounts</span>
+          <span className="text-[13px] text-brand-navy/45 font-bold uppercase tracking-wider block">Active Accounts</span>
           <span className="text-2xl font-extrabold text-emerald-700 mt-1 block">{activeProfiles}</span>
         </div>
         <div className="bg-white rounded-2xl border border-brand-navy/10 p-5 shadow-sm">
-          <span className="text-[10px] text-brand-navy/45 font-bold uppercase tracking-wider block">Suspended Profiles</span>
+          <span className="text-[13px] text-brand-navy/45 font-bold uppercase tracking-wider block">Suspended Profiles</span>
           <span className="text-2xl font-extrabold text-rose-600 mt-1 block">{suspendedProfiles}</span>
         </div>
         <div className="bg-white rounded-2xl border border-brand-navy/10 p-5 shadow-sm">
-          <span className="text-[10px] text-brand-navy/45 font-bold uppercase tracking-wider block">Study Abroad Leads</span>
+          <span className="text-[13px] text-brand-navy/45 font-bold uppercase tracking-wider block">Study Abroad Leads</span>
           <span className="text-2xl font-extrabold text-brand-gold mt-1 block">{divisionDist['study-abroad'] || 0}</span>
         </div>
       </div>
@@ -353,7 +353,7 @@ export default function ClientsList() {
           <option value="all">All Divisions</option>
           <option value="study-abroad">Study Abroad</option>
           <option value="visa">Visa Prep</option>
-          <option value="umrah">Umrah</option>
+          <option value="umrah">Tours &amp; Travels</option>
           <option value="attestation">Attestation</option>
           <option value="manpower">Manpower</option>
         </select>
@@ -369,13 +369,13 @@ export default function ClientsList() {
         </select>
 
         <div className="flex items-center gap-1.5">
-          <input value={viewName} onChange={(e) => setViewName(e.target.value)} placeholder="Save this view as…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-36" />
-          <button onClick={saveView} disabled={!viewName.trim()} className="rounded-lg border border-brand-navy/15 bg-brand-navy/[0.04] px-2.5 py-2 text-[10px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all cursor-pointer disabled:opacity-40">💾 Save</button>
+          <input value={viewName} onChange={(e) => setViewName(e.target.value)} placeholder="Save this view as…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[13px] text-brand-navy outline-none focus:border-brand-gold w-36" />
+          <button onClick={saveView} disabled={!viewName.trim()} className="rounded-lg border border-brand-navy/15 bg-brand-navy/[0.04] px-2.5 py-2 text-[13px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all cursor-pointer disabled:opacity-40">💾 Save</button>
         </div>
         {savedViews.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
             {savedViews.map(v => (
-              <span key={v} className="flex items-center gap-1 rounded-lg bg-brand-gold/10 border border-brand-gold/30 px-2 py-1 text-[10px] font-bold text-brand-navy">
+              <span key={v} className="flex items-center gap-1 rounded-lg bg-brand-gold/10 border border-brand-gold/30 px-2 py-1 text-[13px] font-bold text-brand-navy">
                 <button onClick={() => loadView(v)} className="cursor-pointer">{v}</button>
                 <button onClick={() => deleteView(v)} className="text-brand-navy/40 hover:text-rose-500 cursor-pointer">✕</button>
               </span>
@@ -396,7 +396,7 @@ export default function ClientsList() {
       <div className="reveal overflow-hidden rounded-2xl border border-brand-navy/15 bg-white shadow-md">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-brand-navy/10 bg-[#FAF8F4] text-[10px] uppercase tracking-wider text-brand-gold font-extrabold">
+            <thead className="border-b border-brand-navy/10 bg-[#FAF8F4] text-[13px] uppercase tracking-wider text-brand-gold font-extrabold">
               <tr>
                 <th className="px-4 py-3.5">Token ID</th>
                 <th className="px-4 py-3.5">Client Name</th>
@@ -424,7 +424,7 @@ export default function ClientsList() {
                     <td className="px-4 py-3.5 font-bold text-brand-navy">
                       {c.name}
                       {c.name === 'Deleted Candidate' && (
-                        <span className="ml-1.5 inline-block text-[8px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-bold uppercase border border-rose-200">DPDP Anonymized</span>
+                        <span className="ml-1.5 inline-block text-sm bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-bold uppercase border border-rose-200">DPDP Anonymized</span>
                       )}
                     </td>
                     <td className="px-4 py-3.5">
@@ -432,14 +432,14 @@ export default function ClientsList() {
                         <div className="w-16 h-1.5 rounded-full bg-brand-navy/[0.08] overflow-hidden">
                           <div className={`h-full ${completenessOf(c) === 100 ? 'bg-emerald-500' : completenessOf(c) >= 50 ? 'bg-brand-gold' : 'bg-amber-400'}`} style={{ width: `${completenessOf(c)}%` }} />
                         </div>
-                        <span className={`text-[9px] font-black ${completenessOf(c) === 100 ? 'text-emerald-700' : completenessOf(c) >= 50 ? 'text-brand-gold' : 'text-amber-600'}`}>{completenessOf(c)}%</span>
+                        <span className={`text-xs font-black ${completenessOf(c) === 100 ? 'text-emerald-700' : completenessOf(c) >= 50 ? 'text-brand-gold' : 'text-amber-600'}`}>{completenessOf(c)}%</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 font-mono text-[11px] text-brand-navy/70">{c.phone}</td>
+                    <td className="px-4 py-3.5 font-mono text-sm text-brand-navy/70">{c.phone}</td>
                     <td className="px-4 py-3.5 text-brand-navy/70">{c.email}</td>
                     <td className="px-4 py-3.5 capitalize font-medium text-brand-navy">{c.primaryDivision?.replace('-', ' ')}</td>
                     <td className="px-4 py-3.5">
-                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase border tracking-wider ${c.status === 'blocked' ? 'bg-rose-500/10 border-rose-500/30 text-rose-700' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700'}`}>
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-black uppercase border tracking-wider ${c.status === 'blocked' ? 'bg-rose-500/10 border-rose-500/30 text-rose-700' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700'}`}>
                         {c.status || 'active'}
                       </span>
                     </td>
@@ -448,7 +448,7 @@ export default function ClientsList() {
                     {/* Workspace Desk */}
                     <button
                       onClick={() => setLocation(`/clients/${c.id}`)}
-                      className="cursor-pointer rounded bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-2 py-1 text-[10px] font-bold transition"
+                      className="cursor-pointer rounded bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-2 py-1 text-[13px] font-bold transition"
                       title="Open Counselor 360 Workspace"
                     >
                       360 Desk
@@ -459,7 +459,7 @@ export default function ClientsList() {
                       href={`/portal?token=${c.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block rounded bg-brand-navy/10 hover:bg-brand-navy/20 text-brand-navy px-2 py-1 text-[10px] font-bold transition"
+                      className="inline-block rounded bg-brand-navy/10 hover:bg-brand-navy/20 text-brand-navy px-2 py-1 text-[13px] font-bold transition"
                       title="View workspace from Candidate portal perspective"
                     >
                       Impersonate
@@ -469,7 +469,7 @@ export default function ClientsList() {
                     {isEditor && c.name !== 'Deleted Candidate' && (
                       <button
                         onClick={() => handleOpenEdit(c)}
-                        className="cursor-pointer rounded bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 text-[10px] font-bold transition"
+                        className="cursor-pointer rounded bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 text-[13px] font-bold transition"
                       >
                         Edit
                       </button>
@@ -479,7 +479,7 @@ export default function ClientsList() {
                     {isEditor && c.name !== 'Deleted Candidate' && (
                       <button
                         onClick={() => toggleBlockMutation.mutate({ id: c.id, status: c.status === 'blocked' ? 'active' : 'blocked' })}
-                        className={`cursor-pointer rounded px-2 py-1 text-[10px] font-bold transition ${c.status === 'blocked' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-rose-50 text-rose-700 hover:bg-rose-100'}`}
+                        className={`cursor-pointer rounded px-2 py-1 text-[13px] font-bold transition ${c.status === 'blocked' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-rose-50 text-rose-700 hover:bg-rose-100'}`}
                       >
                         {c.status === 'blocked' ? 'Unblock' : 'Block'}
                       </button>
@@ -489,7 +489,7 @@ export default function ClientsList() {
                     {isSuperAdmin && c.name !== 'Deleted Candidate' && (
                       <button
                         onClick={() => setAnonymizingClientId(c.id)}
-                        className="cursor-pointer rounded bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 text-[10px] font-bold transition"
+                        className="cursor-pointer rounded bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 text-[13px] font-bold transition"
                         title="DPDP-2023 Subject Erasure Action"
                       >
                         DPDP Delete
@@ -514,7 +514,7 @@ export default function ClientsList() {
             <div className="bg-brand-navy p-6 text-white flex justify-between items-center">
               <div>
                 <h3 className="font-display font-extrabold text-lg text-white">Manual Candidate Registration</h3>
-                <p className="text-[10px] text-brand-gold font-bold uppercase tracking-wider mt-0.5">Onboard Portal User Directly</p>
+                <p className="text-[13px] text-brand-gold font-bold uppercase tracking-wider mt-0.5">Onboard Portal User Directly</p>
               </div>
               <button 
                 onClick={() => setIsAddModalOpen(false)}
@@ -533,7 +533,7 @@ export default function ClientsList() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Full Name *</label>
+                  <label className="text-[13px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Full Name *</label>
                   <input 
                     type="text"
                     required
@@ -544,7 +544,7 @@ export default function ClientsList() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Phone Number *</label>
+                  <label className="text-[13px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Phone Number *</label>
                   <input 
                     type="text"
                     required
@@ -557,7 +557,7 @@ export default function ClientsList() {
               </div>
 
               <div>
-                <label className="text-[10px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Email Address *</label>
+                <label className="text-[13px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Email Address *</label>
                 <input 
                   type="email"
                   required
@@ -570,7 +570,7 @@ export default function ClientsList() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Primary Division *</label>
+                  <label className="text-[13px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Primary Division *</label>
                   <select
                     value={addDivision}
                     onChange={(e) => setAddDivision(e.target.value)}
@@ -578,13 +578,13 @@ export default function ClientsList() {
                   >
                     <option value="study-abroad">Study Abroad</option>
                     <option value="visa">Visa Prep</option>
-                    <option value="umrah">Umrah</option>
+                    <option value="umrah">Tours &amp; Travels</option>
                     <option value="attestation">Attestation</option>
                     <option value="manpower">Manpower</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Qualification *</label>
+                  <label className="text-[13px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Qualification *</label>
                   <select
                     value={addQualification}
                     onChange={(e) => setAddQualification(e.target.value)}
@@ -627,7 +627,7 @@ export default function ClientsList() {
             <div className="bg-brand-navy p-6 text-white flex justify-between items-center">
               <div>
                 <h3 className="font-display font-bold text-lg text-white">Modify Client profile</h3>
-                <p className="text-[10px] text-brand-gold font-bold uppercase tracking-wider mt-0.5">Token: {editingClient.id}</p>
+                <p className="text-[13px] text-brand-gold font-bold uppercase tracking-wider mt-0.5">Token: {editingClient.id}</p>
               </div>
               <button 
                 onClick={() => setEditingClient(null)}
@@ -645,7 +645,7 @@ export default function ClientsList() {
               )}
 
               <div>
-                <label className="text-[10px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Full Name</label>
+                <label className="text-[13px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Full Name</label>
                 <input 
                   type="text"
                   required
@@ -657,7 +657,7 @@ export default function ClientsList() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Phone Number</label>
+                  <label className="text-[13px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Phone Number</label>
                   <input 
                     type="text"
                     required
@@ -667,7 +667,7 @@ export default function ClientsList() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Highest Qualification</label>
+                  <label className="text-[13px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Highest Qualification</label>
                   <select
                     value={editQualification}
                     onChange={(e) => setEditQualification(e.target.value)}
@@ -681,7 +681,7 @@ export default function ClientsList() {
               </div>
 
               <div>
-                <label className="text-[10px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Email Address</label>
+                <label className="text-[13px] uppercase font-bold text-brand-navy tracking-wider block mb-1">Email Address</label>
                 <input 
                   type="email"
                   required

@@ -90,13 +90,13 @@ export default function JourneyStepper({ engagements = [], documents = [], isLoa
     return (
       <div className="sticky top-0 z-10 -mx-6 md:-mx-8 px-6 md:px-8 bg-[#FAF8F4]/95 backdrop-blur border-y border-brand-navy/10">
         <div className="h-[52px] flex items-center justify-between gap-3 overflow-x-auto scrollbar-thin">
-          <div className="text-[11px] font-black tracking-[0.12em] text-slate-500 whitespace-nowrap">
+          <div className="text-xs font-black tracking-wider text-slate-600 whitespace-nowrap">
             YOUR ROADMAP • <span className="text-brand-navy font-mono">0% Ready</span>
           </div>
           <div className="hidden lg:block w-[180px] h-2 bg-slate-200 rounded-full overflow-hidden shrink-0">
             <div className="h-full bg-slate-300 rounded-full" style={{ width: '0%' }} />
           </div>
-          <span className="text-[11px] text-slate-500 font-medium">Select an active service below to initialize your live milestone radar</span>
+          <span className="text-xs text-slate-600 font-medium">Select an active service below to initialize your live milestone radar</span>
         </div>
       </div>
     );
@@ -106,12 +106,12 @@ export default function JourneyStepper({ engagements = [], documents = [], isLoa
     <div className="sticky top-0 z-10 -mx-6 md:-mx-8 px-6 md:px-8 bg-[#FAF8F4]/95 backdrop-blur border-y border-brand-navy/10 shadow-xs">
       <div className="h-[52px] flex items-center gap-3 overflow-x-auto scrollbar-thin">
         {/* Progress summary label */}
-        <div className="text-[11px] font-black tracking-[0.12em] text-slate-600 whitespace-nowrap">
+        <div className="text-xs font-black tracking-wider text-slate-700 whitespace-nowrap">
           ROADMAP • <span className="text-brand-navy font-mono font-bold">{currentIdx + 1}/{STAGES.length} • {journeyPct}%</span>
         </div>
 
         {/* Multi-stage step indicators */}
-        <div className="flex items-center gap-2 min-w-[500px] flex-1 mx-2">
+        <div className="flex items-center gap-2.5 min-w-[500px] flex-1 mx-2">
           {STAGES.map((s, i) => (
             <button
               key={s.key}
@@ -121,13 +121,13 @@ export default function JourneyStepper({ engagements = [], documents = [], isLoa
               title={`Click to navigate to ${s.label}`}
             >
               <span
-                className={`w-6 h-6 rounded-full grid place-items-center text-[10px] font-bold border transition-all duration-300
+                className={`w-7 h-7 rounded-full grid place-items-center text-xs font-bold border transition-all duration-300
                   ${isDone(i) ? 'bg-emerald-500 text-white border-emerald-500' : isActive(i) ? 'bg-brand-navy text-brand-gold border-brand-navy shadow-xs ring-2 ring-brand-gold/40' : 'bg-white text-slate-400 border-slate-300 group-hover:border-brand-gold'}`}
                 aria-current={isActive(i) ? 'step' : undefined}
               >
                 {isDone(i) ? '✓' : i + 1}
               </span>
-              <span className={`hidden sm:inline text-xs transition-colors ${isActive(i) ? 'font-bold text-brand-navy' : isDone(i) ? 'font-semibold text-slate-700' : 'font-medium text-slate-400 group-hover:text-slate-600'}`}>
+              <span className={`hidden sm:inline text-xs sm:text-sm transition-colors ${isActive(i) ? 'font-bold text-brand-navy' : isDone(i) ? 'font-semibold text-slate-700' : 'font-medium text-slate-400 group-hover:text-slate-600'}`}>
                 {s.shortLabel}
               </span>
               {i < STAGES.length - 1 && (
@@ -146,8 +146,8 @@ export default function JourneyStepper({ engagements = [], documents = [], isLoa
         </div>
 
         {/* Real-time next step badge */}
-        <div className="hidden md:flex items-center gap-2 text-[11px] shrink-0">
-          <span className="px-2.5 py-1 rounded-full bg-white border border-brand-navy/10 text-brand-navy font-semibold text-[10px] whitespace-nowrap shadow-2xs">
+        <div className="hidden md:flex items-center gap-2 text-xs shrink-0">
+          <span className="px-3 py-1 rounded-full bg-white border border-brand-navy/10 text-brand-navy font-bold text-xs whitespace-nowrap shadow-2xs">
             {nextStepLabel}
           </span>
         </div>

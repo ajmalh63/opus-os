@@ -304,12 +304,12 @@ const [consentMarketing, setConsentMarketing] = useState(true);
             <div>
               <label className="text-xs font-bold text-brand-navy uppercase tracking-wider block mb-2">Service Division Interested *</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-{[
+                {[
                   { id: 'study-abroad', label: '🎓 Study Abroad' },
                   { id: 'visa', label: '🛂 Visa Services' },
-                  { id: 'umrah', label: '🕋 Umrah Travel' },
+                  { id: 'umrah', label: '🧳 Tours & Travels' },
                   { id: 'attestation', label: '📜 Document Attestation' },
-                  { id: 'manpower', label: '💼 Overseas Jobs' },
+                  { id: 'manpower', label: '👷 Overseas Jobs' },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -333,7 +333,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                 <h4 className="text-xs font-bold text-brand-navy uppercase tracking-wider">Study Abroad Choices</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Target Country</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Target Country</label>
                     <select 
                       value={targetCountry}
                       onChange={(e) => setTargetCountry(e.target.value)}
@@ -363,7 +363,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Preferred Intake Season</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Preferred Intake Season</label>
                     <div className="flex gap-2">
                       {['Fall 2027', 'Spring 2027'].map((season) => (
                         <label 
@@ -385,7 +385,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     </div>
                   </div>
                   <div className="col-span-1 md:col-span-2">
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Quick profile (optional — helps us pre-qualify you)</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Quick profile (optional — helps us pre-qualify you)</label>
                     <div className="grid grid-cols-3 gap-2">
                       <input type="number" min={0} max={10} step={0.1} value={leadCgpa} onChange={(e) => setLeadCgpa(e.target.value)} placeholder="CGPA (e.g. 7.5)" className="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium" />
                       <input type="number" min={0} max={9} step={0.5} value={leadEnglishScore} onChange={(e) => setLeadEnglishScore(e.target.value)} placeholder="English score (e.g. 6.5 / 120)" className="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium" />
@@ -401,7 +401,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                 <h4 className="text-xs font-bold text-brand-navy uppercase tracking-wider">Visa Type Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Visa Category</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Visa Category</label>
                     <select 
                       value={visaCategory}
                       onChange={(e) => setVisaCategory(e.target.value)}
@@ -414,7 +414,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Target Visa Country</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Target Visa Country</label>
                     <input 
                       type="text" 
                       value={visaCountry}
@@ -429,29 +429,35 @@ const [consentMarketing, setConsentMarketing] = useState(true);
 
             {division === 'umrah' && (
               <div className="p-4 bg-brand-cream rounded-lg border border-brand-gold/15 space-y-3">
-                <h4 className="text-xs font-bold text-brand-navy uppercase tracking-wider">Umrah Package Preferences</h4>
+                <h4 className="text-xs font-bold text-brand-navy uppercase tracking-wider">Tours &amp; Travel Preferences</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Package Tier</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Tour Category / Destination</label>
                     <select 
                       value={umrahTier}
                       onChange={(e) => setUmrahTier(e.target.value)}
                       className="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium"
                     >
-                      <option value="deluxe">Deluxe (5-Star Hotel close to Haram)</option>
-                      <option value="economy">Economy (Shared rooms, standard travel)</option>
-                      <option value="custom">Custom Family Package</option>
+                      <option value="umrah_5star">🕋 5-Star Executive Umrah (Haram View)</option>
+                      <option value="umrah_eco">🕋 Classic Economy Umrah Group</option>
+                      <option value="dubai_holiday">🏖️ Dubai &amp; Abu Dhabi Family Vacation</option>
+                      <option value="europe_tour">🏖️ Europe Grand Alpine Tour (Switzerland &amp; France)</option>
+                      <option value="kashmir_domestic">🏞️ Kashmir Paradise Getaway</option>
+                      <option value="kerala_domestic">🏞️ Kerala Backwaters &amp; Munnar Hills</option>
+                      <option value="custom_group">👥 Custom Corporate / Family Group Tour</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Expected Departure</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Expected Departure</label>
                     <select 
                       value={umrahDeparture}
                       onChange={(e) => setUmrahDeparture(e.target.value)}
                       className="w-full text-xs p-2 border border-gray-300 rounded bg-white font-medium"
                     >
-                      <option value="sep">September 2026</option>
-                      <option value="ramadan">Ramadan Season 2027</option>
+                      <option value="sep_2026">September 2026</option>
+                      <option value="oct_2026">October 2026</option>
+                      <option value="winter_2026">Winter Holidays (Dec 2026)</option>
+                      <option value="ramadan_2027">Ramadan Season 2027</option>
                     </select>
                   </div>
                 </div>
@@ -463,7 +469,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                 <h4 className="text-xs font-bold text-brand-navy uppercase tracking-wider">Attestation Document Options</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Document Category</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Document Category</label>
                     <select 
                       value={attestationCategory}
                       onChange={(e) => setAttestationCategory(e.target.value)}
@@ -475,7 +481,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Required Authentication</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Required Authentication</label>
                     <select 
                       value={attestationAuth}
                       onChange={(e) => setAttestationAuth(e.target.value)}
@@ -495,7 +501,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                 <h4 className="text-xs font-bold text-brand-navy uppercase tracking-wider">Overseas Job Application</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Target Job Sector</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Target Job Sector</label>
                     <select 
                       value={manpowerSector}
                       onChange={(e) => setManpowerSector(e.target.value)}
@@ -507,7 +513,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-brand-textLight font-semibold uppercase block mb-1">Upload CV/Resume *</label>
+                    <label className="text-[13px] text-brand-textLight font-semibold uppercase block mb-1">Upload CV/Resume *</label>
                     <div 
                       className={`border-2 border-dashed rounded bg-white p-3 text-center transition cursor-pointer ${
                         manpowerFile ? 'border-brand-gold bg-brand-cream/10' : 'border-gray-300 hover:border-brand-gold'
@@ -524,7 +530,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                         <span className="text-xs text-brand-textLight font-medium block">
                           {manpowerFile ? `✓ Selected: ${manpowerFile.name}` : 'Drag & Drop Resume (PDF)'}
                         </span>
-                        <span className="text-[9px] text-brand-textLight">or click to browse</span>
+                        <span className="text-xs text-brand-textLight">or click to browse</span>
                       </label>
                     </div>
                   </div>
@@ -537,7 +543,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     onChange={(e) => setManpowerRetain(e.target.checked)}
                     className="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold"
                   />
-                  <label htmlFor="manpowerRetainCheck" className="text-[10px] text-brand-textLight leading-tight">
+                  <label htmlFor="manpowerRetainCheck" className="text-xs sm:text-sm text-brand-navy/80 leading-relaxed">
                     <strong>Retain Consent:</strong> I agree that Opus Overseas can retain my resume details for 3 years to match and share with foreign employers (DPDP Candidate Clause).
                   </label>
                 </div>
@@ -548,40 +554,40 @@ const [consentMarketing, setConsentMarketing] = useState(true);
             <div className="border-t border-gray-200 pt-4 space-y-3">
               <h4 className="text-xs font-bold text-brand-navy uppercase tracking-wider">DPDP-2023 Legal Consents</h4>
               
-              <div className="space-y-2.5">
-                <label className="flex gap-2 items-start cursor-pointer select-none">
+              <div className="space-y-3">
+                <label className="flex gap-2.5 items-start cursor-pointer select-none">
                   <input 
                     type="checkbox" 
                     required 
                     checked={consentProcessing}
                     onChange={(e) => setConsentProcessing(e.target.checked)}
-                    className="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold"
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-brand-gold focus:ring-brand-gold accent-brand-gold shrink-0"
                   />
-                  <span className="text-[11px] text-brand-textLight leading-tight">
+                  <span className="text-xs sm:text-sm text-brand-navy/80 leading-relaxed">
                     I agree to the processing of my contact information and files to facilitate my application processes with universities, embassies, and transit agents.
                   </span>
                 </label>
 
-                <label className="flex gap-2 items-start cursor-pointer select-none">
+                <label className="flex gap-2.5 items-start cursor-pointer select-none">
                   <input 
                     type="checkbox" 
                     checked={consentWhatsApp}
                     onChange={(e) => setConsentWhatsApp(e.target.checked)}
-                    className="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold"
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-brand-gold focus:ring-brand-gold accent-brand-gold shrink-0"
                   />
-                  <span className="text-[11px] text-brand-textLight leading-tight">
+                  <span className="text-xs sm:text-sm text-brand-navy/80 leading-relaxed">
                     I authorize sending progress alerts, payment reminders, and visa status information via WhatsApp and SMS notifications.
                   </span>
                 </label>
 
-                <label className="flex gap-2 items-start cursor-pointer select-none">
+                <label className="flex gap-2.5 items-start cursor-pointer select-none">
                   <input 
                     type="checkbox" 
                     checked={consentMarketing}
                     onChange={(e) => setConsentMarketing(e.target.checked)}
-                    className="mt-0.5 rounded border-gray-300 text-brand-gold focus:ring-brand-gold"
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-brand-gold focus:ring-brand-gold accent-brand-gold shrink-0"
                   />
-                  <span className="text-[11px] text-brand-textLight leading-tight">
+                  <span className="text-xs sm:text-sm text-brand-navy/80 leading-relaxed">
                     I would like to receive occasional updates, tips, scholarship alerts, and offers about study-abroad and visa services tailored to my interests.
                   </span>
                 </label>
@@ -592,7 +598,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
             {siteKeyConfigured ? (
               <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken(null)} />
             ) : (
-              <div className="bg-gray-50 border border-gray-200 rounded p-3 flex justify-between items-center text-xs">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex justify-between items-center text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-brand-navy">Security check enabled in production</span>
                 </div>
@@ -601,14 +607,14 @@ const [consentMarketing, setConsentMarketing] = useState(true);
 
             {/* Submit Button */}
             {refCode && (
-              <div className="rounded-xl border border-brand-gold/40 bg-brand-gold/5 px-3 py-2.5 text-[11px] text-brand-navy/70">
+              <div className="rounded-xl border border-brand-gold/40 bg-brand-gold/5 px-3.5 py-2.5 text-xs sm:text-sm text-brand-navy/80 leading-relaxed">
                 Referred by partner <span className="font-mono font-bold text-brand-gold">{refCode}</span> — the referral is credited automatically when this application is submitted.
               </div>
             )}
             <button 
               type="submit" 
               disabled={leadMutation.isPending}
-              className="w-full bg-brand-gold hover:bg-brand-goldHover text-brand-navy py-2.5 rounded text-xs font-bold uppercase tracking-wider transition shadow hover:shadow-md disabled:opacity-50"
+              className="w-full bg-brand-gold hover:bg-brand-goldHover text-brand-navy py-3.5 rounded-xl text-sm font-bold uppercase tracking-wider transition shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer min-h-[48px]"
             >
               {leadMutation.isPending ? 'Submitting...' : 'Submit Lead & Get Code'}
             </button>
@@ -640,7 +646,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
 
             <form onSubmit={handleStatusSearch} className="space-y-3">
               <div>
-                <label className="text-[9px] uppercase tracking-wider text-brand-gold font-bold block mb-1">Mobile Number</label>
+                <label className="text-xs uppercase tracking-wider text-brand-gold font-bold block mb-1">Mobile Number</label>
                 <input 
                   type="tel" 
                   value={searchPhone}
@@ -650,7 +656,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                 />
               </div>
               <div>
-                <label className="text-[9px] uppercase tracking-wider text-brand-gold font-bold block mb-1">Access Token</label>
+                <label className="text-xs uppercase tracking-wider text-brand-gold font-bold block mb-1">Access Token</label>
                 <input 
                   type="text" 
                   value={searchToken}
@@ -670,7 +676,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
             </form>
 
             {/* Quick Demo Helper */}
-            <div className="border-t border-brand-navyLight pt-3 flex justify-between items-center text-[10px] text-brand-cream/50">
+            <div className="border-t border-brand-navyLight pt-3 flex justify-between items-center text-[13px] text-brand-cream/50">
               <span>Try Demo Search:</span>
               <button type="button" onClick={fillDemoSearch} className="text-brand-gold font-bold hover:underline">Click here to auto-fill</button>
             </div>
@@ -681,28 +687,28 @@ const [consentMarketing, setConsentMarketing] = useState(true);
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg flex flex-col gap-5">
               <div className="flex justify-between items-start border-b border-gray-100 pb-3">
                 <div>
-                  <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest">Active Application Status</span>
+                  <span className="text-xs font-bold text-brand-gold uppercase tracking-widest">Active Application Status</span>
                   <h4 className="font-display font-bold text-base text-brand-navy mt-1">{statusData.name || 'Client Account'}</h4>
-                  <p className="text-[10px] text-brand-textLight">Token: <span className="font-mono text-brand-navy font-semibold">{statusData.token}</span></p>
+                  <p className="text-[13px] text-brand-textLight">Token: <span className="font-mono text-brand-navy font-semibold">{statusData.token}</span></p>
                 </div>
-                <span className="px-2.5 py-1 bg-yellow-100 text-yellow-800 text-[10px] font-bold rounded uppercase">
+                <span className="px-2.5 py-1 bg-yellow-100 text-yellow-800 text-[13px] font-bold rounded uppercase">
                   {statusData.engagements?.[0]?.division || 'Study Abroad'}
                 </span>
               </div>
 
               {/* Visual Timeline Tracker */}
               <div>
-                <label className="text-[9px] uppercase tracking-wider text-brand-textLight font-bold block mb-3">Application Progress</label>
+                <label className="text-xs uppercase tracking-wider text-brand-textLight font-bold block mb-3">Application Progress</label>
                 
                 <div className="relative pl-6 space-y-4 text-xs">
                   <div className="absolute left-[7px] top-1.5 bottom-1.5 w-[2px] bg-gray-200"></div>
 
                   {/* Step 1: Consult */}
                   <div className="relative flex gap-3 flex-col">
-                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-brand-success text-white text-[9px] flex items-center justify-center font-bold font-mono">✓</span>
+                    <span className="absolute -left-6 w-4 h-4 rounded-full bg-brand-success text-white text-xs flex items-center justify-center font-bold font-mono">✓</span>
                     <div>
                       <p className="font-bold text-brand-navy">Consultation & Onboarding</p>
-                      <p className="text-[10px] text-brand-textLight">Completed. Lead captured in OpusOS database system.</p>
+                      <p className="text-[13px] text-brand-textLight">Completed. Lead captured in OpusOS database system.</p>
                     </div>
                   </div>
 
@@ -714,14 +720,14 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     
                     return (
                       <div className={`relative flex gap-3 flex-col ${!isActive && !isCompleted ? 'opacity-45' : ''}`}>
-                        <span className={`absolute -left-6 w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold font-mono ${
+                        <span className={`absolute -left-6 w-4 h-4 rounded-full text-xs flex items-center justify-center font-bold font-mono ${
                           isCompleted ? 'bg-brand-success text-white' : isActive ? 'bg-brand-gold text-brand-navy' : 'bg-gray-200 text-gray-500'
                         }`}>
                           {isCompleted ? '✓' : '2'}
                         </span>
                         <div>
                           <p className="font-bold text-brand-navy">Document Vault Verification</p>
-                          <p className="text-[10px] text-brand-textLight">
+                          <p className="text-[13px] text-brand-textLight">
                             {isCompleted ? 'Completed. All required documents verified.' : isActive ? 'Under review. Counselors are auditing uploaded certificates.' : 'Awaiting previous stages.'}
                           </p>
                         </div>
@@ -737,14 +743,14 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     
                     return (
                       <div className={`relative flex gap-3 flex-col ${!isActive && !isCompleted ? 'opacity-45' : ''}`}>
-                        <span className={`absolute -left-6 w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold font-mono ${
+                        <span className={`absolute -left-6 w-4 h-4 rounded-full text-xs flex items-center justify-center font-bold font-mono ${
                           isCompleted ? 'bg-brand-success text-white' : isActive ? 'bg-brand-gold text-brand-navy' : 'bg-gray-200 text-gray-500'
                         }`}>
                           {isCompleted ? '✓' : '3'}
                         </span>
                         <div>
                           <p className="font-bold text-brand-navy">Application Submission</p>
-                          <p className="text-[10px] text-brand-textLight">
+                          <p className="text-[13px] text-brand-textLight">
                             {isCompleted ? 'Submitted. Application sent to relevant entity.' : isActive ? 'Active. Counselors are submitting applications.' : 'Awaiting previous stages.'}
                           </p>
                         </div>
@@ -759,14 +765,14 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     
                     return (
                       <div className={`relative flex gap-3 flex-col ${!isActive ? 'opacity-45' : ''}`}>
-                        <span className={`absolute -left-6 w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold font-mono ${
+                        <span className={`absolute -left-6 w-4 h-4 rounded-full text-xs flex items-center justify-center font-bold font-mono ${
                           isActive ? 'bg-brand-gold text-brand-navy' : 'bg-gray-200 text-gray-500'
                         }`}>
                           4
                         </span>
                         <div>
                           <p className="font-bold text-brand-navy">Visa Stamping & Transit</p>
-                          <p className="text-[10px] text-brand-textLight">
+                          <p className="text-[13px] text-brand-textLight">
                             {isActive ? 'Active. Visa interview prep & financial statement assembly.' : 'Awaiting previous stages.'}
                           </p>
                         </div>
@@ -783,7 +789,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
                     SK
                   </div>
                   <div>
-                    <p className="text-[10px] text-brand-textLight leading-none">Assigned Counselor</p>
+                    <p className="text-[13px] text-brand-textLight leading-none">Assigned Counselor</p>
                     <p className="text-xs font-bold text-brand-navy mt-1">Santhosh Kumar</p>
                   </div>
                 </div>

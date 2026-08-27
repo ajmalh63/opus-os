@@ -235,4 +235,42 @@ describe('Study Abroad — Student Portal Profile & Documents (sync)', () => {
     expect(res.status).toBe(200);
     expect(bucket.get).toHaveBeenCalled();
   });
+
+  it('GET strategy-session returns required status when student has no active booking', async () => {
+    const res = await app.request('/api/public/portal/study-abroad/strategy-session?token=OP-2026-9301', {}, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(data.sessionMandatory).toBe(true);
+    expect(data.sessionStatus).toBe('required');
+    expect(data.booking).toBeNull();
+    expect(data.bookingUrl).toContain('cal');
+  });
+
+  it('GET strategy-session returns scheduled status when booking exists for student', async () => {
+    mockD1.tables.bookings.push({
+      id: 'book-9301',
+      cal_uid: 'cal-uid-9301',
+      event_type_id: 'ev-counseling',
+      division: 'study-abroad',
+      title: 'Study Abroad Admissions Strategy Session',
+      start_time: now + 86400,
+      end_time: now + 86400 + 1800,
+      attendee_name: 'Priya Sharma',
+      attendee_email: 'priya@test.com',
+      attendee_phone: '+91 99999 44444',
+      status: 'scheduled',
+      client_id: 'OP-2026-9301',
+      created_at: now,
+      updated_at: now,
+    });
+
+    const res = await app.request('/api/public/portal/study-abroad/strategy-session?token=OP-2026-9301', {}, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(data.sessionStatus).toBe('scheduled');
+    expect(data.booking).toBeTruthy();
+    expect(data.booking.title).toContain('Admissions Strategy');
+  });
 });

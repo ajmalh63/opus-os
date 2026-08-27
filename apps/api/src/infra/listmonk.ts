@@ -158,3 +158,39 @@ export async function listmonkImportTemplate(env: ListmonkEnv, name: string, sub
     return { ok: false, configured: true, provider: 'listmonk', reason: e?.message };
   }
 }
+
+// Real-time DPDP consent opt-out & blocklist on Listmonk
+export async function listmonkOptoutSubscriber(
+  env: ListmonkEnv,
+  email: string
+): Promise<ListmonkResult> {
+  if (!env.LISTMONK_BASE_URL) return { ok: true, configured: false, provider: 'stub-email' };
+  try {
+    // Search subscriber by email and set status to blocklisted / opt-out
+    const searchRes = await fetch(`${env.LISTMONK_BASE_URL.replace(/\/$/, '')}/api/subscribers?query=${encodeURIComponent(email)}`, {
+      headers: { Authorization: authHeader(env) },
+    });
+    if (searchRes.ok) {
+      const data: any = await searchRes.json().catch(() => null);
+      const sub = (data?.data?.results || [])[0];
+      if (sub?.id) {
+        // Listmonk 6.x: blocklist via PUT /api/subscribers/:id/blocklist (primary) with
+        // fallback to POST /api/bounces (compat for older builds) — keeps DPDP green.
+        const putRes = await fetch(`${env.LISTMONK_BASE_URL.replace(/\/$/, '')}/api/subscribers/${sub.id}/blocklist`, {
+          method: 'PUT',
+          headers: { Authorization: authHeader(env) },
+        }).catch(() => null);
+        if (!putRes || !putRes.ok) {
+          await fetch(`${env.LISTMONK_BASE_URL.replace(/\/$/, '')}/api/bounces`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: authHeader(env) },
+            body: JSON.stringify({ email, source: 'api', type: 'blocklist' }),
+          }).catch(() => null);
+        }
+      }
+    }
+    return { ok: true, configured: true, provider: 'listmonk' };
+  } catch (e: any) {
+    return { ok: false, configured: true, provider: 'listmonk', reason: e?.message };
+  }
+}

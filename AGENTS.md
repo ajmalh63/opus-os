@@ -92,13 +92,15 @@ cd apps/api && pnpm run db:generate   # incremental Drizzle migration
 - `/api/marketing/funnel`, `/partners`, `/experiments`, `/stale/:id/reactivate`, `/nurture/plan|due|:id/send`.
 - Artifact endpoints: `/api/public/jobs`, `/umrah/departures`, `/attestation/chains`, `/match/eligibility`.
 
-### Umrah division (Phase 3 — COMPLETE 2026-08-14)
+### Tours & Travels division (incorporating Umrah inventory — Phase 3 Updated 2026-08-26)
+- **Division Scope**: Tours & Travels desk (🧳) manages curated international holidays, domestic escapes, corporate MICE, and Umrah pilgrimage operations.
 - **Inventory**: `umrah_packages` (60 cols: flight/hotels/visa/transport/duration/pricing/content; wholesale vs retail paise; `soloAvailable`+`soloSupplementPaise`; **family pricing** `childWithBedPricePaise`/`childNoBedPricePaise`/`infantPricePaise` — null = adult rate). Staff CRUD in `routes/umrah.ts`; client browse in `routes/portalUmrah.ts`.
 - **Calendar**: `group_departures` (capacity 30, `packageId`, `endDate` for trip ranges, `departureCity`). Staff announce via calendar; client/partner see availability (aggregate only — who-booked is staff-only via manifest).
 - **Booking model (party)**: one booking = one **party** (`paxCount` + `booking_passengers` rows: name/dob/passport/category/specialNeeds; passport masked at API boundary via `lib/umrahParty.ts`). ₹500×pax non-refundable advance → seats `held` → Razorpay order → `verify-advance` → `reserved` 3 days (`reserveHoldHours`=72) → balance online (`pay-balance`/`verify-balance`) or office (`confirm-office`). Pricing per person by category (adult / child_with_bed / child_no_bed / infant), solo supplement only for pax=1 & solo, **group discount wired** (`groupDiscountPct` ≥ `groupDiscountMinPax`). Capacity & advance scale by pax; self-heal releases pax-count seats (held>24h / reserved>72h, no cron). Waitlist = whole party when pax > available.
 - **Coming Soon switch**: `app_settings` key `umrah_inventory_enabled` — gates client/partner surfaces until owner flips it.
+- **Member Price Gating**: Public pages show itineraries & dynamic configuration engines; live rate cards and wholesale PNR allocations require client authentication (`/login`).
 - **Partner**: catalog `departure` (fixed) + `umrah_package` types; `/go` links; commission plans support `umrah_package`.
-- **Frontend**: `UmrahCalendar.tsx` (reusable, staff/client/partner modes), `UmrahPortal.tsx` (Packages tab + calendar + party manifest w/ travellers + CSV), `UmrahClientSection.tsx` (browse→party builder→book→tracker), ClientPortal 🕋 tab.
+- **Frontend**: `UmrahCalendar.tsx` (reusable, staff/client/partner modes), `UmrahPortal.tsx` (Packages tab + calendar + party manifest w/ travellers + CSV), `UmrahClientSection.tsx` (browse→party builder→book→tracker), ClientPortal 🧳 tab.
 - **Tests**: `umrahPackages.test.ts`, `umrahPortalBooking.test.ts` (incl. solo supplement), `umrahFamilyBooking.test.ts` (party pax/capacity/advance/child pricing/group discount/waitlist/masking). Plan: `docs/umrah-division-plan.md` §13.
 
 ### Study Abroad division (Phase 4 — COMPLETE 2026-08-15)

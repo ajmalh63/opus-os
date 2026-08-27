@@ -137,34 +137,34 @@ export default function StudyAbroadApplicationModal({ profile, onClose, onCreate
   const match = computeMatch(profile, form);
   const valid = form.name.trim().length >= 2 && form.country.trim().length >= 2 && form.program.trim().length >= 2 && form.intake.trim().length >= 1;
 
-  const inputCls = 'w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[11px] text-brand-navy outline-none focus:border-brand-gold';
-  const labelCls = 'font-semibold text-brand-navy/40 text-[10px]';
+  const inputCls = 'w-full rounded-xl border border-brand-navy/15 bg-white px-3 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold min-h-[40px] transition-all';
+  const labelCls = 'font-semibold text-brand-navy/70 text-xs mb-1 block';
 
   return (
     <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 w-full max-w-2xl shadow-lg space-y-4 text-xs my-8">
-        <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
-          <h3 className="font-display font-extrabold text-brand-navy text-sm">🎓 New University Application</h3>
-          <button onClick={onClose} className="text-brand-navy/40 hover:text-brand-navy text-lg cursor-pointer">✕</button>
+      <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 sm:p-7 w-full max-w-3xl shadow-2xl space-y-4 text-xs sm:text-sm my-8">
+        <div className="flex justify-between items-center border-b border-brand-navy/10 pb-3">
+          <h3 className="font-display font-extrabold text-brand-navy text-base sm:text-lg">🎓 New University Application</h3>
+          <button onClick={onClose} className="text-brand-navy/40 hover:text-brand-navy text-xl cursor-pointer">✕</button>
         </div>
 
         {/* Live compatibility badge */}
-        <div className={`rounded-xl border p-3 flex items-center justify-between ${TIER_STYLE[match.tier]}`}>
+        <div className={`rounded-xl border p-3.5 flex items-center justify-between ${TIER_STYLE[match.tier]}`}>
           <div>
-            <div className="font-bold text-[11px]">{TIER_LABEL[match.tier]} — {match.score}/100</div>
-            <div className="text-[9px] opacity-80 mt-0.5">
+            <div className="font-bold text-xs sm:text-sm">{TIER_LABEL[match.tier]} — {match.score}/100</div>
+            <div className="text-xs opacity-80 mt-0.5">
               {match.reasons.length ? match.reasons.join(' · ') : 'Fill requirements to see compatibility'}
             </div>
           </div>
-          <div className="text-right text-[9px] opacity-80 shrink-0">
+          <div className="text-right text-xs opacity-85 shrink-0 font-medium">
             {profile.cgpa ? `CGPA ${profile.cgpa}` : 'No CGPA'} · {profile.englishScore ? `${profile.englishTest || ''} ${profile.englishScore}` : 'No English'} · ₹{profile.tuitionBudget ?? '?'}L
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* University */}
-          <div className="space-y-2">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">🏛️ University</h4>
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-brand-gold">🏛️ University</h4>
             <div><label className={labelCls}>Name *</label><input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. University of Toronto" /></div>
             <div className="grid grid-cols-2 gap-2">
               <div><label className={labelCls}>Country *</label><input className={inputCls} value={form.country} onChange={e => set('country', e.target.value)} placeholder="Canada" /></div>
@@ -175,12 +175,12 @@ export default function StudyAbroadApplicationModal({ profile, onClose, onCreate
               <div><label className={labelCls}>Portal URL</label><input className={inputCls} value={form.portalUrl} onChange={e => set('portalUrl', e.target.value)} placeholder="https://apply.…" /></div>
               <div><label className={labelCls}>Portal username</label><input className={inputCls} value={form.portalUsername} onChange={e => set('portalUsername', e.target.value)} placeholder="agent-ops" /></div>
             </div>
-            <div className="text-[9px] text-brand-navy/40">🔒 Portal passwords stay in your partner tools — never stored here.</div>
+            <div className="text-xs text-brand-navy/50">🔒 Portal passwords stay in your partner tools — never stored here.</div>
           </div>
 
           {/* Program */}
-          <div className="space-y-2">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">📚 Program</h4>
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-brand-gold">📚 Program</h4>
             <div><label className={labelCls}>Program title *</label><input className={inputCls} value={form.program} onChange={e => set('program', e.target.value)} placeholder="MSc Computer Science" /></div>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -207,8 +207,8 @@ export default function StudyAbroadApplicationModal({ profile, onClose, onCreate
           </div>
 
           {/* Requirements */}
-          <div className="space-y-2">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">📏 Requirements (from partner research)</h4>
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-brand-gold">📏 Requirements (from partner research)</h4>
             <div className="grid grid-cols-2 gap-2">
               <div><label className={labelCls}>Min CGPA (10 scale)</label><input type="number" min={0} max={10} step={0.1} className={inputCls} value={form.minGpa ?? ''} onChange={e => set('minGpa', e.target.value ? Number(e.target.value) : undefined)} placeholder="7.5" /></div>
               <div>
@@ -220,30 +220,30 @@ export default function StudyAbroadApplicationModal({ profile, onClose, onCreate
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><label className={labelCls}>Min score</label><input type="number" min={0} max={160} step={0.5} className={inputCls} value={form.minEnglishScore ?? ''} onChange={e => set('minEnglishScore', e.target.value ? Number(e.target.value) : undefined)} placeholder={form.englishTest === 'Duolingo' ? '120' : form.englishTest === 'Cambridge' ? '180' : form.englishTest === 'TOEFL' ? '100' : form.englishTest === 'PTE' ? '65' : '6.5'} /></div>
-              <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-brand-navy/60 cursor-pointer"><input type="checkbox" checked={!!form.greRequired} onChange={e => set('greRequired', e.target.checked)} className="h-3.5 w-3.5 accent-brand-gold" /> GRE required</label></div>
+              <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-brand-navy/80 text-xs cursor-pointer"><input type="checkbox" checked={!!form.greRequired} onChange={e => set('greRequired', e.target.checked)} className="h-4 w-4 accent-brand-gold rounded" /> GRE required</label></div>
             </div>
             <div><label className={labelCls}>Scholarships (JSON)</label><input className={inputCls} value={form.scholarshipsJson} onChange={e => set('scholarshipsJson', e.target.value)} placeholder='["Entrance Scholarship"]' /></div>
             <div><label className={labelCls}>Notes</label><textarea rows={2} className={inputCls} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Apply via portal, fee waiver code…" /></div>
           </div>
 
           {/* Docs checklist */}
-          <div className="space-y-2">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">📄 Typical document set</h4>
-            <div className="rounded-lg border border-brand-navy/10 p-3 text-[10px] text-brand-navy/60 space-y-1">
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-brand-gold">📄 Typical document set</h4>
+            <div className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.02] p-3.5 text-xs text-brand-navy/70 space-y-1.5">
               {['Transcripts', 'SOP', 'LORs (2–3)', 'Resume/CV', 'IELTS/TOEFL/PTE', 'Passport copy', 'Financial proof', 'Portfolio (if arts)'].map(d => (
-                <div key={d} className="flex items-center gap-1.5"><span className="text-emerald-600">✓</span>{d}</div>
+                <div key={d} className="flex items-center gap-2"><span className="text-emerald-600 font-bold">✓</span>{d}</div>
               ))}
             </div>
-            <div className="text-[9px] text-brand-navy/40">Checklist is tracked per application after creation (Documents tab).</div>
+            <div className="text-xs text-brand-navy/50">Checklist is tracked per application after creation (Documents tab).</div>
           </div>
         </div>
 
-        <div className="flex gap-3 pt-2 border-t border-brand-navy/10">
-          <button onClick={onClose} className="flex-1 border border-brand-navy/15 bg-brand-navy/[0.04] hover:border-brand-gold/50 py-2 rounded-lg font-bold text-brand-navy cursor-pointer transition-all">Cancel</button>
+        <div className="flex gap-3 pt-3 border-t border-brand-navy/10">
+          <button onClick={onClose} className="flex-1 border border-brand-navy/15 bg-brand-navy/[0.04] hover:border-brand-gold/50 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-brand-navy cursor-pointer transition-all">Cancel</button>
           <button
             onClick={() => onCreate(form)}
             disabled={!valid || creating}
-            className="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-2 rounded-lg font-bold cursor-pointer transition-all disabled:opacity-50"
+            className="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-2.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer transition-all disabled:opacity-50 shadow-sm"
           >
             {creating ? 'Creating…' : `Create Application (${match.tier})`}
           </button>

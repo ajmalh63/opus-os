@@ -38,7 +38,7 @@ export default function AiTranslatePanel({ clientId }: { clientId?: string }) {
         <select
           value={sourceLang}
           onChange={(e) => setSourceLang(e.target.value)}
-          className="rounded-lg border border-brand-navy/15 bg-white px-2 py-2 text-[11px] font-semibold text-brand-navy"
+          className="rounded-lg border border-brand-navy/15 bg-white px-2 py-2 text-sm font-semibold text-brand-navy"
         >
           <option value="auto">Detect (auto)</option>
           {Object.entries(LANGS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -47,7 +47,7 @@ export default function AiTranslatePanel({ clientId }: { clientId?: string }) {
         <select
           value={targetLang}
           onChange={(e) => setTargetLang(e.target.value)}
-          className="rounded-lg border border-brand-navy/15 bg-white px-2 py-2 text-[11px] font-semibold text-brand-navy"
+          className="rounded-lg border border-brand-navy/15 bg-white px-2 py-2 text-sm font-semibold text-brand-navy"
         >
           {Object.entries(LANGS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
@@ -65,23 +65,23 @@ export default function AiTranslatePanel({ clientId }: { clientId?: string }) {
         <button
           onClick={() => translateMutation.mutate()}
           disabled={!text.trim() || translateMutation.isPending}
-          className="rounded-lg bg-brand-gold px-4 py-2 text-[11px] font-extrabold uppercase tracking-wider text-brand-navy hover:bg-brand-gold-hover hover:text-white disabled:opacity-50 cursor-pointer"
+          className="rounded-lg bg-brand-gold px-4 py-2 text-sm font-extrabold uppercase tracking-wider text-brand-navy hover:bg-brand-gold-hover hover:text-white disabled:opacity-50 cursor-pointer"
         >
           {translateMutation.isPending ? 'Translating…' : 'Translate'}
         </button>
-        <span className="text-[10px] text-brand-navy/40">{text.length}/5000</span>
+        <span className="text-[13px] text-brand-navy/40">{text.length}/5000</span>
       </div>
 
-      {error && <p className="mt-2 text-[11px] font-semibold text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm font-semibold text-red-600">{error}</p>}
       {result && (
         <div className="mt-3">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">Translation</p>
-            <button onClick={() => navigator.clipboard?.writeText(result)} className="text-[10px] font-bold text-brand-navy/50 hover:text-brand-gold">
+            <p className="text-[13px] font-bold uppercase tracking-wider text-brand-gold">Translation</p>
+            <button onClick={() => navigator.clipboard?.writeText(result)} className="text-[13px] font-bold text-brand-navy/50 hover:text-brand-gold">
               Copy
             </button>
           </div>
-          <p className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-[11px] leading-relaxed text-brand-navy">
+          <p className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-sm leading-relaxed text-brand-navy">
             {result}
           </p>
         </div>

@@ -94,7 +94,7 @@ export default function FunnelTab() {
           <p className="text-xs text-brand-navy/40 mt-1">Lead to Customer conversion across all divisions. Generated {new Date((data as any).generatedAt * 1000).toLocaleString()}</p>
         </div>
         {data.staleCount > 0 && (
-          <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200/60 text-rose-700">
+          <span className="text-[13px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200/60 text-rose-700">
             {data.staleCount} stale lead{data.staleCount > 1 ? 's' : ''} need attention
           </span>
         )}
@@ -109,7 +109,7 @@ export default function FunnelTab() {
           { label: 'Lead -> Customer', value: data.leadToCustomer, suffix: '%' },
         ].map((kpi) => (
           <div key={kpi.label} className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">{kpi.label}</p>
+            <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">{kpi.label}</p>
             <p className="kpi-num font-display font-bold text-2xl md:text-3xl text-brand-gold mt-2">
               0{kpi.suffix}
             </p>
@@ -120,7 +120,7 @@ export default function FunnelTab() {
       {/* Stage bars + velocity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="panel-entrance lg:col-span-2 rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold mb-5">Pipeline Stages</h3>
+          <h3 className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold mb-5">Pipeline Stages</h3>
           <div className="space-y-4">
             {data.funnel.map((s) => {
               const rate = Math.min(100, Math.max(0, s.conversionRate));
@@ -142,7 +142,7 @@ export default function FunnelTab() {
         </div>
 
         <div className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold mb-5">Avg Days in Stage</h3>
+          <h3 className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold mb-5">Avg Days in Stage</h3>
           <div className="space-y-3">
             {data.funnel.map((s) => (
               <div key={s.stage} className="flex items-center justify-between">
@@ -157,8 +157,8 @@ export default function FunnelTab() {
       {/* Stale recovery queue */}
       <div className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white overflow-hidden shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
         <div className="px-6 py-4 border-b border-brand-navy/[0.08] flex items-center justify-between">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Stale Lead Recovery Queue</h3>
-          <span className="text-[10px] text-brand-navy/40">Untouched &gt; 7 days</span>
+          <h3 className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Stale Lead Recovery Queue</h3>
+          <span className="text-[13px] text-brand-navy/40">Untouched &gt; 7 days</span>
         </div>
         {data.stale.length === 0 ? (
           <p className="p-8 text-center text-xs text-brand-navy/40">No stale leads — follow-up discipline is on point.</p>
@@ -166,7 +166,7 @@ export default function FunnelTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[13px] text-brand-gold uppercase tracking-wider font-semibold">
                   <th className="p-4">Client</th>
                   <th className="p-4">Division</th>
                   <th className="p-4">Stage</th>
@@ -180,17 +180,17 @@ export default function FunnelTab() {
                   <tr key={s.clientId} className="border-b border-brand-navy/[0.08] last:border-0 hover:bg-brand-navy/[0.04]">
                     <td className="p-4">
                       <p className="text-brand-navy font-semibold">{s.name}</p>
-                      <p className="text-[10px] text-brand-navy/40">{s.phone} · {s.clientId}</p>
+                      <p className="text-[13px] text-brand-navy/40">{s.phone} · {s.clientId}</p>
                     </td>
                     <td className="p-4 text-brand-navy/40 capitalize">{s.division.replace('-', ' ')}</td>
-                    <td className="p-4"><span className="text-[10px] uppercase font-bold px-2 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/10 text-brand-navy/70">{s.stageKey}</span></td>
+                    <td className="p-4"><span className="text-[13px] uppercase font-bold px-2 py-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/10 text-brand-navy/70">{s.stageKey}</span></td>
                     <td className={`p-4 font-bold ${s.ageDays > 14 ? 'text-rose-600' : 'text-amber-700'}`}>{s.ageDays}d</td>
                     <td className="p-4 text-brand-navy">{inr(s.outstandingBalance)}</td>
                     <td className="p-4">
                       <button
                         onClick={() => reactivate.mutate(s.clientId)}
                         disabled={reactivate.isPending}
-                        className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-brand-gold/10 border border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-navy transition-all disabled:opacity-40"
+                        className="text-[13px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-brand-gold/10 border border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-navy transition-all disabled:opacity-40"
                       >
                         {reactivate.isPending ? '-' : 'Reactivate'}
                       </button>
@@ -206,8 +206,8 @@ export default function FunnelTab() {
       {/* Affiliate leaderboard */}
       <div className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white overflow-hidden shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
         <div className="px-6 py-4 border-b border-brand-navy/[0.08] flex items-center justify-between">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Partner Affiliate Leaderboard</h3>
-          <span className="text-[10px] text-brand-navy/40">Section 39 · commission</span>
+          <h3 className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Partner Affiliate Leaderboard</h3>
+          <span className="text-[13px] text-brand-navy/40">Section 39 · commission</span>
         </div>
         {partners.length === 0 ? (
           <p className="p-8 text-center text-xs text-brand-navy/40">No partners registered yet — share your affiliate link to start.</p>
@@ -215,7 +215,7 @@ export default function FunnelTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[13px] text-brand-gold uppercase tracking-wider font-semibold">
                   <th className="p-4">Partner</th>
                   <th className="p-4">Code</th>
                   <th className="p-4">Referrals</th>
@@ -228,7 +228,7 @@ export default function FunnelTab() {
                 {partners.map((p) => (
                   <tr key={p.partnerId} className="border-b border-brand-navy/[0.08] last:border-0 hover:bg-brand-navy/[0.04]">
                     <td className="p-4 text-brand-navy font-semibold">{p.name}</td>
-                    <td className="p-4"><span className="text-[10px] font-bold px-2 py-1 rounded-full bg-brand-gold/10 border border-brand-gold/40 text-brand-gold">{p.referralCode || '—'}</span></td>
+                    <td className="p-4"><span className="text-[13px] font-bold px-2 py-1 rounded-full bg-brand-gold/10 border border-brand-gold/40 text-brand-gold">{p.referralCode || '—'}</span></td>
                     <td className="p-4 text-brand-navy">{p.referrals}</td>
                     <td className="p-4 text-brand-navy">{p.converted}</td>
                     <td className="p-4 text-brand-navy">{p.conversionRate}%</td>
@@ -244,8 +244,8 @@ export default function FunnelTab() {
       {/* A/B experiments (Funnel#5) */}
       <div className="panel-entrance rounded-2xl border border-brand-navy/10 bg-white overflow-hidden shadow-[0_16px_40px_-22px_rgba(3,8,20,0.8)]">
         <div className="px-6 py-4 border-b border-brand-navy/[0.08] flex items-center justify-between">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">A/B Experiments</h3>
-          <span className="text-[10px] text-brand-navy/40">locked hypothesis · no peeking</span>
+          <h3 className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">A/B Experiments</h3>
+          <span className="text-[13px] text-brand-navy/40">locked hypothesis · no peeking</span>
         </div>
         {!expData || !expData.experiments || expData.experiments.length === 0 ? (
           <p className="p-8 text-center text-xs text-brand-navy/40">No experiments yet. Create one with a locked hypothesis + baseline + MDE.</p>
@@ -253,7 +253,7 @@ export default function FunnelTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[13px] text-brand-gold uppercase tracking-wider font-semibold">
                   <th className="p-4">Experiment</th>
                   <th className="p-4">Status</th>
                   <th className="p-4">Variant A</th>
@@ -266,20 +266,20 @@ export default function FunnelTab() {
                   <tr key={e.key} className="border-b border-brand-navy/[0.08] last:border-0 hover:bg-brand-navy/[0.04]">
                     <td className="p-4">
                       <p className="text-brand-navy font-semibold">{e.name}</p>
-                      <p className="text-[10px] text-brand-navy/40 max-w-md">{e.hypothesis}</p>
+                      <p className="text-[13px] text-brand-navy/40 max-w-md">{e.hypothesis}</p>
                     </td>
                     <td className="p-4">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${e.status === 'active' ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30' : 'bg-brand-navy/[0.06] text-brand-navy/70'}`}>
+                      <span className={`text-[13px] font-bold uppercase px-2 py-1 rounded-full ${e.status === 'active' ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30' : 'bg-brand-navy/[0.06] text-brand-navy/70'}`}>
                         {e.status}
                       </span>
                     </td>
                     <td className="p-4">
                       <p className="text-brand-navy">{e.variantA}</p>
-                      <p className="text-[10px] text-brand-gold">{e.variants.A.assigned} assigned · {e.variants.A.rate}% {e.primaryMetric}</p>
+                      <p className="text-[13px] text-brand-gold">{e.variants.A.assigned} assigned · {e.variants.A.rate}% {e.primaryMetric}</p>
                     </td>
                     <td className="p-4">
                       <p className="text-brand-navy">{e.variantB}</p>
-                      <p className="text-[10px] text-brand-gold">{e.variants.B.assigned} assigned · {e.variants.B.rate}% {e.primaryMetric}</p>
+                      <p className="text-[13px] text-brand-gold">{e.variants.B.assigned} assigned · {e.variants.B.rate}% {e.primaryMetric}</p>
                     </td>
                     <td className="p-4 text-brand-navy/40">{e.primaryMetric}</td>
                   </tr>

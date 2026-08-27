@@ -76,6 +76,11 @@ export const signAgreementSchema = z.object({
   otp: z.string().optional()
 });
 
+export const dispatchAgreementSchema = z.object({
+  channel: z.enum(['whatsapp', 'chatwoot', 'email', 'all']).default('all'),
+  note: z.string().max(500).optional(),
+});
+
 // 6. Create Payment Ledger Schema
 export const createPaymentSchema = z.object({
   clientId: z.string().min(1, { message: "Client ID is required" }),
@@ -113,7 +118,11 @@ export const createDepartureSchema = z.object({
 // of client doubts. All money integer paise. JSON lists are stringified.
 export const createUmrahPackageSchema = z.object({
   name: z.string().min(2, 'Package name is required'),
+  category: z.enum(['umrah_pilgrimage', 'international_holiday', 'domestic', 'custom_group']).default('umrah_pilgrimage'),
   tier: z.enum(['economy', 'standard', 'premium', 'luxury']).default('standard'),
+  // Destination
+  destinationCountry: z.string().optional(),
+  destinationCity: z.string().optional(),
   // Duration
   totalDays: z.number().int().min(1).default(7),
   makkahNights: z.number().int().min(0).default(0),
@@ -126,13 +135,16 @@ export const createUmrahPackageSchema = z.object({
   baggageAllowance: z.string().optional(),
   flightClass: z.enum(['economy', 'business']).default('economy'),
   zamzamIncluded: z.boolean().default(true),
-  // Makkah hotel
+  // General Hotel (International / Domestic)
+  hotelName: z.string().optional(),
+  hotelStars: z.number().int().min(1).max(7).optional(),
+  // Makkah hotel (Pilgrimage)
   makkahHotel: z.string().optional(),
   makkahHotelStars: z.number().int().min(1).max(7).optional(),
   makkahDistanceMeters: z.number().int().min(0).optional(),
   makkahWalkMinutes: z.number().int().min(0).optional(),
   makkahHaramView: z.enum(['none', 'partial', 'full']).default('none'),
-  // Madinah hotel
+  // Madinah hotel (Pilgrimage)
   madinahHotel: z.string().optional(),
   madinahHotelStars: z.number().int().min(1).max(7).optional(),
   madinahDistanceMeters: z.number().int().min(0).optional(),
@@ -148,6 +160,7 @@ export const createUmrahPackageSchema = z.object({
   airportTransfer: z.boolean().default(true),
   intercityTransport: z.enum(['group_bus', 'private_car', 'luxury_car', 'none']).default('group_bus'),
   ziyaratTours: z.boolean().default(true),
+  sightseeingHighlightsJson: z.string().default('[]'),
   groupLeader: z.boolean().default(false),
   guideLanguage: z.string().optional(),
   // Visa
@@ -247,6 +260,8 @@ export type ConfirmUmrahOfficeInput = z.infer<typeof confirmUmrahOfficeSchema>;
 // 8. Study Abroad Applications (snapshot model — Phase 4)
 // The application modal captures everything an agent needs to apply; the
 // university object is stored as universityJson on the application row.
+export const STUDY_ABROAD_ENGLISH_TESTS = ['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge', 'LanguageCert', 'OET', 'TOEIC', 'Other'] as const;
+
 export const studyAbroadUniversitySchema = z.object({
   name: z.string().min(2, 'University name is required'),
   country: z.string().min(2, 'Country is required'),
@@ -261,7 +276,7 @@ export const studyAbroadUniversitySchema = z.object({
   applicationFeePaise: z.number().int().min(0).optional(),
   minGpa: z.number().min(0).max(10).optional(),
   minEnglishScore: z.number().min(0).max(9).optional(),
-  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge']).optional(),
+  englishTest: z.enum(STUDY_ABROAD_ENGLISH_TESTS).optional(),
   greRequired: z.boolean().default(false),
   tuitionLpaMin: z.number().min(0).optional(),
   tuitionLpaMax: z.number().min(0).optional(),
@@ -338,8 +353,8 @@ export const studentProfileSchema = z.object({
   workCompany: z.string().max(120).optional(),
   workRole: z.string().max(120).optional(),
   // Test scores (actual or planned) — universal, any country
-  englishTest: z.enum(['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge', 'SAT', 'ACT', 'Other']).optional(),
-  englishScore: z.number().min(0).max(160).optional(), // allow 160 for SAT, Duolingo etc.
+  englishTest: z.enum(STUDY_ABROAD_ENGLISH_TESTS).optional(),
+  englishScore: z.number().min(0).max(160).optional(), // allow 160 for Duolingo 160, TOEFL 120, PTE 90, IELTS 9, LanguageCert 90 etc.
   greScore: z.number().min(260).max(340).optional(),
   gmatScore: z.number().min(200).max(800).optional(),
   satScore: z.number().min(400).max(1600).optional(),
@@ -380,7 +395,17 @@ export const createShipmentSchema = z.object({
 
 export type CreateShipmentInput = z.infer<typeof createShipmentSchema>;
 
-// 10. Register Staff Schema
+// 10. Feedback & Review Schemas
+export const reviewSourceSchema = z.enum(['native', 'google', 'trustpilot', 'whatsapp']);
+export type ReviewSource = z.infer<typeof reviewSourceSchema>;
+
+export const syncExternalReviewsSchema = z.object({
+  sources: z.array(z.enum(['google', 'trustpilot'])).optional(),
+  minRating: z.number().int().min(1).max(5).default(4),
+  limit: z.number().int().min(1).max(50).default(20),
+});
+export type SyncExternalReviewsInput = z.infer<typeof syncExternalReviewsSchema>;
+
 export const feedbackSubmissionSchema = z.object({
   clientName: z.string().min(2, { message: "Name must be at least 2 characters" }),
   rating: z.number().int().min(1).max(5, { message: "Rating must be between 1 and 5 stars" }),
@@ -389,6 +414,10 @@ export const feedbackSubmissionSchema = z.object({
   comment: z.string().min(5, { message: "Review or feedback must be at least 5 characters" }),
   feedbackType: z.enum(['review', 'csat', 'bug', 'suggestion']).default('review'),
   counselorName: z.string().max(100).optional(),
+  source: reviewSourceSchema.default('native'),
+  authorAvatarUrl: z.string().url().optional(),
+  authorLocation: z.string().max(100).optional(),
+  sourceUrl: z.string().url().optional(),
   consentToPublish: z.boolean().default(true),
   metadata: z.record(z.any()).optional()
 });

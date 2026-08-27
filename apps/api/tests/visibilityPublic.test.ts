@@ -1,6 +1,38 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
+
+vi.mock('../src/auth.js', () => {
+  return {
+    getAuth: () => ({
+      api: {
+        getSession: async (options: any) => {
+          const cookieHeader = options?.headers?.get('cookie') || '';
+          const match = cookieHeader.match(/better-auth\.session_token=([^;]+)/);
+          const token = match ? match[1] : null;
+
+          if (token === 'token-admin') {
+            return {
+              user: {
+                id: 'admin-1',
+                name: 'Admin User',
+                email: 'admin@test.com',
+                role: 'super_admin',
+                userDivisions: JSON.stringify(['study-abroad', 'visa', 'umrah', 'attestation', 'manpower']),
+              },
+              session: {
+                id: 'session-admin',
+                token,
+                userId: 'admin-1',
+              },
+            };
+          }
+          return null;
+        },
+      },
+    }),
+  };
+});
 
 // Regression: public attribution endpoints (POST /api/visibility/utm,
 // POST /api/visibility/ga4/events, GET /api/visibility/ga4/config) must stay
@@ -45,5 +77,45 @@ describe('Public visibility endpoints (anonymous access)', () => {
   it('manager-only visibility endpoints still require RBAC (no session → 401)', async () => {
     const res = await app.request('/api/visibility/seo/audit', {}, { DB: mockD1, BETTER_AUTH_SECRET: 's' });
     expect(res.status).toBe(401);
+  });
+
+  it('GET /api/visibility/public/meta returns gold-standard default meta for any static route', async () => {
+    const res = await app.request('/api/visibility/public/meta?route=/study-abroad', {}, { DB: mockD1, BETTER_AUTH_SECRET: 's' });
+    expect(res.status).toBe(200);
+    const j = await res.json() as any;
+    expect(j.success).toBe(true);
+    expect(j.meta.title).toBe('Study Abroad Programs | Top Universities in UK, USA & Germany');
+    expect(j.meta.metaDescription.length).toBeLessThanOrEqual(165);
+    expect(j.meta.ogTitle).toBeDefined();
+    expect(JSON.parse(j.meta.schemaJson)['@type']).toBe('EducationalOrganization');
+  });
+
+  it('GET /api/visibility/seo/audit returns 100/100 average score with 0 issues across all 7 routes', async () => {
+    const res = await app.request('/api/visibility/seo/audit', {
+      headers: { cookie: 'better-auth.session_token=token-admin' },
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 's' });
+    expect(res.status).toBe(200);
+    const j = await res.json() as any;
+    expect(j.success).toBe(true);
+    expect(j.avgScore).toBe(100);
+    expect(j.pages.length).toBe(7);
+    for (const page of j.pages) {
+      expect(page.score).toBe(100);
+      expect(page.issues.length).toBe(0);
+    }
+  });
+
+  it('GET /api/visibility/seo/pages returns 7 complete pages', async () => {
+    const res = await app.request('/api/visibility/seo/pages', {
+      headers: { cookie: 'better-auth.session_token=token-admin' },
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 's' });
+    expect(res.status).toBe(200);
+    const j = await res.json() as any;
+    expect(j.success).toBe(true);
+    expect(j.pages.length).toBe(7);
+    for (const page of j.pages) {
+      expect(page.hasMeta).toBe(true);
+      expect(page.hasSchema).toBe(true);
+    }
   });
 });

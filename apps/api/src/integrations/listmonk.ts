@@ -46,23 +46,45 @@ export const listmonkAdapter: ToolAdapter = {
       ]);
       if (!campRes.ok || !subRes.ok || !bncRes.ok) {
         const bad = [campRes, subRes, bncRes].find((r) => !r.ok);
-        throw new Error(`fetch failed: HTTP ${bad?.status} from Listmonk`);
+        const status = bad?.status || 500;
+        const summary = status === 530
+          ? 'Cloudflare Tunnel Offline (HTTP 530)'
+          : `fetch failed: HTTP ${status} from Listmonk`;
+        return { ...base, status: { state: 'error', label: this.label, summary }, metrics: { httpStatus: status }, items: [] };
       }
       const camps: any = await campRes.json().catch(() => ({ data: [] }));
       const subs: any = await subRes.json().catch(() => ({ data: { total: null } }));
       const bnc: any = await bncRes.json().catch(() => ({ data: { total: null } }));
-      const items: ToolFeedItem[] = (camps.data || []).map((c: any) => ({
+
+      const campList: any[] = Array.isArray(camps?.data?.results)
+        ? camps.data.results
+        : Array.isArray(camps?.data)
+        ? camps.data
+        : Array.isArray(camps?.results)
+        ? camps.results
+        : Array.isArray(camps)
+        ? camps
+        : [];
+
+      const totalSubs = Number(subs?.data?.total ?? subs?.total ?? (Array.isArray(subs?.data?.results) ? subs.data.results.length : 0));
+      const totalBnc = Number(bnc?.data?.total ?? bnc?.total ?? (Array.isArray(bnc?.data?.results) ? bnc.data.results.length : 0));
+
+      const items: ToolFeedItem[] = campList.map((c: any) => ({
         tool: 'listmonk', kind: 'campaign', id: String(c.id), title: c.name || `Campaign ${c.id}`,
-        detail: `${c.status || 'unknown'} · sent ${c.sends || 0} · ${c.to_send ?? 0} queued`, at: c.updated_at || Math.floor(Date.now() / 1000),
+        detail: `${c.status || 'unknown'} · sent ${c.sends || 0} · ${c.to_send ?? 0} queued`,
+        at: typeof c.updated_at === 'string' ? Math.floor(new Date(c.updated_at).getTime() / 1000) : (Number(c.updated_at) || Math.floor(Date.now() / 1000)),
       }));
       return {
         ...base,
-        status: { state: 'ok', label: this.label, summary: `${items.length} campaigns · ${subs.data?.total ?? 0} subscribers` },
-        metrics: { campaigns: items.length, subscribers: subs.data?.total ?? 0, bounces: bnc.data?.total ?? 0 },
+        status: { state: 'ok', label: this.label, summary: `${items.length} campaigns · ${totalSubs} subscribers` },
+        metrics: { campaigns: items.length, subscribers: totalSubs, bounces: totalBnc },
         items,
       };
     } catch (e: any) {
-      return { ...base, status: { state: 'error', label: this.label, summary: `fetch failed: ${e?.message || 'unknown'}` }, metrics: {}, items: [] };
+      const summary = String(e?.message).includes('530')
+        ? 'Cloudflare Tunnel Offline (HTTP 530)'
+        : `fetch failed: ${e?.message || 'unknown'}`;
+      return { ...base, status: { state: 'error', label: this.label, summary }, metrics: {}, items: [] };
     }
   },
 };

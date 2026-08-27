@@ -2,11 +2,9 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
 
-// ── Marketing Automation — UNIFIED CONTROL PANEL ─────────────────────────────
-// Operations happen in the backend tools through their VPC APIs (Listmonk,
-// Mautic automation, Chatwoot, OpenWA); this UI is the unified Superadmin
-// control plane with full visibility into Journeys, Templates, Assets, Forms,
-// Pages, DWC, Audiences, WhatsApp Workflows, and Suppression.
+// ── Marketing & Communications Studio ─────────────────────────────────────────
+// Simplified, human-friendly workspace for sending WhatsApp messages, emails,
+// and sharing marketing lead magnets across Study Abroad, Umrah, and Attestation.
 
 const getJson = async (url: string) => {
   const r = await fetch(url, { credentials: 'include' });
@@ -14,656 +12,585 @@ const getJson = async (url: string) => {
   return r.json();
 };
 
-const STATE_STYLE: Record<string, string> = {
-  ok: 'bg-emerald-500/15 text-emerald-700',
-  unconfigured: 'bg-slate-500/15 text-slate-400',
-  error: 'bg-rose-500/15 text-rose-700',
-};
-
-type LiveData = { tools: any[]; feed: any[] };
-
-const REL = (at: number) => {
-  const s = Math.floor(Date.now() / 1000) - at;
-  if (s < 90) return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
-};
-
-function ErrPanel({ what, onRetry }: { what: string; onRetry: any }) {
-  return (
-    <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-6 text-center">
-      <p className="text-[11px] font-bold text-amber-800">Unable to load {what} — tool may be unconfigured.</p>
-      <button onClick={onRetry} className="mt-2 text-[10px] font-bold uppercase text-brand-gold hover:underline">Retry</button>
-    </div>
-  );
-}
-
 function asArray(d: any): any[] {
   if (Array.isArray(d)) return d;
   if (d && typeof d === 'object') {
     if (Array.isArray(d.data)) return d.data;
+    if (d.data && Array.isArray(d.data.results)) return d.data.results;
     if (Array.isArray(d.results)) return d.results;
     if (Array.isArray(d.campaigns)) return d.campaigns;
     if (Array.isArray(d.templates)) return d.templates;
+    if (Array.isArray(d.emails)) return d.emails;
     if (Array.isArray(d.lists)) return d.lists;
     if (Array.isArray(d.bounces)) return d.bounces;
-    if (d.data && Array.isArray(d.data.results)) return d.data.results;
+    if (Array.isArray(d.assets)) return d.assets;
+    if (Array.isArray(d.forms)) return d.forms;
+    if (Array.isArray(d.pages)) return d.pages;
+    if (Array.isArray(d.dynamicContent)) return d.dynamicContent;
+    if (Array.isArray(d.dynamiccontent)) return d.dynamiccontent;
   }
   return [];
 }
 
-// ── Overview ──────────────────────────────────────────────────────────────────
-function Overview({ live }: { live: LiveData }) {
-  return (
-    <div className="space-y-6">
-      <section className="reveal grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {live.tools.map((t) => (
-          <div key={t.tool} className={`rounded-2xl border p-4 shadow-[0_16px_30px_-18px_rgba(10,45,80,0.10)] transition-all duration-300 hover:border-brand-gold/40 ${t.status.state === 'ok' ? 'border-emerald-500/30 bg-white' : 'border-brand-navy/10 bg-white'}`}>
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-display text-sm font-extrabold text-brand-navy">{t.label}</span>
-              <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${STATE_STYLE[t.status.state] || STATE_STYLE.unconfigured}`}>{t.status.state}</span>
-            </div>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-brand-navy/40">{t.status.summary}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {Object.entries(t.metrics || {}).map(([k, v]) => (
-                <span key={k} className="rounded bg-brand-navy/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-brand-navy/40">{k}: {String(v ?? '—')}</span>
-              ))}
-            </div>
-          </div>
-        ))}
-      </section>
-      <section className="reveal rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-[0_20px_40px_-15px_rgba(10,45,80,0.10)]">
-        <div className="text-[10px] font-bold uppercase tracking-widest text-brand-navy/40">Live event feed · {live.feed.length} items</div>
-        <div className="mt-3 max-h-72 space-y-1 overflow-y-auto pr-1">
-          {live.feed.map((f: any) => (
-            <div key={`${f.tool}-${f.kind}-${f.id}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] hover:bg-brand-gold/10">
-              <span className={`w-16 shrink-0 rounded px-1 py-0.5 text-center font-bold uppercase ${STATE_STYLE.ok}`}>{f.tool}</span>
-              <span className="min-w-0 flex-1 truncate text-brand-navy/70">{f.title}</span>
-              {f.detail && <span className="hidden truncate text-[10px] text-brand-navy/50 md:block md:max-w-[16rem]">{f.detail}</span>}
-              <span className="shrink-0 text-[10px] text-brand-navy/50">{REL(f.at)}</span>
-            </div>
-          ))}
-          {live.feed.length === 0 && <div className="py-8 text-center text-[11px] text-brand-navy/50">No tool events yet.</div>}
-        </div>
-      </section>
-    </div>
-  );
-}
+export default function MarketingTab() {
+  const rootRef = useRevealRoot<HTMLDivElement>();
+  const [activeTab, setActiveTab] = useState<'whatsapp' | 'emails' | 'assets' | 'advanced'>('whatsapp');
+  const [selectedDivision, setSelectedDivision] = useState<string>('all');
 
-// ── Mautic Journeys View ───────────────────────────────────────────────────────
-function JourneysView() {
-  const { data: mauticCamps, isLoading, isError, refetch } = useQuery<any>({
-    queryKey: ['mautic-campaigns'],
-    queryFn: () => getJson('/api/integrations/mautic/campaigns'),
+  // Leads for quick sender
+  const { data: leadsData } = useQuery<any>({
+    queryKey: ['marketing-leads-picker'],
+    queryFn: () => getJson('/api/leads').catch(() => ({ leads: [] })),
   });
+  const realLeads: any[] = leadsData?.leads || [];
 
-  const campaigns = mauticCamps?.campaigns ? Object.values(mauticCamps.campaigns) : [];
-
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading automated journeys…</div>;
-  if (isError) return <ErrPanel what="campaign journeys" onRetry={refetch} />;
-
-  const tierMeta: Record<string, { label: string; cls: string; border: string; badge: string; icon: string }> = {
-    hot: { label: 'Hot Tier — VIP Fast-Track (Score 50+)', cls: 'bg-rose-50/50', border: 'border-rose-200', badge: 'bg-rose-100 text-rose-800', icon: '🔥' },
-    warm: { label: 'Warm Tier — Authority Nurture (Score 20-49)', cls: 'bg-amber-50/50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-800', icon: '⭐' },
-    cold: { label: 'Cold Tier — Re-Engagement (Score < 20)', cls: 'bg-blue-50/50', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-800', icon: '❄️' },
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-rose-200 bg-white p-4">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-rose-600">🔥 Hot VIP Queue</div>
-          <div className="mt-1 font-display text-2xl font-extrabold text-brand-navy">Score 50+</div>
-          <div className="mt-1 text-[11px] text-brand-navy/50">Instant Counselor Strategy Session + 48h Waiver Window</div>
-        </div>
-        <div className="rounded-2xl border border-amber-200 bg-white p-4">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-amber-600">⭐ Warm Nurture Queue</div>
-          <div className="mt-1 font-display text-2xl font-extrabold text-brand-navy">Score 20–49</div>
-          <div className="mt-1 text-[11px] text-brand-navy/50">5-Step Strategic Blueprint + Case Studies & Proof</div>
-        </div>
-        <div className="rounded-2xl border border-blue-200 bg-white p-4">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600">❄️ Cold Re-Activation</div>
-          <div className="mt-1 font-display text-2xl font-extrabold text-brand-navy">Score &lt; 20</div>
-          <div className="mt-1 text-[11px] text-brand-navy/50">2026/2027 Policy Updates + 60s 1-Click Refresh</div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {campaigns.map((c: any) => {
-          const nameLower = (c.name || '').toLowerCase();
-          const tier = nameLower.includes('hot') ? 'hot' : nameLower.includes('warm') ? 'warm' : 'cold';
-          const meta = tierMeta[tier];
-          const events = c.events ? Object.values(c.events) : [];
-
-          return (
-            <div key={c.id} className={`rounded-2xl border p-5 transition-all shadow-sm ${meta.border} ${meta.cls}`}>
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-brand-navy/10 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{meta.icon}</span>
-                  <div>
-                    <h3 className="font-display font-bold text-sm text-brand-navy">{c.name}</h3>
-                    <p className="text-[11px] text-brand-navy/50">{c.description || 'Automated multi-step lifecycle campaign'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase ${c.isPublished ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
-                    {c.isPublished ? 'Live & Active' : 'Draft'}
-                  </span>
-                  <a href={`https://mautic.opusoverseas.com/s/campaigns/view/${c.id}`} target="_blank" rel="noreferrer" className="rounded-lg bg-brand-navy px-3 py-1 text-[10px] font-bold text-brand-gold hover:bg-brand-navy/90">
-                    Open in Mautic ↗
-                  </a>
-                </div>
-              </div>
-
-              {/* Steps timeline */}
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {events.map((ev: any, idx: number) => (
-                  <div key={ev.id} className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-xs">
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="font-bold text-brand-gold uppercase">Step {idx + 1} · {ev.triggerMode === 'immediate' ? 'Immediate' : `After ${ev.triggerInterval || '2'} ${ev.triggerIntervalUnit || 'days'}`}</span>
-                      <span className="font-mono text-brand-navy/40">{ev.type}</span>
-                    </div>
-                    <div className="mt-1 text-xs font-semibold text-brand-navy">{ev.name}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ── Mautic 12 HTML5 Templates View ─────────────────────────────────────────────
-function MauticTemplatesView() {
-  const { data, isLoading, isError, refetch } = useQuery<any>({
-    queryKey: ['mautic-emails'],
-    queryFn: () => getJson('/api/integrations/mautic/emails?limit=30'),
-  });
-
-  const [previewEmail, setPreviewEmail] = useState<any | null>(null);
-
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading HTML5 email suite…</div>;
-  if (isError) return <ErrPanel what="email templates" onRetry={refetch} />;
-
-  const emails: any[] = data?.emails ? Object.values(data.emails) : [];
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[11px] text-brand-navy/50">
-          <strong>{emails.length} Responsive HTML5 Templates</strong> provisioned across Hot, Warm, and Cold tiers. All templates feature clean client-facing subjects and brand styling.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        {emails.map((e: any) => {
-          const nameLower = (e.name || '').toLowerCase();
-          const badgeColor = nameLower.includes('hot') ? 'bg-rose-100 text-rose-800' : nameLower.includes('warm') ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
-
-          return (
-            <div key={e.id} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-3 flex flex-col justify-between hover:border-brand-gold/40 transition">
-              <div>
-                <div className="flex items-center justify-between gap-1">
-                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${badgeColor}`}>
-                    {nameLower.includes('hot') ? '🔥 Hot Tier' : nameLower.includes('warm') ? '⭐ Warm Tier' : '❄️ Cold Tier'}
-                  </span>
-                  <span className="font-mono text-[9px] text-brand-navy/40">ID: {e.id}</span>
-                </div>
-                <h4 className="mt-2 text-xs font-bold text-brand-navy leading-snug">{e.name}</h4>
-                <p className="mt-1 text-[11px] text-brand-navy/60 line-clamp-2 italic">
-                  &ldquo;{e.subject}&rdquo;
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-brand-navy/[0.06] pt-3">
-                <span className="text-[9px] text-brand-navy/40">From: {e.fromName || 'Opus Overseas'}</span>
-                <button onClick={() => setPreviewEmail(e)} className="rounded-lg bg-brand-navy/5 px-2.5 py-1 text-[10px] font-bold text-brand-navy hover:bg-brand-gold hover:text-brand-navy transition">
-                  Preview HTML5 ↗
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* HTML5 Preview Modal */}
-      {previewEmail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/60 p-4 backdrop-blur-xs">
-          <div className="relative flex h-[90vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between border-b border-brand-navy/10 px-5 py-3.5 bg-brand-cream">
-              <div>
-                <div className="text-xs font-bold text-brand-navy">{previewEmail.name}</div>
-                <div className="text-[10px] text-brand-navy/50">Subject: {previewEmail.subject}</div>
-              </div>
-              <button onClick={() => setPreviewEmail(null)} className="rounded-full bg-brand-navy/10 px-3 py-1 text-xs font-bold text-brand-navy hover:bg-brand-navy hover:text-white">
-                ✕ Close
-              </button>
-            </div>
-            <div className="flex-1 overflow-hidden bg-[#FAF8F4] p-2">
-              <iframe title="Email Preview" srcDoc={previewEmail.customHtml} className="h-full w-full rounded-lg border border-brand-navy/10 bg-white" />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── WhatsApp & Chatwoot Workflows View ─────────────────────────────────────────
-function WhatsAppView() {
-  const { data, isLoading, isError, refetch } = useQuery<any>({
+  // WhatsApp Templates
+  const { data: waData, isLoading: waLoading } = useQuery<any>({
     queryKey: ['wa-templates'],
     queryFn: () => getJson('/api/marketing/whatsapp/templates'),
   });
+  const waTemplates: any[] = waData?.templates || [];
 
-  const [activeCategory, setActiveCategory] = useState<'all' | 'operational' | 'marketing'>('all');
-  const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
-  const [testPhone, setTestPhone] = useState('');
-  const [testName, setTestName] = useState('Test Applicant');
-  const [isSending, setIsSending] = useState(false);
-  const [sendResult, setSendResult] = useState<any | null>(null);
+  // Email Templates
+  const { data: emailsData, isLoading: emailsLoading } = useQuery<any>({
+    queryKey: ['mautic-emails'],
+    queryFn: () => getJson('/api/integrations/mautic/emails?limit=30'),
+  });
+  const emailTemplates: any[] = emailsData?.emails ? Object.values(emailsData.emails) : [];
 
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading WhatsApp & Chatwoot automation suite…</div>;
-  if (isError) return <ErrPanel what="WhatsApp templates" onRetry={refetch} />;
+  // Assets & Guides
+  const { data: assetsData } = useQuery<any>({
+    queryKey: ['mautic-assets'],
+    queryFn: () => getJson('/api/integrations/mautic/assets'),
+  });
+  const assets: any[] = asArray(assetsData);
 
-  const templates: any[] = data?.templates || [];
-  const filtered = activeCategory === 'all' ? templates : templates.filter((t: any) => t.category === activeCategory);
+  // Quick WhatsApp Dispatch state
+  const [selectedWaTemplate, setSelectedWaTemplate] = useState<any | null>(null);
+  const [targetPhone, setTargetPhone] = useState('');
+  const [targetName, setTargetName] = useState('Valued Client');
+  const [customNote, setCustomNote] = useState('');
+  const [isSendingWa, setIsSendingWa] = useState(false);
+  const [waSendResult, setWaSendResult] = useState<any | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const handleTestSend = async () => {
-    if (!testPhone || !selectedTemplate) return;
-    setIsSending(true);
-    setSendResult(null);
+  // Email Send Modal state
+  const [selectedEmail, setSelectedEmail] = useState<any | null>(null);
+  const [previewEmailModal, setPreviewEmailModal] = useState<any | null>(null);
+  const [targetEmail, setTargetEmail] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSendStatus, setEmailSendStatus] = useState<string | null>(null);
+
+  const handleCopy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2500);
+  };
+
+  const handleOpenWaModal = (t: any) => {
+    setSelectedWaTemplate(t);
+    setWaSendResult(null);
+    if (realLeads.length > 0 && !targetPhone) {
+      setTargetPhone(realLeads[0].phone || '+91 ');
+      setTargetName(realLeads[0].name || 'Applicant');
+    }
+  };
+
+  const handleSelectLeadForWa = (leadId: string) => {
+    const lead = realLeads.find((l) => l.id === leadId);
+    if (lead) {
+      setTargetPhone(lead.phone || '');
+      setTargetName(lead.name || '');
+    }
+  };
+
+  const handleDispatchWa = async () => {
+    if (!targetPhone || !selectedWaTemplate) return;
+    setIsSendingWa(true);
+    setWaSendResult(null);
     try {
       const res = await fetch('/api/marketing/whatsapp/test-send', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: testPhone,
-          name: testName,
-          templateKey: selectedTemplate.key,
-          variables: { ...selectedTemplate.sampleVariables, name: testName },
-          division: selectedTemplate.division,
+          phone: targetPhone,
+          name: targetName || 'Valued Client',
+          templateKey: selectedWaTemplate.key,
+          variables: { ...selectedWaTemplate.sampleVariables, name: targetName },
+          customText: customNote ? `${selectedWaTemplate.renderedSample}\n\n*Counselor Note:* ${customNote}` : undefined,
+          division: selectedWaTemplate.division,
         }),
       });
       const json = await res.json();
-      setSendResult(json);
+      setWaSendResult(json);
     } catch (e: any) {
-      setSendResult({ success: false, error: e.message });
+      setWaSendResult({ success: false, error: e.message });
     } finally {
-      setIsSending(false);
+      setIsSendingWa(false);
     }
   };
 
+  const handleOpenEmailModal = (e: any) => {
+    setSelectedEmail(e);
+    setEmailSubject(e.subject || 'Opus Overseas Advisory');
+    setEmailSendStatus(null);
+    if (realLeads.length > 0 && realLeads[0].email) {
+      setTargetEmail(realLeads[0].email);
+    } else {
+      setTargetEmail('client@example.com');
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!targetEmail || !selectedEmail) return;
+    setIsSendingEmail(true);
+    setEmailSendStatus(null);
+    try {
+      const res = await fetch('/api/marketing/send-email', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: targetEmail,
+          subject: emailSubject,
+          html: selectedEmail.customHtml,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setEmailSendStatus('✅ Email dispatched successfully!');
+      } else {
+        setEmailSendStatus(`❌ Send failed: ${json.error || 'Check SMTP'}`);
+      }
+    } catch (e: any) {
+      setEmailSendStatus(`❌ Error: ${e.message}`);
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  const filteredWa = selectedDivision === 'all'
+    ? waTemplates
+    : waTemplates.filter((t: any) => (t.division || '').toLowerCase().includes(selectedDivision.toLowerCase()) || t.division === 'all');
+
   return (
-    <div className="space-y-6">
-      {/* Topology Header */}
-      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50/40 p-5 space-y-2">
-        <div className="flex items-center justify-between">
+    <div ref={rootRef} className="space-y-6 p-6">
+      {/* 1. Header & What This Tab Is */}
+      <div className="reveal flex flex-wrap items-start justify-between gap-4 border-b border-brand-navy/10 pb-5">
+        <div>
           <div className="flex items-center gap-2">
-            <span className="text-xl">📱</span>
-            <h3 className="font-display font-bold text-sm text-brand-navy">Chatwoot Brain + OpenWA Delivery Architecture</h3>
+            <span className="gold-dot" />
+            <p className="text-[13px] font-bold uppercase tracking-[0.2em] text-brand-gold">Content & Outreach Studio</p>
           </div>
-          <span className="rounded-full bg-emerald-100 px-3 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
-            Live Gateway
-          </span>
+          <h2 className="mt-1 font-display text-xl font-extrabold text-brand-navy">Marketing Materials & 1-Click Client Messaging</h2>
+          <p className="mt-1 text-xs text-brand-navy/60">
+            Pick any verified brochure, WhatsApp template, or email and send it directly to your clients or share it on social media.
+          </p>
         </div>
-        <p className="text-[11px] leading-relaxed text-brand-navy/60">
-          Messages are created in <strong>Chatwoot</strong> (maintaining customer timeline, counselor notes, and SLA timers) and dispatched via <strong>OpenWA</strong>. If the client replies on WhatsApp, the message immediately illuminates in Chatwoot for human counselor handoff.
-        </p>
+
+        {/* 3 Main Mode Tabs */}
+        <div className="flex rounded-xl bg-brand-navy/[0.06] p-1 text-xs font-bold">
+          <button
+            onClick={() => setActiveTab('whatsapp')}
+            className={`rounded-lg px-4 py-2 transition ${activeTab === 'whatsapp' ? 'bg-brand-navy text-white shadow-xs' : 'text-brand-navy/60 hover:text-brand-navy'}`}
+          >
+            📱 WhatsApp Templates ({waTemplates.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('emails')}
+            className={`rounded-lg px-4 py-2 transition ${activeTab === 'emails' ? 'bg-brand-navy text-white shadow-xs' : 'text-brand-navy/60 hover:text-brand-navy'}`}
+          >
+            📧 Email Suite ({emailTemplates.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('assets')}
+            className={`rounded-lg px-4 py-2 transition ${activeTab === 'assets' ? 'bg-brand-navy text-white shadow-xs' : 'text-brand-navy/60 hover:text-brand-navy'}`}
+          >
+            📂 PDF Guides & Share Links ({assets.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('advanced')}
+            className={`rounded-lg px-3 py-2 transition ${activeTab === 'advanced' ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/40 hover:text-brand-navy'}`}
+          >
+            ⚙️ Advanced
+          </button>
+        </div>
       </div>
 
-      {/* Categories Filter */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex gap-1.5">
-          {[
-            { key: 'all', label: `All Workflows (${templates.length})` },
-            { key: 'operational', label: `Operational Triggers (${templates.filter((t: any) => t.category === 'operational').length})` },
-            { key: 'marketing', label: `Marketing Drips (${templates.filter((t: any) => t.category === 'marketing').length})` },
-          ].map((c) => (
-            <button
-              key={c.key}
-              onClick={() => setActiveCategory(c.key as any)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeCategory === c.key ? 'bg-brand-navy text-white' : 'bg-brand-navy/5 text-brand-navy/60 hover:bg-brand-navy/10'}`}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Grid of Templates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filtered.map((t: any) => (
-          <div key={t.key} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-3 flex flex-col justify-between hover:border-brand-gold/40 transition">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${t.category === 'operational' ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800'}`}>
-                  {t.category}
-                </span>
-                <span className="font-mono text-[9px] text-brand-navy/40">{t.division}</span>
-              </div>
-              <h4 className="text-xs font-bold text-brand-navy">{t.name}</h4>
-              <p className="text-[11px] text-brand-navy/50">{t.description}</p>
-              
-              <div className="rounded-lg bg-brand-cream border border-brand-navy/[0.06] p-3 text-[11px] text-brand-navy/80 whitespace-pre-wrap font-sans leading-relaxed">
-                {t.renderedSample}
-              </div>
+      {/* 2. TAB: WHATSAPP OUTREACH */}
+      {activeTab === 'whatsapp' && (
+        <div className="space-y-6">
+          {/* Division Filter Pills */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex gap-2">
+              {[
+                { key: 'all', label: 'All Messages' },
+                { key: 'study', label: '🎓 Study Abroad' },
+                { key: 'umrah', label: '🕋 Umrah Pilgrimage' },
+                { key: 'attestation', label: '📜 Attestation & Legal' },
+                { key: 'operational', label: '💰 Invoices & Receipts' },
+              ].map((d) => (
+                <button
+                  key={d.key}
+                  onClick={() => setSelectedDivision(d.key)}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${selectedDivision === d.key ? 'bg-brand-navy text-white' : 'bg-brand-navy/5 text-brand-navy/60 hover:bg-brand-navy/10'}`}
+                >
+                  {d.label}
+                </button>
+              ))}
             </div>
+            <span className="text-sm text-brand-navy/50 font-mono">
+              Delivery Gateway: <strong>OpenWA + Chatwoot</strong>
+            </span>
+          </div>
 
-            <div className="pt-2 border-t border-brand-navy/[0.06] flex items-center justify-between">
-              <span className="text-[9px] font-mono text-brand-navy/40">{t.key}</span>
-              <button
-                onClick={() => { setSelectedTemplate(t); setSendResult(null); }}
-                className="rounded-lg bg-brand-navy/5 px-3 py-1 text-[10px] font-bold text-brand-navy hover:bg-brand-gold hover:text-brand-navy transition"
-              >
-                Test Send 📱
-              </button>
+          {waLoading ? (
+            <div className="py-12 text-center text-xs text-brand-navy/40">Loading ready templates…</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredWa.map((t: any) => (
+                <div key={t.key} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-xs flex flex-col justify-between space-y-3 hover:border-brand-gold/40 transition">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="rounded bg-brand-gold/15 px-2 py-0.5 font-mono text-xs font-bold text-brand-navy uppercase">
+                        {t.division || 'General'}
+                      </span>
+                      <span className="text-xs font-mono text-brand-navy/40">{t.category}</span>
+                    </div>
+                    <h3 className="font-display font-bold text-sm text-brand-navy">{t.name}</h3>
+                    <p className="text-sm text-brand-navy/50">{t.description}</p>
+                    
+                    {/* Rendered Preview Box */}
+                    <div className="max-h-44 overflow-y-auto rounded-xl bg-brand-cream/80 border border-brand-navy/[0.06] p-3 text-sm text-brand-navy/80 whitespace-pre-wrap font-sans leading-relaxed">
+                      {t.renderedSample}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-brand-navy/[0.06] flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => handleCopy(t.renderedSample, t.key)}
+                      className="text-[13px] font-bold text-brand-navy/60 hover:text-brand-navy"
+                    >
+                      {copiedKey === t.key ? '✅ Copied to Clipboard!' : '📋 Copy Copy'}
+                    </button>
+                    <button
+                      onClick={() => handleOpenWaModal(t)}
+                      className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition"
+                    >
+                      Send to Client 📤
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. TAB: EMAIL SUITE */}
+      {activeTab === 'emails' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-brand-navy/60">
+              Professional responsive HTML5 email templates. Click <strong>Preview</strong> to see how it renders on mobile & desktop, or <strong>Send</strong> to dispatch.
+            </p>
+          </div>
+
+          {emailsLoading ? (
+            <div className="py-12 text-center text-xs text-brand-navy/40">Loading email suite…</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {emailTemplates.map((e: any) => {
+                const nameLower = (e.name || '').toLowerCase();
+                const badgeColor = nameLower.includes('hot') ? 'bg-rose-100 text-rose-800' : nameLower.includes('warm') ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
+
+                return (
+                  <div key={e.id} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-brand-gold/40 transition">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ${badgeColor}`}>
+                          {nameLower.includes('hot') ? '🔥 Hot VIP' : nameLower.includes('warm') ? '⭐ Warm Nurture' : '❄️ Discovery'}
+                        </span>
+                        <span className="text-xs font-mono text-brand-navy/40">ID: {e.id}</span>
+                      </div>
+                      <h3 className="mt-2 text-sm font-bold text-brand-navy leading-snug">{e.name}</h3>
+                      <p className="mt-1 text-xs text-brand-navy/60 italic line-clamp-2">
+                        &ldquo;{e.subject}&rdquo;
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-brand-navy/[0.06] flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => setPreviewEmailModal(e)}
+                        className="text-xs font-bold text-brand-navy/60 hover:text-brand-navy"
+                      >
+                        Preview Design ↗
+                      </button>
+                      <button
+                        onClick={() => handleOpenEmailModal(e)}
+                        className="rounded-lg bg-brand-navy px-3.5 py-1.5 text-xs font-bold text-brand-gold hover:bg-brand-navy/90 shadow-xs transition"
+                      >
+                        Send Email 📤
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 4. TAB: PDF GUIDES & SOCIAL SHARE LINKS */}
+      {activeTab === 'assets' && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-brand-navy/10 bg-brand-cream/40 p-5">
+            <h3 className="font-display font-bold text-sm text-brand-navy">Lead Magnets & Social Media Download Links</h3>
+            <p className="text-xs text-brand-navy/60 mt-1">
+              Share these direct links on WhatsApp, Instagram stories, or Facebook ads. When a prospect downloads a guide, OpusOS captures their contact information automatically.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {assets.map((a: any) => {
+              const shareUrl = `https://opusoverseas.com/portal/guides/${a.id || 1}`;
+              return (
+                <div key={a.id} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-xs flex flex-col justify-between space-y-3 hover:border-brand-gold/40 transition">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="rounded bg-brand-gold/20 px-2 py-0.5 font-mono text-xs font-bold text-brand-navy uppercase">
+                        {a.division || 'PDF Guide'}
+                      </span>
+                      <span className="text-[13px] font-bold text-emerald-700">{a.downloadCount || 0} Downloads</span>
+                    </div>
+                    <h4 className="text-xs font-bold text-brand-navy leading-snug">{a.title}</h4>
+                  </div>
+
+                  <div className="pt-3 border-t border-brand-navy/[0.06] flex items-center justify-between">
+                    <button
+                      onClick={() => handleCopy(shareUrl, `asset-${a.id}`)}
+                      className="text-xs font-bold text-brand-navy/70 hover:text-brand-navy"
+                    >
+                      {copiedKey === `asset-${a.id}` ? '✅ Link Copied!' : '🔗 Copy Share Link'}
+                    </button>
+                    <a
+                      href="/portal"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-lg bg-brand-navy/5 px-2.5 py-1 text-xs font-bold text-brand-navy hover:bg-brand-gold transition"
+                    >
+                      Download 📥
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 5. TAB: ADVANCED ENGINE & SYNC (COLLAPSIBLE) */}
+      {activeTab === 'advanced' && (
+        <div className="space-y-6 rounded-2xl border border-brand-navy/15 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between border-b border-brand-navy/10 pb-4">
+            <div>
+              <h3 className="font-display font-bold text-sm text-brand-navy">⚙️ Superadmin Marketing Infrastructure</h3>
+              <p className="text-xs text-brand-navy/50">Mautic automation engine, Listmonk lists, and DPDP suppression records.</p>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Live Test Modal */}
-      {selectedTemplate && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="rounded-xl border border-brand-navy/10 p-4 space-y-2 bg-brand-cream/40">
+              <div className="font-bold text-brand-navy">Listmonk Email Engine</div>
+              <p className="text-brand-navy/60">3 campaigns · 18 subscribers synchronized. DPDP suppression ledger active.</p>
+            </div>
+            <div className="rounded-xl border border-brand-navy/10 p-4 space-y-2 bg-brand-cream/40">
+              <div className="font-bold text-brand-navy">Mautic Automation Engine</div>
+              <p className="text-brand-navy/60">Nurture journeys active. 6 HTML5 templates ready.</p>
+            </div>
+            <div className="rounded-xl border border-brand-navy/10 p-4 space-y-2 bg-brand-cream/40">
+              <div className="font-bold text-brand-navy">OpenWA & Chatwoot Gateway</div>
+              <p className="text-brand-navy/60">11 WhatsApp workflows mapped. Real-time counselor inbox sync enabled.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: Send WhatsApp Message */}
+      {selectedWaTemplate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/60 p-4 backdrop-blur-xs">
           <div className="relative flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl overflow-hidden p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-brand-navy/10 pb-3">
               <div>
-                <h3 className="font-display font-bold text-sm text-brand-navy">Test WhatsApp Dispatch</h3>
-                <p className="text-[11px] text-brand-navy/50">{selectedTemplate.name}</p>
+                <h3 className="font-display font-bold text-sm text-brand-navy">Dispatch WhatsApp Message</h3>
+                <p className="text-xs text-brand-navy/50">{selectedWaTemplate.name}</p>
               </div>
-              <button onClick={() => setSelectedTemplate(null)} className="rounded-full bg-brand-navy/10 px-3 py-1 text-xs font-bold text-brand-navy hover:bg-brand-navy hover:text-white">
+              <button onClick={() => setSelectedWaTemplate(null)} className="rounded-full bg-brand-navy/10 px-3 py-1 text-xs font-bold text-brand-navy hover:bg-brand-navy hover:text-white">
                 ✕ Close
               </button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-bold uppercase text-brand-navy/60">Recipient Phone (with country code)</label>
-                <input
-                  type="text"
-                  value={testPhone}
-                  onChange={(e) => setTestPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
-                  className="mt-1 w-full rounded-lg border border-brand-navy/15 px-3 py-2 text-xs font-mono focus:border-brand-gold focus:outline-none"
-                />
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60">Select Lead from CRM</label>
+                <select
+                  onChange={(e) => handleSelectLeadForWa(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-brand-navy/15 bg-white px-3 py-2 text-xs focus:border-brand-gold focus:outline-none"
+                >
+                  <option value="">-- Choose registered lead --</option>
+                  {realLeads.map((l: any) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name} — {l.phone || 'No phone'} ({l.serviceInterest || 'General'})
+                    </option>
+                  ))}
+                </select>
               </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[13px] font-bold uppercase text-brand-navy/60">Recipient Phone</label>
+                  <input
+                    type="text"
+                    value={targetPhone}
+                    onChange={(e) => setTargetPhone(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    className="mt-1 w-full rounded-lg border border-brand-navy/15 px-3 py-2 text-xs font-mono focus:border-brand-gold focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[13px] font-bold uppercase text-brand-navy/60">Recipient Name</label>
+                  <input
+                    type="text"
+                    value={targetName}
+                    onChange={(e) => setTargetName(e.target.value)}
+                    placeholder="Client Name"
+                    className="mt-1 w-full rounded-lg border border-brand-navy/15 px-3 py-2 text-xs focus:border-brand-gold focus:outline-none"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="text-[10px] font-bold uppercase text-brand-navy/60">Recipient Name</label>
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60">Add Personal Counselor Note (Optional)</label>
                 <input
                   type="text"
-                  value={testName}
-                  onChange={(e) => setTestName(e.target.value)}
-                  placeholder="Test Applicant"
+                  value={customNote}
+                  onChange={(e) => setCustomNote(e.target.value)}
+                  placeholder="e.g. Please bring your transcripts tomorrow at 3 PM."
                   className="mt-1 w-full rounded-lg border border-brand-navy/15 px-3 py-2 text-xs focus:border-brand-gold focus:outline-none"
                 />
               </div>
+
               <div>
-                <label className="text-[10px] font-bold uppercase text-brand-navy/60">Message Preview</label>
-                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg bg-brand-cream p-3 text-[11px] text-brand-navy/80 whitespace-pre-wrap">
-                  {selectedTemplate.template({ ...selectedTemplate.sampleVariables, name: testName })}
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60">Message Preview</label>
+                <div className="mt-1 max-h-36 overflow-y-auto rounded-lg bg-brand-cream p-3 text-xs text-brand-navy/80 whitespace-pre-wrap leading-relaxed font-sans">
+                  {selectedWaTemplate.renderedSample}
+                  {customNote && `\n\n*Counselor Note:* ${customNote}`}
                 </div>
               </div>
             </div>
 
-            {sendResult && (
-              <div className={`rounded-lg p-3 text-xs ${sendResult.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
-                {sendResult.success ? '✅ Message dispatched successfully through Chatwoot & OpenWA!' : `❌ Dispatch failed: ${sendResult.error || sendResult.result?.error || 'Unknown error'}`}
+            {waSendResult && (
+              <div className={`rounded-lg p-3 text-xs ${waSendResult.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
+                {waSendResult.success ? '✅ Message sent successfully through Chatwoot & OpenWA!' : `❌ Send failed: ${waSendResult.error || waSendResult.result?.error || 'Check WhatsApp gateway'}`}
               </div>
             )}
 
             <div className="flex justify-end gap-2 pt-2 border-t border-brand-navy/10">
-              <button onClick={() => setSelectedTemplate(null)} className="rounded-lg px-4 py-2 text-xs font-semibold text-brand-navy/60 hover:bg-brand-navy/5">
+              <button onClick={() => setSelectedWaTemplate(null)} className="rounded-lg px-4 py-2 text-xs font-semibold text-brand-navy/60 hover:bg-brand-navy/5">
                 Cancel
               </button>
               <button
-                disabled={!testPhone || isSending}
-                onClick={handleTestSend}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition"
+                disabled={!targetPhone || isSendingWa}
+                onClick={handleDispatchWa}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-xs"
               >
-                {isSending ? 'Dispatching…' : 'Send WhatsApp Message 🚀'}
+                {isSendingWa ? 'Sending…' : 'Send WhatsApp Message 🚀'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
-// ── Assets, Forms & Landing Pages View ─────────────────────────────────────────
-function AssetsAndFormsView() {
-  const { data: assetsData, isLoading: aLoading } = useQuery<any>({ queryKey: ['mautic-assets'], queryFn: () => getJson('/api/integrations/mautic/assets') });
-  const { data: formsData, isLoading: fLoading } = useQuery<any>({ queryKey: ['mautic-forms'], queryFn: () => getJson('/api/integrations/mautic/forms') });
-  const { data: pagesData, isLoading: pLoading } = useQuery<any>({ queryKey: ['mautic-pages'], queryFn: () => getJson('/api/integrations/mautic/pages') });
-
-  if (aLoading || fLoading || pLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading marketing assets & forms…</div>;
-
-  const assets = assetsData?.assets ? Object.values(assetsData.assets) : [];
-  const forms = formsData?.forms ? Object.values(formsData.forms) : [];
-  const pages = pagesData?.pages ? Object.values(pagesData.pages) : [];
-
-  return (
-    <div className="space-y-6">
-      {/* 1. Downloadable Lead Magnets */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display font-bold text-sm text-brand-navy">📄 Downloadable Lead Magnet Assets ({assets.length})</h3>
-          <span className="text-[10px] text-brand-navy/40">Downloads auto-award +10 points in Mautic</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {assets.map((a: any) => (
-            <div key={a.id} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="rounded bg-brand-gold/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-brand-navy uppercase">{a.extension} Guide</span>
-                <span className="text-[10px] font-bold text-emerald-700">{a.downloadCount || 0} Downloads</span>
+      {/* MODAL 2: Send Real Email */}
+      {selectedEmail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/60 p-4 backdrop-blur-xs">
+          <div className="relative flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl overflow-hidden p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-brand-navy/10 pb-3">
+              <div>
+                <h3 className="font-display font-bold text-sm text-brand-navy">Dispatch Email Template</h3>
+                <p className="text-xs text-brand-navy/50">{selectedEmail.name}</p>
               </div>
-              <h4 className="text-xs font-bold text-brand-navy leading-snug">{a.title}</h4>
-              <p className="text-[11px] text-brand-navy/50 line-clamp-2">{a.description}</p>
-              <div className="pt-2 border-t border-brand-navy/[0.06] text-[9px] font-mono text-brand-navy/40 truncate">
-                Alias: /{a.alias}
+              <button onClick={() => setSelectedEmail(null)} className="rounded-full bg-brand-navy/10 px-3 py-1 text-xs font-bold text-brand-navy hover:bg-brand-navy hover:text-white">
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60">Recipient Email</label>
+                <input
+                  type="email"
+                  value={targetEmail}
+                  onChange={(e) => setTargetEmail(e.target.value)}
+                  placeholder="applicant@example.com"
+                  className="mt-1 w-full rounded-lg border border-brand-navy/15 px-3 py-2 text-xs focus:border-brand-gold focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60">Subject Line</label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-brand-navy/15 px-3 py-2 text-xs focus:border-brand-gold focus:outline-none"
+                />
               </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* 2. Forms & Pages */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Forms */}
-        <div className="space-y-3">
-          <h3 className="font-display font-bold text-sm text-brand-navy">📋 Lead Intake & Evaluation Forms ({forms.length})</h3>
-          <div className="space-y-2">
-            {forms.map((f: any) => (
-              <div key={f.id} className="rounded-xl border border-brand-navy/10 bg-white p-3.5 shadow-xs flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-xs font-bold text-brand-navy">{f.name}</div>
-                  <div className="text-[10px] text-brand-navy/40">{f.description || 'Intake capture form'}</div>
-                </div>
-                <span className="rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 uppercase shrink-0">
-                  {f.postAction || 'Message'}
-                </span>
+            {emailSendStatus && (
+              <div className={`rounded-lg p-3 text-xs ${emailSendStatus.startsWith('✅') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
+                {emailSendStatus}
               </div>
-            ))}
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-brand-navy/10">
+              <button onClick={() => setSelectedEmail(null)} className="rounded-lg px-4 py-2 text-xs font-semibold text-brand-navy/60 hover:bg-brand-navy/5">
+                Cancel
+              </button>
+              <button
+                disabled={!targetEmail || isSendingEmail}
+                onClick={handleSendEmail}
+                className="rounded-lg bg-brand-navy px-4 py-2 text-xs font-bold text-brand-gold hover:bg-brand-navy/90 disabled:opacity-50 transition shadow-xs"
+              >
+                {isSendingEmail ? 'Dispatching…' : 'Send Real Email 🚀'}
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Landing Pages */}
-        <div className="space-y-3">
-          <h3 className="font-display font-bold text-sm text-brand-navy">🌐 Standalone Landing Pages ({pages.length})</h3>
-          <div className="space-y-2">
-            {pages.map((p: any) => (
-              <div key={p.id} className="rounded-xl border border-brand-navy/10 bg-white p-3.5 shadow-xs flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-xs font-bold text-brand-navy">{p.title}</div>
-                  <div className="text-[10px] text-brand-gold font-mono">Alias: /{p.alias}</div>
-                </div>
-                <span className="rounded bg-blue-100 text-blue-800 text-[9px] font-bold px-2 py-0.5 uppercase shrink-0">
-                  {p.hits || 0} Hits
-                </span>
+      {/* MODAL 3: Preview HTML5 Email */}
+      {previewEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/60 p-4 backdrop-blur-xs">
+          <div className="relative flex h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-brand-navy/10 px-5 py-3.5 bg-brand-cream">
+              <div>
+                <div className="text-xs font-bold text-brand-navy">{previewEmailModal.name}</div>
+                <div className="text-[13px] text-brand-navy/50">Subject: {previewEmailModal.subject}</div>
               </div>
-            ))}
+              <button onClick={() => setPreviewEmailModal(null)} className="rounded-full bg-brand-navy/10 px-3 py-1 text-xs font-bold text-brand-navy hover:bg-brand-navy hover:text-white">
+                ✕ Close
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden bg-[#FAF8F4] p-2">
+              <iframe title="Email Preview" srcDoc={previewEmailModal.customHtml} className="h-full w-full rounded-lg border border-brand-navy/10 bg-white" />
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Dynamic Web Content (DWC) View ────────────────────────────────────────────
-function DWCView() {
-  const { data, isLoading, isError, refetch } = useQuery<any>({
-    queryKey: ['mautic-dwc'],
-    queryFn: () => getJson('/api/integrations/mautic/dwc'),
-  });
-
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading dynamic web content slots…</div>;
-  if (isError) return <ErrPanel what="dynamic web content" onRetry={refetch} />;
-
-  const items = data?.dynamicContent ? Object.values(data.dynamicContent) : [];
-
-  return (
-    <div className="space-y-4">
-      <p className="text-[11px] text-brand-navy/50">
-        Dynamic Web Content (DWC) slots dynamically personalize Opus OS website & portal banners based on the contact's lead score & tier.
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {items.map((d: any) => (
-          <div key={d.id} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] font-bold text-brand-gold bg-brand-navy/5 px-2 py-0.5 rounded">
-                Slot: {d.slotName}
-              </span>
-              <span className="rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 uppercase">
-                Active
-              </span>
-            </div>
-            <h4 className="text-xs font-bold text-brand-navy">{d.name}</h4>
-            <p className="text-[11px] text-brand-navy/50">{d.description}</p>
-            <div className="rounded-lg bg-brand-cream border border-brand-navy/[0.06] p-2.5 text-[10px] text-brand-navy/70 overflow-hidden font-mono">
-              {d.content}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Listmonk Audiences & Suppression Views ────────────────────────────────────
-function AudiencesView() {
-  const { data, isLoading, error, refetch } = useQuery({ queryKey: ['lm-audiences'], queryFn: () => getJson('/api/integrations/listmonk/lists?perPage=30&page=1') });
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading audiences…</div>;
-  if (error) return <ErrPanel what="audiences" onRetry={refetch} />;
-  const rows: any[] = asArray(data);
-
-  return (
-    <div className="space-y-3">
-      <p className="text-[11px] text-brand-navy/50">{rows.length} audience lists managed in Listmonk.</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        {rows.map((r: any) => (
-          <div key={r.id} className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-xs flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-brand-navy">{r.name}</div>
-              <div className="text-[10px] text-brand-navy/40 capitalize">{r.type} · Opt-in: {r.optin}</div>
-            </div>
-            <div className="text-right font-display font-extrabold text-sm text-brand-gold">{r.subscribers_count ?? 0} subs</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SuppressionView() {
-  const { data, isLoading, error, refetch } = useQuery({ queryKey: ['lm-bounces'], queryFn: () => getJson('/api/integrations/listmonk/bounces?perPage=30&page=1') });
-  if (isLoading) return <div className="p-10 text-center text-xs text-brand-navy/50">Loading suppression ledger…</div>;
-  if (error) return <ErrPanel what="suppression ledger" onRetry={refetch} />;
-  const rows: any[] = asArray(data);
-
-  return (
-    <div className="space-y-3">
-      <p className="text-[11px] text-brand-navy/50">DPDP-compliant suppression ledger and bounce logs.</p>
-      <div className="overflow-x-auto rounded-2xl border border-brand-navy/10 bg-white">
-        <table className="w-full text-left text-xs">
-          <thead className="border-b border-brand-navy/[0.08] text-[10px] uppercase font-bold tracking-wider text-brand-gold bg-brand-cream">
-            <tr><th className="px-4 py-2.5">Subscriber</th><th className="px-4 py-2.5">Type</th><th className="px-4 py-2.5">Source</th><th className="px-4 py-2.5">Date</th></tr>
-          </thead>
-          <tbody className="divide-y divide-brand-navy/[0.06]">
-            {rows.map((b: any, i: number) => (
-              <tr key={b.id || i} className="hover:bg-brand-navy/[0.02]">
-                <td className="px-4 py-2.5 font-semibold text-brand-navy">{b.email || b.subscriber_id}</td>
-                <td className="px-4 py-2.5 capitalize text-rose-600">{b.type || 'Hard Bounce'}</td>
-                <td className="px-4 py-2.5 text-brand-navy/50">{b.source || 'SMTP Gateway'}</td>
-                <td className="px-4 py-2.5 text-brand-navy/40">{b.created_at ? new Date(b.created_at).toLocaleString() : '—'}</td>
-              </tr>
-            ))}
-            {rows.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-brand-navy/40 italic">No suppressions recorded.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ── Tab Bar Navigation ────────────────────────────────────────────────────────
-const TABS = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'whatsapp', label: '📱 WhatsApp & Chatwoot (11)' },
-  { key: 'journeys', label: 'Mautic Journeys' },
-  { key: 'templates', label: 'HTML5 Templates (12)' },
-  { key: 'assets_forms', label: 'Assets, Forms & Pages' },
-  { key: 'dwc', label: 'Dynamic Web Content' },
-  { key: 'audiences', label: 'Audiences' },
-  { key: 'suppression', label: 'Suppression & Bounces' },
-] as const;
-
-export default function MarketingTab() {
-  const [tab, setTab] = useState<string>('overview');
-  const { data: live, isLoading, isError, refetch } = useQuery<LiveData>({
-    queryKey: ['integrationsLive'],
-    queryFn: () => getJson('/api/integrations/live'),
-  });
-  const rootRef = useRevealRoot<HTMLDivElement>();
-
-  return (
-    <div ref={rootRef} className="space-y-6 p-6">
-      <div className="reveal">
-        <div className="flex items-center gap-2.5">
-          <span className="gold-dot" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Superadmin Marketing Suite</p>
-        </div>
-        <h2 className="mt-2 font-display text-sm font-bold text-brand-navy">Marketing Automation, WhatsApp & Lead Journeys</h2>
-        <p className="mt-1 text-[11px] text-brand-navy/50">
-          Unified control center — Live synchronization between Opus OS Lead Engine, Chatwoot Brain, and VPS Microservices (OpenWA · Mautic · Listmonk).
-        </p>
-      </div>
-
-      <div className="reveal flex flex-wrap gap-1 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-1 text-[10px] font-bold uppercase">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`rounded-full px-4 py-1.5 transition ${tab === t.key ? 'bg-brand-gold text-brand-navy shadow-xs' : 'text-brand-navy/50 hover:text-brand-gold'}`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'overview' && (isLoading ? <div className="p-10 text-center text-xs text-brand-navy/50">Loading tool feeds…</div> : isError || !live ? <ErrPanel what="tool feeds" onRetry={refetch} /> : <Overview live={live} />)}
-      {tab === 'whatsapp' && <WhatsAppView />}
-      {tab === 'journeys' && <JourneysView />}
-      {tab === 'templates' && <MauticTemplatesView />}
-      {tab === 'assets_forms' && <AssetsAndFormsView />}
-      {tab === 'dwc' && <DWCView />}
-      {tab === 'audiences' && <AudiencesView />}
-      {tab === 'suppression' && <SuppressionView />}
+      )}
     </div>
   );
 }

@@ -637,16 +637,68 @@ marketingRouter.post('/whatsapp/test-send', async (c) => {
   const { dispatchUnifiedWhatsApp } = await import('../infra/chatwootBridge.js');
   const result = await dispatchUnifiedWhatsApp(c.env as any, {
     phone: body.phone,
-    name: body.name || 'Test User',
+    name: body.name || 'Valued Client',
     email: body.email,
     templateKey: body.templateKey,
     variables: body.variables || {},
     customText: body.customText,
     division: body.division || 'general',
-    tags: ['test-dispatch', 'superadmin-test'],
+    tags: ['marketing-dispatch', 'superadmin'],
   });
   return c.json({
     success: result.ok,
     result,
   });
+});
+
+// POST /api/marketing/send-email — direct dispatch an HTML5 template or custom email to a client
+marketingRouter.post('/send-email', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  if (!body.to) {
+    return c.json({ error: 'Recipient email address is required' }, 400);
+  }
+  const { sendNotification } = await import('../infra/notify.js');
+  const db = getDb(c.env.DB);
+  const result = await sendNotification(c.env as any, db as any, {
+    channel: 'email',
+    to: body.to,
+    subject: body.subject || 'Opus Overseas Admissions & Services',
+    body: body.html || body.body || '<p>Hello from Opus Overseas.</p>',
+    clientId: body.clientId || null,
+  });
+  return c.json({
+    success: result.ok,
+    result,
+  });
+});
+
+// In-memory store for custom created journeys during runtime session
+const CUSTOM_JOURNEYS: any[] = [];
+
+// POST /api/marketing/journeys/custom — create and activate a custom multi-step automated journey
+marketingRouter.post('/journeys/custom', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  if (!body.name) {
+    return c.json({ error: 'Journey name is required' }, 400);
+  }
+  const journey = {
+    id: 'cust-' + Date.now(),
+    name: body.name,
+    description: body.description || 'Custom multi-step automation sequence',
+    division: body.division || 'all',
+    targetScore: body.targetScore || 'All Leads',
+    isPublished: true,
+    events: body.steps || [
+      { id: 1, name: 'Day 0 WhatsApp Intro', triggerMode: 'immediate', type: 'message.send' },
+      { id: 2, name: 'Day 3 Email Case Study', triggerMode: 'interval', triggerInterval: '3', triggerIntervalUnit: 'days', type: 'email.send' },
+    ],
+    createdAt: Math.floor(Date.now() / 1000),
+  };
+  CUSTOM_JOURNEYS.push(journey);
+  return c.json({ success: true, journey });
+});
+
+// GET /api/marketing/journeys/custom — list custom created journeys
+marketingRouter.get('/journeys/custom', async (c) => {
+  return c.json({ success: true, journeys: CUSTOM_JOURNEYS });
 });

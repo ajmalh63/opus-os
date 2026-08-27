@@ -32,11 +32,12 @@ export interface AiGovernanceSettings {
 export interface ModelDetail {
   id: string;
   name: string;
-  provider: 'Meta' | 'Mistral AI' | 'Alibaba' | 'DeepSeek' | 'Google' | 'Microsoft' | 'OpenAI' | 'BAAI' | 'Stability AI' | 'Black Forest Labs' | 'ByteDance' | 'Community';
+  provider: 'Meta' | 'Mistral AI' | 'Alibaba' | 'DeepSeek' | 'Google' | 'Microsoft' | 'OpenAI' | 'BAAI' | 'Stability AI' | 'Black Forest Labs' | 'ByteDance' | 'HuggingFace' | 'Facebook' | 'Community';
   description: string;
   contextWindow: string;
   bestFor: string;
-  tier: 'flagship' | 'fast' | 'slm' | 'coder' | 'vision' | 'imageGen' | 'audio' | 'translation' | 'embeddings';
+  tier: 'flagship' | 'fast' | 'slm' | 'coder' | 'vision' | 'imageGen' | 'audio' | 'translation' | 'embeddings' | 'rerank' | 'classification' | 'summarization' | 'objectDetection' | 'imageClassification';
+  taskType?: string;
 }
 
 export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
@@ -50,6 +51,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '128k tokens',
       bestFor: 'Deep Visa Risk Analysis, Complex SOPs, Legal Audit',
       tier: 'flagship',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
@@ -59,6 +61,27 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '64k tokens',
       bestFor: 'Financial Calculations, Visa Rejection Defense Logic',
       tier: 'flagship',
+      taskType: 'Text Generation (Reasoning)',
+    },
+    {
+      id: '@cf/deepseek-ai/deepseek-r1-distill-llama-70b',
+      name: 'DeepSeek R1 Distill Llama 70B',
+      provider: 'DeepSeek',
+      description: '70B scale DeepSeek R1 distillation with exceptional institutional reasoning.',
+      contextWindow: '128k tokens',
+      bestFor: 'Complex Immigration Legal Reasoning & Defense Statements',
+      tier: 'flagship',
+      taskType: 'Text Generation (Reasoning)',
+    },
+    {
+      id: '@cf/deepseek-ai/deepseek-r1-distill-qwen-1.5b',
+      name: 'DeepSeek R1 Distill Qwen 1.5B',
+      provider: 'DeepSeek',
+      description: 'Ultra-compact edge reasoning model with step-by-step thinking under 100ms.',
+      contextWindow: '32k tokens',
+      bestFor: 'Edge Verification & Fast Step-by-Step Reasoners',
+      tier: 'slm',
+      taskType: 'Text Generation (Reasoning)',
     },
     {
       id: '@cf/qwen/qwq-32b-preview',
@@ -68,6 +91,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '32k tokens',
       bestFor: 'Complex Rule Engines & Eligibility Reasoning',
       tier: 'flagship',
+      taskType: 'Text Generation (Reasoning)',
     },
     {
       id: '@cf/qwen/qwen2.5-72b-instruct',
@@ -77,6 +101,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '32k tokens',
       bestFor: 'Multilingual Academic Evaluation & Cross-border Profiling',
       tier: 'flagship',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/meta/llama-3.1-70b-instruct',
@@ -86,6 +111,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '128k tokens',
       bestFor: 'Embassy Cover Letters, University Communications',
       tier: 'flagship',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/meta/llama-3-70b-instruct',
@@ -95,6 +121,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8k tokens',
       bestFor: 'General Purpose Comprehensive Inferences',
       tier: 'flagship',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/google/gemma-2-27b-it',
@@ -104,6 +131,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8k tokens',
       bestFor: 'Academic Essay Polishing & High-standard Writing',
       tier: 'flagship',
+      taskType: 'Text Generation',
     },
 
     // ── Fast & High-Throughput Models (7B - 14B) ──
@@ -115,6 +143,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '128k tokens',
       bestFor: 'Rapid Screening, Lead Qualification, Summary Cards',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/meta/llama-3.1-8b-instruct-fp8-fast',
@@ -124,6 +153,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '128k tokens',
       bestFor: 'Real-time Chat Streams & Fast Form Autocomplete',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/meta/llama-3-8b-instruct',
@@ -133,6 +163,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8k tokens',
       bestFor: 'General Lead Intake & Profile Scrubbing',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/mistral/mistral-7b-instruct-v0.2',
@@ -142,6 +173,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '32k tokens',
       bestFor: 'Strict JSON Formatting & Document Verification',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/mistral/mistral-7b-instruct-v0.1',
@@ -151,6 +183,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8k tokens',
       bestFor: 'General Text Classification',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/qwen/qwen2.5-14b-instruct',
@@ -160,6 +193,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '32k tokens',
       bestFor: 'Country Comparison & Course Alignment',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/qwen/qwen2.5-7b-instruct',
@@ -169,6 +203,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '32k tokens',
       bestFor: 'Profile Intake & Intake Context Parsing',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/google/gemma-2-9b-it',
@@ -178,6 +213,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8k tokens',
       bestFor: 'Creative Drafting & Communication Polishing',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/google/gemma-7b-it',
@@ -187,6 +223,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8k tokens',
       bestFor: 'Text Summarization & Formatting',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/openchat/openchat-3.5-0106',
@@ -196,6 +233,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8k tokens',
       bestFor: 'Casual Client Q&A & WhatsApp Auto-reply',
       tier: 'fast',
+      taskType: 'Text Generation',
     },
     {
       id: '@cf/tiiuae/falcon-7b-instruct',
@@ -205,6 +243,17 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '2k tokens',
       bestFor: 'Middle East & Gulf Context General Chat',
       tier: 'fast',
+      taskType: 'Text Generation',
+    },
+    {
+      id: '@cf/meta/llama-2-7b-chat-int8',
+      name: 'Llama 2 7B Chat INT8',
+      provider: 'Meta',
+      description: 'Quantized Llama 2 chat model for legacy compatibility.',
+      contextWindow: '2k tokens',
+      bestFor: 'Legacy Pipeline Fallbacks',
+      tier: 'fast',
+      taskType: 'Text Generation',
     },
 
     // ── Small & Edge Language Models (SLMs < 4B) ──
@@ -216,6 +265,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '128k tokens',
       bestFor: 'Edge Screening, Instant Auto-tagging, Sub-second Classifiers',
       tier: 'slm',
+      taskType: 'Text Generation (SLM)',
     },
     {
       id: '@cf/meta/llama-3.2-1b-instruct',
@@ -225,6 +275,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '128k tokens',
       bestFor: 'Micro-tasks, Lead Entity Extraction, Intent Detection',
       tier: 'slm',
+      taskType: 'Text Generation (SLM)',
     },
     {
       id: '@cf/google/gemma-2-2b-it',
@@ -234,6 +285,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8k tokens',
       bestFor: 'Mobile & Fast Edge Response Generation',
       tier: 'slm',
+      taskType: 'Text Generation (SLM)',
     },
     {
       id: '@cf/qwen/qwen2.5-3b-instruct',
@@ -243,6 +295,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '32k tokens',
       bestFor: 'Fast Foreign Language Field Parsing',
       tier: 'slm',
+      taskType: 'Text Generation (SLM)',
     },
     {
       id: '@cf/qwen/qwen2.5-1.5b-instruct',
@@ -252,6 +305,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '32k tokens',
       bestFor: 'Address & Name Normalization',
       tier: 'slm',
+      taskType: 'Text Generation (SLM)',
     },
     {
       id: '@cf/qwen/qwen2.5-0.5b-instruct',
@@ -261,6 +315,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '32k tokens',
       bestFor: 'Pincode & Tracking Number Extraction',
       tier: 'slm',
+      taskType: 'Text Generation (SLM)',
     },
     {
       id: '@cf/microsoft/phi-2',
@@ -270,6 +325,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '2k tokens',
       bestFor: 'Micro-tagging & Keyword Extraction',
       tier: 'slm',
+      taskType: 'Text Generation (SLM)',
     },
     {
       id: '@cf/tinyllama/tinyllama-1.1b-chat-v1.0',
@@ -279,18 +335,10 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '2k tokens',
       bestFor: 'Basic Keyword Disambiguation',
       tier: 'slm',
+      taskType: 'Text Generation (SLM)',
     },
 
     // ── Code & Deterministic Form Generation ──
-    {
-      id: '@cf/qwen/qwen2.5-coder-7b-instruct',
-      name: 'Qwen 2.5 Coder 7B',
-      provider: 'Alibaba',
-      description: 'Deterministic coding and logic model with zero hallucination rate on schemas.',
-      contextWindow: '32k tokens',
-      bestFor: 'Rule-based Checks, Form Auto-fill & JSON Schemas',
-      tier: 'coder',
-    },
     {
       id: '@cf/qwen/qwen2.5-coder-32b-instruct',
       name: 'Qwen 2.5 Coder 32B',
@@ -299,6 +347,17 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '32k tokens',
       bestFor: 'Complex Multi-step JSON Schema Generation',
       tier: 'coder',
+      taskType: 'Code Generation',
+    },
+    {
+      id: '@cf/qwen/qwen2.5-coder-7b-instruct',
+      name: 'Qwen 2.5 Coder 7B',
+      provider: 'Alibaba',
+      description: 'Deterministic coding and logic model with zero hallucination rate on schemas.',
+      contextWindow: '32k tokens',
+      bestFor: 'Rule-based Checks, Form Auto-fill & JSON Schemas',
+      tier: 'coder',
+      taskType: 'Code Generation',
     },
     {
       id: '@cf/deepseek-ai/deepseek-coder-6.7b-instruct',
@@ -308,18 +367,11 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '16k tokens',
       bestFor: 'Database Mapping & Migration Verification',
       tier: 'coder',
+      taskType: 'Code Generation',
     },
   ],
+
   vision: [
-    {
-      id: '@cf/meta/llama-3.2-11b-vision-instruct',
-      name: 'Llama 3.2 11B Vision Instruct',
-      provider: 'Meta',
-      description: 'Multimodal vision model capable of reading passport pages, certificates, and seals.',
-      contextWindow: '128k tokens',
-      bestFor: 'Passport OCR, Marksheet Grade Extraction, Stamp Verification',
-      tier: 'vision',
-    },
     {
       id: '@cf/meta/llama-3.2-90b-vision-instruct',
       name: 'Llama 3.2 90B Vision Instruct',
@@ -328,6 +380,17 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '128k tokens',
       bestFor: 'Complex Multipage Transcripts, High-density Apostille Chains',
       tier: 'vision',
+      taskType: 'Image-to-Text / Multimodal',
+    },
+    {
+      id: '@cf/meta/llama-3.2-11b-vision-instruct',
+      name: 'Llama 3.2 11B Vision Instruct',
+      provider: 'Meta',
+      description: 'Multimodal vision model capable of reading passport pages, certificates, and seals.',
+      contextWindow: '128k tokens',
+      bestFor: 'Passport OCR, Marksheet Grade Extraction, Stamp Verification',
+      tier: 'vision',
+      taskType: 'Image-to-Text / Multimodal',
     },
     {
       id: '@cf/llava-hf/llava-1.5-7b-hf',
@@ -337,6 +400,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '4k tokens',
       bestFor: 'Document Layout Inspection & Photo Checks',
       tier: 'vision',
+      taskType: 'Image-to-Text / Multimodal',
     },
     {
       id: '@cf/unum/uform-gen2-qwen-500m',
@@ -346,8 +410,10 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '2k tokens',
       bestFor: 'Document Type Verification (Passport vs Degree vs ID)',
       tier: 'vision',
+      taskType: 'Image-to-Text / Multimodal',
     },
   ],
+
   imageGen: [
     {
       id: '@cf/black-forest-labs/flux-1-schnell',
@@ -357,6 +423,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: 'Image Generation',
       bestFor: 'Marketing Creatives, Campaign Banners, Hero Visuals',
       tier: 'imageGen',
+      taskType: 'Text-to-Image',
     },
     {
       id: '@cf/stabilityai/stable-diffusion-xl-base-1.0',
@@ -366,6 +433,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: 'Image Generation',
       bestFor: 'Event Postcards, Social Media Campaign Graphics',
       tier: 'imageGen',
+      taskType: 'Text-to-Image',
     },
     {
       id: '@cf/stabilityai/stable-diffusion-xl-lightning',
@@ -375,6 +443,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: 'Image Generation',
       bestFor: 'Real-time Campaign Asset Prototyping',
       tier: 'imageGen',
+      taskType: 'Text-to-Image',
     },
     {
       id: '@cf/bytedance/stable-diffusion-xl-lightning',
@@ -384,6 +453,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: 'Image Generation',
       bestFor: 'Rapid Social Media Visuals',
       tier: 'imageGen',
+      taskType: 'Text-to-Image',
     },
     {
       id: '@cf/lykon/dreamshaper-8-lcm',
@@ -393,8 +463,30 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: 'Image Generation',
       bestFor: 'Stylized Marketing Artwork',
       tier: 'imageGen',
+      taskType: 'Text-to-Image',
+    },
+    {
+      id: '@cf/runwayml/stable-diffusion-v1-5-img2img',
+      name: 'Stable Diffusion v1.5 Img2Img',
+      provider: 'Community',
+      description: 'Image-to-image guided diffusion model for image restyling.',
+      contextWindow: 'Image-to-Image',
+      bestFor: 'Brand Avatar & Profile Photo Enhancements',
+      tier: 'imageGen',
+      taskType: 'Image-to-Image',
+    },
+    {
+      id: '@cf/runwayml/stable-diffusion-v1-5-inpainting',
+      name: 'Stable Diffusion v1.5 Inpainting',
+      provider: 'Community',
+      description: 'Inpainting model for selective background or object replacement in image masks.',
+      contextWindow: 'Inpainting',
+      bestFor: 'Background Cleaning & Watermark Masking',
+      tier: 'imageGen',
+      taskType: 'Inpainting',
     },
   ],
+
   audio: [
     {
       id: '@cf/openai/whisper-large-v3-turbo',
@@ -404,6 +496,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: 'Audio Stream',
       bestFor: 'Consultation Call Recordings, WhatsApp Voice Notes',
       tier: 'audio',
+      taskType: 'Automatic Speech Recognition',
     },
     {
       id: '@cf/openai/whisper',
@@ -413,6 +506,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: 'Audio Stream',
       bestFor: 'Short Voice Memos (<60s)',
       tier: 'audio',
+      taskType: 'Automatic Speech Recognition',
     },
     {
       id: '@cf/openai/whisper-tiny-en',
@@ -422,8 +516,10 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: 'Audio Stream',
       bestFor: 'Real-time Live Audio Dictation',
       tier: 'audio',
+      taskType: 'Automatic Speech Recognition',
     },
   ],
+
   translation: [
     {
       id: '@cf/meta/m2m100-1.2b',
@@ -433,8 +529,10 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '1k tokens',
       bestFor: 'Arabic Embassy Documents, MEA Attestations, Umrah Itineraries',
       tier: 'translation',
+      taskType: 'Translation',
     },
   ],
+
   embeddings: [
     {
       id: '@cf/baai/bge-large-en-v1.5',
@@ -444,6 +542,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '512 tokens',
       bestFor: 'High Precision University & Job Vector Search',
       tier: 'embeddings',
+      taskType: 'Text Embeddings',
     },
     {
       id: '@cf/baai/bge-base-en-v1.5',
@@ -453,6 +552,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '512 tokens',
       bestFor: 'Opus OS Vector Index Matching',
       tier: 'embeddings',
+      taskType: 'Text Embeddings',
     },
     {
       id: '@cf/baai/bge-small-en-v1.5',
@@ -462,6 +562,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '512 tokens',
       bestFor: 'Fast Candidate Search & Real-time Auto-complete',
       tier: 'embeddings',
+      taskType: 'Text Embeddings',
     },
     {
       id: '@cf/baai/bge-m3',
@@ -471,6 +572,7 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8192 tokens',
       bestFor: 'Long-document Semantic Search & Cross-lingual Retrieval',
       tier: 'embeddings',
+      taskType: 'Text Embeddings',
     },
     {
       id: '@cf/mistral/mistral-embed',
@@ -480,6 +582,79 @@ export const APPROVED_AI_MODELS: Record<string, ModelDetail[]> = {
       contextWindow: '8192 tokens',
       bestFor: 'Document Corpus Vector Search',
       tier: 'embeddings',
+      taskType: 'Text Embeddings',
+    },
+  ],
+
+  rerank: [
+    {
+      id: '@cf/baai/bge-reranker-large',
+      name: 'BGE Reranker Large (BAAI)',
+      provider: 'BAAI',
+      description: 'Cross-encoder reranking model that refines vector search rankings with deep query-document cross-attention.',
+      contextWindow: '512 tokens',
+      bestFor: 'Semantic Search Precision Boost, Course Re-ranking, Resume Matching',
+      tier: 'rerank',
+      taskType: 'Reranking',
+    },
+    {
+      id: '@cf/baai/bge-reranker-base',
+      name: 'BGE Reranker Base (BAAI)',
+      provider: 'BAAI',
+      description: 'Lightweight cross-encoder reranker for low-latency ranking passes.',
+      contextWindow: '512 tokens',
+      bestFor: 'Fast Top-10 Candidate Reranking',
+      tier: 'rerank',
+      taskType: 'Reranking',
+    },
+  ],
+
+  classification: [
+    {
+      id: '@cf/huggingface/distilbert-sst-2-int8',
+      name: 'DistilBERT SST-2 (Sentiment / Classification)',
+      provider: 'HuggingFace',
+      description: 'Quantized lightweight transformer for instantaneous sentiment analysis and positive/negative intent scoring.',
+      contextWindow: '512 tokens',
+      bestFor: 'Client Sentiment Analysis, Review Tone Scoring, Lead Urgency Detection',
+      tier: 'classification',
+      taskType: 'Text Classification',
+    },
+  ],
+
+  summarization: [
+    {
+      id: '@cf/facebook/bart-large-cnn',
+      name: 'BART Large CNN (Summarization)',
+      provider: 'Facebook',
+      description: 'Sequence-to-sequence model fine-tuned for abstractive text summarization.',
+      contextWindow: '1024 tokens',
+      bestFor: 'Client Consultation Notes Summaries, Long Document Briefs',
+      tier: 'summarization',
+      taskType: 'Summarization',
+    },
+  ],
+
+  objectDetection: [
+    {
+      id: '@cf/facebook/detr-resnet-50',
+      name: 'DETR ResNet-50 (Object Detection)',
+      provider: 'Facebook',
+      description: 'End-to-End Object Detection Transformer with ResNet-50 backbone.',
+      contextWindow: 'Image Input',
+      bestFor: 'Passport Photo Detection, Stamp Location, Signature Bounding Boxes',
+      tier: 'objectDetection',
+      taskType: 'Object Detection',
+    },
+    {
+      id: '@cf/microsoft/resnet-50',
+      name: 'ResNet-50 (Image Classification)',
+      provider: 'Microsoft',
+      description: '50-layer deep convolutional neural network for 1000-category image classification.',
+      contextWindow: 'Image Input',
+      bestFor: 'Document Orientation Checks & General Image Triage',
+      tier: 'imageClassification',
+      taskType: 'Image Classification',
     },
   ],
 };

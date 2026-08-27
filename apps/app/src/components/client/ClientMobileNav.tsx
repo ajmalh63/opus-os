@@ -27,9 +27,9 @@ export default function ClientMobileNav({
   const items: { key: ClientTab; label: string; icon: string }[] = [
     { key: 'dashboard', label: 'Home', icon: '⌂' },
     { key: 'study', label: 'Study', icon: '🎓' },
-    { key: 'visa', label: 'Visa', icon: '✈️' },
-    { key: 'jobs', label: 'Jobs', icon: '💼' },
-    { key: 'umrah', label: 'Umrah', icon: '🕋' },
+    { key: 'visa', label: 'Visa', icon: '🛂' },
+    { key: 'jobs', label: 'Jobs', icon: '👷' },
+    { key: 'umrah', label: 'Travel', icon: '🧳' },
   ];
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
@@ -41,7 +41,7 @@ export default function ClientMobileNav({
             <button
               key={it.key}
               onClick={() => onChange(it.key)}
-              className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-bold cursor-pointer ${
+              className={`flex flex-col items-center justify-center gap-0.5 text-sm font-bold cursor-pointer ${
                 active === it.key ? 'text-brand-navy bg-[#FAF3DC]' : 'text-slate-500'
               }`}
             >

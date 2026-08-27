@@ -62,10 +62,12 @@ export interface Completeness {
   done: string[];
 }
 
+export const GATE_PCT = 80;
+
 const REQUIRED_CHECKS: { key: string; label: string; test: (ctx: any) => boolean }[] = [
-  { key: 'academic', label: 'Academic history (10th/12th or degree)', test: (c) => (c.pct10th && c.pct12th) || c.degreeName },
+  { key: 'academic', label: 'Academic history (10th/12th or degree)', test: (c) => (c.pct10th && c.pct12th) || !!c.degreeName },
   { key: 'cgpa', label: 'CGPA', test: (c) => c.cgpa !== undefined && c.cgpa !== null && c.cgpa !== '' },
-  { key: 'english', label: 'English score or planned test', test: (c) => (c.englishScore !== undefined && c.englishScore !== null && c.englishScore !== '') || c.testPlanned === true },
+  { key: 'english', label: 'English score or planned test', test: (c) => isEnglishValid(c) },
   { key: 'country', label: 'Target country', test: (c) => !!c.targetCountry },
   { key: 'intake', label: 'Target intake', test: (c) => !!c.targetIntake },
   { key: 'course', label: 'Preferred course', test: (c) => !!c.preferredCourse },
@@ -88,14 +90,34 @@ export function computeProfileCompleteness(raw?: string | null): Completeness {
   return { pct, missing, done };
 }
 
-/** Normalize a TOEFL/PTE score to an approximate IELTS band for comparison. */
+/** Normalize TOEFL/PTE/Duolingo/Cambridge/LanguageCert/OET/TOEIC to an approximate IELTS band.
+ *  Valid if mapping exists; returns null when score missing or test unknown.
+ *  Gold standard: IELTS 9 scale, half-bands. Mapping is conservative (favour student). */
 export function normalizeEnglish(score: number | null | undefined, test?: string | null): number | null {
-  if (score === null || score === undefined || Number.isNaN(score)) return null;
-  if (test === 'TOEFL') return Math.round(((score - 31) / 10) * 2) / 2; // TOEFL 100 ≈ IELTS 7.0
-  if (test === 'PTE') return Math.round(((score - 50) / 17 + 6) * 2) / 2; // PTE 50≈6.0 · 65≈7.0 · 84≈8.0
-  if (test === 'Duolingo') return Math.round(((score - 85) / 20 + 5) * 2) / 2; // DET 85≈5.0 · 120≈7.0 · 145≈8.0
-  if (test === 'Cambridge') return Math.round(((score - 160) / 20 + 5.5) * 2) / 2; // CAE 180≈6.5 · CPE 200≈7.5
-  return Number(score);
+  if (score === null || score === undefined || Number.isNaN(Number(score))) return null;
+  const s = Number(score);
+  if (test === 'TOEFL') return Math.round(((s - 31) / 10) * 2) / 2; // TOEFL 100 ≈ IELTS 7.0, 120 → 8.0
+  if (test === 'PTE') return Math.round(((s - 50) / 17 + 6) * 2) / 2; // PTE 50≈6.0 · 65≈7.0 · 84≈8.0, 90→8.5
+  if (test === 'Duolingo') return Math.round(((s - 85) / 20 + 5) * 2) / 2; // DET 85≈5.0 · 120≈7.0 · 145≈8.0
+  if (test === 'Cambridge') return Math.round(((s - 160) / 20 + 5.5) * 2) / 2; // CAE 180≈6.5 · CPE 200≈7.5
+  if (test === 'LanguageCert') return Math.round(((s - 60) / 15 + 6) * 2) / 2; // LC 60≈6.0 · 75≈7.0 · 90→8.0
+  if (test === 'OET') return Math.round(((s - 300) / 50 + 6) * 2) / 2; // OET 300≈6.0 · 350≈7.0 · 400→8.0 (approx B-grade 350)
+  if (test === 'TOEIC') return Math.round(((s - 550) / 150 + 5.5) * 2) / 2; // TOEIC 550≈5.5 · 785≈7.0 · 945→8.5
+  if (test === 'IELTS') return s; // already IELTS band
+  if (test === 'Other' || !test) return s; // assume IELTS scale when unspecified
+  return Number(s);
+}
+
+/** Test validity — does the student's English entry count for the gate / matching?
+ *  Counts as valid if: real score normalizes to an IELTS band, OR testPlanned/waiver is set.
+ *  This is the gate's "test should be valid if criteria is matching" rule. */
+export function isEnglishValid(ctx: any): boolean {
+  if (ctx?.englishWaiver === true) return true;
+  if (ctx?.testPlanned === true) return true;
+  const raw = ctx?.englishScore;
+  if (raw === undefined || raw === null || raw === '') return false;
+  const band = normalizeEnglish(Number(raw), ctx?.englishTest || 'IELTS');
+  return band !== null && !Number.isNaN(band);
 }
 
 export function matchApplication(profile: StudentProfile, uni: UniRequirements): MatchResult {

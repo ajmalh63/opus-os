@@ -41,7 +41,7 @@ export default function TrustStrip({
 
   return (
     <div className="w-full bg-[#FAF8F4] border-y border-brand-navy/10 -mx-6 md:-mx-8 px-6 md:px-8 py-2">
-      <div className="flex items-center justify-between gap-3 text-[11px] overflow-x-auto whitespace-nowrap scrollbar-thin">
+      <div className="flex items-center justify-between gap-3 text-sm overflow-x-auto whitespace-nowrap scrollbar-thin">
         {!hasJourney ? (
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 font-bold text-brand-navy">
@@ -67,10 +67,10 @@ export default function TrustStrip({
                   type="button"
                   onClick={handleCopyFileNo}
                   title="Click to copy Case Reference ID"
-                  className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-brand-navy/10 text-brand-navy hover:border-brand-gold hover:text-brand-navy transition-colors cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-1 font-mono text-[13px] font-bold px-2 py-0.5 rounded-md bg-white border border-brand-navy/10 text-brand-navy hover:border-brand-gold hover:text-brand-navy transition-colors cursor-pointer shadow-xs"
                 >
                   <span>{fileNo}</span>
-                  <span className="text-[9px] text-brand-gold">{copied ? '✓' : '📋'}</span>
+                  <span className="text-xs text-brand-gold">{copied ? '✓' : '📋'}</span>
                 </button>
               </>
             )}
@@ -89,7 +89,7 @@ export default function TrustStrip({
             {counselorName && (
               <>
                 <span className="hidden md:inline text-slate-300">|</span>
-                <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium text-[10px]">
+                <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium text-[13px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                   Counselor: {counselorName}
                 </span>
@@ -100,7 +100,7 @@ export default function TrustStrip({
             {lastSyncLabel && (
               <>
                 <span className="hidden lg:inline text-slate-300">|</span>
-                <span className="hidden lg:inline font-mono text-[10px] text-slate-500">
+                <span className="hidden lg:inline font-mono text-[13px] text-slate-500">
                   {lastSyncLabel}
                 </span>
               </>
@@ -115,13 +115,13 @@ export default function TrustStrip({
               <button
                 type="button"
                 onClick={nextStepAction}
-                className="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-[11px] font-bold px-3 py-1 rounded-full transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-sm font-bold px-3 py-1 rounded-full transition-all shadow-xs cursor-pointer"
               >
                 <span>⚡ Next: {nextStep}</span>
                 <span>→</span>
               </button>
             ) : (
-              <span className="inline-flex items-center gap-1 font-bold text-brand-navy text-[11px] px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200/80">
+              <span className="inline-flex items-center gap-1 font-bold text-brand-navy text-sm px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200/80">
                 <span>Next: {nextStep}</span>
               </span>
             )}

@@ -176,4 +176,75 @@ beforeEach(() => {
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
     expect(res.status).toBe(503);
   });
+
+  describe('Standard Generic Web Checkout (/api/create-order & /api/verify-payment)', () => {
+    it('POST /api/create-order creates order with minimum 100 paise validation', async () => {
+      // 1. Rejects below 100 paise
+      const tooLow = await app.request('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 50 })
+      }, { DB: mockD1, RAZORPAY_KEY_ID: 'rzp_test_mock_123', RAZORPAY_KEY_SECRET: 'mock_secret_key_abc' });
+      expect(tooLow.status).toBe(400);
+
+      // 2. Creates valid order
+      global.fetch = vi.fn(async (url: any) => {
+        if (String(url).includes('/orders')) {
+          return new Response(JSON.stringify({ id: 'order_std_999', amount: 50000, currency: 'INR', receipt: 'rcpt_1' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+        return new Response('{}', { status: 404 });
+      }) as any;
+
+      const res = await app.request('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 50000, currency: 'INR', receipt: 'rcpt_1' })
+      }, { DB: mockD1, RAZORPAY_KEY_ID: 'rzp_test_mock_123', RAZORPAY_KEY_SECRET: 'mock_secret_key_abc' });
+
+      expect(res.status).toBe(200);
+      const data = await res.json() as any;
+      expect(data.success).toBe(true);
+      expect(data.order_id).toBe('order_std_999');
+      expect(data.amount).toBe(50000);
+      expect(data.key_id).toBe('rzp_test_mock_123');
+    });
+
+    it('POST /api/verify-payment verifies HMAC signature and rejects forged signatures', async () => {
+      const secret = 'mock_secret_key_abc';
+      const orderId = 'order_std_999';
+      const paymentId = 'pay_std_123';
+      const validSig = await hmacHex(secret, `${orderId}|${paymentId}`);
+
+      // Valid signature
+      const validRes = await app.request('/api/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_order_id: orderId,
+          razorpay_payment_id: paymentId,
+          razorpay_signature: validSig,
+        })
+      }, { DB: mockD1, RAZORPAY_KEY_ID: 'rzp_test_mock_123', RAZORPAY_KEY_SECRET: secret });
+
+      expect(validRes.status).toBe(200);
+      const validJson = await validRes.json() as any;
+      expect(validJson.success).toBe(true);
+      expect(validJson.message).toBe('Payment verified successfully');
+
+      // Invalid signature
+      const invalidRes = await app.request('/api/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_order_id: orderId,
+          razorpay_payment_id: paymentId,
+          razorpay_signature: 'forged_fake_signature_hex_1234567890abcdef',
+        })
+      }, { DB: mockD1, RAZORPAY_KEY_ID: 'rzp_test_mock_123', RAZORPAY_KEY_SECRET: secret });
+
+      expect(invalidRes.status).toBe(400);
+      const invalidJson = await invalidRes.json() as any;
+      expect(invalidJson.success).toBe(false);
+    });
+  });
 });

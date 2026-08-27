@@ -30,8 +30,11 @@ function ensureGtag(measurementId: string) {
   }
   // dataLayer + gtag stub
   (window as any).dataLayer = (window as any).dataLayer || [];
-  function gtag(...args: any[]) { (window as any).dataLayer.push(arguments); (window as any).gtag = (window as any).gtag || function(){ (window as any).dataLayer.push(arguments); }; (window as any).gtag(...args); }
-  (window as any).gtag = (window as any).gtag || gtag;
+  if (!(window as any).gtag) {
+    (window as any).gtag = function() {
+      (window as any).dataLayer.push(arguments);
+    };
+  }
   (window as any).gtag('js', new Date());
   (window as any).gtag('config', measurementId, { send_page_view: false });
   injected.gtag = measurementId;

@@ -59,10 +59,10 @@ export default function Img({
           <circle cx="9" cy="9" r="2" />
           <path d="M21 15l-4.5-4.5L7 20" />
         </svg>
-        <span className="max-w-[80%] truncate rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-brand-gold">
+        <span className="max-w-[80%] truncate rounded-full border border-brand-gold/30 bg-brand-gold/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-brand-gold">
           {label || 'Image'}
         </span>
-        <span className="line-clamp-2 text-[10px] leading-snug text-brand-textLight/70">{prompt}</span>
+        <span className="line-clamp-2 text-[13px] leading-snug text-brand-textLight/70">{prompt}</span>
       </div>
     </div>
   );

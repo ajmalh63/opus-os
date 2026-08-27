@@ -143,7 +143,7 @@ export default function Signup() {
                   <p className="text-xs text-brand-textLight">
                     We sent an activation link to <strong className="text-brand-navy">{email}</strong>. Click the link in the email to activate your account.
                   </p>
-                  <p className="text-[11px] text-brand-textLight/75">
+                  <p className="text-sm text-brand-textLight/75">
                     If you don't see it in your primary inbox, please check your <strong>Spam</strong> or <strong>Promotions</strong> folder.
                   </p>
                 </div>
@@ -166,17 +166,17 @@ export default function Signup() {
             ) : (
               <form onSubmit={handleSignup} className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Full name</label>
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-widest text-brand-textLight">Full name</label>
                   <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className={baseInput} />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Email</label>
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-widest text-brand-textLight">Email</label>
                   <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={baseInput} />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-brand-textLight">Password</label>
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-widest text-brand-textLight">Password</label>
                   <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" className={baseInput} />
-                  <p className="mt-1.5 text-[10px] text-brand-textLight">Use 8+ characters. 2FA (authenticator app) can be enabled later from your workspace.</p>
+                  <p className="mt-1.5 text-[13px] text-brand-textLight">Use 8+ characters. 2FA (authenticator app) can be enabled later from your workspace.</p>
                 </div>
                 <button disabled={busy} className="w-full rounded-full bg-brand-gold py-3.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] disabled:opacity-50">
                   {busy ? 'Creating…' : 'Create & Verify Account'}

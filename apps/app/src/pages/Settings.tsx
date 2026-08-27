@@ -126,7 +126,7 @@ function SessionsCard() {
       <div className="flex items-center justify-between gap-3">
         <SectionTitle title="Active sessions" sub="Devices currently signed in to your account." />
         <button onClick={() => revoke(undefined, true)} disabled={busy}
-          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11px] font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">
+          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50">
           Sign out all others
         </button>
       </div>
@@ -144,15 +144,15 @@ function SessionsCard() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 text-xs font-semibold text-brand-navy">
                   {deviceOf(s)}
-                  {isCurrent && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">This device</span>}
+                  {isCurrent && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-emerald-700">This device</span>}
                 </div>
-                <div className="mt-0.5 truncate text-[11px] text-brand-navy/50">
+                <div className="mt-0.5 truncate text-sm text-brand-navy/50">
                   Signed in {fmtDate(s.createdAt)} · Last active {fmtDate(s.updatedAt)}{s.ipAddress ? ` · ${s.ipAddress}` : ''}
                 </div>
               </div>
               {!isCurrent && (
                 <button onClick={() => revoke(s.token)} disabled={busy}
-                  className="rounded-lg border border-brand-navy/10 px-3 py-1.5 text-[11px] font-semibold text-brand-navy/60 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50">
+                  className="rounded-lg border border-brand-navy/10 px-3 py-1.5 text-sm font-semibold text-brand-navy/60 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50">
                   Revoke
                 </button>
               )}
@@ -178,8 +178,8 @@ function ProfileTab() {
             <h2 className="font-display text-lg font-bold text-brand-navy">{me.name}</h2>
             <p className="truncate text-xs text-brand-navy/50">{me.email}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-brand-navy/5 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-navy">{me.role?.replace('_', ' ')}</span>
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${me.twoFactorEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+              <span className="rounded-full bg-brand-navy/5 px-2.5 py-0.5 text-[13px] font-bold uppercase tracking-wider text-brand-navy">{me.role?.replace('_', ' ')}</span>
+              <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-bold uppercase tracking-wider ${me.twoFactorEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                 {me.twoFactorEnabled ? '2FA on' : '2FA off'}
               </span>
             </div>
@@ -189,10 +189,10 @@ function ProfileTab() {
       <div className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-[0_4px_20px_rgba(10,45,80,0.05)]">
         <SectionTitle title="About this account" sub="Your identity is managed by the workspace owner." />
         <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div><dt className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40">Name</dt><dd className="mt-0.5 text-sm text-brand-navy">{me.name}</dd></div>
-          <div><dt className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40">Email</dt><dd className="mt-0.5 text-sm text-brand-navy">{me.email}</dd></div>
-          <div><dt className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40">Role</dt><dd className="mt-0.5 text-sm capitalize text-brand-navy">{me.role?.replace('_', ' ')}</dd></div>
-          <div><dt className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40">Email verified</dt><dd className="mt-0.5 text-sm text-brand-navy">{me.emailVerified ? 'Yes' : 'No'}</dd></div>
+          <div><dt className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40">Name</dt><dd className="mt-0.5 text-sm text-brand-navy">{me.name}</dd></div>
+          <div><dt className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40">Email</dt><dd className="mt-0.5 text-sm text-brand-navy">{me.email}</dd></div>
+          <div><dt className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40">Role</dt><dd className="mt-0.5 text-sm capitalize text-brand-navy">{me.role?.replace('_', ' ')}</dd></div>
+          <div><dt className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40">Email verified</dt><dd className="mt-0.5 text-sm text-brand-navy">{me.emailVerified ? 'Yes' : 'No'}</dd></div>
         </dl>
       </div>
     </div>
@@ -213,7 +213,7 @@ export default function Settings() {
       <div className="border-b border-brand-navy/10 pb-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Account Governance</span>
+          <span className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Account Governance</span>
         </div>
         <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Account & Security Settings</h1>
         <p className="mt-0.5 text-xs text-brand-textLight">Manage your personal credentials, hardware 2FA authenticator, and active enterprise sessions.</p>

@@ -15,9 +15,9 @@ function GrowthCard({ label, value, sub, tone = 'navy' }: { label: string; value
   };
   return (
     <div className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-[0_20px_40px_-20px_rgba(10,45,80,0.15)]">
-      <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-brand-navy/40">{label}</div>
+      <div className="text-xs font-bold uppercase tracking-[0.18em] text-brand-navy/40">{label}</div>
       <div className={`mt-1.5 font-display font-extrabold text-xl ${tones[tone]}`}>{value}</div>
-      {sub && <div className="mt-1 text-[10px] text-brand-navy/40">{sub}</div>}
+      {sub && <div className="mt-1 text-[13px] text-brand-navy/40">{sub}</div>}
     </div>
   );
 }
@@ -25,7 +25,7 @@ function GrowthCard({ label, value, sub, tone = 'navy' }: { label: string; value
 function Delta({ pct, suffix = '' }: { pct: number; suffix?: string }) {
   const up = pct >= 0;
   return (
-    <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[9px] font-bold ${up ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-600'}`}>
+    <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-bold ${up ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-600'}`}>
       {up ? '▲' : '▼'} {Math.abs(pct)}%{suffix}
     </span>
   );
@@ -35,7 +35,7 @@ function Bar({ label, value, max, color }: { label: string; value: number; max: 
   const pct = max > 0 ? Math.max(4, Math.round((value / max) * 100)) : 0;
   return (
     <div>
-      <div className="flex justify-between text-[10px] mb-1">
+      <div className="flex justify-between text-[13px] mb-1">
         <span className="font-bold text-brand-navy">{label}</span>
         <span className="text-brand-navy/40 font-mono">{rs(value)}</span>
       </div>
@@ -76,7 +76,7 @@ export default function GrowthMetricsTab() {
         <div>
           <div className="flex items-center gap-2">
             <span className="gold-dot" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Growth</span>
+            <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Growth</span>
           </div>
           <h2 className="font-display font-bold text-base text-brand-navy">Business Growth Metrics</h2>
         </div>
@@ -115,16 +115,16 @@ export default function GrowthMetricsTab() {
           {divs.map(([key, d]: any) => (
             <div key={key}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold text-brand-navy">{DIV_LABELS[key] || key}</span>
+                <span className="text-[13px] font-bold text-brand-navy">{DIV_LABELS[key] || key}</span>
                 <span className="flex items-center gap-2">
-                  <span className="text-[9px] text-brand-navy/40 font-mono">last {rs(d.lastMonth)}</span>
+                  <span className="text-xs text-brand-navy/40 font-mono">last {rs(d.lastMonth)}</span>
                   <Delta pct={d.growthPct} />
                 </span>
               </div>
               <Bar label="" value={d.thisMonth} max={maxDiv} color="bg-brand-gold" />
             </div>
           ))}
-          {divs.length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-3">No paid revenue recorded yet.</p>}
+          {divs.length === 0 && <p className="text-[13px] text-brand-navy/40 text-center py-3">No paid revenue recorded yet.</p>}
         </div>
       </div>
     </div>

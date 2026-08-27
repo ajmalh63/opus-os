@@ -103,7 +103,7 @@ export default function ClientDashboardHub({
       id: 'transit', 
       label: '5. Ready & Travel', 
       tagline: 'Flight ticketing, briefing & arrival',
-      icon: '✈️', 
+      icon: '🧳', 
       badgeBg: 'bg-amber-100 text-amber-950 border-brand-gold/60',
       headerGlow: 'from-brand-gold/15 to-transparent',
     },
@@ -134,7 +134,7 @@ export default function ClientDashboardHub({
     ...visaApps.map((a) => ({
       id: `visa-${a.id}`,
       type: 'visa' as const,
-      badge: '✈️ Visa Processing',
+      badge: '🛂 Visa Processing',
       badgeClass: 'bg-sky-500/10 text-sky-700 border-sky-200/80',
       title: `${a.country || 'Global'} ${a.visaType || 'Visa'}`,
       subtitle: `Entry: ${a.entryType || 'Standard'}`,
@@ -145,9 +145,9 @@ export default function ClientDashboardHub({
     ...umrahBookings.map((b) => ({
       id: `umrah-${b.id}`,
       type: 'umrah' as const,
-      badge: '🕋 Umrah Pilgrimage',
+      badge: '🧳 Tours & Travels',
       badgeClass: 'bg-amber-500/10 text-amber-800 border-amber-200/80',
-      title: b.packageName || 'Premium Umrah Package',
+      title: b.packageName || 'Premium Tour Package',
       subtitle: `Party of ${b.paxCount || 1} · Departure: ${b.departureDate || 'Scheduled'}`,
       country: 'Saudi Arabia 🇸🇦',
       status: b.status || 'Confirmed',
@@ -156,7 +156,7 @@ export default function ClientDashboardHub({
     ...attestationApps.map((a) => ({
       id: `attest-${a.id}`,
       type: 'attestation' as const,
-      badge: '📑 Attestation Desk',
+      badge: '📜 Attestation Desk',
       badgeClass: 'bg-emerald-500/10 text-emerald-700 border-emerald-200/80',
       title: `${a.targetCountry || 'Embassy'} Attestation`,
       subtitle: `Doc: ${a.docCategory || 'Commercial / Educational'}`,
@@ -167,7 +167,7 @@ export default function ClientDashboardHub({
     ...jobApps.map((j) => ({
       id: `job-${j.id}`,
       type: 'jobs' as const,
-      badge: '💼 Global Career',
+      badge: '👷 Global Career',
       badgeClass: 'bg-slate-500/10 text-slate-800 border-slate-300/80',
       title: j.jobTitle || 'International Job Application',
       subtitle: `Country: ${j.country || 'Gulf / Europe'}`,
@@ -290,7 +290,137 @@ export default function ClientDashboardHub({
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* 0. OFFLINE / STALE KILL SWITCH — never show stale as fresh */}
-      <OfflineBanner lastSyncAt={Math.max(...(sessionData?.journeys?.map((j: any) => j.updatedAt) || [Date.now() / 1000]))} />
+      <OfflineBanner lastSyncAt={sessionData?.journeys?.length ? Math.max(...sessionData.journeys.map((j: any) => j.updatedAt || 0)) : Math.floor(Date.now() / 1000)} />
+
+      {/* 1. LUXURY HERO EXECUTIVE BANNER */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-navy via-[#0C2340] to-[#08182B] p-7 md:p-10 text-white shadow-xl border border-brand-gold/20">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-gold/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div className="space-y-3 max-w-2xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white/90">
+                Your workspace — active and ready
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs font-bold text-white/80">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                Updates appear here live
+              </span>
+            </div>
+
+            <h1 className="font-display font-black text-2xl md:text-3xl lg:text-4xl text-white tracking-tight leading-tight">
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-gold via-amber-300 to-amber-100">{clientName || clientEmail}</span>
+            </h1>
+
+            <p className="text-sm md:text-base text-slate-200 leading-relaxed font-normal">
+              Your global journey hub is synchronized directly with Opus Overseas counselors across admissions, visa processing, document vaults, and pilgrimage desks.
+            </p>
+          </div>
+
+          {/* Quick Action Station */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full lg:w-auto">
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 px-4 py-3.5 rounded-2xl flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-brand-gold/20 border border-brand-gold/40 flex items-center justify-center text-brand-gold font-black text-lg shadow-inner">
+                👤
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white truncate max-w-[170px]">{clientEmail}</div>
+                <div className="text-xs text-brand-gold font-mono font-bold tracking-wider">#{accountId?.slice(0, 10) || 'CLIENT'}</div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onNavigateTab('study')}
+              className="bg-gradient-to-r from-brand-gold to-amber-500 hover:from-amber-400 hover:to-brand-gold text-brand-navy font-black text-sm px-6 py-4 rounded-2xl transition shadow-lg uppercase tracking-wider cursor-pointer whitespace-nowrap active:scale-95"
+            >
+              + Apply New Service
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. TOP METRICS TELEMETRY STRIP */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Metric 1 */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition group flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Enrolled Services</span>
+            <span className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-brand-navy flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
+              🚀
+            </span>
+          </div>
+          <div className="mt-4">
+            <div className="text-3xl sm:text-4xl font-black text-brand-navy font-display tracking-tight">{totalEnrolled}</div>
+            <div className="text-sm text-slate-600 mt-1.5 flex items-center gap-1.5">
+              <span className="font-bold text-brand-gold">Active</span> applications & files
+            </div>
+          </div>
+        </div>
+
+        {/* Metric 2 */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition group flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Document Vault</span>
+            <span className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
+              📁
+            </span>
+          </div>
+          <div className="mt-4">
+            <div className="text-3xl sm:text-4xl font-black text-brand-navy font-display tracking-tight">{verifiedDocsCount}</div>
+            <div className="text-sm text-slate-600 mt-1.5 flex items-center gap-1.5">
+              <span className="font-bold text-emerald-600">Verified</span> certificates on file
+            </div>
+          </div>
+        </div>
+
+        {/* Metric 3 */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition group flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Payments & Receipts</span>
+            <span className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
+              💳
+            </span>
+          </div>
+          <div className="mt-4">
+            <div className="text-3xl sm:text-4xl font-black text-brand-navy font-display tracking-tight">₹{(totalPaidPaise / 100).toLocaleString('en-IN')}</div>
+            <div className="text-sm text-slate-600 mt-1.5 flex items-center gap-1.5">
+              <span className="font-bold text-emerald-600">{totalPayments.length}</span> settled invoices
+            </div>
+          </div>
+        </div>
+
+        {/* Metric 4: Dedicated Counselor Desk */}
+        <div className="bg-gradient-to-br from-brand-navy to-[#0F223D] text-white rounded-3xl p-6 border border-brand-gold/30 shadow-md flex flex-col justify-between relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-brand-gold">Assigned Counselor</span>
+            <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+          </div>
+          <div className="mt-3.5">
+            <div className="font-display font-bold text-base text-white">
+              {assignedCounselor?.name || 'Central Opus Advisory Desk'}
+            </div>
+            <div className="text-xs sm:text-sm text-white/80 mt-0.5">
+              {assignedCounselor?.role || 'Senior Counselor'} · Hyderabad HQ
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="flex-1 text-center bg-white/10 text-white/90 py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-white/10">
+              Chat via bubble in corner →
+            </span>
+            <a
+              href="tel:+919876543210"
+              className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm transition"
+              title="Call Support"
+              aria-label="Call support"
+            >
+              📞
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* 0. TRUST STRIP — LIVE CONTEXT (meaningful, realtime, honest — not dummy) */}
       <TrustStrip
         clientName={clientName}
@@ -335,135 +465,6 @@ export default function ClientDashboardHub({
         />
       )}
 
-      {/* 1. LUXURY HERO EXECUTIVE BANNER */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-navy via-[#0C2340] to-[#08182B] p-7 md:p-9 text-white shadow-xl border border-brand-gold/20">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-gold/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="space-y-2.5 max-w-2xl">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/80">
-                Your workspace — active and ready
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-[10px] font-bold text-white/70">
-                <span className="w-1.5 h-1.5 rounded-full bg-white/60"></span>
-                Updates appear here live
-              </span>
-            </div>
-
-            <h1 className="font-display font-black text-2xl md:text-3xl text-white tracking-tight leading-tight">
-              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-gold via-amber-300 to-amber-100">{clientName || clientEmail}</span>
-            </h1>
-
-            <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-normal">
-              Your global journey hub is synchronized directly with Opus Overseas counselors across admissions, visa processing, document vaults, and pilgrimage desks.
-            </p>
-          </div>
-
-          {/* Quick Action Station */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 px-4 py-3 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-gold/20 border border-brand-gold/40 flex items-center justify-center text-brand-gold font-black text-base shadow-inner">
-                👤
-              </div>
-              <div>
-                <div className="text-xs font-bold text-white truncate max-w-[150px]">{clientEmail}</div>
-                <div className="text-[10px] text-brand-gold font-mono font-bold tracking-wider">#{accountId?.slice(0, 10) || 'CLIENT'}</div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onNavigateTab('study')}
-              className="bg-gradient-to-r from-brand-gold to-amber-500 hover:from-amber-400 hover:to-brand-gold text-brand-navy font-black text-xs px-5 py-3.5 rounded-2xl transition shadow-lg uppercase tracking-wider cursor-pointer whitespace-nowrap active:scale-95"
-            >
-              + Apply New Service
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. TOP METRICS TELEMETRY STRIP */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition group flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Enrolled Services</span>
-            <span className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-brand-navy flex items-center justify-center text-lg shadow-inner group-hover:scale-110 transition-transform">
-              🚀
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-black text-brand-navy font-display tracking-tight">{totalEnrolled}</div>
-            <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-              <span className="font-semibold text-brand-gold">Active</span> applications & files
-            </div>
-          </div>
-        </div>
-
-        {/* Metric 2 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition group flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Document Vault</span>
-            <span className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 flex items-center justify-center text-lg shadow-inner group-hover:scale-110 transition-transform">
-              📁
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-black text-brand-navy font-display tracking-tight">{verifiedDocsCount}</div>
-            <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-              <span className="font-semibold text-emerald-600">Verified</span> certificates on file
-            </div>
-          </div>
-        </div>
-
-        {/* Metric 3 */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition group flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Payments & Receipts</span>
-            <span className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center text-lg shadow-inner group-hover:scale-110 transition-transform">
-              💳
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-black text-brand-navy font-display tracking-tight">₹{(totalPaidPaise / 100).toLocaleString('en-IN')}</div>
-            <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-              <span className="font-semibold text-emerald-600">{totalPayments.length}</span> settled invoices
-            </div>
-          </div>
-        </div>
-
-        {/* Metric 4: Dedicated Counselor Desk */}
-        <div className="bg-gradient-to-br from-brand-navy to-[#0F223D] text-white rounded-3xl p-6 border border-brand-gold/30 shadow-md flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-gold">Assigned Counselor</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-          </div>
-          <div className="mt-3">
-            <div className="font-display font-bold text-sm text-white">
-              {assignedCounselor?.name || 'Central Opus Advisory Desk'}
-            </div>
-            <div className="text-[11px] text-white/70">
-              {assignedCounselor?.role || 'Senior Counselor'} · Hyderabad HQ
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-2">
-            <span className="flex-1 text-center bg-white/10 text-white/80 py-2 rounded-xl text-[11px] font-medium border border-white/10">
-              Chat via bubble in corner →
-            </span>
-            <a
-              href="tel:+919876543210"
-              className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs transition"
-              title="Call Support"
-              aria-label="Call support"
-            >
-              📞
-            </a>
-          </div>
-        </div>
-      </section>
-
       {/* 2b. ANXIETY RELIEF CHECKLIST + SOCIAL PROOF — 8/4 calm, hesitation point */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-8">
@@ -501,26 +502,26 @@ export default function ClientDashboardHub({
       {/* 3. LIVE KANBAN PIPELINE BOARD */}
       <section className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2.5">
-              <h2 className="font-display font-black text-xl text-brand-navy tracking-tight">
+              <h2 className="font-display font-black text-xl sm:text-2xl text-brand-navy tracking-tight">
                 Live Enrolled Services Pipeline
               </h2>
-              <span className="text-[10px] bg-emerald-50 border border-emerald-300 text-emerald-800 px-2.5 py-0.5 rounded-full font-extrabold shadow-xs">
+              <span className="text-xs bg-emerald-50 border border-emerald-300 text-emerald-800 px-3 py-1 rounded-full font-bold shadow-xs">
                 Auto-Synced with Staff CRM
               </span>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-600">
               Live status tracking across university admissions, embassy visa files, attestation chains, and pilgrimage slots.
             </p>
           </div>
 
           {/* Division Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200">
+          <div className="flex flex-wrap items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200">
             {[
               { id: 'all', label: 'All Files' },
               { id: 'study', label: '🎓 Study' },
-              { id: 'visa', label: '✈️ Visa' },
+              { id: 'visa', label: '🛂 Visa' },
               { id: 'umrah', label: '🕋 Umrah' },
               { id: 'attestation', label: '📑 Attest' },
               { id: 'jobs', label: '💼 Jobs' },
@@ -529,7 +530,7 @@ export default function ClientDashboardHub({
                 key={f.id}
                 type="button"
                 onClick={() => setActiveFilter(f.id as any)}
-                className={`px-3 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
                   activeFilter === f.id
                     ? 'bg-brand-navy text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
@@ -548,17 +549,17 @@ export default function ClientDashboardHub({
             return (
               <div
                 key={col.id}
-                className="bg-slate-50/90 rounded-2xl p-4 border border-slate-200/80 flex flex-col gap-3 min-h-[360px]"
+                className="bg-slate-50/90 rounded-2xl p-4 border border-slate-200/80 flex flex-col gap-3.5 min-h-[360px]"
               >
                 {/* Column Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
                   <div className="flex items-center gap-2">
-                    <span className="text-base">{col.icon}</span>
+                    <span className="text-lg">{col.icon}</span>
                     <div>
-                      <div className="text-xs font-black text-brand-navy leading-none">{col.label}</div>
+                      <div className="text-sm font-black text-brand-navy leading-none">{col.label}</div>
                     </div>
                   </div>
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${col.badgeBg}`}>
+                  <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${col.badgeBg}`}>
                     {itemsInCol.length}
                   </span>
                 </div>
@@ -566,12 +567,12 @@ export default function ClientDashboardHub({
                 {/* Column Items */}
                 <div className="flex flex-col gap-3 flex-1">
                   {itemsInCol.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-slate-200/60 rounded-xl gap-2">
-                      <span className="w-8 h-8 rounded-lg bg-slate-100 grid place-items-center text-sm" aria-hidden>📄</span>
-                      <span className="text-slate-500 text-xs font-semibold">No files in this stage</span>
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-slate-200/60 rounded-xl gap-2.5">
+                      <span className="w-9 h-9 rounded-lg bg-slate-100 grid place-items-center text-base" aria-hidden>📄</span>
+                      <span className="text-slate-600 text-sm font-semibold">No files in this stage</span>
                       <button
                         onClick={() => onNavigateTab('study')}
-                        className="text-[11px] font-bold text-brand-navy hover:text-brand-gold underline cursor-pointer"
+                        className="text-xs sm:text-sm font-bold text-brand-navy hover:text-brand-gold underline cursor-pointer"
                       >
                         Start intake →
                       </button>
@@ -582,27 +583,27 @@ export default function ClientDashboardHub({
                         key={item.id}
                         onClick={() => onNavigateTab(item.type)}
                         aria-label={`Open ${item.title} — ${item.badge}`}
-                        className="w-full text-left bg-white hover:bg-slate-50/90 rounded-2xl p-4 border border-slate-200/90 hover:border-brand-gold shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer space-y-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/20"
+                        className="w-full text-left bg-white hover:bg-slate-50/90 rounded-2xl p-4 border border-slate-200/90 hover:border-brand-gold shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer space-y-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/20"
                       >
                         <div className="flex items-center justify-between">
-                          <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border ${item.badgeClass}`}>
+                          <span className={`text-xs font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md border ${item.badgeClass}`}>
                             {item.badge}
                           </span>
-                          <span className="text-[10px] font-bold text-slate-400 group-hover:text-brand-gold transition-colors">
+                          <span className="text-xs font-bold text-slate-400 group-hover:text-brand-gold transition-colors">
                             Open →
                           </span>
                         </div>
 
                         <div>
-                          <h4 className="text-xs font-bold text-brand-navy leading-snug group-hover:text-brand-gold transition-colors">
+                          <h4 className="text-sm font-bold text-brand-navy leading-snug group-hover:text-brand-gold transition-colors">
                             {item.title}
                           </h4>
-                          <p className="text-[11px] text-slate-500 mt-0.5">{item.subtitle}</p>
+                          <p className="text-xs sm:text-sm text-slate-600 mt-1">{item.subtitle}</p>
                         </div>
 
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                          <span className="text-slate-400">Country: <strong className="text-slate-700">{item.country}</strong></span>
-                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold capitalize">
+                        <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+                          <span className="text-slate-500">Country: <strong className="text-slate-800">{item.country}</strong></span>
+                          <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded font-bold capitalize">
                             {item.status.replace(/_/g, ' ')}
                           </span>
                         </div>
@@ -620,37 +621,37 @@ export default function ClientDashboardHub({
       <section className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div>
-            <h3 className="font-display font-black text-lg text-brand-navy tracking-tight">
+            <h3 className="font-display font-black text-xl text-brand-navy tracking-tight">
               Global Divisions & Instant Application Desk
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">Explore active catalogue inventories and initiate self-service applications.</p>
+            <p className="text-sm text-slate-600 mt-1">Explore active catalogue inventories and initiate self-service applications.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* Division 1: Study Abroad */}
           <button
             onClick={() => onNavigateTab('study')}
             type="button"
-            className="w-full text-left p-5 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
+            className="w-full text-left p-6 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
           >
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                <span className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   🎓
                 </span>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
                   isEnabled('study-abroad') ? 'text-indigo-700 bg-indigo-50 border border-indigo-200' : 'text-amber-800 bg-amber-50 border border-amber-200'
                 }`}>
                   {isEnabled('study-abroad') ? 'Admissions Open' : 'Coming Soon'}
                 </span>
               </div>
-              <h4 className="font-display font-black text-sm text-brand-navy">Study Abroad Admissions</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h4 className="font-display font-black text-base sm:text-lg text-brand-navy">Study Abroad Admissions</h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Full-service applications for UK, USA, Canada, Australia & Europe with live IELTS/GRE match score calculations.
               </p>
             </div>
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-navy group-hover:text-brand-gold">
+            <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-brand-navy group-hover:text-brand-gold">
               <span>{isEnabled('study-abroad') ? 'Launch Intake Wizard' : 'View Division Status'}</span>
               <span>→</span>
             </div>
@@ -660,25 +661,25 @@ export default function ClientDashboardHub({
           <button
             onClick={() => onNavigateTab('visa')}
             type="button"
-            className="w-full text-left p-5 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
+            className="w-full text-left p-6 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
           >
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                  ✈️
+                <span className="w-11 h-11 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                  🧳
                 </span>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
                   isEnabled('visa') ? 'text-sky-700 bg-sky-50 border border-sky-200' : 'text-amber-800 bg-amber-50 border border-amber-200'
                 }`}>
                   {isEnabled('visa') ? 'Active Catalogue' : 'Coming Soon'}
                 </span>
               </div>
-              <h4 className="font-display font-black text-sm text-brand-navy">Visa Processing Desk</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h4 className="font-display font-black text-base sm:text-lg text-brand-navy">Visa Processing Desk</h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Tourist, Business, and Student visas for Dubai, Thailand, Malaysia, Singapore, Vietnam, UK, US, and Schengen.
               </p>
             </div>
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-navy group-hover:text-brand-gold">
+            <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-brand-navy group-hover:text-brand-gold">
               <span>{isEnabled('visa') ? 'Explore Visa Catalogue' : 'View Division Status'}</span>
               <span>→</span>
             </div>
@@ -688,25 +689,25 @@ export default function ClientDashboardHub({
           <button
             onClick={() => onNavigateTab('umrah')}
             type="button"
-            className="w-full text-left p-5 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
+            className="w-full text-left p-6 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
           >
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                <span className="w-11 h-11 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   🕋
                 </span>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
                   isEnabled('umrah') ? 'text-amber-800 bg-amber-50 border border-amber-200' : 'text-slate-600 bg-slate-100 border border-slate-200'
                 }`}>
                   {isEnabled('umrah') ? 'Departures Open' : 'Coming Soon'}
                 </span>
               </div>
-              <h4 className="font-display font-black text-sm text-brand-navy">Umrah Pilgrimage Desk</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h4 className="font-display font-black text-base sm:text-lg text-brand-navy">Umrah Pilgrimage Desk</h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
                 5-Star luxury packages in Makkah & Madinah, family pricing, direct flights, and guaranteed departure dates.
               </p>
             </div>
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-navy group-hover:text-brand-gold">
+            <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-brand-navy group-hover:text-brand-gold">
               <span>{isEnabled('umrah') ? 'View Packages & Departures' : 'View Coming Soon Status'}</span>
               <span>→</span>
             </div>
@@ -716,25 +717,25 @@ export default function ClientDashboardHub({
           <button
             onClick={() => onNavigateTab('attestation')}
             type="button"
-            className="w-full text-left p-5 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
+            className="w-full text-left p-6 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
           >
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                <span className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📑
                 </span>
-                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                <span className={`text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full ${
                   isEnabled('attestation') ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-amber-800 bg-amber-50 border border-amber-200'
                 }`}>
                   {isEnabled('attestation') ? 'MEA & Apostille' : 'Coming Soon'}
                 </span>
               </div>
-              <h4 className="font-display font-black text-sm text-brand-navy">Document Attestation Desk</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h4 className="font-display font-black text-base sm:text-lg text-brand-navy">Document Attestation Desk</h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
                 HRD, SDM, MEA, Apostille, and Embassy authentication chains with doorstep document pickup and tracking.
               </p>
             </div>
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-navy group-hover:text-brand-gold">
+            <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-brand-navy group-hover:text-brand-gold">
               <span>{isEnabled('attestation') ? 'Check Rate Cards' : 'View Coming Soon Status'}</span>
               <span>→</span>
             </div>
@@ -744,25 +745,25 @@ export default function ClientDashboardHub({
           <button
             onClick={() => onNavigateTab('jobs')}
             type="button"
-            className="w-full text-left p-5 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
+            className="w-full text-left p-6 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
           >
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                <span className="w-11 h-11 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   💼
                 </span>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
                   isEnabled('manpower') ? 'text-slate-800 bg-slate-100 border border-slate-300' : 'text-amber-800 bg-amber-50 border border-amber-200'
                 }`}>
                   {isEnabled('manpower') ? 'Verified Openings' : 'Coming Soon'}
                 </span>
               </div>
-              <h4 className="font-display font-black text-sm text-brand-navy">International Job Placement</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h4 className="font-display font-black text-base sm:text-lg text-brand-navy">International Job Placement</h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Verified overseas job openings in Gulf and European markets with direct employer interviews and work permits.
               </p>
             </div>
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-navy group-hover:text-brand-gold">
+            <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-brand-navy group-hover:text-brand-gold">
               <span>{isEnabled('manpower') ? 'Browse Vacancies' : 'View Coming Soon Status'}</span>
               <span>→</span>
             </div>
@@ -772,23 +773,23 @@ export default function ClientDashboardHub({
           <button
             onClick={() => onNavigateTab('vault')}
             type="button"
-            className="w-full text-left p-5 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
+            className="w-full text-left p-6 rounded-2xl border border-slate-200/80 hover:border-brand-gold bg-gradient-to-br from-white to-slate-50 hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-4 group"
           >
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                <span className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   🔒
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
                   Private vault
                 </span>
               </div>
-              <h4 className="font-display font-black text-sm text-brand-navy">Secure Document Vault</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h4 className="font-display font-black text-base sm:text-lg text-brand-navy">Secure Document Vault</h4>
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Private handling for passports and transcripts — privacy-first and audit-logged.
               </p>
             </div>
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-navy group-hover:text-brand-gold">
+            <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-brand-navy group-hover:text-brand-gold">
               <span>Open Document Vault</span>
               <span>→</span>
             </div>

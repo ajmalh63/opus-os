@@ -900,7 +900,7 @@ export default function VisaPrepPortal() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Immigration & Embassy Slots</span>
+            <span className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Immigration & Embassy Slots</span>
           </div>
           <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Visa Processing Operations</h1>
           <p className="text-xs text-brand-textLight mt-0.5">Coordinate visa applicants, embassy appointments, mock interviews, and active inventory.</p>
@@ -953,7 +953,7 @@ export default function VisaPrepPortal() {
               <h3 className="text-xs uppercase font-bold text-brand-navy/50 tracking-wider">Applicants Directory</h3>
               <button
                 onClick={() => setShowAddApplicant(true)}
-                className="bg-brand-gold text-brand-navy text-[10px] font-bold px-2.5 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
+                className="bg-brand-gold text-brand-navy text-[13px] font-bold px-2.5 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
               >
                 + Add Applicant
               </button>
@@ -973,7 +973,7 @@ export default function VisaPrepPortal() {
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-full text-[13px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                     statusFilter === s ? 'bg-brand-navy text-white border-brand-navy' : 'border-brand-navy/10 bg-brand-navy/[0.04] text-brand-navy/60 hover:border-brand-gold hover:text-brand-gold'
                   }`}
                 >
@@ -1020,13 +1020,13 @@ export default function VisaPrepPortal() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-bold text-brand-navy line-clamp-1 truncate">{name}</span>
-                      <span className={`shrink-0 inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${statusMeta(a.status).cls}`}>
+                      <span className={`shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider border ${statusMeta(a.status).cls}`}>
                         {statusMeta(a.status).label}
                       </span>
                     </div>
-                    <div className="text-[10px] text-brand-navy/50 font-mono truncate">{token}</div>
-                    <div className="text-[10px] text-brand-navy/50 truncate">{a.country} · {a.visaType}</div>
-                    <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-brand-navy/50">
+                    <div className="text-[13px] text-brand-navy/50 font-mono truncate">{token}</div>
+                    <div className="text-[13px] text-brand-navy/50 truncate">{a.country} · {a.visaType}</div>
+                    <div className="flex items-center justify-between gap-2 text-[13px] font-semibold text-brand-navy/50">
                       <span className="shrink-0">📄 {docLine} verified</span>
                       <span className="shrink-0">{a.submittedAt ? `submitted ${fmtRel(a.submittedAt)}` : 'not submitted'}</span>
                     </div>
@@ -1041,7 +1041,7 @@ export default function VisaPrepPortal() {
 
               {noAppClients.length > 0 && (
                 <>
-                  <p className="text-[10px] uppercase font-bold text-brand-navy/40 tracking-wider pt-2.5">Without application</p>
+                  <p className="text-[13px] uppercase font-bold text-brand-navy/40 tracking-wider pt-2.5">Without application</p>
                   {noAppClients.map(c => (
                     <button
                       key={c.id}
@@ -1053,8 +1053,8 @@ export default function VisaPrepPortal() {
                       className={`w-full text-left p-3.5 rounded-xl border border-dashed text-xs transition-all cursor-pointer space-y-1 ${selectedClientId === c.id && !selectedAppId ? 'border-brand-gold bg-brand-gold/10' : 'border-brand-navy/15 bg-white hover:border-brand-gold/50'}`}
                     >
                       <span className="font-bold text-brand-navy block truncate">{c.name}</span>
-                      <span className="text-[10px] text-brand-navy/40 font-mono block truncate">{c.id}</span>
-                      <span className="text-[10px] text-brand-navy/40 italic">no application yet — initialize below</span>
+                      <span className="text-[13px] text-brand-navy/40 font-mono block truncate">{c.id}</span>
+                      <span className="text-[13px] text-brand-navy/40 italic">no application yet — initialize below</span>
                     </button>
                   ))}
                 </>
@@ -1077,7 +1077,7 @@ export default function VisaPrepPortal() {
                         <h2 className="font-display text-xl font-extrabold text-brand-navy">{selectedClient.name}</h2>
                         {activeApp && <span className="text-sm">🛫</span>}
                       </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-brand-navy/50 font-mono text-[10px] mt-1 font-semibold">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-brand-navy/50 font-mono text-[13px] mt-1 font-semibold">
                         <span className="text-emerald-700 font-bold">#{selectedClient.id.split('-').pop()}</span>
                         <span>•</span>
                         <span>{selectedClient.email}</span>
@@ -1093,7 +1093,7 @@ export default function VisaPrepPortal() {
                       className="p-2 border border-brand-navy/10 rounded-xl hover:border-brand-gold hover:bg-brand-navy/[0.06] cursor-pointer"
                       title="Visa Details"
                     >
-                      ✈️
+                      🛂
                     </button>
                     <button
                       onClick={() => setActiveTab('booking')}
@@ -1163,7 +1163,7 @@ export default function VisaPrepPortal() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div className="space-y-4">
                             <div className="flex justify-between items-center border-b border-brand-navy/[0.08] pb-2">
-                              <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Processing Pipeline</h4>
+                              <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">Processing Pipeline</h4>
                             </div>
 
                             <div className="space-y-3.5 bg-brand-navy/[0.04] rounded-xl border border-brand-navy/10 p-4">
@@ -1177,7 +1177,7 @@ export default function VisaPrepPortal() {
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="font-semibold text-brand-navy/40">Current Status:</span>
-                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${statusMeta(activeApp.status).cls}`}>
+                                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider border ${statusMeta(activeApp.status).cls}`}>
                                   {statusMeta(activeApp.status).label}
                                 </span>
                               </div>
@@ -1205,7 +1205,7 @@ export default function VisaPrepPortal() {
                                 <div className="pt-2 space-y-2.5 border-t border-brand-navy/[0.08]">
                                   <div className="flex items-end gap-2">
                                     <div className="flex-1 space-y-1">
-                                      <label className="font-semibold text-brand-navy/40 text-[10px] uppercase">Transition to</label>
+                                      <label className="font-semibold text-brand-navy/40 text-[13px] uppercase">Transition to</label>
                                       <select
                                         value={transitionNext}
                                         onChange={(e) => {
@@ -1229,14 +1229,14 @@ export default function VisaPrepPortal() {
                                         });
                                       }}
                                       disabled={!transitionNext || (transitionNext === 'rejected' && !rejectionReasonText.trim()) || transitionMutation.isPending}
-                                      className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy font-bold px-3.5 py-1.5 rounded-lg cursor-pointer disabled:opacity-50 text-[10px] uppercase tracking-wider"
+                                      className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy font-bold px-3.5 py-1.5 rounded-lg cursor-pointer disabled:opacity-50 text-[13px] uppercase tracking-wider"
                                     >
                                       {transitionMutation.isPending ? 'Saving…' : 'Apply'}
                                     </button>
                                   </div>
                                   {transitionNext === 'rejected' && (
                                     <div className="space-y-1">
-                                      <label className="font-semibold text-brand-navy/40 text-[10px] uppercase">Rejection reason (required)</label>
+                                      <label className="font-semibold text-brand-navy/40 text-[13px] uppercase">Rejection reason (required)</label>
                                       <textarea
                                         value={rejectionReasonText}
                                         onChange={(e) => setRejectionReasonText(e.target.value)}
@@ -1247,27 +1247,27 @@ export default function VisaPrepPortal() {
                                     </div>
                                   )}
                                   {(transitionMutation.isError || updateApplicationMutation.isError) && (
-                                    <p className="text-[10px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-2.5 py-2">
+                                    <p className="text-[13px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-2.5 py-2">
                                       {((transitionMutation.error || updateApplicationMutation.error) as any)?.message || 'Status update failed — the server may require verified documents or a valid transition.'}
                                     </p>
                                   )}
                                 </div>
                               ) : (
-                                <p className="text-[10px] font-semibold text-brand-navy/40 italic pt-2 border-t border-brand-navy/[0.08]">This application is in a terminal state.</p>
+                                <p className="text-[13px] font-semibold text-brand-navy/40 italic pt-2 border-t border-brand-navy/[0.08]">This application is in a terminal state.</p>
                               )}
 
                               {(activeApp.status === 'granted' || activeApp.status === 'rejected') && (
                                 <button
                                   onClick={() => transitionMutation.mutate({ id: activeApp.id, payload: { status: 'delivered' } })}
                                   disabled={transitionMutation.isPending}
-                                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer disabled:opacity-50"
+                                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold text-[13px] uppercase tracking-wider px-3 py-2 rounded-lg cursor-pointer disabled:opacity-50"
                                 >
                                   ✓ Mark Delivered
                                 </button>
                               )}
 
                               {activeApp.status === 'rejected' && activeApp.rejectionReason && (
-                                <div className="bg-rose-50 border border-rose-100 text-rose-700 rounded-lg p-2.5 text-[10px] font-semibold">
+                                <div className="bg-rose-50 border border-rose-100 text-rose-700 rounded-lg p-2.5 text-[13px] font-semibold">
                                   Rejection reason: {activeApp.rejectionReason}
                                 </div>
                               )}
@@ -1275,7 +1275,7 @@ export default function VisaPrepPortal() {
                           </div>
 
                           <div className="space-y-4">
-                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px] border-b border-brand-navy/[0.08] pb-2">Document Notes</h4>
+                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px] border-b border-brand-navy/[0.08] pb-2">Document Notes</h4>
                             <div className="space-y-3">
                               <textarea
                                 value={activeApp.notes || ''}
@@ -1294,10 +1294,10 @@ export default function VisaPrepPortal() {
                         {/* Application Form (form_json) */}
                         <div className="rounded-xl border border-brand-navy/10 bg-white p-5 space-y-4 mt-6 backdrop-blur-sm">
                           <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
-                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">📝 Application Form Profile</h4>
+                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">📝 Application Form Profile</h4>
                             <button
                               onClick={openFormEditor}
-                              className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                              className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-[13px] font-bold px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
                             >
                               ✎ Edit Form
                             </button>
@@ -1306,7 +1306,7 @@ export default function VisaPrepPortal() {
                           {!activeApp.formJson || Object.keys(activeApp.formJson).length === 0 ? (
                             <div className="bg-brand-navy/[0.04] border border-dashed border-brand-navy/15 rounded-xl p-6 text-center space-y-2">
                               <p className="text-brand-navy/50 font-semibold text-xs">Complete application profile</p>
-                              <p className="text-[10px] text-brand-navy/40">
+                              <p className="text-[13px] text-brand-navy/40">
                                 The client has not completed their application form yet. Ask them to fill it in the portal, or use “Edit Form” to assist with corrections.
                               </p>
                             </div>
@@ -1317,7 +1317,7 @@ export default function VisaPrepPortal() {
                                 const filled = !!data && Object.keys(data).some(k => data[k] !== undefined && data[k] !== null && data[k] !== '');
                                 return (
                                   <div key={sec.key} className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.03] p-4 space-y-2.5">
-                                    <h5 className="font-bold text-brand-navy uppercase tracking-wider text-[10px] border-b border-brand-navy/[0.08] pb-1.5">{sec.title}</h5>
+                                    <h5 className="font-bold text-brand-navy uppercase tracking-wider text-[13px] border-b border-brand-navy/[0.08] pb-1.5">{sec.title}</h5>
                                     {filled ? (
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                                         {sec.fields.map(f => {
@@ -1325,14 +1325,14 @@ export default function VisaPrepPortal() {
                                           if (v === undefined || v === null || v === '') return null;
                                           return (
                                             <div key={f.key} className="min-w-0">
-                                              <span className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40 block">{f.label}</span>
+                                              <span className="text-xs font-bold uppercase tracking-wider text-brand-navy/40 block">{f.label}</span>
                                               <span className="text-xs font-semibold text-brand-navy break-words">{fmtVal(f, v)}</span>
                                             </div>
                                           );
                                         })}
                                       </div>
                                     ) : (
-                                      <p className="text-[10px] text-brand-navy/40 italic">Not filled yet.</p>
+                                      <p className="text-[13px] text-brand-navy/40 italic">Not filled yet.</p>
                                     )}
                                   </div>
                                 );
@@ -1344,28 +1344,28 @@ export default function VisaPrepPortal() {
                         {/* All Uploaded Files — every document the client uploaded (incl. non-checklist) */}
                         <div className="rounded-xl border border-brand-navy/10 bg-white p-5 space-y-3 mt-6 backdrop-blur-sm">
                           <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
-                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">🗂️ All Uploaded Files ({clientDocs.length})</h4>
-                            <span className="text-[10px] text-brand-navy/50">Every document the client uploaded to their vault</span>
+                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">🗂️ All Uploaded Files ({clientDocs.length})</h4>
+                            <span className="text-[13px] text-brand-navy/50">Every document the client uploaded to their vault</span>
                           </div>
                           {clientDocs.length === 0 ? (
-                            <p className="text-[10px] text-brand-navy/40 italic py-3">No files uploaded yet by this client.</p>
+                            <p className="text-[13px] text-brand-navy/40 italic py-3">No files uploaded yet by this client.</p>
                           ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {clientDocs.map((d: any) => (
                                 <div key={d.id} className="rounded-lg border border-brand-navy/10 bg-brand-navy/[0.03] p-3 flex items-center justify-between gap-3">
                                   <div className="min-w-0 space-y-0.5">
-                                    <span className="text-[11px] font-bold text-brand-navy truncate block">{d.fileName}</span>
-                                    <span className="text-[9px] text-brand-navy/40 font-mono block">
+                                    <span className="text-sm font-bold text-brand-navy truncate block">{d.fileName}</span>
+                                    <span className="text-xs text-brand-navy/40 font-mono block">
                                       {d.version} · {new Date(d.uploadedAt * 1000).toLocaleDateString()}
                                       {d.sizeBytes ? ` · ${(d.sizeBytes / 1024).toFixed(0)} KB` : ''}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                    <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-full ${
                                       d.status === 'verified' ? 'bg-emerald-50 text-emerald-600' :
                                       d.status === 'rejected' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'
                                     }`}>{d.status}</span>
-                                    <a href={`/api/visa/documents/${d.id}/download`} target="_blank" rel="noreferrer" className="bg-brand-navy/[0.05] hover:bg-brand-navy/[0.08] text-brand-navy font-bold text-[9px] px-2 py-1 rounded transition-all">👁️ View</a>
+                                    <a href={`/api/visa/documents/${d.id}/download`} target="_blank" rel="noreferrer" className="bg-brand-navy/[0.05] hover:bg-brand-navy/[0.08] text-brand-navy font-bold text-xs px-2 py-1 rounded transition-all">👁️ View</a>
                                   </div>
                                 </div>
                               ))}
@@ -1376,17 +1376,17 @@ export default function VisaPrepPortal() {
                         {/* Document Verification & Review Panel */}
                         <div className="rounded-xl border border-brand-navy/10 bg-white p-5 space-y-4 mt-6 backdrop-blur-sm">
                           <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
-                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">
+                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">
                               📋 Document Checklist & Verification Vault for {activeApp.country}
                             </h4>
-                            <span className="text-[10px] font-bold text-brand-navy/50">
+                            <span className="text-[13px] font-bold text-brand-navy/50">
                               Verified: {clientDocs.filter((d: any) => d.status === 'verified').length} / {getRequiredDocs(activeProducts.find(p => p.country === activeApp.country && p.visaType === activeApp.visaType) || activeProducts.find(p => p.country === activeApp.country)).length}
                             </span>
                           </div>
 
                           {rejectingDocId && (
                             <div className="bg-rose-50 border border-rose-100 p-4.5 rounded-xl space-y-3.5">
-                              <h5 className="font-bold text-rose-800 text-[10px] uppercase">Rejection Reason Remarks</h5>
+                              <h5 className="font-bold text-rose-800 text-[13px] uppercase">Rejection Reason Remarks</h5>
                               <textarea
                                 value={rejectionNotes}
                                 onChange={(e) => setRejectionNotes(e.target.value)}
@@ -1398,13 +1398,13 @@ export default function VisaPrepPortal() {
                                 <button
                                   onClick={() => rejectDocMutation.mutate({ id: rejectingDocId, notes: rejectionNotes })}
                                   disabled={!rejectionNotes.trim()}
-                                  className="bg-rose-600 text-white text-[10px] font-bold px-3 py-1.5 rounded hover:bg-rose-700 cursor-pointer disabled:opacity-50"
+                                  className="bg-rose-600 text-white text-[13px] font-bold px-3 py-1.5 rounded hover:bg-rose-700 cursor-pointer disabled:opacity-50"
                                 >
                                   Confirm Rejection
                                 </button>
                                 <button 
                                   onClick={() => setRejectingDocId(null)}
-                                  className="text-brand-navy/50 font-bold text-[10px] px-2 py-1.5"
+                                  className="text-brand-navy/50 font-bold text-[13px] px-2 py-1.5"
                                 >
                                   Cancel
                                 </button>
@@ -1422,25 +1422,25 @@ export default function VisaPrepPortal() {
                               return (
                                 <div key={docName} className="rounded-xl border border-brand-navy/10 bg-white p-3.5 flex items-center justify-between gap-3 shadow-sm">
                                   <div className="space-y-1">
-                                    <span className="font-bold text-brand-navy/70 text-[11px] block">{docName}</span>
+                                    <span className="font-bold text-brand-navy/70 text-sm block">{docName}</span>
                                     {docFile ? (
                                       <div className="space-y-0.5">
-                                        <span className="text-[10px] text-brand-navy/40 font-mono block truncate max-w-[180px]">
+                                        <span className="text-[13px] text-brand-navy/40 font-mono block truncate max-w-[180px]">
                                           {docFile.fileName}
                                         </span>
-                                        <span className="text-[9px] text-brand-navy/50 block font-mono">
+                                        <span className="text-xs text-brand-navy/50 block font-mono">
                                           Uploaded: {new Date(docFile.uploadedAt * 1000).toLocaleDateString()} ({docFile.version})
                                         </span>
                                       </div>
                                     ) : (
-                                      <span className="text-[10px] text-brand-navy/50 italic block">Awaiting upload from client...</span>
+                                      <span className="text-[13px] text-brand-navy/50 italic block">Awaiting upload from client...</span>
                                     )}
                                   </div>
 
                                   <div className="flex flex-col items-end gap-2 shrink-0">
                                     {docFile ? (
                                       <>
-                                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                        <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-full ${
                                           docFile.status === 'verified' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                                           docFile.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
                                           'bg-amber-50 text-amber-600 border border-amber-100'
@@ -1452,14 +1452,14 @@ export default function VisaPrepPortal() {
                                             href={`/api/visa/documents/${docFile.id}/download`}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="bg-brand-navy/[0.05] hover:bg-brand-navy/[0.06] text-brand-navy font-bold text-[9px] px-2 py-1 rounded transition-all"
+                                            className="bg-brand-navy/[0.05] hover:bg-brand-navy/[0.06] text-brand-navy font-bold text-xs px-2 py-1 rounded transition-all"
                                           >
                                             👁️ View
                                           </a>
                                           {docFile.status !== 'verified' && (
                                             <button
                                               onClick={() => verifyDocMutation.mutate(docFile.id)}
-                                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[9px] px-2 py-1 rounded transition-all cursor-pointer"
+                                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-2 py-1 rounded transition-all cursor-pointer"
                                             >
                                               ✓ Verify
                                             </button>
@@ -1470,7 +1470,7 @@ export default function VisaPrepPortal() {
                                                 setRejectingDocId(docFile.id);
                                                 setRejectionNotes('');
                                               }}
-                                              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-[9px] px-2 py-1 rounded transition-all cursor-pointer"
+                                              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-2 py-1 rounded transition-all cursor-pointer"
                                             >
                                               ✕ Reject
                                             </button>
@@ -1478,7 +1478,7 @@ export default function VisaPrepPortal() {
                                         </div>
                                       </>
                                     ) : (
-                                      <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-brand-navy/[0.06] text-brand-navy/50 border border-brand-navy/10">
+                                      <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-brand-navy/[0.06] text-brand-navy/50 border border-brand-navy/10">
                                         Missing
                                       </span>
                                     )}
@@ -1494,7 +1494,7 @@ export default function VisaPrepPortal() {
                           <p className="text-brand-navy/40 font-medium">No active visa application is registered for this client.</p>
                           <div className="flex justify-center items-end gap-3 max-w-md mx-auto">
                             <div className="flex-1 text-left space-y-1">
-                              <label className="text-[10px] font-bold text-brand-navy/50 block uppercase">Destination Country</label>
+                              <label className="text-[13px] font-bold text-brand-navy/50 block uppercase">Destination Country</label>
                               <select
                                 value={initCountry}
                                 onChange={(e) => {
@@ -1508,7 +1508,7 @@ export default function VisaPrepPortal() {
                               </select>
                             </div>
                             <div className="flex-1 text-left space-y-1">
-                              <label className="text-[10px] font-bold text-brand-navy/50 block uppercase">Visa Type / Option</label>
+                              <label className="text-[13px] font-bold text-brand-navy/50 block uppercase">Visa Type / Option</label>
                               <select
                                 value={initType}
                                 onChange={(e) => setInitType(e.target.value)}
@@ -1540,7 +1540,7 @@ export default function VisaPrepPortal() {
                       {activeApp ? (
                         <>
                           <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
-                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Embassy Appointment Slot</h4>
+                            <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">Embassy Appointment Slot</h4>
                             <button
                               onClick={handleSaveBooking}
                               className="text-brand-navy hover:text-brand-gold font-bold transition-all cursor-pointer"
@@ -1597,7 +1597,7 @@ export default function VisaPrepPortal() {
                   {activeTab === 'mock' && (
                     <div className="rounded-xl border border-brand-navy/10 bg-white p-5 space-y-4 backdrop-blur-sm">
                       <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
-                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Visa Mock Interviews</h4>
+                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">Visa Mock Interviews</h4>
                       </div>
 
                       {/* Schedule Mock Form */}
@@ -1634,7 +1634,7 @@ export default function VisaPrepPortal() {
                               <span className="font-bold text-brand-navy">
                                 📅 {new Date(m.scheduledAt * 1000).toLocaleString()}
                               </span>
-                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${m.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${m.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                                 {m.status}
                               </span>
                             </div>
@@ -1748,7 +1748,7 @@ export default function VisaPrepPortal() {
           <div className="flex justify-between items-center border-b border-brand-navy/10 pb-3">
             <div>
               <h3 className="font-display font-extrabold text-brand-navy text-sm">Visa Products Inventory Control</h3>
-              <p className="text-[10px] text-brand-navy/50">Configure tourist, work, and business visa pricing, processing durations, and documents.</p>
+              <p className="text-[13px] text-brand-navy/50">Configure tourist, work, and business visa pricing, processing durations, and documents.</p>
             </div>
             <button
               onClick={() => {
@@ -1766,19 +1766,19 @@ export default function VisaPrepPortal() {
                 setProdInsurance(false);
                 setShowAddProduct(true);
               }}
-              className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
+              className="bg-brand-gold text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
             >
               + Create Product
             </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 mr-1">Category:</span>
+            <span className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40 mr-1">Category:</span>
             {['all', 'Tourist', 'Business', 'Work', 'Student', 'Medical', 'Transit', 'Visit', 'Other'].map(cat => (
               <button
                 key={cat}
                 onClick={() => setProdCategoryFilter(cat)}
-                className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider transition cursor-pointer ${prodCategoryFilter === cat ? 'bg-brand-gold text-brand-navy' : 'bg-brand-navy/[0.04] text-brand-navy/50 hover:text-brand-navy border border-brand-navy/10'}`}
+                className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition cursor-pointer ${prodCategoryFilter === cat ? 'bg-brand-gold text-brand-navy' : 'bg-brand-navy/[0.04] text-brand-navy/50 hover:text-brand-navy border border-brand-navy/10'}`}
               >
                 {cat}
               </button>
@@ -1787,14 +1787,14 @@ export default function VisaPrepPortal() {
 
           <div className="overflow-x-auto border border-brand-navy/10 rounded-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-brand-navy/[0.04] text-[10px] uppercase font-bold text-brand-gold border-b border-brand-navy/[0.08]">
+              <thead className="bg-brand-navy/[0.04] text-[13px] uppercase font-bold text-brand-gold border-b border-brand-navy/[0.08]">
                 <tr>
                   <th className="px-4 py-3">Destination Country</th>
                   <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3">Visa Type</th>
                   <th className="px-4 py-3">Tier</th>
                   <th className="px-4 py-3">Entry Type</th>
-                  <th className="px-4 py-3 font-mono text-[10px]">Clearance</th>
+                  <th className="px-4 py-3 font-mono text-[13px]">Clearance</th>
                   <th className="px-4 py-3 text-right">Validity / Stay</th>
                   <th className="px-4 py-3 text-right">Fee (INR)</th>
                   <th className="px-4 py-3 text-center">Status</th>
@@ -1805,15 +1805,15 @@ export default function VisaPrepPortal() {
                 {activeProducts.filter((p) => prodCategoryFilter === 'all' || (p.category || 'Tourist') === prodCategoryFilter).map((p) => (
                   <tr key={p.id} onClick={() => setPreviewProduct(p)} className="hover:bg-brand-navy/[0.04] cursor-pointer">
                     <td className="px-4 py-3 font-semibold text-brand-navy">{p.country}</td>
-                    <td className="px-4 py-3"><span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-brand-navy/[0.06] text-brand-navy/70">{p.category || 'Tourist'}</span></td>
+                    <td className="px-4 py-3"><span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-navy/[0.06] text-brand-navy/70">{p.category || 'Tourist'}</span></td>
                     <td className="px-4 py-3 font-medium">{p.visaType}</td>
-                    <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${p.tier === 'Urgent' ? 'bg-rose-50 text-rose-600' : p.tier === 'Express' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>{p.tier || 'Standard'}</span></td>
+                    <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${p.tier === 'Urgent' ? 'bg-rose-50 text-rose-600' : p.tier === 'Express' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>{p.tier || 'Standard'}</span></td>
                     <td className="px-4 py-3 text-brand-navy/40">{p.entryType}</td>
-                    <td className="px-4 py-3 font-mono text-[10px]">{p.processingTime}</td>
-                    <td className="px-4 py-3 text-right text-[10px] text-brand-navy/50">{p.validityDays ? `${p.validityDays}d` : '—'}{p.maxStayDays ? ` / ${p.maxStayDays}d stay` : ''}{p.insuranceIncluded ? ' · 🛡️' : ''}</td>
+                    <td className="px-4 py-3 font-mono text-[13px]">{p.processingTime}</td>
+                    <td className="px-4 py-3 text-right text-[13px] text-brand-navy/50">{p.validityDays ? `${p.validityDays}d` : '—'}{p.maxStayDays ? ` / ${p.maxStayDays}d stay` : ''}{p.insuranceIncluded ? ' · 🛡️' : ''}</td>
                     <td className="px-4 py-3 text-right font-bold text-brand-gold">₹{(p.feePaise / 100).toLocaleString('en-IN')}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${p.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${p.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>
                         {p.status || 'active'}
                       </span>
                     </td>
@@ -1884,81 +1884,81 @@ export default function VisaPrepPortal() {
           <aside className="fixed top-0 right-0 h-full w-[30rem] max-w-[95vw] bg-white shadow-2xl z-50 overflow-y-auto p-6 space-y-5 border-l border-brand-navy/10 animate-in slide-in-from-right duration-300">
             <div className="flex justify-between items-start border-b border-brand-navy/10 pb-4">
               <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-brand-gold">Visa Product</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-gold">Visa Product</p>
                 <h3 className="font-display font-extrabold text-lg text-brand-navy mt-1">{previewProduct.visaType}</h3>
-                <p className="text-[11px] text-brand-navy/50">{previewProduct.country}</p>
+                <p className="text-sm text-brand-navy/50">{previewProduct.country}</p>
               </div>
               <button onClick={() => setPreviewProduct(null)} className="text-brand-navy/50 hover:text-brand-navy text-xl cursor-pointer">✕</button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Category</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Category</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewProduct.category || 'Tourist'}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Tier</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Tier</p>
                 <p className={`font-bold mt-0.5 ${previewProduct.tier === 'Urgent' ? 'text-rose-600' : previewProduct.tier === 'Express' ? 'text-amber-600' : 'text-emerald-600'}`}>{previewProduct.tier || 'Standard'}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Entry Type</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Entry Type</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewProduct.entryType}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Processing</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Processing</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewProduct.processingTime}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Validity</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Validity</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewProduct.validityDays ? `${previewProduct.validityDays} days` : '—'}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Max Stay</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Max Stay</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewProduct.maxStayDays ? `${previewProduct.maxStayDays} days` : '—'}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Fee</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Fee</p>
                 <p className="font-bold text-brand-gold mt-0.5">₹{(previewProduct.feePaise / 100).toLocaleString('en-IN')}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Insurance</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Insurance</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewProduct.insuranceIncluded ? 'Included 🛡️' : 'Not included'}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Status</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Status</p>
                 <p className={`font-bold mt-0.5 ${previewProduct.status === 'active' ? 'text-emerald-600' : 'text-brand-navy/40'}`}>{previewProduct.status || 'active'}</p>
               </div>
             </div>
 
             <div>
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 mb-2">Required Documents</h4>
+              <h4 className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40 mb-2">Required Documents</h4>
               <div className="flex flex-wrap gap-1.5">
                 {(() => { try { return JSON.parse(previewProduct.requiredDocsJson || '[]'); } catch { return []; } })().map((d: string, i: number) => (
-                  <span key={i} className="bg-brand-navy/[0.06] text-brand-navy/70 border border-brand-navy/10 rounded px-2 py-0.5 text-[10px]">{d}</span>
+                  <span key={i} className="bg-brand-navy/[0.06] text-brand-navy/70 border border-brand-navy/10 rounded px-2 py-0.5 text-[13px]">{d}</span>
                 ))}
               </div>
             </div>
 
             <div>
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 mb-2">Client Portal Preview</h4>
+              <h4 className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40 mb-2">Client Portal Preview</h4>
               <div className="rounded-2xl border border-white/10 bg-[#0B132B] p-5 flex flex-col justify-between gap-4">
                 <div className="space-y-2">
                   <h3 className="font-display font-bold text-sm text-white leading-snug">{previewProduct.visaType}</h3>
-                  <div className="flex flex-wrap gap-2 text-[10px]">
+                  <div className="flex flex-wrap gap-2 text-[13px]">
                     <span className="bg-white/10 text-white/70 rounded px-2 py-0.5 font-mono border border-white/10">{previewProduct.country}</span>
                     <span className="bg-brand-gold/10 text-brand-gold rounded px-2 py-0.5 font-bold capitalize">{previewProduct.category || 'Tourist'}</span>
                     <span className="bg-white/10 text-white/70 rounded px-2 py-0.5">{previewProduct.entryType}</span>
                   </div>
-                  <p className="text-[10px] text-white/40">{previewProduct.processingTime}{previewProduct.validityDays ? ` · ${previewProduct.validityDays} days validity` : ''}{previewProduct.maxStayDays ? ` · ${previewProduct.maxStayDays} days stay` : ''}</p>
+                  <p className="text-[13px] text-white/40">{previewProduct.processingTime}{previewProduct.validityDays ? ` · ${previewProduct.validityDays} days validity` : ''}{previewProduct.maxStayDays ? ` · ${previewProduct.maxStayDays} days stay` : ''}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {(() => { try { return JSON.parse(previewProduct.requiredDocsJson || '[]'); } catch { return []; } })().slice(0, 4).map((d: string, i: number) => (
-                      <span key={i} className="bg-emerald-500/10 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded">{d}</span>
+                      <span key={i} className="bg-emerald-500/10 text-emerald-300 text-xs px-1.5 py-0.5 rounded">{d}</span>
                     ))}
                   </div>
                 </div>
                 <div className="flex items-center justify-between border-t border-white/10 pt-3">
                   <span className="text-brand-gold font-bold text-sm">₹{(previewProduct.feePaise / 100).toLocaleString('en-IN')}</span>
-                  <span className="bg-brand-gold text-brand-navy text-[11px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg">Start Application</span>
+                  <span className="bg-brand-gold text-brand-navy text-sm font-bold uppercase tracking-wider px-4 py-2 rounded-lg">Start Application</span>
                 </div>
               </div>
             </div>
@@ -1996,7 +1996,7 @@ export default function VisaPrepPortal() {
                       setCustomCategoryMode(!customCategoryMode);
                       setProdVisaType('');
                     }}
-                    className="text-[9px] text-brand-navy hover:text-brand-gold font-bold uppercase transition"
+                    className="text-xs text-brand-navy hover:text-brand-gold font-bold uppercase transition"
                   >
                     {customCategoryMode ? 'Select Preset' : 'Write Custom'}
                   </button>
@@ -2211,7 +2211,7 @@ export default function VisaPrepPortal() {
             </div>
 
             {updateFormMutation.isError && (
-              <p className="text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2 text-[10px] font-semibold">
+              <p className="text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2 text-[13px] font-semibold">
                 {((updateFormMutation.error as any)?.message) || 'Failed to save form — validations failed server-side.'}
               </p>
             )}
@@ -2219,14 +2219,14 @@ export default function VisaPrepPortal() {
             <div className="space-y-4">
               {FORM_SECTIONS.map(sec => (
                 <div key={sec.key} className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.03] p-4 space-y-3">
-                  <h5 className="font-bold text-brand-navy uppercase tracking-wider text-[10px] border-b border-brand-navy/[0.08] pb-1.5">{sec.title}</h5>
+                  <h5 className="font-bold text-brand-navy uppercase tracking-wider text-[13px] border-b border-brand-navy/[0.08] pb-1.5">{sec.title}</h5>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {sec.fields.map(f => {
                       const val = formDraft?.[sec.key]?.[f.key];
                       const upd = (v: any) => setFormDraft((d) => ({ ...d, [sec.key]: { ...(d?.[sec.key] || {}), [f.key]: v } }));
                       return (
                         <div key={f.key} className={f.kind === 'boolean' ? 'flex items-center gap-2 pt-1' : 'space-y-1'}>
-                          <label className="font-semibold text-brand-navy/40 text-[10px] block">{f.label}</label>
+                          <label className="font-semibold text-brand-navy/40 text-[13px] block">{f.label}</label>
                           {f.kind === 'boolean' ? (
                             <input type="checkbox" checked={!!val} onChange={(e) => upd(e.target.checked)} className="w-4 h-4 accent-brand-gold cursor-pointer" />
                           ) : f.kind === 'enum' && f.options ? (

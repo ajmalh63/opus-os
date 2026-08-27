@@ -26,6 +26,7 @@ import AgreementsTab from './components/AgreementsTab';
 import PublicHome from './pages/PublicHome';
 import StudyAbroadPage from './pages/public/StudyAbroadPage';
 import VisaServicesPage from './pages/public/VisaServicesPage';
+import ToursTravelPage from './pages/public/ToursTravelPage';
 import UmrahTravelPage from './pages/public/UmrahTravelPage';
 import AttestationPage from './pages/public/AttestationPage';
 import RecruitmentPage from './pages/public/RecruitmentPage';
@@ -51,6 +52,9 @@ import GoRedirectPage from './pages/GoRedirectPage';
 import ChatwootDashboardWidget from './pages/ChatwootDashboardWidget';
 import BlogIndex from './pages/BlogIndex';
 import BlogPost from './pages/BlogPost';
+import FleetConsole from './components/fleet/FleetConsole';
+import TestPaymentPage from './pages/TestPaymentPage';
+import SignAgreementPage from './pages/SignAgreementPage';
 
 // ONE umbrella: every authenticated page renders inside the WorkspaceShell so
 // sidebar/brand/topbar persist across ALL modules. The workspace shell owns
@@ -78,6 +82,7 @@ export default function App() {
 
         <Route path="/study-abroad" component={StudyAbroadPage} />
         <Route path="/visa-services" component={VisaServicesPage} />
+        <Route path="/tours-travels" component={ToursTravelPage} />
         <Route path="/umrah-travel" component={UmrahTravelPage} />
         <Route path="/attestation" component={AttestationPage} />
         <Route path="/recruitment" component={RecruitmentPage} />
@@ -96,8 +101,12 @@ export default function App() {
 
         {/* Public self-service surfaces (token-based by design) */}
         <Route path="/portal" component={ClientPortal} />
+        <Route path="/sign/:id" component={SignAgreementPage} />
+        <Route path="/portal/agreements/:id" component={SignAgreementPage} />
         <Route path="/partner" component={PartnerDashboard} />
         <Route path="/payment-confirmed" component={PaymentConfirmed} />
+        <Route path="/test-payment" component={TestPaymentPage} />
+        <Route path="/pay" component={TestPaymentPage} />
         <Route path="/go/:ref/:type/:id" component={GoRedirectPage} />
         <Route path="/widget/chatwoot" component={ChatwootDashboardWidget} />
         <Route path="/staff/chatwoot-sidebar" component={ChatwootDashboardWidget} />
@@ -168,6 +177,17 @@ export default function App() {
         <Route path="/inbox">
           {() => <AuthGuard><WorkspaceRoute><Inbox /></WorkspaceRoute></AuthGuard>}
         </Route>
+        {/* Fleet — 13-app console (super_admin, realtime) */}
+        <Route path="/workspaces/fleet">
+          {() => <AuthGuard><RoleGate roles={['super_admin']}><WorkspaceShell><FleetConsole /></WorkspaceShell></RoleGate></AuthGuard>}
+        </Route>
+        <Route path="/workspaces/fleet/:app">
+          {() => <AuthGuard><RoleGate roles={['super_admin']}><WorkspaceShell><FleetConsole /></WorkspaceShell></RoleGate></AuthGuard>}
+        </Route>
+        <Route path="/workspaces/infra/:app">
+          {() => <AuthGuard><RoleGate roles={['super_admin']}><WorkspaceShell><FleetConsole /></WorkspaceShell></RoleGate></AuthGuard>}
+        </Route>
+
         <Route path="/workspaces/:slug">
           {() => <AuthGuard><WorkspaceRoute /></AuthGuard>}
         </Route>

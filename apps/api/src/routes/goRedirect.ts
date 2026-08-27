@@ -8,10 +8,10 @@ import { eq } from 'drizzle-orm';
 // the public division page (with ?ref= so the lead form attributes).
 const VALID: Record<string, string> = {
   university: '/study-abroad',
-  departure: '/umrah-travel',
+  departure: '/tours-travels',
   job: '/recruitment',
   visa: '/visa-services',
-  umrah_package: '/umrah-travel',
+  umrah_package: '/tours-travels',
 };
 
 export const goRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string } }>();

@@ -105,7 +105,7 @@ const [rec, setRec] = useState<any>(null);
         <div>
           <div className="flex items-center gap-2">
             <span className="gold-dot" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Compliance</span>
+            <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Compliance</span>
           </div>
           <h2 className="font-display font-bold text-base text-brand-navy">GST & Statutory Compliance Workbench (Section 14.5)</h2>
         </div>
@@ -115,15 +115,15 @@ const [rec, setRec] = useState<any>(null);
       {/* Profile */}
       <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-5 flex flex-wrap items-end gap-3 text-xs">
         <div>
-          <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Legal name</label>
+          <label className="text-[13px] text-brand-navy/40 font-bold uppercase block mb-1">Legal name</label>
           <div className="bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy">{prof?.profile?.legalName || '—-'}</div>
         </div>
         <div>
-          <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">GSTIN</label>
+          <label className="text-[13px] text-brand-navy/40 font-bold uppercase block mb-1">GSTIN</label>
           <input value={gstin || prof?.profile?.gstin || ''} onChange={e => setGstin(e.target.value)} placeholder="GSTIN" className="bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 w-52" />
         </div>
         <div>
-          <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">State</label>
+          <label className="text-[13px] text-brand-navy/40 font-bold uppercase block mb-1">State</label>
           <div className="bg-white border border-brand-navy/10 rounded px-3 py-2 text-brand-navy">{prof?.profile?.stateName || '—-'}</div>
         </div>
         <button onClick={() => saveProfile.mutate()} className="self-end bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded text-xs font-bold">Save</button>
@@ -136,19 +136,19 @@ const [rec, setRec] = useState<any>(null);
             <span className="gold-dot" />
             <h3 className="font-display font-bold text-sm text-brand-navy">GSTR-1 Export</h3>
           </div>
-          <p className="text-[10px] text-brand-navy/40">Printable PDF — B2B, B2C, HSN, credit notes, doc summary (GSTN v1.7 schema).</p>
+          <p className="text-[13px] text-brand-navy/40">Printable PDF — B2B, B2C, HSN, credit notes, doc summary (GSTN v1.7 schema).</p>
           <button onClick={runG1} disabled={f1} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-5 py-2.5 rounded text-xs font-bold disabled:opacity-40">{f1 ? 'Building...' : 'Export GSTR-1 PDF'}</button>
-          {g1?.stats && <div className="text-[10px] text-emerald-700">{g1.stats.b2bInvoices} B2B · {g1.stats.b2cLines} B2C · {g1.stats.hsnLines} HSN</div>}
+          {g1?.stats && <div className="text-[13px] text-emerald-700">{g1.stats.b2bInvoices} B2B · {g1.stats.b2cLines} B2C · {g1.stats.hsnLines} HSN</div>}
         </div>
         <div className="rounded-2xl border border-brand-navy/10 bg-white p-5 space-y-3">
           <div className="flex items-center gap-2">
             <span className="gold-dot" />
             <h3 className="font-display font-bold text-sm text-brand-navy">GSTR-3B Computation</h3>
           </div>
-          <p className="text-[10px] text-brand-navy/40">Output tax, ITC from purchases, net payable —- from D1.</p>
+          <p className="text-[13px] text-brand-navy/40">Output tax, ITC from purchases, net payable —- from D1.</p>
           <button onClick={runG3} disabled={f3} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-5 py-2.5 rounded text-xs font-bold disabled:opacity-40">{f3 ? 'Computing...' : 'Export GSTR-3B PDF'}</button>
           {g3?.computed && (
-            <div className="grid grid-cols-3 gap-2 text-[10px]">
+            <div className="grid grid-cols-3 gap-2 text-[13px]">
               <div className="bg-brand-navy/[0.06] rounded p-2"><span className="text-brand-navy/40 block">Output</span><b className="text-brand-navy">{rs(g3.computed.outputTax)}</b></div>
               <div className="bg-brand-navy/[0.06] rounded p-2"><span className="text-brand-navy/40 block">ITC</span><b className="text-emerald-700">{rs(g3.computed.inputItc)}</b></div>
               <div className="bg-brand-navy/[0.06] rounded p-2"><span className="text-brand-navy/40 block">Net</span><b className="text-brand-warning">{rs(g3.computed.netPayable)}</b></div>
@@ -163,10 +163,10 @@ const [rec, setRec] = useState<any>(null);
           <span className="gold-dot" />
           <h3 className="font-display font-bold text-sm text-brand-navy">GSTR-2B Reconciliation</h3>
         </div>
-        <p className="text-[10px] text-brand-navy/40">Import gst.gov.in 2B JSON ₹ ’ auto-match vs D1 purchase invoices.</p>
+        <p className="text-[13px] text-brand-navy/40">Import gst.gov.in 2B JSON ₹ ’ auto-match vs D1 purchase invoices.</p>
         <label className="inline-block bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-5 py-2.5 rounded text-xs font-bold cursor-pointer">Import 2B JSON<input type="file" accept=".json" onChange={on2b} className="hidden" /></label>
         {rec && (
-          <div className="grid grid-cols-4 gap-2 text-[10px]">
+          <div className="grid grid-cols-4 gap-2 text-[13px]">
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2 text-center"><b className="text-emerald-700">{rec.summary.matched}</b><span className="text-brand-navy/40 block">Matched</span></div>
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-center"><b className="text-amber-700">{rec.summary.mismatched}</b><span className="text-brand-navy/40 block">Mismatch</span></div>
             <div className="bg-rose-50 border border-rose-200 rounded-lg p-2 text-center"><b className="text-rose-700">{rec.summary.twoBOnly}</b><span className="text-brand-navy/40 block">2B-only</span></div>
@@ -225,7 +225,7 @@ const [rec, setRec] = useState<any>(null);
 
         {/* Summary chips */}
         {statSummary && (
-          <div className="flex flex-wrap gap-3 text-[10px]">
+          <div className="flex flex-wrap gap-3 text-[13px]">
             {Object.entries(statSummary).map(([k, v]: any) => (
               <span key={k} className="rounded-full border border-brand-navy/10 bg-brand-navy/[0.06] px-3 py-1 text-brand-navy/40">
                 {k.toUpperCase()}: {v.rows.length} rows · ₹{(v.totalDeduction / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })} · {v.paid} paid / {v.pending} pending
@@ -236,7 +236,7 @@ const [rec, setRec] = useState<any>(null);
 
         {/* entries */}
         {statRows.length === 0 ? (
-          <p className="text-[10px] text-brand-navy/40 text-center py-3">No statutory entries yet for this period — add employee deductions above.</p>
+          <p className="text-[13px] text-brand-navy/40 text-center py-3">No statutory entries yet for this period — add employee deductions above.</p>
         ) : (
           <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
             {statRows.map((r: any) => (
@@ -245,9 +245,9 @@ const [rec, setRec] = useState<any>(null);
                 <span className="flex items-center gap-2">
                   <span className="text-brand-gold font-mono">₹{((r.deductionPaise ?? r.deduction_paise ?? 0) / 100).toFixed(0)}</span>
                   {(r.status === 'pending' || r.status === 'overdue') && (
-                    <button onClick={() => markPaid.mutate(r.id)} className="cursor-pointer rounded-full border border-emerald-600/40 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-700 hover:bg-emerald-600 hover:text-white transition">Paid</button>
+                    <button onClick={() => markPaid.mutate(r.id)} className="cursor-pointer rounded-full border border-emerald-600/40 px-2 py-0.5 text-xs font-bold uppercase text-emerald-700 hover:bg-emerald-600 hover:text-white transition">Paid</button>
                   )}
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${r.status === 'paid' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-amber-500/15 text-amber-700'}`}>{r.status}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-xs font-bold uppercase ${r.status === 'paid' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-amber-500/15 text-amber-700'}`}>{r.status}</span>
                 </span>
               </div>
             ))}
@@ -262,7 +262,7 @@ const [rec, setRec] = useState<any>(null);
             <span className="gold-dot" />
             <h3 className="font-display font-bold text-sm text-brand-navy">Statutory Calendar</h3>
           </div>
-          <p className="text-[10px] text-brand-navy/40">Next 3 months of GST / TDS / PF / ESI / LWF deadlines vs live books.</p>
+          <p className="text-[13px] text-brand-navy/40">Next 3 months of GST / TDS / PF / ESI / LWF deadlines vs live books.</p>
           {(() => {
             const overdue = calItems.filter((i: any) => i.status === 'overdue');
             const dueSoon = calItems.filter((i: any) => i.status === 'due');
@@ -270,12 +270,12 @@ const [rec, setRec] = useState<any>(null);
             return (
               <div className="space-y-1.5">
                 {overdue.length > 0 && (
-                  <div className="rounded-lg border border-rose-200 bg-rose-50/70 p-2.5 text-[10px] text-rose-700">
+                  <div className="rounded-lg border border-rose-200 bg-rose-50/70 p-2.5 text-[13px] text-rose-700">
                     <b>🔴 {overdue.length} overdue:</b> {overdue.map((i: any) => i.label).join(' · ')}
                   </div>
                 )}
                 {dueSoon.length > 0 && (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-[10px] text-amber-700">
+                  <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-[13px] text-amber-700">
                     <b>🟡 {dueSoon.length} due soon:</b> {dueSoon.map((i: any) => `${i.label} (${i.date})`).join(' · ')}
                   </div>
                 )}
@@ -295,13 +295,13 @@ const [rec, setRec] = useState<any>(null);
                   <span className="text-brand-navy font-semibold">{item.label}</span>
                   <span className="flex items-center gap-2">
                     <span className="font-mono text-brand-navy/40">{item.date}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${badge}`}>{label}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-bold uppercase ${badge}`}>{label}</span>
                   </span>
                 </div>
               );
             })}
           </div>
-          {calItems.length === 0 && <p className="text-[10px] text-brand-navy/40 text-center py-2">Calendar loading…</p>}
+          {calItems.length === 0 && <p className="text-[13px] text-brand-navy/40 text-center py-2">Calendar loading…</p>}
         </div>
 
         <div className="rounded-2xl border border-brand-navy/10 bg-white p-5 space-y-3">
@@ -309,7 +309,7 @@ const [rec, setRec] = useState<any>(null);
             <span className="gold-dot" />
             <h3 className="font-display font-bold text-sm text-brand-navy">CA Export Center</h3>
           </div>
-          <p className="text-[10px] text-brand-navy/40">One-click statutory pack (GST outward + purchases, TDS/TCS, statutory registers, profile).</p>
+          <p className="text-[13px] text-brand-navy/40">One-click statutory pack (GST outward + purchases, TDS/TCS, statutory registers, profile).</p>
           <div className="flex flex-wrap gap-2">
             <button onClick={runCalendar} disabled={isFetchingCal} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded text-xs font-bold disabled:opacity-50">
               {isFetchingCal ? 'Loading…' : 'Refresh Calendar'}
@@ -318,7 +318,7 @@ const [rec, setRec] = useState<any>(null);
               {isExporting ? 'Packing…' : `Export CA Pack PDF (${period})`}
             </button>
           </div>
-          <div className="rounded-xl bg-white border border-brand-navy/10 p-3 text-[10px] text-brand-navy/40 leading-relaxed">
+          <div className="rounded-xl bg-white border border-brand-navy/10 p-3 text-[13px] text-brand-navy/40 leading-relaxed">
             The pack is a single PDF covering:<br/>
             <code className="font-mono">business profile · outward payments · purchase invoices · statutory registers · TDS · TCS</code><br/>
             Hand it to the CA; each export is written to the audit trail.

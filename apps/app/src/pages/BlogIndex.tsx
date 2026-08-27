@@ -28,7 +28,7 @@ export default function BlogIndex() {
     <div className="min-h-screen bg-[#fcf9f4]">
       <div className="max-w-6xl mx-auto px-5 py-10 space-y-6">
         <div className="text-center space-y-2">
-          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Opus Overseas — Journal</div>
+          <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Opus Overseas — Journal</div>
           <h1 className="font-display font-bold text-3xl text-brand-navy">Guides for Study, Visa & Attestation</h1>
           <p className="text-xs text-brand-navy/50 max-w-2xl mx-auto">Every guide is built for SEO + AEO + GEO + AIO: TL;DR answer, definition, comparison table, FAQ (5), author Person + publisher Organization — citable by ChatGPT, Perplexity and Google AI Overviews.</p>
           <div className="flex flex-wrap gap-2 justify-center pt-2">
@@ -52,10 +52,10 @@ export default function BlogIndex() {
             <div className="grid md:grid-cols-2">
               {featured.ogImage ? <img src={featured.ogImage} alt={featured.title} className="w-full h-64 object-cover" /> : <div className="h-64 bg-brand-navy/[0.04]" />}
               <div className="p-6 space-y-3">
-                <div className="flex gap-2"><span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 text-[10px] font-bold uppercase">Featured</span><span className="px-2 py-0.5 rounded-full bg-brand-navy/10 text-[10px]">{featured.division}</span></div>
+                <div className="flex gap-2"><span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 text-[13px] font-bold uppercase">Featured</span><span className="px-2 py-0.5 rounded-full bg-brand-navy/10 text-[13px]">{featured.division}</span></div>
                 <h2 className="font-display font-bold text-xl text-brand-navy leading-tight">{featured.title}</h2>
                 <blockquote className="border-l-2 border-brand-gold pl-3 text-xs text-brand-navy/70 italic">{featured.tldr?.slice(0,180)}…</blockquote>
-                <div className="text-[10px] text-brand-navy/40">{featured.authorName || 'Opus Overseas'} • {featured.readingMinutes || 5} min • {featured.publishedAt ? new Date(featured.publishedAt*1000).toLocaleDateString('en-IN') : ''}</div>
+                <div className="text-[13px] text-brand-navy/40">{featured.authorName || 'Opus Overseas'} • {featured.readingMinutes || 5} min • {featured.publishedAt ? new Date(featured.publishedAt*1000).toLocaleDateString('en-IN') : ''}</div>
               </div>
             </div>
           </Link>
@@ -66,10 +66,10 @@ export default function BlogIndex() {
             <Link key={p.id} href={`/blog/${p.slug}`} className="rounded-2xl border border-brand-navy/10 bg-white overflow-hidden hover:shadow-md transition">
               {p.ogImage ? <img src={p.ogImage} alt={p.title} className="w-full h-40 object-cover" /> : <div className="h-40 bg-brand-navy/[0.04]" />}
               <div className="p-4 space-y-2">
-                <div className="flex gap-1"><span className="px-1.5 py-0.5 rounded bg-brand-navy/10 text-[9px] uppercase font-bold">{p.division}</span></div>
+                <div className="flex gap-1"><span className="px-1.5 py-0.5 rounded bg-brand-navy/10 text-xs uppercase font-bold">{p.division}</span></div>
                 <h3 className="font-bold text-sm text-brand-navy line-clamp-2 leading-tight">{p.title}</h3>
-                <p className="text-[11px] text-brand-navy/50 line-clamp-2">{p.excerpt || p.tldr?.slice(0,100)}</p>
-                <div className="text-[10px] text-brand-navy/30">{p.primaryKeyword ? `“${p.primaryKeyword}”` : ''} • {p.readingMinutes || 5} min</div>
+                <p className="text-sm text-brand-navy/50 line-clamp-2">{p.excerpt || p.tldr?.slice(0,100)}</p>
+                <div className="text-[13px] text-brand-navy/30">{p.primaryKeyword ? `“${p.primaryKeyword}”` : ''} • {p.readingMinutes || 5} min</div>
               </div>
             </Link>
           ))}

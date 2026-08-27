@@ -60,7 +60,7 @@ export default function PerformanceTab() {
     else { setSortKey(k); setSortDir('desc'); }
   };
   const thSort = (k: keyof RosterRow, label: string) => (
-    <th onClick={() => toggleSort(k)} className={`cursor-pointer select-none px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider ${sortKey === k ? 'text-brand-gold' : 'text-brand-navy/40'} hover:text-brand-gold`}>
+    <th onClick={() => toggleSort(k)} className={`cursor-pointer select-none px-3 py-2.5 text-[13px] font-bold uppercase tracking-wider ${sortKey === k ? 'text-brand-gold' : 'text-brand-navy/40'} hover:text-brand-gold`}>
       {label}{sortKey === k ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}
     </th>
   );
@@ -76,9 +76,9 @@ export default function PerformanceTab() {
 
   const BAN = ({ label, value, sub, tone = '' }: { label: string; value: string | number; sub?: string; tone?: string }) => (
     <div className={`rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-[0_16px_30px_-18px_rgba(10,45,80,0.10)] transition-all duration-300 hover:border-brand-gold/40 ${tone}`}>
-      <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">{label}</div>
+      <div className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">{label}</div>
       <div className="mt-1 font-display text-2xl font-extrabold text-brand-navy">{value}</div>
-      {sub && <div className="mt-0.5 text-[10px] text-brand-navy/40">{sub}</div>}
+      {sub && <div className="mt-0.5 text-[13px] text-brand-navy/40">{sub}</div>}
     </div>
   );
 
@@ -88,12 +88,12 @@ export default function PerformanceTab() {
         <div>
           <div className="flex items-center gap-2.5">
             <span className="gold-dot" />
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Performance</p>
+            <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Performance</p>
           </div>
           <h2 className="mt-2 font-display text-sm font-bold text-brand-navy">Staff Performance</h2>
-          <p className="mt-1 text-[11px] text-brand-navy/40">Balanced scorecard: output × on-time quality × workload · every number is live from task/approval records.</p>
+          <p className="mt-1 text-sm text-brand-navy/40">Balanced scorecard: output × on-time quality × workload · every number is live from task/approval records.</p>
         </div>
-        <div className="flex rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-0.5 text-[10px] font-bold uppercase">
+        <div className="flex rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-0.5 text-[13px] font-bold uppercase">
           {[['7', '7d'], ['30', '30d'], ['90', '90d']].map(([v, l]) => (
             <button key={v} onClick={() => setRange(v)} className={`rounded-full px-3 py-1.5 transition ${range === v ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-gold'}`}>{l}</button>
           ))}
@@ -109,7 +109,7 @@ export default function PerformanceTab() {
         <BAN label="On-time rate" value={h.onTimeRate != null ? `${h.onTimeRate}%` : '—'} tone={(h.onTimeRate ?? 100) < 70 ? 'ring-2 ring-rose-400/40' : ''} sub="SLA adherence" />
       </section>
       {h.approvalQueue > 0 && (
-        <div className="reveal flex items-center gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-[11px] font-bold text-amber-700">
+        <div className="reveal flex items-center gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-sm font-bold text-amber-700">
           ◆ {h.approvalQueue} item(s) awaiting approval — invoices/charges to confirm, agreements to sign (see queue below)
         </div>
       )}
@@ -117,7 +117,7 @@ export default function PerformanceTab() {
       <div className="reveal grid grid-cols-1 gap-6 xl:grid-cols-3">
         <section className="xl:col-span-2 overflow-x-auto rounded-2xl border border-brand-navy/10 bg-white shadow-[0_20px_40px_-15px_rgba(10,45,80,0.10)]">
           <table className="w-full text-left text-xs">
-            <thead className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] uppercase tracking-wider text-brand-gold">
+            <thead className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[13px] uppercase tracking-wider text-brand-gold">
               <tr>
                 <th className="px-3 py-2.5 font-bold">Staff</th>
                 {thSort('doneToday', 'Today')}{thSort('doneWeek', 'Week')}{thSort('doneRange', 'Window')}
@@ -130,18 +130,18 @@ export default function PerformanceTab() {
                 <tr key={r.userId} className="border-b border-brand-navy/[0.08] last:border-0 hover:bg-brand-navy/[0.04]">
                   <td className="px-3 py-2.5">
                     <div className="font-semibold text-brand-navy">{r.name}</div>
-                    <div className="text-[9px] uppercase tracking-wider text-brand-navy/50">{ROLE_LABEL[r.role] || r.role}{r.divisionCount > 0 ? ` · ${r.divisionCount} div` : ''}</div>
+                    <div className="text-xs uppercase tracking-wider text-brand-navy/50">{ROLE_LABEL[r.role] || r.role}{r.divisionCount > 0 ? ` · ${r.divisionCount} div` : ''}</div>
                   </td>
                   <td className="px-3 py-2.5 font-bold text-brand-navy">{r.doneToday}</td>
                   <td className="px-3 py-2.5 text-brand-navy/70">{r.doneWeek}</td>
-                  <td className="px-3 py-2.5 text-brand-navy/70">{r.doneRange}<span className="text-[9px] text-brand-navy/50">/{r.doneTotal}</span></td>
+                  <td className="px-3 py-2.5 text-brand-navy/70">{r.doneRange}<span className="text-xs text-brand-navy/50">/{r.doneTotal}</span></td>
                   <td className="px-3 py-2.5 text-brand-navy/40">{r.avgCycleHours != null ? `${r.avgCycleHours}h` : '—'}</td>
                   <td className="px-3 py-2.5">
-                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${(r.onTimeRate ?? 100) >= 80 ? 'bg-emerald-500/15 text-emerald-700' : (r.onTimeRate ?? 100) >= 60 ? 'bg-amber-500/15 text-amber-700' : 'bg-rose-500/15 text-rose-700'}`}>
+                    <span className={`rounded px-1.5 py-0.5 text-[13px] font-bold ${(r.onTimeRate ?? 100) >= 80 ? 'bg-emerald-500/15 text-emerald-700' : (r.onTimeRate ?? 100) >= 60 ? 'bg-amber-500/15 text-amber-700' : 'bg-rose-500/15 text-rose-700'}`}>
                       {r.onTimeRate != null ? `${r.onTimeRate}%` : '—'}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 text-brand-navy/70">{r.open}<span className="text-[9px] text-brand-navy/50"> ({r.inProgress} prog)</span></td>
+                  <td className="px-3 py-2.5 text-brand-navy/70">{r.open}<span className="text-xs text-brand-navy/50"> ({r.inProgress} prog)</span></td>
                   <td className="px-3 py-2.5"><span className={`font-bold ${r.overdue > 0 ? 'text-rose-600' : 'text-brand-navy/40'}`}>{r.overdue}</span></td>
                   <td className="px-3 py-2.5"><span className={`font-bold ${r.urgentOpen > 0 ? 'text-rose-600' : 'text-brand-navy/40'}`}>{r.urgentOpen}</span></td>
                 </tr>
@@ -153,7 +153,7 @@ export default function PerformanceTab() {
 
         <section className="space-y-4">
           <div className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-[0_20px_40px_-15px_rgba(10,45,80,0.10)]">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-brand-navy/40">Throughput · daily completions</div>
+            <div className="text-[13px] font-bold uppercase tracking-widest text-brand-navy/40">Throughput · daily completions</div>
             <div className="mt-3 flex h-20 items-end gap-1">
               {data.trend.map((t) => (
                 <div key={t.day} title={`${new Date(t.day * 1000).toLocaleDateString()}: ${t.done}`}
@@ -161,19 +161,19 @@ export default function PerformanceTab() {
                   style={{ height: `${Math.max(6, (t.done / maxTrend) * 100)}%` }} />
               ))}
             </div>
-            <div className="mt-1 flex justify-between text-[9px] text-brand-navy/50">
+            <div className="mt-1 flex justify-between text-xs text-brand-navy/50">
               <span>{new Date((data.trend[0]?.day || 0) * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
               <span>{new Date((data.trend[data.trend.length - 1]?.day || 0) * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
             </div>
           </div>
           <div className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-[0_20px_40px_-15px_rgba(10,45,80,0.10)]">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-brand-navy/40">Highest current load</div>
+            <div className="text-[13px] font-bold uppercase tracking-widest text-brand-navy/40">Highest current load</div>
             <div className="mt-3 space-y-2.5">
               {topLoad.map((r) => {
                 const maxOpen = Math.max(1, ...data.roster.map((x) => x.open));
                 return (
                   <div key={r.userId}>
-                    <div className="flex justify-between text-[11px]">
+                    <div className="flex justify-between text-sm">
                       <span className="font-semibold text-brand-navy">{r.name}</span>
                       <span className="text-brand-navy/40">{r.open} open{r.overdue > 0 ? <span className="text-rose-600"> · {r.overdue} late</span> : null}</span>
                     </div>
@@ -191,48 +191,48 @@ export default function PerformanceTab() {
       {/* Live artifact queues — evidence behind the numbers */}
       <section className="reveal grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-amber-700">Awaiting approval ({data.artifacts.approval.length})</div>
+          <div className="text-[13px] font-bold uppercase tracking-widest text-amber-700">Awaiting approval ({data.artifacts.approval.length})</div>
           <div className="mt-2.5 space-y-1.5">
             {data.artifacts.approval.map((a) => (
-              <div key={`${a.kind}-${a.id}`} className="flex items-center justify-between gap-2 rounded-lg bg-brand-navy/[0.04] px-2.5 py-1.5 text-[11px]">
-                <span className="truncate text-brand-navy/70"><span className={`mr-1 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${a.kind === 'payment' ? 'bg-brand-gold/15 text-brand-gold' : 'bg-violet-500/15 text-violet-300'}`}>{a.kind}</span>{a.label}</span>
+              <div key={`${a.kind}-${a.id}`} className="flex items-center justify-between gap-2 rounded-lg bg-brand-navy/[0.04] px-2.5 py-1.5 text-sm">
+                <span className="truncate text-brand-navy/70"><span className={`mr-1 rounded px-1 py-0.5 text-xs font-bold uppercase ${a.kind === 'payment' ? 'bg-brand-gold/15 text-brand-gold' : 'bg-violet-500/15 text-violet-300'}`}>{a.kind}</span>{a.label}</span>
                 {a.amountPaise != null && <span className="shrink-0 font-mono font-bold text-brand-navy">{(a.amountPaise / 100).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</span>}
               </div>
             ))}
-            {data.artifacts.approval.length === 0 && <div className="py-4 text-center text-[11px] text-brand-navy/50">Queue clear — nothing waits on a decision.</div>}
+            {data.artifacts.approval.length === 0 && <div className="py-4 text-center text-sm text-brand-navy/50">Queue clear — nothing waits on a decision.</div>}
           </div>
         </div>
         <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-rose-700">Overdue ({data.artifacts.overdue.length})</div>
+          <div className="text-[13px] font-bold uppercase tracking-widest text-rose-700">Overdue ({data.artifacts.overdue.length})</div>
           <div className="mt-2.5 space-y-1.5">
             {data.artifacts.overdue.map((o) => (
-              <div key={o.id} className="rounded-lg bg-brand-navy/[0.04] px-2.5 py-1.5 text-[11px]">
+              <div key={o.id} className="rounded-lg bg-brand-navy/[0.04] px-2.5 py-1.5 text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate font-semibold text-brand-navy">{o.title}</span>
-                  <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${PRIORITY_STYLE[o.priority] || PRIORITY_STYLE.medium}`}>{o.priority}</span>
+                  <span className={`shrink-0 rounded px-1 py-0.5 text-xs font-bold uppercase ${PRIORITY_STYLE[o.priority] || PRIORITY_STYLE.medium}`}>{o.priority}</span>
                 </div>
-                <div className="mt-0.5 flex justify-between text-[10px] text-brand-navy/40">
+                <div className="mt-0.5 flex justify-between text-[13px] text-brand-navy/40">
                   <span>{o.assignee}</span>
                   <span className="font-bold text-rose-600">{o.daysLate}d late</span>
                 </div>
               </div>
             ))}
-            {data.artifacts.overdue.length === 0 && <div className="py-4 text-center text-[11px] text-brand-navy/50">Nothing overdue 🎉</div>}
+            {data.artifacts.overdue.length === 0 && <div className="py-4 text-center text-sm text-brand-navy/50">Nothing overdue 🎉</div>}
           </div>
         </div>
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Recently done ({data.artifacts.recentDone.length})</div>
+          <div className="text-[13px] font-bold uppercase tracking-widest text-emerald-700">Recently done ({data.artifacts.recentDone.length})</div>
           <div className="mt-2.5 space-y-1.5">
             {data.artifacts.recentDone.map((d) => (
-              <div key={d.id} className="rounded-lg bg-brand-navy/[0.04] px-2.5 py-1.5 text-[11px]">
+              <div key={d.id} className="rounded-lg bg-brand-navy/[0.04] px-2.5 py-1.5 text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate font-semibold text-brand-navy">{d.title}</span>
-                  <span className="shrink-0 text-[9px] text-brand-navy/50">{d.cycleHours != null ? `${d.cycleHours}h` : '—'}</span>
+                  <span className="shrink-0 text-xs text-brand-navy/50">{d.cycleHours != null ? `${d.cycleHours}h` : '—'}</span>
                 </div>
-                <div className="mt-0.5 text-[10px] text-brand-navy/40">{d.assignee} · {new Date((d.completedAt || 0) * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
+                <div className="mt-0.5 text-[13px] text-brand-navy/40">{d.assignee} · {new Date((d.completedAt || 0) * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
               </div>
             ))}
-            {data.artifacts.recentDone.length === 0 && <div className="py-4 text-center text-[11px] text-brand-navy/50">Nothing completed in this window yet.</div>}
+            {data.artifacts.recentDone.length === 0 && <div className="py-4 text-center text-sm text-brand-navy/50">Nothing completed in this window yet.</div>}
           </div>
         </div>
       </section>

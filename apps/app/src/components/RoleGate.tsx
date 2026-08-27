@@ -9,7 +9,7 @@ export default function RoleGate({ roles, children }: { roles: string[]; childre
     return (
       <div className="grid min-h-[60vh] place-items-center p-8">
         <div className="max-w-sm text-center">
-          <div className="mx-auto w-fit rounded-full border border-rose-800/50 bg-rose-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-rose-600">
+          <div className="mx-auto w-fit rounded-full border border-rose-800/50 bg-rose-50 px-3 py-1 text-[13px] font-bold uppercase tracking-wider text-rose-600">
             Access limited
           </div>
           <p className="mt-4 text-sm text-slate-600">

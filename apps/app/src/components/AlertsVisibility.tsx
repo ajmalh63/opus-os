@@ -49,11 +49,11 @@ export default function AlertsVisibility() {
     <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm space-y-4 text-xs">
       <div>
         <h3 className="font-display font-extrabold text-brand-navy text-sm">Staff Alert Visibility</h3>
-        <p className="text-[10px] text-brand-navy/50 mt-1">Control which staff roles see which client sales/requests in the live activity feed (header bell + dashboard).</p>
+        <p className="text-[13px] text-brand-navy/50 mt-1">Control which staff roles see which client sales/requests in the live activity feed (header bell + dashboard).</p>
       </div>
       <div className="overflow-x-auto border border-brand-navy/10 rounded-xl">
         <table className="w-full text-left text-xs">
-          <thead className="bg-brand-navy/[0.04] text-[10px] uppercase font-bold text-brand-gold border-b border-brand-navy/[0.08]">
+          <thead className="bg-brand-navy/[0.04] text-[13px] uppercase font-bold text-brand-gold border-b border-brand-navy/[0.08]">
             <tr>
               <th className="px-4 py-3">Role</th>
               {TYPES.map((t) => <th key={t} className="px-3 py-3 text-center">{t.replace('_', ' ')}</th>)}
@@ -74,7 +74,7 @@ export default function AlertsVisibility() {
         </table>
       </div>
       <div className="flex justify-end">
-        <button onClick={() => save.mutate(vis)} disabled={save.isPending} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-[10px] font-bold px-4 py-2 rounded-lg transition cursor-pointer disabled:opacity-50">
+        <button onClick={() => save.mutate(vis)} disabled={save.isPending} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-[13px] font-bold px-4 py-2 rounded-lg transition cursor-pointer disabled:opacity-50">
           {save.isPending ? 'Saving…' : 'Save Visibility'}
         </button>
       </div>

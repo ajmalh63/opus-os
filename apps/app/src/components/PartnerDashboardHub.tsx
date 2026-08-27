@@ -143,7 +143,7 @@ export default function PartnerDashboardHub({
           <div>
             <h3 className="font-display font-bold text-base text-brand-navy flex items-center gap-2">
               <span>🎯 Live Candidate Progression Stream</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              <span className="text-[13px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                 {referrals.length} Active Leads
               </span>
             </h3>
@@ -166,18 +166,18 @@ export default function PartnerDashboardHub({
             return (
               <div key={col.id} className={`rounded-2xl p-3 border ${col.color} space-y-3 min-h-[180px]`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
                     <span>{col.icon}</span>
                     <span className="truncate">{col.label}</span>
                   </span>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-white text-slate-700 shadow-2xs">
+                  <span className="text-[13px] font-extrabold px-1.5 py-0.5 rounded-full bg-white text-slate-700 shadow-2xs">
                     {colReferrals.length}
                   </span>
                 </div>
 
                 <div className="space-y-2">
                   {colReferrals.length === 0 ? (
-                    <div className="py-8 text-center text-[10px] text-slate-400">
+                    <div className="py-8 text-center text-[13px] text-slate-400">
                       No candidates in this stage
                     </div>
                   ) : (
@@ -189,17 +189,17 @@ export default function PartnerDashboardHub({
                         className="w-full text-left p-2.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-brand-gold hover:shadow-xs transition space-y-1.5 cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                          <span className="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                             Client #{r.referredClientId?.slice(0, 8) || 'REF'}
                           </span>
-                          <span className="text-[10px] font-extrabold text-brand-gold">
+                          <span className="text-[13px] font-extrabold text-brand-gold">
                             ₹{((r.amountPaise || 0) / 100).toLocaleString('en-IN')}
                           </span>
                         </div>
-                        <div className="text-[11px] font-bold text-slate-800">
+                        <div className="text-sm font-bold text-slate-800">
                           Commission: {r.ratePct || 10}%
                         </div>
-                        <div className="text-[9px] text-slate-400 capitalize">
+                        <div className="text-xs text-slate-400 capitalize">
                           Status: {r.status || 'Active in pipeline'}
                         </div>
                       </button>
@@ -218,7 +218,7 @@ export default function PartnerDashboardHub({
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-display font-bold text-base text-brand-navy">Deep-Link & Campaign Studio</h3>
-            <span className="text-[10px] bg-brand-gold/15 text-brand-navy font-bold px-2.5 py-0.5 rounded-full border border-brand-gold/30">
+            <span className="text-[13px] bg-brand-gold/15 text-brand-navy font-bold px-2.5 py-0.5 rounded-full border border-brand-gold/30">
               Cookie 90-Days Active
             </span>
           </div>
@@ -229,7 +229,7 @@ export default function PartnerDashboardHub({
 
           {/* SubID Tagging Input */}
           <div className="flex items-center gap-2">
-            <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 shrink-0">
+            <label className="text-[13px] font-extrabold uppercase tracking-wider text-slate-500 shrink-0">
               Campaign Tag (SubID):
             </label>
             <input
@@ -276,7 +276,7 @@ export default function PartnerDashboardHub({
                 <button
                   type="button"
                   onClick={handleDownloadQrSvg}
-                  className="text-[10px] text-brand-navy font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-[13px] text-brand-navy font-bold hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <span>📥 Download Vector SVG</span>
                 </button>
@@ -296,7 +296,7 @@ export default function PartnerDashboardHub({
         <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-display font-bold text-base text-brand-navy">Fast Candidate Referral</h3>
-            <span className="text-[10px] text-slate-400">Direct desk handoff</span>
+            <span className="text-[13px] text-slate-400">Direct desk handoff</span>
           </div>
 
           {submitMsg && (
@@ -340,7 +340,7 @@ export default function PartnerDashboardHub({
                 className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 outline-none focus:border-brand-gold"
               >
                 <option value="study_abroad">🎓 Study Abroad (Admissions)</option>
-                <option value="visa_services">✈️ Visa Processing</option>
+                <option value="visa_services">🛂 Visa Processing</option>
                 <option value="umrah_pilgrimage">🕋 Umrah Pilgrimage</option>
                 <option value="attestation">📑 Document Attestation</option>
                 <option value="global_jobs">💼 Overseas Jobs & Careers</option>

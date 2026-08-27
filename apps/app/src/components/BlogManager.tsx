@@ -6,7 +6,7 @@ const DIVISIONS = ['general','study-abroad','visa-services','attestation','umrah
 
 function ScoreBadge({ score }: { score: number }) {
   const cls = score >= 85 ? 'bg-emerald-500/15 text-emerald-700' : score >= 70 ? 'bg-amber-500/15 text-amber-700' : score >= 50 ? 'bg-rose-500/15 text-rose-600' : 'bg-red-500/15 text-red-600';
-  return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${cls}`}>{score}/100</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-[13px] font-bold ${cls}`}>{score}/100</span>;
 }
 
 export default function BlogManager() {
@@ -140,7 +140,7 @@ export default function BlogManager() {
       <div className="rounded-2xl border border-brand-navy/10 bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead className="bg-brand-navy/[0.04] text-[10px] uppercase text-brand-navy/50">
+            <thead className="bg-brand-navy/[0.04] text-[13px] uppercase text-brand-navy/50">
               <tr><th className="p-3 text-left">Post</th><th className="p-3">Division</th><th className="p-3">Keyword</th><th className="p-3">Score</th><th className="p-3">Status</th><th className="p-3">Updated</th><th className="p-3">Actions</th></tr>
             </thead>
             <tbody>
@@ -148,14 +148,14 @@ export default function BlogManager() {
                 <tr key={p.id} className="border-t border-brand-navy/5 hover:bg-brand-navy/[0.02]">
                   <td className="p-3">
                     <div className="font-bold text-brand-navy truncate max-w-[260px]">{p.title}</div>
-                    <div className="text-brand-navy/40 font-mono text-[10px]">/blog/{p.slug}</div>
-                    {p.tldr && <div className="text-[10px] text-brand-navy/50 line-clamp-1 mt-1">{p.tldr.slice(0,90)}…</div>}
+                    <div className="text-brand-navy/40 font-mono text-[13px]">/blog/{p.slug}</div>
+                    {p.tldr && <div className="text-[13px] text-brand-navy/50 line-clamp-1 mt-1">{p.tldr.slice(0,90)}…</div>}
                   </td>
-                  <td className="p-3"><span className="px-1.5 py-0.5 rounded bg-brand-navy/10 text-[10px]">{p.division}</span></td>
-                  <td className="p-3 text-[10px]">{p.primaryKeyword || <span className="text-rose-500">— missing</span>}</td>
+                  <td className="p-3"><span className="px-1.5 py-0.5 rounded bg-brand-navy/10 text-[13px]">{p.division}</span></td>
+                  <td className="p-3 text-[13px]">{p.primaryKeyword || <span className="text-rose-500">— missing</span>}</td>
                   <td className="p-3"><ScoreBadge score={p._audit?.overall ?? 0} /></td>
-                  <td className="p-3"><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${p.status==='published'?'bg-emerald-500/15 text-emerald-700': p.status==='draft'?'bg-amber-500/15 text-amber-700':'bg-brand-navy/10'}`}>{p.status}</span></td>
-                  <td className="p-3 text-[10px] text-brand-navy/40">{new Date(p.updatedAt*1000).toLocaleDateString('en-IN')}</td>
+                  <td className="p-3"><span className={`px-1.5 py-0.5 rounded text-[13px] font-bold ${p.status==='published'?'bg-emerald-500/15 text-emerald-700': p.status==='draft'?'bg-amber-500/15 text-amber-700':'bg-brand-navy/10'}`}>{p.status}</span></td>
+                  <td className="p-3 text-[13px] text-brand-navy/40">{new Date(p.updatedAt*1000).toLocaleDateString('en-IN')}</td>
                   <td className="p-3 flex gap-1 flex-wrap">
                     <button onClick={()=>openEdit(p)} className="px-2 py-1 rounded border border-brand-navy/10 hover:bg-brand-navy/5">Edit</button>
                     {p.status!=='published' ? <button onClick={()=>publish.mutate(p.id)} className="px-2 py-1 rounded bg-brand-gold text-brand-navy font-bold">Publish</button> : <button onClick={()=>auditOne(p.id)} className="px-2 py-1 rounded border">Audit</button>}
@@ -181,57 +181,57 @@ export default function BlogManager() {
               {/* Editor */}
               <div className="lg:col-span-2 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <label className="text-[10px] font-bold uppercase text-brand-navy/60">Title (H1) *<input value={form.title||''} onChange={e=>setForm({...form,title:e.target.value})} placeholder="What is MBBS Abroad Admission Process?" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
-                  <label className="text-[10px] font-bold uppercase text-brand-navy/60">Slug *<input value={form.slug||''} onChange={e=>setForm({...form,slug:e.target.value})} placeholder="what-is-mbbs-abroad-process" className="mt-1 w-full border rounded px-3 py-2 text-xs font-mono" /></label>
+                  <label className="text-[13px] font-bold uppercase text-brand-navy/60">Title (H1) *<input value={form.title||''} onChange={e=>setForm({...form,title:e.target.value})} placeholder="What is MBBS Abroad Admission Process?" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
+                  <label className="text-[13px] font-bold uppercase text-brand-navy/60">Slug *<input value={form.slug||''} onChange={e=>setForm({...form,slug:e.target.value})} placeholder="what-is-mbbs-abroad-process" className="mt-1 w-full border rounded px-3 py-2 text-xs font-mono" /></label>
                 </div>
-                <label className="text-[10px] font-bold uppercase text-brand-navy/60">TL;DR — 2-3 sentence direct answer (blockquote after H1, AEO extractor) *<textarea value={form.tldr||''} onChange={e=>setForm({...form,tldr:e.target.value})} rows={3} placeholder="MBBS abroad is ... It requires ... Students who ...  (200-350 chars, must answer H1)" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
-                <label className="text-[10px] font-bold uppercase text-brand-navy/60">Excerpt (155c metaDescription fallback) <input value={form.excerpt||''} onChange={e=>setForm({...form,excerpt:e.target.value})} placeholder="155-160 chars for SERP" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60">TL;DR — 2-3 sentence direct answer (blockquote after H1, AEO extractor) *<textarea value={form.tldr||''} onChange={e=>setForm({...form,tldr:e.target.value})} rows={3} placeholder="MBBS abroad is ... It requires ... Students who ...  (200-350 chars, must answer H1)" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60">Excerpt (155c metaDescription fallback) <input value={form.excerpt||''} onChange={e=>setForm({...form,excerpt:e.target.value})} placeholder="155-160 chars for SERP" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <label className="text-[10px] font-bold uppercase">Division<select value={form.division||'general'} onChange={e=>setForm({...form,division:e.target.value})} className="mt-1 w-full border rounded px-2 py-2 text-xs">{DIVISIONS.map(d=><option key={d} value={d}>{d}</option>)}</select></label>
-                  <label className="text-[10px] font-bold uppercase">Category<input value={form.category||''} onChange={e=>setForm({...form,category:e.target.value})} placeholder="MBBS Abroad" className="mt-1 w-full border rounded px-2 py-2 text-xs" /></label>
-                  <label className="text-[10px] font-bold uppercase">Primary Keyword *<input value={form.primaryKeyword||''} onChange={e=>setForm({...form,primaryKeyword:e.target.value})} placeholder="mbbs abroad admission process" className="mt-1 w-full border rounded px-2 py-2 text-xs" /></label>
-                  <label className="text-[10px] font-bold uppercase">Pillar Slug<input value={form.pillarSlug||''} onChange={e=>setForm({...form,pillarSlug:e.target.value})} placeholder="study-abroad" className="mt-1 w-full border rounded px-2 py-2 text-xs" /></label>
+                  <label className="text-[13px] font-bold uppercase">Division<select value={form.division||'general'} onChange={e=>setForm({...form,division:e.target.value})} className="mt-1 w-full border rounded px-2 py-2 text-xs">{DIVISIONS.map(d=><option key={d} value={d}>{d}</option>)}</select></label>
+                  <label className="text-[13px] font-bold uppercase">Category<input value={form.category||''} onChange={e=>setForm({...form,category:e.target.value})} placeholder="MBBS Abroad" className="mt-1 w-full border rounded px-2 py-2 text-xs" /></label>
+                  <label className="text-[13px] font-bold uppercase">Primary Keyword *<input value={form.primaryKeyword||''} onChange={e=>setForm({...form,primaryKeyword:e.target.value})} placeholder="mbbs abroad admission process" className="mt-1 w-full border rounded px-2 py-2 text-xs" /></label>
+                  <label className="text-[13px] font-bold uppercase">Pillar Slug<input value={form.pillarSlug||''} onChange={e=>setForm({...form,pillarSlug:e.target.value})} placeholder="study-abroad" className="mt-1 w-full border rounded px-2 py-2 text-xs" /></label>
                 </div>
-                <label className="text-[10px] font-bold uppercase">Secondary Keywords (comma)<input value={form.secondaryKeywords||''} onChange={e=>setForm({...form,secondaryKeywords:e.target.value})} placeholder="mbbs abroad eligibility, mbbs abroad cost" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
-                <label className="text-[10px] font-bold uppercase">Content Markdown * — Must start with ## What is ...? and include 1 table + FAQ (5 Q/A)
+                <label className="text-[13px] font-bold uppercase">Secondary Keywords (comma)<input value={form.secondaryKeywords||''} onChange={e=>setForm({...form,secondaryKeywords:e.target.value})} placeholder="mbbs abroad eligibility, mbbs abroad cost" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
+                <label className="text-[13px] font-bold uppercase">Content Markdown * — Must start with ## What is ...? and include 1 table + FAQ (5 Q/A)
                   <textarea value={form.contentMarkdown||''} onChange={e=>setForm({...form,contentMarkdown:e.target.value})} rows={18} placeholder={`## What is MBBS Abroad Admission?\nMBBS abroad admission is ... (definition sentence)\n\nTL;DR is above, this H2 opens with 40-60 word capsule.\n\n## Why it matters\n...\n\n| Country | Duration | Cost |\n|---|---|---|\n| Georgia | 5+1 yr | ₹35L |\n\n## FAQ\n### What is ...?\nAnswer <50 words, self-contained.\n`} className="mt-1 w-full border rounded px-3 py-2 text-xs font-mono" />
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <label className="text-[10px] font-bold uppercase">Meta Title (50-60c)<input value={form.metaTitle||''} onChange={e=>setForm({...form,metaTitle:e.target.value})} placeholder="MBBS Abroad Admission Process — Opus Overseas" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
-                  <label className="text-[10px] font-bold uppercase">Meta Description (155c)<input value={form.metaDescription||''} onChange={e=>setForm({...form,metaDescription:e.target.value})} placeholder="155 chars with primaryKeyword" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
+                  <label className="text-[13px] font-bold uppercase">Meta Title (50-60c)<input value={form.metaTitle||''} onChange={e=>setForm({...form,metaTitle:e.target.value})} placeholder="MBBS Abroad Admission Process — Opus Overseas" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
+                  <label className="text-[13px] font-bold uppercase">Meta Description (155c)<input value={form.metaDescription||''} onChange={e=>setForm({...form,metaDescription:e.target.value})} placeholder="155 chars with primaryKeyword" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <label className="text-[10px] font-bold uppercase">OG Image URL<input value={form.ogImage||''} onChange={e=>setForm({...form,ogImage:e.target.value})} placeholder="https://.../1200x630.jpg" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
-                  <label className="text-[10px] font-bold uppercase">Author Name<input value={form.authorName||''} onChange={e=>setForm({...form,authorName:e.target.value})} placeholder="Dr. Ayesha, Opus Counselor" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
-                  <label className="text-[10px] font-bold uppercase">Status<select value={form.status||'draft'} onChange={e=>setForm({...form,status:e.target.value})} className="mt-1 w-full border rounded px-3 py-2 text-xs"><option value="draft">draft</option><option value="published">published</option><option value="scheduled">scheduled</option><option value="archived">archived</option></select></label>
+                  <label className="text-[13px] font-bold uppercase">OG Image URL<input value={form.ogImage||''} onChange={e=>setForm({...form,ogImage:e.target.value})} placeholder="https://.../1200x630.jpg" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
+                  <label className="text-[13px] font-bold uppercase">Author Name<input value={form.authorName||''} onChange={e=>setForm({...form,authorName:e.target.value})} placeholder="Dr. Ayesha, Opus Counselor" className="mt-1 w-full border rounded px-3 py-2 text-xs" /></label>
+                  <label className="text-[13px] font-bold uppercase">Status<select value={form.status||'draft'} onChange={e=>setForm({...form,status:e.target.value})} className="mt-1 w-full border rounded px-3 py-2 text-xs"><option value="draft">draft</option><option value="published">published</option><option value="scheduled">scheduled</option><option value="archived">archived</option></select></label>
                 </div>
                 <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!form.featured} onChange={e=>setForm({...form,featured:e.target.checked})} /> Featured on /blog hero</label>
               </div>
               {/* Right rail: audit + extractability */}
               <div className="space-y-3">
                 <div className="rounded-xl border p-3 bg-brand-navy/[0.03]">
-                  <div className="text-[10px] font-bold uppercase text-brand-navy/60 mb-2">Content Score — SEO+AEO+Readability</div>
+                  <div className="text-[13px] font-bold uppercase text-brand-navy/60 mb-2">Content Score — SEO+AEO+Readability</div>
                   {audit ? (
                     <div className="space-y-2 text-xs">
-                      <div className="flex gap-2"><ScoreBadge score={audit.overall} /><span className="text-[10px]">Overall {audit.overall}/100 — projected {audit.projected}</span></div>
-                      <div className="grid grid-cols-3 gap-1 text-[10px]"><span>SEO {audit.seo}</span><span>AEO {audit.aeo}</span><span>Read {audit.readability}</span></div>
+                      <div className="flex gap-2"><ScoreBadge score={audit.overall} /><span className="text-[13px]">Overall {audit.overall}/100 — projected {audit.projected}</span></div>
+                      <div className="grid grid-cols-3 gap-1 text-[13px]"><span>SEO {audit.seo}</span><span>AEO {audit.aeo}</span><span>Read {audit.readability}</span></div>
                       {audit.critical.length>0 && <div className="text-rose-600"><div className="font-bold">Critical</div>{audit.critical.map((c:string,i:number)=><div key={i}>• {c}</div>)}</div>}
                       {audit.important.length>0 && <div className="text-amber-700"><div className="font-bold">Important</div>{audit.important.map((c:string,i:number)=><div key={i}>• {c}</div>)}</div>}
                       {audit.polish.length>0 && <div className="text-brand-navy/40"><div className="font-bold">Polish</div>{audit.polish.map((c:string,i:number)=><div key={i}>• {c}</div>)}</div>}
                     </div>
-                  ) : <div className="text-[11px] text-brand-navy/40">Save to see live audit (overall/SEO/AEO/readability).</div>}
-                  <div className="mt-2 text-[10px] text-brand-navy/40">Gold checklist: TL;DR after H1, "What is" H2 with definition, 40-60w capsule per H2, 1 table, FAQ 5×&lt;50w, author Person, source hyperlinks.</div>
+                  ) : <div className="text-sm text-brand-navy/40">Save to see live audit (overall/SEO/AEO/readability).</div>}
+                  <div className="mt-2 text-[13px] text-brand-navy/40">Gold checklist: TL;DR after H1, "What is" H2 with definition, 40-60w capsule per H2, 1 table, FAQ 5×&lt;50w, author Person, source hyperlinks.</div>
                 </div>
                 <div className="rounded-xl border p-3">
-                  <div className="text-[10px] font-bold uppercase mb-1">Extractability Preview (what Perplexity sees)</div>
-                  <div className="text-[11px] text-brand-navy/70 space-y-1">
+                  <div className="text-[13px] font-bold uppercase mb-1">Extractability Preview (what Perplexity sees)</div>
+                  <div className="text-sm text-brand-navy/70 space-y-1">
                     <div className="p-2 rounded bg-amber-50 border border-amber-200"><b>TL;DR:</b> {form.tldr || <span className="text-brand-navy/30">— add TL;DR —</span>}</div>
                     <div className="p-2 rounded bg-white border"><b>Definition:</b> first line of "What is" H2 will be lifted</div>
                     <div className="p-2 rounded bg-white border">FAQ answers must be &lt;50w and self-contained</div>
                   </div>
                 </div>
                 <button onClick={()=>save.mutate()} disabled={save.isPending} className="w-full bg-brand-navy text-white py-2.5 rounded font-bold text-sm hover:bg-brand-navy/90 disabled:opacity-50">{save.isPending ? 'Saving…' : editing?.id ? 'Save Changes' : 'Create Post'}</button>
-                <div className="text-[10px] text-brand-navy/40">Primary keyword is unique across posts — cannibalization blocked (409 if duplicate). Slug is URL — ^[a-z0-9-]+$.</div>
+                <div className="text-[13px] text-brand-navy/40">Primary keyword is unique across posts — cannibalization blocked (409 if duplicate). Slug is URL — ^[a-z0-9-]+$.</div>
               </div>
             </div>
           </div>

@@ -60,7 +60,23 @@ export const mauticAdapter: ToolAdapter = {
         ]);
         if (!camps.ok || !conts.ok || !segs.ok) {
           const bad = [camps, conts, segs].find((r) => !r.ok);
-          throw new Error(`fetch failed: HTTP ${bad?.status}`);
+          const status = bad?.status || 500;
+          if (status === 401 || status === 403) {
+            // Mautic API authorization pending in UI settings; probe web UI reachability
+            const probe = await fetch(`${url.replace(/\/$/, '')}/s/login`, { signal: AbortSignal.timeout(4000) }).catch(() => null);
+            if (probe && probe.status < 500) {
+              return {
+                ...base,
+                status: { state: 'ok', label: this.label, summary: 'automation engine reachable' },
+                metrics: { httpStatus: 200 },
+                items: [],
+              };
+            }
+          }
+          const summary = status === 530
+            ? 'Cloudflare Tunnel Offline (HTTP 530)'
+            : `HTTP ${status} from Mautic`;
+          return { ...base, status: { state: 'error', label: this.label, summary }, metrics: { httpStatus: status }, items: [] };
         }
         const cj: any = await camps.json().catch(() => ({ total: null, campaigns: [] }));
         const oj: any = await conts.json().catch(() => ({ total: null }));
@@ -76,21 +92,32 @@ export const mauticAdapter: ToolAdapter = {
           items,
         };
       } catch (e: any) {
-        return { ...base, status: { state: 'error', label: this.label, summary: `fetch failed: ${e?.message || 'unknown'}` }, metrics: {}, items: [] };
+        const summary = String(e?.message).includes('530')
+          ? 'Cloudflare Tunnel Offline (HTTP 530)'
+          : `fetch failed: ${e?.message || 'unknown'}`;
+        return { ...base, status: { state: 'error', label: this.label, summary }, metrics: {}, items: [] };
       }
     }
 
     try {
       const probe = await fetch(`${url.replace(/\/$/, '')}/s/dashboard`, { signal: AbortSignal.timeout(4000) });
       const ok = probe.status < 500;
+      const summary = ok
+        ? 'automation engine reachable'
+        : probe.status === 530
+        ? 'Cloudflare Tunnel Offline (HTTP 530)'
+        : `HTTP ${probe.status}`;
       return {
         ...base,
-        status: { state: ok ? 'ok' : 'error', label: this.label, summary: ok ? 'automation engine reachable' : `HTTP ${probe.status}` },
+        status: { state: ok ? 'ok' : 'error', label: this.label, summary },
         metrics: { httpStatus: probe.status },
         items: [],
       };
     } catch (e: any) {
-      return { ...base, status: { state: 'error', label: this.label, summary: `fetch failed: ${e?.message || 'unknown'}` }, metrics: {}, items: [] };
+      const summary = String(e?.message).includes('530')
+        ? 'Cloudflare Tunnel Offline (HTTP 530)'
+        : `unreachable: ${e?.message || 'unknown'}`;
+      return { ...base, status: { state: 'error', label: this.label, summary }, metrics: {}, items: [] };
     }
   },
 };

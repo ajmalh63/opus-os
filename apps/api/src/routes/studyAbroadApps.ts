@@ -10,8 +10,8 @@ function getPortalToken(c: any): string | undefined {
 }
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { clients, engagements, studyAbroadApplications, tasks, documents, consents } from '../db/schema.js';
-import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
+import { clients, engagements, studyAbroadApplications, tasks, documents, consents, bookings, appSettings } from '../db/schema.js';
+import { eq, and, gte, lte, inArray, sql, or, desc } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { publishSyncEvent } from './sync.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
@@ -25,7 +25,7 @@ import {
   updateApplicationStatusSchema, updateApplicationOfferSchema, updateApplicationDocsSchema,
   studentProfileSchema
 } from '@opusos/shared';
-import { matchApplication, profileFromIntakeContext, normalizeEnglish, computeProfileCompleteness, type UniRequirements } from '../lib/studyAbroadMatch.js';
+import { matchApplication, profileFromIntakeContext, normalizeEnglish, computeProfileCompleteness, GATE_PCT, type UniRequirements } from '../lib/studyAbroadMatch.js';
 
 // Study Abroad applications — snapshot model (Phase 4).
 // No university catalog: each application stores the modal snapshot
@@ -98,6 +98,46 @@ function serializeApplication(row: any, client?: any) {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
+}
+
+// ─── Gate helper (Option B — single source, 80% + exam-valid + booking) ───
+async function getGateState(db: any, clientId: string) {
+  const client = await db.select().from(clients).where(eq(clients.id, clientId)).get();
+  if (!client) return { ok: false, reason: 'Client not found' as const };
+  let gatePct = GATE_PCT;
+  try {
+    const row = await db.select().from(appSettings).where(eq(appSettings.key, 'study_abroad_gate_pct')).get();
+    const v = row?.value ? Number(row.value) : NaN;
+    if (!Number.isNaN(v) && v >= 50 && v <= 100) gatePct = v;
+  } catch {}
+  const completeness = computeProfileCompleteness(client.intakeContext);
+  const profileComplete = completeness.pct >= gatePct;
+  const activeBooking = await db.select().from(bookings).where(
+    and(
+      eq(bookings.division, 'study-abroad'),
+      or(eq(bookings.clientId, clientId), client.email ? eq(bookings.attendeeEmail, client.email) : sql`0=1`),
+      inArray(bookings.status, ['scheduled', 'rescheduled', 'completed'])
+    )
+  ).orderBy(desc(bookings.startTime)).get();
+  let sessionStatus: 'required' | 'scheduled' | 'completed' = 'required';
+  if (activeBooking) {
+    if (activeBooking.status === 'completed') sessionStatus = 'completed';
+    else if (['scheduled', 'rescheduled'].includes(activeBooking.status) && (activeBooking.startTime || 0) > Math.floor(Date.now()/1000)) sessionStatus = 'scheduled';
+  }
+  const settingRow = await db.select().from(appSettings).where(eq(appSettings.key, 'cal_booking_links')).get();
+  let bookingUrl = 'https://cal.opusoverseas.com/counseling';
+  try { if (settingRow?.value) { const links = JSON.parse(settingRow.value); if (links['study-abroad']) bookingUrl = links['study-abroad']; } } catch {}
+  try {
+    const u = new URL(bookingUrl.startsWith('http') ? bookingUrl : `https://${bookingUrl}`);
+    if (client.name) u.searchParams.set('name', client.name);
+    if (client.email) u.searchParams.set('email', client.email);
+    if (client.phone) u.searchParams.set('phone', client.phone);
+    u.searchParams.set('notes', `OpusOS Portal Token: ${clientId}`);
+    bookingUrl = u.toString();
+  } catch {}
+  if (!profileComplete) return { ok: false as const, reason: 'GATE_PROFILE_INCOMPLETE' as const, completeness, gatePct, bookingUrl, sessionStatus, missing: completeness.missing };
+  if (sessionStatus === 'required') return { ok: false as const, reason: 'BOOKING_REQUIRED' as const, completeness, gatePct, bookingUrl, sessionStatus };
+  return { ok: true as const, completeness, gatePct, bookingUrl, sessionStatus, booking: activeBooking };
 }
 
 // ─── Auto-task triggers (deadline management — dispatch rides integration wave) ───
@@ -213,7 +253,7 @@ studyAbroadAppsRouter.get('/pipeline', async (c) => {
   }
 });
 
-// POST /api/study-abroad/applications — create from the modal snapshot
+// POST /api/study-abroad/applications — create from the modal snapshot (gate-enforced)
 studyAbroadAppsRouter.post('/', zValidator('json', createStudyAbroadApplicationSchema), async (c) => {
   const body = c.req.valid('json');
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
@@ -222,6 +262,13 @@ studyAbroadAppsRouter.post('/', zValidator('json', createStudyAbroadApplicationS
   try {
     const client = await db.select().from(clients).where(eq(clients.id, body.clientId)).get();
     if (!client) return c.json({ error: 'Student not found' }, 404);
+    // Gate: docs_ready + submitted require 80% + booked session (shortlisted is draft, allowed without gate)
+    if (['docs_ready', 'submitted'].includes(body.status)) {
+      const gate = await getGateState(db, body.clientId);
+      if (!gate.ok) {
+        return c.json({ error: gate.reason, code: gate.reason, completeness: (gate as any).completeness, gatePct: (gate as any).gatePct, bookingUrl: (gate as any).bookingUrl, sessionStatus: (gate as any).sessionStatus, missing: (gate as any).missing }, 409);
+      }
+    }
 
     const id = crypto.randomUUID();
     await db.insert(studyAbroadApplications).values({
@@ -307,6 +354,13 @@ studyAbroadAppsRouter.patch('/:id/status', zValidator('json', updateApplicationS
     const allowed = TRANSITIONS[row.status] || [];
     if (!allowed.includes(body.status)) {
       return c.json({ error: `Cannot move from '${row.status}' to '${body.status}'`, code: 'invalid_transition', allowed }, 409);
+    }
+    // Gate: docs_ready + submitted require 80% + booked session (Option B enforcement)
+    if (['docs_ready', 'submitted'].includes(body.status)) {
+      const gate = await getGateState(db, row.clientId);
+      if (!gate.ok) {
+        return c.json({ error: gate.reason, code: gate.reason, completeness: (gate as any).completeness, gatePct: (gate as any).gatePct, bookingUrl: (gate as any).bookingUrl, sessionStatus: (gate as any).sessionStatus, missing: (gate as any).missing }, 409);
+      }
     }
 
     const updates: any = { status: body.status, updatedAt: now };
@@ -479,6 +533,90 @@ portalStudyAbroadRouter.put('/profile', zValidator('json', studentProfileSchema)
     return c.json({ success: true, profile: merged, completeness: computeProfileCompleteness(JSON.stringify(merged)), message: afterPct === 100 ? 'Profile complete! Our counsellor will reach out with your university shortlist.' : `Profile ${afterPct}% complete.` });
   } catch (e: any) {
     return c.json({ error: 'Profile update failed', details: e?.message }, 500);
+  }
+});
+
+// GET /api/public/portal/study-abroad/strategy-session?token=
+// Gold-standard Gate (Option B — 80% + exam-valid): completeness, Cal booking, prefilled link
+portalStudyAbroadRouter.get('/strategy-session', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'token is required' }, 400);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const client = await resolveClientByToken(db, token);
+    if (!client) return c.json({ error: 'Client not found for token' }, 404);
+
+    // Gate pct is configurable via appSettings, default 80 (form-CRO: 80% = qualified)
+    let gatePct = GATE_PCT;
+    try {
+      const row = await db.select().from(appSettings).where(eq(appSettings.key, 'study_abroad_gate_pct')).get();
+      const v = row?.value ? Number(row.value) : NaN;
+      if (!Number.isNaN(v) && v >= 50 && v <= 100) gatePct = v;
+    } catch {}
+    const completeness = computeProfileCompleteness(client.intakeContext);
+    const profileComplete = completeness.pct >= gatePct;
+
+    // Check active booking for this client / student
+    const activeBooking = await db.select().from(bookings).where(
+      and(
+        eq(bookings.division, 'study-abroad'),
+        or(
+          eq(bookings.clientId, token),
+          client.email ? eq(bookings.attendeeEmail, client.email) : sql`0=1`
+        ),
+        inArray(bookings.status, ['scheduled', 'rescheduled', 'completed', 'pending'])
+      )
+    ).orderBy(desc(bookings.startTime)).get();
+
+    // Fetch dynamic booking link from appSettings
+    const settingRow = await db.select().from(appSettings).where(eq(appSettings.key, 'cal_booking_links')).get();
+    let bookingUrl = 'https://cal.opusoverseas.com/counseling';
+    try {
+      if (settingRow?.value) {
+        const links = JSON.parse(settingRow.value);
+        if (links['study-abroad']) bookingUrl = links['study-abroad'];
+      }
+    } catch {}
+
+    // Pre-fill parameters on booking URL
+    let fullBookingUrl = bookingUrl;
+    try {
+      const urlObj = new URL(bookingUrl.startsWith('http') ? bookingUrl : `https://${bookingUrl}`);
+      if (client.name) urlObj.searchParams.set('name', client.name);
+      if (client.email) urlObj.searchParams.set('email', client.email);
+      if (client.phone) urlObj.searchParams.set('phone', client.phone);
+      urlObj.searchParams.set('notes', `OpusOS Portal Token: ${token}`);
+      fullBookingUrl = urlObj.toString();
+    } catch {}
+
+    // Only scheduled/rescheduled in future counts as scheduled; pending does NOT flip gate
+    let sessionStatus: 'required' | 'scheduled' | 'completed' = 'required';
+    if (activeBooking) {
+      if (activeBooking.status === 'completed') sessionStatus = 'completed';
+      else if (['scheduled', 'rescheduled'].includes(activeBooking.status) && (activeBooking.startTime || 0) > Math.floor(Date.now()/1000)) sessionStatus = 'scheduled';
+    }
+
+    return c.json({
+      success: true,
+      profileComplete,
+      completeness,
+      gatePct,
+      sessionMandatory: true,
+      sessionStatus,
+      booking: activeBooking ? {
+        id: activeBooking.id,
+        title: activeBooking.title,
+        startTime: activeBooking.startTime,
+        endTime: activeBooking.endTime,
+        status: activeBooking.status,
+        attendeeName: activeBooking.attendeeName,
+        attendeeEmail: activeBooking.attendeeEmail,
+      } : null,
+      bookingUrl: fullBookingUrl,
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Strategy session status failed', details: e?.message }, 500);
   }
 });
 

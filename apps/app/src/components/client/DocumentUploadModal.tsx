@@ -134,7 +134,7 @@ export default function DocumentUploadModal({
             <span className="text-base leading-none">⚠️</span>
             <div className="space-y-0.5">
               <p className="font-bold text-amber-950">Previous Upload Action Required:</p>
-              <p className="text-[11px] leading-relaxed text-amber-900">{rejectionReason}</p>
+              <p className="text-sm leading-relaxed text-amber-900">{rejectionReason}</p>
             </div>
           </div>
         )}
@@ -155,7 +155,7 @@ export default function DocumentUploadModal({
           <label htmlFor="doc-file-input" className="cursor-pointer">
             <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 grid place-items-center mx-auto text-xl" aria-hidden>📄</div>
             <p className="text-xs font-bold text-slate-700 mt-2">{file ? file.name : 'Click to choose or drag & drop'}</p>
-            <p className="text-[11px] text-slate-500 mt-1">{file ? `${(file.size / 1024).toFixed(1)} KB` : 'PDF, JPG, PNG, DOC up to 10MB'}</p>
+            <p className="text-sm text-slate-500 mt-1">{file ? `${(file.size / 1024).toFixed(1)} KB` : 'PDF, JPG, PNG, DOC up to 10MB'}</p>
           </label>
         </div>
 
@@ -181,7 +181,7 @@ export default function DocumentUploadModal({
           </button>
         </div>
 
-        <p className="text-[10px] text-slate-400 text-center">By uploading, you consent to processing for this division only. Manage in Journey → consents. • Back button closes this dialog.</p>
+        <p className="text-[13px] text-slate-400 text-center">By uploading, you consent to processing for this division only. Manage in Journey → consents. • Back button closes this dialog.</p>
       </div>
     </div>
   );

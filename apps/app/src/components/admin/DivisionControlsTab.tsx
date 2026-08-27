@@ -25,18 +25,18 @@ const DIVISION_CONFIG: DivisionMeta[] = [
     key: 'visa',
     name: 'Worldwide Visa Services',
     tagline: 'Consular Processing, Document Stack Audits & Appointment Expediting',
-    icon: '✈️',
+    icon: '🛂',
     accent: 'from-amber-600/20 to-yellow-600/20 text-amber-400 border-amber-500/30',
     description: 'Controls public visa inquiry intake, consular checklist tracking, and priority appointment booking.',
     portalRoute: '/visa',
   },
   {
     key: 'umrah',
-    name: 'Umrah Pilgrimage Division',
-    tagline: 'Direct Group Departures, Package Manifests & Family Bookings',
-    icon: '🕋',
+    name: 'Tours & Travels Division',
+    tagline: 'World Holidays, 5-Star Umrah Pilgrimages & Bespoke Group Departures',
+    icon: '🧳',
     accent: 'from-emerald-600/20 to-teal-600/20 text-emerald-400 border-emerald-500/30',
-    description: 'Gates public Umrah packages, seat hold reservations, ₹500 advance payments, and passenger manifests.',
+    description: 'Gates public tour packages, departure dates, seat hold reservations, and passenger manifests.',
     portalRoute: '/umrah',
   },
   {
@@ -141,7 +141,7 @@ export default function DivisionControlsTab() {
         <div>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-brand-gold animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">
+            <span className="text-[13px] font-bold uppercase tracking-widest text-brand-gold">
               Master Availability Controls
             </span>
           </div>
@@ -156,12 +156,12 @@ export default function DivisionControlsTab() {
         <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl px-5 py-3 backdrop-blur-sm">
           <div className="text-center">
             <div className="text-2xl font-display font-black text-brand-gold">{activeCount} / 5</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-white/60">Divisions Live</div>
+            <div className="text-[13px] font-bold uppercase tracking-wider text-white/60">Divisions Live</div>
           </div>
           <div className="h-8 w-px bg-white/15" />
           <div className="text-xs text-white/70">
             <div className="font-semibold text-white">Fail-Safe State</div>
-            <div className="text-[10px] text-white/50">
+            <div className="text-[13px] text-white/50">
               {data?.updatedAt ? `Last updated ${new Date(data.updatedAt * 1000).toLocaleDateString('en-IN')}` : 'Factory Defaults'}
             </div>
           </div>
@@ -202,12 +202,12 @@ export default function DivisionControlsTab() {
                       </div>
                       <div>
                         <h3 className="font-display text-sm font-bold text-brand-navy">{div.name}</h3>
-                        <span className="font-mono text-[10px] text-slate-400">{div.key}</span>
+                        <span className="font-mono text-[13px] text-slate-400">{div.key}</span>
                       </div>
                     </div>
 
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[13px] font-bold uppercase tracking-wider ${
                         isLive
                           ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
                           : 'bg-slate-100 text-slate-500 border border-slate-200'
@@ -220,12 +220,12 @@ export default function DivisionControlsTab() {
 
                   {/* Subtitle & Description */}
                   <p className="mt-3 text-xs font-semibold text-brand-navy/80">{div.tagline}</p>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">{div.description}</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{div.description}</p>
                 </div>
 
                 {/* Bottom Toggle Action */}
                 <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                  <span className="text-[11px] font-medium text-slate-400">
+                  <span className="text-sm font-medium text-slate-400">
                     Status: <strong className={isLive ? 'text-emerald-600' : 'text-slate-600'}>{isLive ? 'Active for Public & Clients' : 'Paused / Maintenance'}</strong>
                   </span>
 
@@ -254,7 +254,7 @@ export default function DivisionControlsTab() {
       )}
 
       {/* Operational Protocol Note */}
-      <div className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.02] p-4 text-[11px] text-slate-500 leading-relaxed">
+      <div className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.02] p-4 text-sm text-slate-500 leading-relaxed">
         <strong className="text-brand-navy">ℹ Operational Protocol:</strong> Deactivating a division switches its public inquiry routes to Coming Soon mode and restricts new client booking creation, while preserving all existing active client engagements, documents, and historical payments.
       </div>
     </div>

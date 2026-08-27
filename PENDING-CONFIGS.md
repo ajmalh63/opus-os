@@ -68,11 +68,24 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
   - Service token lane active (`/api/automation/*`, `X-Service-Token`).
   - 5 n8n workflow blueprints prepared in `automation/n8n/`.
 
-## D. Payment Gateway (Razorpay)
-- [x] **D1–D4. Commerce & Payment Gateway** — ✅ LIVE & VERIFIED
-  - Invoices, agreements, Umrah advances/balances, and Manpower VAS orders wired.
-  - Razorpay HMAC verification active.
-  - Database schema & D1 migrations fully applied (0001–0071).
+## D. Payment Gateway (Razorpay Standard Checkout & ERP Sync)
+- [x] **D1. Standard Web Checkout Architecture** — ✅ LIVE & FULLY INTEGRATED
+  - Standard SDK `<script src="https://checkout.razorpay.com/v1/checkout.js"></script>` loaded.
+  - Endpoints: `POST /api/create-order` and `POST /api/verify-payment`.
+  - Reusable `<RazorpayCheckoutButton />` component and `/test-payment` & `/pay` testing sandboxes active.
+- [x] **D2. Credentials & Secrets Isolation** — ✅ SECURE & HARDENED
+  - Active Razorpay API Key ID & Secret configured strictly in `.dev.vars` (local) / Cloudflare Worker Secrets (production HSM).
+  - Zero credentials or secrets committed in repo or sitting in client-side bundles; key ID is delivered dynamically via authenticated backend order creation.
+- [x] **D3. Real-Time ERPNext & n8n Synchronization** — ✅ LIVE & AUTOMATED
+  - Payment verifications automatically record to D1 database ledger, dispatch `payment.received` webhooks to n8n, and push `Sales Invoice` entries into ERPNext books with `Customer` auto-creation.
+- [x] **D4. Statutory 18% GST & Full ITC Model** — ✅ CONFIGURED & VERIFIED
+  - Statutory 18% GST (9% CGST + 9% SGST intra-state Telangana / 18% IGST inter-state) applied universally across all divisions (Study Abroad, Visa, Attestation, Manpower, Umrah tour packages).
+  - Exact integer paise tax calculations without rounding drift.
+- [x] **D5. All Division Payment Surfaces Connected** — ✅ COMPLETE
+  - Umrah travel booking party advance (₹500×pax) and balance payments.
+  - Manpower candidate VIP job seeker memberships & VAS add-ons.
+  - Staff Client 360 payments ledger & custom milestones.
+  - Admin unified transactions & billing hub.
 
 ## E. Open decisions (need a yes/no once)
 - [ ] **E1. OpenWA number** â€” deferred until a dedicated number exists (production lane
@@ -309,8 +322,8 @@ All technical, infrastructure, domain, database, security, and integration confi
    - SPF `v=spf1 include:secureserver.net ~all` and Titan DKIM configured for transactional and outbound mail.
 4. **[x] VPS Microservices & Integration Hub** — ✅ LIVE & WIRED
    - Mautic (:8085), Listmonk (:9009), Chatwoot (:3200), OpenWA (:2785), Cal.com/Cal.diy (:3000), Umami (:3002), Uptime Kuma (:3003) active with reachability probes.
-5. **[x] Payment Gateway & Commerce** — ✅ LIVE & VERIFIED
-   - Razorpay orders, webhooks, and HMAC signature verification active across all division payments and career add-on services.
+5. **[x] Payment Gateway & Commerce (Razorpay Standard Web Checkout)** — ✅ LIVE & VERIFIED
+   - Razorpay orders, standard web checkout modal, webhooks, and HMAC signature verification active across all division payments. Universal 18% GST (9% CGST + 9% SGST) with real-time ERPNext & n8n sync.
 6. **[x] Legal & Regulatory Compliance** — ✅ 100% COMPLIANT
    - Full disclosure across all 5 policy pages (`Terms`, `Privacy`, `Refund`, `Shipping`, `Contact`), clean branded footer, and ILO C181 / Indian Emigration Act compliant free candidate intake.
 
@@ -343,5 +356,60 @@ All technical, infrastructure, domain, database, security, and integration confi
 - [ ] **H12. WAF Logpush → R2 + Analytics** — Enable Cloudflare Logpush `http_requests` → R2 `waf-logs` bucket + Workers Analytics Engine for `Action=block` dashboards (replaces Athena if on Cloudflare-native)
 - [ ] **H13. Token Lifetime Hardening** — Shorten `portalToken` from sessionStorage-lifetime to `15m` absolute + refresh rotation for `studyAbroad`/`manpower` sensitive doc uploads; partner `opus_live_sk_` short-lived scoped per `thrive` call
 - [ ] **H14. OP-XXXX Enumeration Hardening** — Keep `OP-XXXX` display-only; ensure no payment/order path accepts `OP-XXXX` without Razorpay `order.notes.clientId` server check (already enforced in `POST /payments/verify`)
+
+---
+
+## ★ Multi-Source Review Aggregator & Sync Credentials (Google Maps & Trustpilot)
+**Context:** Native multi-source reviews aggregator, 1-click clipboard router, and Schema.org JSON-LD SEO engine are fully built in code (`feedback.ts`, `FeedbackModerationTab.tsx`, `ReviewShowcaseCarousel.tsx`, `ReviewAggregatorPill.tsx`, `ClientFeedbackModal.tsx`). The tasks below are the manual API credentials to plug in when ready.
+
+### 1. Google Business Profile / Google Maps
+- [ ] **G_REV1. Get Google Place ID & 1-Click URL**
+  - Go to [Google Place ID Finder](https://developers.google.com/maps/documentation/places/web-service/place-id) and search for *Opus Overseas* (or *Cordial Crafts*).
+  - Note down your `Place ID` (starts with `ChIJ...`).
+  - Direct 1-Click Review URL format: `https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID`
+- [ ] **G_REV2. Get Google Places API Key**
+  - In [Google Cloud Console](https://console.cloud.google.com/) -> **APIs & Services** -> **Credentials**, create an API Key and enable **Places API (New)**.
+- [ ] **G_REV3. Set Secrets & Variables**
+  - **Local Dev (`apps/api/.dev.vars`)**:
+    ```bash
+    GOOGLE_PLACES_API_KEY="your-google-api-key"
+    GOOGLE_PLACE_ID="your-place-id"
+    ```
+  - **Production Secrets (`wrangler secret put`)**:
+    ```bash
+    npx wrangler secret put GOOGLE_PLACES_API_KEY
+    npx wrangler secret put GOOGLE_PLACE_ID
+    ```
+  - **Frontend Client (`apps/app/.env`)**:
+    ```bash
+    VITE_GOOGLE_REVIEW_URL="https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID"
+    ```
+
+### 2. Trustpilot Business
+- [ ] **TP_REV1. Get Trustpilot Business Unit ID & API Key**
+  - Log in to [Trustpilot Business Portal](https://businessapp.b2b.trustpilot.com/) -> **Settings** -> **Integrations** -> **Developers / APIs**.
+  - Create an API app to get your **API Key (Client ID)** and your **Business Unit ID**.
+- [ ] **TP_REV2. Set Secrets & Variables**
+  - **Local Dev (`apps/api/.dev.vars`)**:
+    ```bash
+    TRUSTPILOT_API_KEY="your-trustpilot-api-key"
+    TRUSTPILOT_BUSINESS_UNIT_ID="your-business-unit-id"
+    ```
+  - **Production Secrets (`wrangler secret put`)**:
+    ```bash
+    npx wrangler secret put TRUSTPILOT_API_KEY
+    npx wrangler secret put TRUSTPILOT_BUSINESS_UNIT_ID
+    ```
+  - **Frontend Client (`apps/app/.env`)**:
+    ```bash
+    VITE_TRUSTPILOT_REVIEW_URL="https://www.trustpilot.com/evaluate/opusoverseas.com"
+    ```
+
+### 3. Verification & Live Sync Trigger
+- [ ] **REV_VERIFY. Trigger Sync in Superadmin**
+  - Navigate to **Superadmin Workspace** -> **Feedback & Reviews Tab**.
+  - Click **"Sync Google & Trustpilot"** to pull live reviews into Cloudflare D1.
+  - Toggle **"✓ Live"** or **"★ Pinned"** on individual reviews to feature them across the homepage and division portals.
+
 
 

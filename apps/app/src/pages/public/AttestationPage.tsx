@@ -231,7 +231,7 @@ export default function AttestationPage() {
                   className="rounded-full border border-white/25 bg-white/5 hover:bg-white/10 px-6 py-3.5 text-xs font-semibold text-white transition-all hover:border-brand-gold hover:text-brand-gold tactile-btn inline-flex items-center gap-1.5"
                 >
                   <span>📝 Request Quote & Dispatch Info</span>
-                  <span className="text-[10px] text-brand-gold">↗</span>
+                  <span className="text-[13px] text-brand-gold">↗</span>
                 </a>
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function AttestationPage() {
                       <p className="font-display text-xs font-bold uppercase tracking-wider text-brand-gold">Hague & GCC Compliant</p>
                       <p className="font-display text-sm font-extrabold text-brand-navy">Tamper-Evident Security</p>
                     </div>
-                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
+                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-2.5 py-1 text-[13px] font-bold font-mono">
                       ● Insured Transit
                     </span>
                   </div>
@@ -268,22 +268,22 @@ export default function AttestationPage() {
           <div>
             <span className="text-2xl mb-1 block">🔒</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Insured Transit</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Insured Logistics Secure Bags</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Insured Logistics Secure Bags</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">🏛️</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Direct MEA Submission</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">No sub-agent chain risk</p>
+            <p className="text-sm text-brand-textLight mt-0.5">No sub-agent chain risk</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">⏱️</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Express Stamping</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">3-7 Business Days Average</p>
+            <p className="text-sm text-brand-textLight mt-0.5">3-7 Business Days Average</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">🔎</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">QR Code Verification</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Official government sticker scan</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Official government sticker scan</p>
           </div>
         </div>
       </section>
@@ -318,20 +318,20 @@ export default function AttestationPage() {
                       </h3>
                     </div>
                     {isSelected && (
-                      <span className="rounded-full bg-brand-gold/20 text-brand-gold text-[10px] font-bold px-2 py-0.5 font-mono">Selected</span>
+                      <span className="rounded-full bg-brand-gold/20 text-brand-gold text-[13px] font-bold px-2 py-0.5 font-mono">Selected</span>
                     )}
                   </div>
                   <p className="text-xs font-semibold text-brand-gold mb-3">{cat.purpose}</p>
                   <div className="space-y-1.5 text-xs text-brand-textLight mb-4">
-                    <p className="font-bold text-brand-navy text-[11px] uppercase tracking-wider">Covered Documents:</p>
-                    <ul className="space-y-1 text-[11px]">
+                    <p className="font-bold text-brand-navy text-sm uppercase tracking-wider">Covered Documents:</p>
+                    <ul className="space-y-1 text-sm">
                       {cat.docs.map((d, i) => (
                         <li key={i} className="flex items-center gap-1.5 truncate"><span className="w-1 h-1 rounded-full bg-brand-gold shrink-0" />{d}</li>
                       ))}
                     </ul>
                   </div>
                 </div>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-brand-gold group-hover:text-brand-navy flex items-center gap-1">Explore →</div>
+                <div className="text-sm font-bold uppercase tracking-wider text-brand-gold group-hover:text-brand-navy flex items-center gap-1">Explore →</div>
               </div>
             );
           })}
@@ -340,7 +340,7 @@ export default function AttestationPage() {
           {DOCUMENT_CATEGORIES.map((_, i) => (
             <span key={i} className="h-1.5 w-1.5 rounded-full bg-brand-navy/15" />
           ))}
-          <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-brand-navy/35 flex items-center gap-1">Swipe to explore <span className="animate-pulse">→</span></span>
+          <span className="ml-2 text-[13px] font-bold uppercase tracking-wider text-brand-navy/35 flex items-center gap-1">Swipe to explore <span className="animate-pulse">→</span></span>
         </div>
         <div className="hidden md:grid md:grid-cols-3 gap-6">
           {DOCUMENT_CATEGORIES.map((cat) => {
@@ -362,7 +362,7 @@ export default function AttestationPage() {
                       </h3>
                     </div>
                     {isSelected && (
-                      <span className="rounded-full bg-brand-gold/20 text-brand-gold text-[10px] font-bold px-2 py-0.5 font-mono">Selected</span>
+                      <span className="rounded-full bg-brand-gold/20 text-brand-gold text-[13px] font-bold px-2 py-0.5 font-mono">Selected</span>
                     )}
                   </div>
 
@@ -371,8 +371,8 @@ export default function AttestationPage() {
                   </p>
 
                   <div className="space-y-1.5 text-xs text-brand-textLight mb-4">
-                    <p className="font-bold text-brand-navy text-[11px] uppercase tracking-wider">Covered Documents:</p>
-                    <ul className="space-y-1 text-[11px]">
+                    <p className="font-bold text-brand-navy text-sm uppercase tracking-wider">Covered Documents:</p>
+                    <ul className="space-y-1 text-sm">
                       {cat.docs.map((d, i) => (
                         <li key={i} className="flex items-center gap-1.5 truncate">
                           <span className="text-brand-gold font-bold">●</span> {d}
@@ -383,8 +383,8 @@ export default function AttestationPage() {
                 </div>
 
                 <div className="pt-3.5 border-t border-brand-navy/5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Standard Route:</p>
-                  <p className="text-[11px] font-mono text-brand-navy font-semibold">{cat.standardRoute}</p>
+                  <p className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Standard Route:</p>
+                  <p className="text-sm font-mono text-brand-navy font-semibold">{cat.standardRoute}</p>
                 </div>
               </div>
             );
@@ -397,7 +397,7 @@ export default function AttestationPage() {
         <DomainDarkGraphics variant="attestation" />
         <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
           <div className="mb-12 text-center space-y-3">
-            <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-gold font-mono">
+            <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3.5 py-1 text-[13px] font-bold uppercase tracking-wider text-brand-gold font-mono">
               Consular Chain Matrix
             </span>
             <h2 className="font-display fluid-h2 font-extrabold text-white">
@@ -410,7 +410,7 @@ export default function AttestationPage() {
 
           <div className="glass-light p-5 sm:p-9 rounded-2xl sm:rounded-3xl text-brand-navy shadow-2xl space-y-6">
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-2">
+              <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-2">
                 Select Destination Country / Treaty
               </label>
               <select
@@ -441,10 +441,10 @@ export default function AttestationPage() {
                       </span>
                       <div>
                         <p className="truncate text-xs sm:text-sm font-bold text-brand-navy">{s.step}</p>
-                        <p className="text-[10px] text-brand-textLight">Est. {s.timelineDays} working days</p>
+                        <p className="text-[13px] text-brand-textLight">Est. {s.timelineDays} working days</p>
                       </div>
                     </div>
-                    <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-[10px] font-bold text-emerald-800 shrink-0">
+                    <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-[13px] font-bold text-emerald-800 shrink-0">
                       Official Seal Milestone
                     </span>
                   </li>
@@ -456,7 +456,7 @@ export default function AttestationPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-brand-gold/15 border border-brand-gold/30 p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-brand-navy">Total Timeline: ~{totalDays} Working Days</p>
-                <p className="text-[11px] text-brand-textLight">Includes state HRD verification, MEA seals, and Insured Logistics tracking.</p>
+                <p className="text-sm text-brand-textLight">Includes state HRD verification, MEA seals, and Insured Logistics tracking.</p>
               </div>
               <div className="text-right shrink-0">
                 <button
@@ -485,10 +485,10 @@ export default function AttestationPage() {
               <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-white/40">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-brand-gold">Hague & GCC Legalization Desk</p>
+                    <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">Hague & GCC Legalization Desk</p>
                     <p className="text-xs sm:text-sm font-extrabold text-brand-navy">MEA Apostille & Consular Seals</p>
                   </div>
-                  <span className="rounded-full bg-sky-500/15 text-sky-800 px-2.5 py-1 text-[10px] font-bold font-mono">
+                  <span className="rounded-full bg-sky-500/15 text-sky-800 px-2.5 py-1 text-[13px] font-bold font-mono">
                     ● 100% Chain Security
                   </span>
                 </div>
@@ -587,37 +587,37 @@ export default function AttestationPage() {
             <form onSubmit={handleSubmitAttestation} className="space-y-4 lead-form-wrap">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Document Holder Name</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Document Holder Name</label>
                   <input required placeholder="As printed on certificate" value={clientName} onChange={(e) => setClientName(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Phone Number (with WhatsApp)</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Phone Number (with WhatsApp)</label>
                   <input required type="tel" placeholder="+91 98765 00001" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
                   <input required type="email" placeholder="you@example.com" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Certificate Type</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Certificate Type</label>
                   <input required placeholder="e.g. B.Tech Degree, Birth Cert" value={documentType} onChange={(e) => setDocumentType(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Target Country</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Target Country</label>
                   <input required placeholder="e.g. UAE, Saudi, USA" value={selectedCountry} onChange={(e) => setSelectedCountry(e.target.value)} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Return Delivery Postal Address (India)</label>
+                <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Return Delivery Postal Address (India)</label>
                 <textarea required rows={2} placeholder="House / Office address, Landmark, City, Pincode for return delivery" value={returnAddress} onChange={(e) => setReturnAddress(e.target.value)} />
               </div>
 
               <div className="pt-2">
-                <label className="flex items-start gap-3 text-[11px] leading-relaxed text-brand-textLight cursor-pointer">
+                <label className="flex items-start gap-3 text-sm leading-relaxed text-brand-textLight cursor-pointer">
                   <input
                     type="checkbox"
                     checked={consent}

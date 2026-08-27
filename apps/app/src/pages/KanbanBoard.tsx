@@ -6,7 +6,7 @@ import BoardsTab from '../components/BoardsTab.js';
 const divisionIcons: Record<string, string> = {
   'study-abroad': '🎓 Study Abroad',
   'visa': '🛂 Visa Prep',
-  'umrah': '🕋 Umrah Travel',
+  'umrah': '🧳 Tours & Travels',
   'attestation': '📜 Attestation',
   'manpower': '💼 Manpower',
 };
@@ -339,11 +339,11 @@ onSuccess: (data) => {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="gold-dot" />
-                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-gold">Operations · Staff Tasks</span>
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">Operations · Staff Tasks</span>
                 </div>
                 <h2 className="mt-1 font-display font-extrabold text-lg text-brand-navy">Staff Operations Tasks</h2>
               </div>
-              <div className="flex bg-brand-navy/[0.05] rounded-lg p-0.5 border border-brand-navy/10 text-[11px] font-bold self-end mb-1">
+              <div className="flex bg-brand-navy/[0.05] rounded-lg p-0.5 border border-brand-navy/10 text-sm font-bold self-end mb-1">
                 <button
                   onClick={() => setBoardType('pipeline')}
                   className={`px-3 py-1 rounded-md transition-all cursor-pointer ${isPipeline ? 'bg-brand-gold text-brand-navy shadow-xs font-extrabold' : 'text-brand-navy/50 hover:text-brand-navy'}`}
@@ -379,11 +379,11 @@ onSuccess: (data) => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="gold-dot" />
-                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-gold">Operations · Pipeline</span>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">Operations · Pipeline</span>
               </div>
               <h2 className="mt-1 font-display font-extrabold text-lg text-brand-navy">Universal Pipeline Board</h2>
             </div>
-            <div className="flex bg-brand-navy/[0.05] rounded-lg p-0.5 border border-brand-navy/10 text-[11px] font-bold self-end mb-1">
+            <div className="flex bg-brand-navy/[0.05] rounded-lg p-0.5 border border-brand-navy/10 text-sm font-bold self-end mb-1">
               <button
                 onClick={() => setBoardType('pipeline')}
                 className={`px-3 py-1 rounded-md transition-all cursor-pointer ${isPipeline ? 'bg-brand-gold text-brand-navy shadow-xs font-extrabold' : 'text-brand-navy/50 hover:text-brand-navy'}`}
@@ -402,7 +402,7 @@ onSuccess: (data) => {
           <div className="flex items-center gap-4 flex-wrap">
             {/* Realtime Search Bar */}
             <div className="min-w-[200px]">
-              <label className="text-[9px] uppercase text-brand-navy/40 font-semibold block mb-0.5">Search Candidate</label>
+              <label className="text-xs uppercase text-brand-navy/40 font-semibold block mb-0.5">Search Candidate</label>
               <input
                 type="text"
                 placeholder="Search name or ID..."
@@ -414,7 +414,7 @@ onSuccess: (data) => {
 
             {/* Division Select */}
             <div>
-              <label className="text-[9px] uppercase text-brand-navy/40 font-semibold block mb-0.5">Division</label>
+              <label className="text-xs uppercase text-brand-navy/40 font-semibold block mb-0.5">Division</label>
               <select 
                 value={divisionFilter}
                 onChange={(e) => setDivisionFilter(e.target.value)}
@@ -424,14 +424,14 @@ onSuccess: (data) => {
                 <option value="study-abroad">Study Abroad</option>
                 <option value="visa">Visa Services</option>
                 <option value="attestation">Attestation</option>
-                <option value="umrah">Umrah / Travel</option>
+                <option value="umrah">Tours &amp; Travels</option>
                 <option value="manpower">Manpower Recruitment</option>
               </select>
             </div>
 
             {/* Counselor Select */}
             <div>
-              <label className="text-[9px] uppercase text-brand-navy/40 font-semibold block mb-0.5">Counselor</label>
+              <label className="text-xs uppercase text-brand-navy/40 font-semibold block mb-0.5">Counselor</label>
               <select 
                 value={counselorFilter}
                 onChange={(e) => setCounselorFilter(e.target.value)}
@@ -478,7 +478,7 @@ onSuccess: (data) => {
 
         {/* Mobile swipe hint for kanban */}
         <div className="md:hidden px-5 pt-3 flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-navy/40">
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wider text-brand-navy/40">
             <span className="w-4 h-0.5 bg-brand-gold/30 rounded-full" /> Swipe columns <span className="animate-pulse">→</span>
           </span>
           <div className="flex items-center gap-1.5">
@@ -541,14 +541,14 @@ onSuccess: (data) => {
                 }`}>
                   <div className="flex flex-col">
                     <span className="font-display font-bold text-xs text-brand-navy uppercase tracking-wider">{column.name}</span>
-                    <div className="flex items-center gap-1.5 mt-0.5 text-[9px] text-brand-navy/40 font-bold uppercase">
+                    <div className="flex items-center gap-1.5 mt-0.5 text-xs text-brand-navy/40 font-bold uppercase">
                       {column.wipLimit && (
                         <span>Limit: {column.wipLimit} |</span>
                       )}
                       <span className="text-brand-gold font-mono">₹{(totalBalance / 100).toFixed(2)}</span>
                     </div>
                   </div>
-                  <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${
+                  <span className={`px-2 py-0.5 text-[13px] rounded font-bold ${
                     isWipViolated ? 'bg-brand-error text-white animate-bounce' : 'bg-brand-gold text-brand-navy'
                   }`}>
                     {filteredCards.length}
@@ -574,7 +574,7 @@ onSuccess: (data) => {
                         }`}
                       >
                         <div className="flex justify-between items-start gap-1">
-                          <span className="text-[9px] font-bold text-brand-gold uppercase tracking-wider bg-brand-gold/10 px-1.5 py-0.5 rounded truncate max-w-[150px]">
+                          <span className="text-xs font-bold text-brand-gold uppercase tracking-wider bg-brand-gold/10 px-1.5 py-0.5 rounded truncate max-w-[150px]">
                             {divisionIcons[card.division] || card.division}
                           </span>
                           <div className="flex items-center gap-1">
@@ -584,7 +584,7 @@ onSuccess: (data) => {
                               if (urgentTask && urgentTask.dueDate) {
                                 const daysLeft = Math.max(0, Math.ceil((urgentTask.dueDate - nowSec) / 86400));
                                 return (
-                                  <span className="text-[8px] bg-red-100 text-red-900 border border-red-300 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider animate-pulse flex items-center gap-0.5 shrink-0">
+                                  <span className="text-sm bg-red-100 text-red-900 border border-red-300 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider animate-pulse flex items-center gap-0.5 shrink-0">
                                     <span>🔥 {daysLeft === 0 ? 'Due Today' : `Due in ${daysLeft}d`}</span>
                                   </span>
                                 );
@@ -592,11 +592,11 @@ onSuccess: (data) => {
                               return null;
                             })()}
                             {hasBlocker ? (
-                              <span className="text-[8px] bg-rose-50 text-brand-error px-1.5 py-0.5 border border-rose-200 rounded font-bold uppercase tracking-wider animate-pulse flex items-center shrink-0">
+                              <span className="text-sm bg-rose-50 text-brand-error px-1.5 py-0.5 border border-rose-200 rounded font-bold uppercase tracking-wider animate-pulse flex items-center shrink-0">
                                 ⚠️ Unassigned
                               </span>
                             ) : (
-                              <span className="text-[8px] bg-slate-50 text-slate-500 px-1.5 py-0.5 border border-slate-200 rounded font-semibold uppercase tracking-wider shrink-0">
+                              <span className="text-sm bg-slate-50 text-slate-500 px-1.5 py-0.5 border border-slate-200 rounded font-semibold uppercase tracking-wider shrink-0">
                                 Assigned
                               </span>
                             )}
@@ -605,13 +605,13 @@ onSuccess: (data) => {
 
                         <div>
                           <h4 className="text-xs font-bold text-brand-navy truncate hover:text-brand-gold transition">{card.clientName}</h4>
-                          <p className="text-[9px] text-brand-navy/40 mt-0.5 font-mono">ID: {card.clientId}</p>
+                          <p className="text-xs text-brand-navy/40 mt-0.5 font-mono">ID: {card.clientId}</p>
                         </div>
 
                         {/* Task progress bar directly on the card */}
                         {totalTasks > 0 && (
                           <div className="space-y-1">
-                            <div className="flex justify-between text-[8px] text-brand-navy/40 font-bold uppercase">
+                            <div className="flex justify-between text-sm text-brand-navy/40 font-bold uppercase">
                               <span>Tasks progress</span>
                               <span>{tasksDone}/{totalTasks} ({progressPercent}%)</span>
                             </div>
@@ -624,9 +624,9 @@ onSuccess: (data) => {
                           </div>
                         )}
 
-                        <div className="flex justify-between items-center text-[10px] text-brand-navy/40 pt-2 border-t border-brand-navy/[0.08]">
+                        <div className="flex justify-between items-center text-[13px] text-brand-navy/40 pt-2 border-t border-brand-navy/[0.08]">
                           <span className="font-mono">Bal: ₹{(card.outstandingBalance / 100).toFixed(2)}</span>
-                          <span className="font-semibold text-brand-gold hover:underline text-[9px] cursor-pointer">
+                          <span className="font-semibold text-brand-gold hover:underline text-xs cursor-pointer">
                             View details →
                           </span>
                         </div>
@@ -635,7 +635,7 @@ onSuccess: (data) => {
                   })}
 
                   {filteredCards.length === 0 && (
-                    <div className="p-8 text-center text-[10px] text-brand-navy/40 border border-dashed border-brand-navy/10 rounded-lg bg-white/50">
+                    <div className="p-8 text-center text-[13px] text-brand-navy/40 border border-dashed border-brand-navy/10 rounded-lg bg-white/50">
                       No Active Cards
                     </div>
                   )}
@@ -658,9 +658,9 @@ onSuccess: (data) => {
             <div className="flex flex-col gap-6">
               <div className="flex justify-between items-start border-b border-brand-navy/10 pb-4">
                 <div>
-                  <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest">Detail Preview</span>
+                  <span className="text-xs font-bold text-brand-gold uppercase tracking-widest">Detail Preview</span>
                   <h3 className="font-display font-extrabold text-lg text-brand-navy mt-1">{selectedCard.clientName}</h3>
-                  <p className="text-[10px] text-brand-navy/40 mt-0.5">Application Token: <span className="font-mono text-brand-navy font-semibold">{selectedCard.clientId}</span></p>
+                  <p className="text-[13px] text-brand-navy/40 mt-0.5">Application Token: <span className="font-mono text-brand-navy font-semibold">{selectedCard.clientId}</span></p>
                 </div>
                 <button 
                   onClick={() => setSelectedCardId(null)}
@@ -674,20 +674,20 @@ onSuccess: (data) => {
               <div className="space-y-3 border rounded-xl border-brand-navy/10 bg-brand-navy/[0.04] p-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-brand-navy uppercase tracking-wider">Card Tasks</h4>
-                  <span className="text-[9px] text-brand-navy/40">linked to this card</span>
+                  <span className="text-xs text-brand-navy/40">linked to this card</span>
                 </div>
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
                   {(selectedCard.tasks || []).length === 0 && (
-                    <p className="text-[10px] text-brand-navy/40 text-center py-2">No tasks on this card yet.</p>
+                    <p className="text-[13px] text-brand-navy/40 text-center py-2">No tasks on this card yet.</p>
                   )}
                   {selectedCard.tasks?.map((t) => (
-                    <div key={t.id} className="flex items-center gap-2 bg-brand-navy/[0.04] border border-brand-navy/10 rounded-lg px-2.5 py-2 text-[10px]">
+                    <div key={t.id} className="flex items-center gap-2 bg-brand-navy/[0.04] border border-brand-navy/10 rounded-lg px-2.5 py-2 text-[13px]">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${t.status === 'done' ? 'bg-emerald-500' : t.status === 'in_progress' ? 'bg-brand-gold' : 'bg-brand-navy/[0.08]'}`} />
                       <span className={`flex-1 truncate ${t.status === 'done' ? 'line-through text-brand-navy/40' : 'text-brand-navy font-medium'}`} title={t.title}>{t.title}</span>
                       <div className="flex gap-2 shrink-0">
                         <button
                           onClick={() => toggleCardTask.mutate({ taskId: t.id, status: t.status === 'done' ? 'open' : t.status === 'in_progress' ? 'done' : 'in_progress' })}
-                          className="text-[8px] font-bold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer"
+                          className="text-sm font-bold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer"
                         >
                           {t.status === 'done' ? 'Reopen' : 'Complete'}
                         </button>
@@ -697,7 +697,7 @@ onSuccess: (data) => {
                               deleteCardTask.mutate({ taskId: t.id });
                             }
                           }}
-                          className="text-[8px] font-bold uppercase tracking-wider text-rose-600 hover:underline cursor-pointer"
+                          className="text-sm font-bold uppercase tracking-wider text-rose-600 hover:underline cursor-pointer"
                         >
                           Delete
                         </button>
@@ -710,9 +710,9 @@ onSuccess: (data) => {
                     value={cardTaskTitle}
                     onChange={(e) => setCardTaskTitle(e.target.value)}
                     placeholder="Add a task…"
-                    className="flex-1 bg-white border border-brand-navy/10 rounded px-2.5 py-2 text-[10px] text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none"
+                    className="flex-1 bg-white border border-brand-navy/10 rounded px-2.5 py-2 text-[13px] text-brand-navy placeholder:text-brand-navy/40 focus:border-brand-gold focus:outline-none"
                   />
-                  <button type="submit" disabled={addCardTask.isPending || !cardTaskTitle.trim()} className="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-3 rounded text-[10px] font-bold uppercase disabled:opacity-40 cursor-pointer">
+                  <button type="submit" disabled={addCardTask.isPending || !cardTaskTitle.trim()} className="bg-brand-gold hover:bg-brand-goldHover text-brand-navy px-3 rounded text-[13px] font-bold uppercase disabled:opacity-40 cursor-pointer">
                     Add
                   </button>
                 </form>
@@ -722,7 +722,7 @@ onSuccess: (data) => {
               <div className="space-y-4">
                 {/* Editable Engagement Title */}
                 <div className="flex flex-col gap-1 py-1.5 border-b border-brand-navy/[0.08]">
-                  <label className="text-[10px] uppercase text-brand-navy/40 font-bold">Engagement Title</label>
+                  <label className="text-[13px] uppercase text-brand-navy/40 font-bold">Engagement Title</label>
                   <input
                     type="text"
                     value={editTitle}
@@ -738,7 +738,7 @@ onSuccess: (data) => {
 
                 {/* Editable Outstanding Balance */}
                 <div className="flex flex-col gap-1 py-1.5 border-b border-brand-navy/[0.08]">
-                  <label className="text-[10px] uppercase text-brand-navy/40 font-bold">Outstanding Balance (₹)</label>
+                  <label className="text-[13px] uppercase text-brand-navy/40 font-bold">Outstanding Balance (₹)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -760,7 +760,7 @@ onSuccess: (data) => {
                 {/* Service Division */}
                 <div className="flex justify-between items-center text-xs py-2 border-b border-brand-navy/[0.08]">
                   <span className="text-brand-navy/40 font-semibold">Service Division</span>
-                  <span className="font-bold text-brand-navy uppercase text-[10px] bg-brand-gold/10 px-1.5 py-0.5 rounded">
+                  <span className="font-bold text-brand-navy uppercase text-[13px] bg-brand-gold/10 px-1.5 py-0.5 rounded">
                     {divisionIcons[selectedCard.division] || selectedCard.division}
                   </span>
                 </div>
@@ -836,7 +836,7 @@ onSuccess: (data) => {
               {/* Danger Zone */}
               <div className="space-y-2 border rounded-xl border-rose-200 bg-rose-50/20 p-4 mt-2">
                 <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider">Danger Zone</h4>
-                <p className="text-[9px] text-rose-700/80">Permanently delete this engagement tracking card from the system database. This cannot be undone.</p>
+                <p className="text-xs text-rose-700/80">Permanently delete this engagement tracking card from the system database. This cannot be undone.</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -844,7 +844,7 @@ onSuccess: (data) => {
                       deleteCardMutation.mutate({ cardId: selectedCard.id });
                     }
                   }}
-                  className="w-full bg-rose-650 hover:bg-rose-700 text-white py-2 rounded text-[10px] font-bold uppercase tracking-wider transition cursor-pointer"
+                  className="w-full bg-rose-650 hover:bg-rose-700 text-white py-2 rounded text-[13px] font-bold uppercase tracking-wider transition cursor-pointer"
                 >
                   Delete Card Completely
                 </button>

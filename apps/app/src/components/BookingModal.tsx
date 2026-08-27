@@ -233,20 +233,20 @@ export default function BookingModal({
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-brand-navy/10 pb-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-brand-gold/15 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-brand-navy">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-gold animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-brand-gold/15 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-brand-navy">
+              <span className="h-2 w-2 rounded-full bg-brand-gold animate-pulse" />
               Verified 1-on-1 Booking
             </div>
-            <h3 className="mt-1.5 font-display text-xl font-extrabold text-brand-navy">
+            <h3 className="mt-2 font-display text-xl sm:text-2xl font-extrabold text-brand-navy">
               {DIVISION_LABELS[activeDivision] || 'Consultation Booking'}
             </h3>
-            <p className="text-xs font-semibold text-brand-navy/60">
+            <p className="text-xs sm:text-sm font-medium text-brand-navy/70 mt-1">
               Senior Counselor · 30 Min Session · Complimentary & Personalized
             </p>
           </div>
           <button
             onClick={onClose}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-brand-navy/5 p-2 text-brand-navy/50 transition hover:bg-brand-navy/10 hover:text-brand-navy cursor-pointer"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-brand-navy/5 p-2 text-brand-navy/50 transition hover:bg-brand-navy/10 hover:text-brand-navy cursor-pointer text-lg"
             aria-label="Close modal"
           >
             ✕
@@ -259,38 +259,38 @@ export default function BookingModal({
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl">
               ✅
             </div>
-            <h4 className="mt-4 font-display text-lg font-extrabold text-brand-navy">
+            <h4 className="mt-4 font-display text-xl font-extrabold text-brand-navy">
               Verification Successful!
             </h4>
-            <p className="mt-2 text-xs font-medium text-brand-navy/80">
+            <p className="mt-2 text-sm font-medium text-brand-navy/80">
               We have opened your verified calendar slot picker in a new tab.
               <br />
-              <span className="text-[11px] text-brand-navy/60">
+              <span className="text-xs sm:text-sm text-brand-navy/60">
                 Please select your preferred date and time on the calendar to finalize your Google Meet session.
               </span>
             </p>
 
-            <div className="mt-6 rounded-2xl bg-brand-navy/[0.03] p-4 text-left border border-brand-navy/10">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-brand-navy/50">Consultation Details:</p>
-              <ul className="mt-1 space-y-1 text-xs text-brand-navy/70">
+            <div className="mt-6 rounded-2xl bg-brand-navy/[0.03] p-5 text-left border border-brand-navy/10">
+              <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/60">Consultation Details:</p>
+              <ul className="mt-2 space-y-1.5 text-sm text-brand-navy/80">
                 <li>• <strong>Applicant:</strong> {name} ({fullPhone || phone})</li>
                 <li>• <strong>Email:</strong> {email}</li>
                 <li>• <strong>Division:</strong> {DIVISION_LABELS[activeDivision]}</li>
               </ul>
             </div>
 
-            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <a
                 href={bookingRedirectUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="tactile-btn inline-flex min-h-11 items-center justify-center rounded-full bg-brand-gold px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-navy hover:bg-brand-gold-hover hover:text-white"
+                className="tactile-btn inline-flex min-h-12 items-center justify-center rounded-full bg-brand-gold px-7 py-3 text-sm font-bold uppercase tracking-wider text-brand-navy hover:bg-brand-gold-hover hover:text-white"
               >
                 📅 Open Calendar Selector Again ↗
               </a>
               <button
                 onClick={onClose}
-                className="tactile-btn min-h-11 rounded-full border border-brand-navy/15 bg-white px-6 py-2.5 text-xs font-bold text-brand-navy hover:bg-brand-navy/5 cursor-pointer"
+                className="tactile-btn min-h-12 rounded-full border border-brand-navy/15 bg-white px-7 py-3 text-sm font-bold text-brand-navy hover:bg-brand-navy/5 cursor-pointer"
               >
                 Close
               </button>
@@ -311,19 +311,19 @@ export default function BookingModal({
             />
 
             {/* Division Qualification Fields */}
-            <div className="rounded-2xl border border-brand-navy/10 bg-brand-navy/[0.02] p-3.5 space-y-3">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy/50">
+            <div className="rounded-2xl border border-brand-navy/10 bg-brand-navy/[0.02] p-4 sm:p-5 space-y-3.5">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-brand-navy/60">
                 Consultation Topic & Preferences
               </p>
 
               {activeDivision === 'study-abroad' && (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase text-brand-navy/60 mb-1">Target Country</label>
+                    <label className="block text-xs font-bold uppercase text-brand-navy/70 mb-1.5">Target Country</label>
                     <select
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
-                      className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3 py-2 text-xs font-semibold text-brand-navy focus:border-brand-gold focus:outline-none"
+                      className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-brand-navy focus:border-brand-gold focus:outline-none"
                     >
                       {STUDY_ABROAD_DESTINATIONS.map((d) => (
                         <option key={d} value={d}>{d}</option>
@@ -331,11 +331,11 @@ export default function BookingModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase text-brand-navy/60 mb-1">Target Intake</label>
+                    <label className="block text-xs font-bold uppercase text-brand-navy/70 mb-1.5">Target Intake</label>
                     <select
                       value={intake}
                       onChange={(e) => setIntake(e.target.value)}
-                      className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3 py-2 text-xs font-semibold text-brand-navy focus:border-brand-gold focus:outline-none"
+                      className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-brand-navy focus:border-brand-gold focus:outline-none"
                     >
                       {STUDY_ABROAD_INTAKES.map((i) => (
                         <option key={i} value={i}>{i}</option>
@@ -347,11 +347,11 @@ export default function BookingModal({
 
               {activeDivision === 'visa' && (
                 <div>
-                  <label className="block text-[10px] font-bold uppercase text-brand-navy/60 mb-1">Visa Category Needed</label>
+                  <label className="block text-xs font-bold uppercase text-brand-navy/70 mb-1.5">Visa Category Needed</label>
                   <select
                     value={visaCategory}
                     onChange={(e) => setVisaCategory(e.target.value)}
-                    className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3 py-2 text-xs font-semibold text-brand-navy focus:border-brand-gold focus:outline-none"
+                    className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-brand-navy focus:border-brand-gold focus:outline-none"
                   >
                     {VISA_CATEGORIES.map((v) => (
                       <option key={v} value={v}>{v}</option>
@@ -362,11 +362,11 @@ export default function BookingModal({
 
               {activeDivision === 'manpower' && (
                 <div>
-                  <label className="block text-[10px] font-bold uppercase text-brand-navy/60 mb-1">Trade / Industry Specialization</label>
+                  <label className="block text-xs font-bold uppercase text-brand-navy/70 mb-1.5">Trade / Industry Specialization</label>
                   <select
                     value={trade}
                     onChange={(e) => setTrade(e.target.value)}
-                    className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3 py-2 text-xs font-semibold text-brand-navy focus:border-brand-gold focus:outline-none"
+                    className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-brand-navy focus:border-brand-gold focus:outline-none"
                   >
                     {MANPOWER_TRADES.map((t) => (
                       <option key={t} value={t}>{t}</option>
@@ -378,50 +378,50 @@ export default function BookingModal({
               {/* Dynamic Write-in for "Other" */}
               {isOtherSelected && (
                 <div>
-                  <label className="block text-[10px] font-bold uppercase text-brand-navy/60 mb-1">Specify Details *</label>
+                  <label className="block text-xs font-bold uppercase text-brand-navy/70 mb-1.5">Specify Details *</label>
                   <input
                     value={customDetail}
                     onChange={(e) => setCustomDetail(e.target.value)}
                     placeholder="Tell us your specific requirement..."
-                    className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3 py-2 text-xs text-brand-navy focus:border-brand-gold focus:outline-none"
+                    className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-sm text-brand-navy focus:border-brand-gold focus:outline-none"
                   />
                 </div>
               )}
             </div>
 
             {/* Contact Details */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
               <div>
-                <label className="block text-[10px] font-bold uppercase text-brand-navy/60 mb-1">Your Full Name *</label>
+                <label className="block text-xs font-bold uppercase text-brand-navy/70 mb-1.5">Your Full Name *</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Asim Hassan"
                   required
-                  className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-3 py-2.5 text-xs text-brand-navy focus:border-brand-gold focus:outline-none"
+                  className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-3.5 py-2.5 text-sm text-brand-navy focus:border-brand-gold focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase text-brand-navy/60 mb-1">Email Address *</label>
+                <label className="block text-xs font-bold uppercase text-brand-navy/70 mb-1.5">Email Address *</label>
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   placeholder="name@example.com"
                   required
-                  className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-3 py-2.5 text-xs text-brand-navy focus:border-brand-gold focus:outline-none"
+                  className="min-h-11 w-full rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-3.5 py-2.5 text-sm text-brand-navy focus:border-brand-gold focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Phone with Country Code */}
             <div>
-              <label className="block text-[10px] font-bold uppercase text-brand-navy/60 mb-1">WhatsApp / Phone Number *</label>
-              <div className="flex gap-2">
+              <label className="block text-xs font-bold uppercase text-brand-navy/70 mb-1.5">WhatsApp / Phone Number *</label>
+              <div className="flex gap-2.5">
                 <select
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
-                  className="min-h-11 w-32 rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-2 py-2 text-xs font-bold text-brand-navy focus:border-brand-gold focus:outline-none"
+                  className="min-h-11 w-36 rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-3 py-2 text-sm font-bold text-brand-navy focus:border-brand-gold focus:outline-none"
                 >
                   {COUNTRY_CODES.map((c) => (
                     <option key={c.code} value={c.code}>{c.label}</option>
@@ -433,7 +433,7 @@ export default function BookingModal({
                   type="tel"
                   placeholder="98765 43210"
                   required
-                  className="min-h-11 flex-1 rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-3 py-2.5 text-xs font-bold text-brand-navy focus:border-brand-gold focus:outline-none"
+                  className="min-h-11 flex-1 rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-3.5 py-2.5 text-sm font-bold text-brand-navy focus:border-brand-gold focus:outline-none"
                 />
               </div>
             </div>
@@ -443,22 +443,22 @@ export default function BookingModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any specific questions or profile background for the counselor (optional)..."
               rows={2}
-              className="w-full rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-3 py-2 text-xs text-brand-navy focus:border-brand-gold focus:outline-none"
+              className="w-full rounded-xl border border-brand-navy/15 bg-brand-navy/[0.02] px-3.5 py-2.5 text-sm text-brand-navy focus:border-brand-gold focus:outline-none"
             />
 
             {/* Cloudflare Turnstile Bot Gate */}
             <TurnstileWidget onToken={setToken} />
 
-            {error && <p className="rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-700">{error}</p>}
+            {error && <p className="rounded-xl bg-rose-50 p-3.5 text-sm font-semibold text-rose-700">{error}</p>}
 
             <button
               type="submit"
               disabled={submitting}
-              className="tactile-btn min-h-12 w-full rounded-full bg-brand-gold py-3 text-xs font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white disabled:opacity-50 cursor-pointer shadow-md"
+              className="tactile-btn min-h-12 w-full rounded-full bg-brand-gold py-3 text-sm font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white disabled:opacity-50 cursor-pointer shadow-md"
             >
               {submitting ? 'Verifying Details…' : '📅 Proceed to Choose Your Slot →'}
             </button>
-            <p className="text-center text-[10px] text-brand-navy/40">
+            <p className="text-center text-xs text-brand-navy/50">
               Protected by Cloudflare Turnstile · Session conducted via Google Meet
             </p>
           </form>

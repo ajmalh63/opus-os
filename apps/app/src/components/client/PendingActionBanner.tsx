@@ -22,7 +22,7 @@ export default function PendingActionBanner({
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className="w-9 h-9 rounded-full bg-brand-navy text-[#FFD85A] grid place-items-center font-black text-sm shrink-0">!</div>
         <div className="min-w-0">
-          <div className="text-[11px] font-black tracking-[0.08em] text-brand-navy">PENDING ACTION • {dueLabel}</div>
+          <div className="text-sm font-black tracking-[0.08em] text-brand-navy">PENDING ACTION • {dueLabel}</div>
           <div className="text-sm font-semibold text-brand-navy leading-tight truncate">
             {title} <span className="font-normal text-[#6B5E2B]">— Estimated: {estimate} • Keep momentum, you are 60% done.</span>
           </div>

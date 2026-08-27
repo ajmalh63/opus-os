@@ -18,7 +18,7 @@ export default function EmptyVaultState({ onAction }: { onAction?: () => void })
       >
         Upload first document →
       </button>
-      <p className="mt-2 text-[11px] text-slate-400">Supports PDF/JPG up to 10MB • Or drag & drop</p>
+      <p className="mt-2 text-sm text-slate-400">Supports PDF/JPG up to 10MB • Or drag & drop</p>
     </div>
   );
 }

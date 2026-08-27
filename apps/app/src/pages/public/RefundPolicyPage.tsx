@@ -76,7 +76,7 @@ export default function RefundPolicyPage() {
               </div>
 
               <div className="p-4 rounded-2xl bg-white border border-brand-navy/10">
-                <h3 className="font-display text-sm font-bold text-brand-navy mb-1">✈️ Global Visa Services</h3>
+                <h3 className="font-display text-sm font-bold text-brand-navy mb-1">🛂 Global Visa Services</h3>
                 <ul className="list-disc pl-5 space-y-1 text-xs text-brand-textLight">
                   <li><strong>Pre-Submission:</strong> 100% refund of professional fees if visa file processing is cancelled prior to consular portal transmission.</li>
                   <li><strong>Post-Submission:</strong> Sovereign consular fees, VFS biometric appointment booking charges, and mandatory travel insurance premiums are strictly non-refundable.</li>

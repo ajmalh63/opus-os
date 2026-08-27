@@ -58,14 +58,28 @@ export default function ClientFeedbackModal({
       setSubmitted(true);
       queryClient.invalidateQueries({ queryKey: ['approvedFeedback'] });
       queryClient.invalidateQueries({ queryKey: ['adminFeedback'] });
-      setTimeout(() => {
-        setSubmitted(false);
-        onClose();
-        setTitle('');
-        setComment('');
-      }, 2000);
     },
   });
+
+  const [copied, setCopied] = useState(false);
+
+  const handleShareToGoogle = () => {
+    if (comment) {
+      navigator.clipboard?.writeText(comment).catch(() => {});
+      setCopied(true);
+    }
+    const googleUrl = import.meta.env.VITE_GOOGLE_REVIEW_URL || 'https://search.google.com/local/writereview?placeid=ChIJ00000000000000000';
+    window.open(googleUrl, '_blank');
+  };
+
+  const handleShareToTrustpilot = () => {
+    if (comment) {
+      navigator.clipboard?.writeText(comment).catch(() => {});
+      setCopied(true);
+    }
+    const tpUrl = import.meta.env.VITE_TRUSTPILOT_REVIEW_URL || 'https://www.trustpilot.com/evaluate/opusoverseas.com';
+    window.open(tpUrl, '_blank');
+  };
 
   if (!open) return null;
 
@@ -99,10 +113,60 @@ export default function ClientFeedbackModal({
         </div>
 
         {submitted ? (
-          <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
+          <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-4">
             <div className="text-3xl">🎉</div>
-            <h4 className="font-bold text-emerald-900 text-sm">Thank You for Your Feedback!</h4>
-            <p className="text-xs text-emerald-700">Your review helps future applicants and keeps our service honest.</p>
+            <div>
+              <h4 className="font-bold text-emerald-900 text-base">Thank You for Your Feedback!</h4>
+              <p className="text-xs text-emerald-700 mt-1">Your review has been logged with our central advisory desk.</p>
+            </div>
+
+            {rating >= 4 && (
+              <div className="bg-white p-4 rounded-2xl border border-emerald-200/80 shadow-xs space-y-2.5 text-left">
+                <div className="text-xs font-bold text-brand-navy flex items-center gap-1.5">
+                  <span>🚀</span> Would you mind sharing this on Google?
+                </div>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  We'll copy your review to your clipboard so you can paste and post it in 3 seconds!
+                </p>
+
+                {copied && (
+                  <div className="text-[13px] text-emerald-700 bg-emerald-100/60 px-2 py-1 rounded-md font-bold">
+                    ✓ Review copied to clipboard! Paste it on the page that opens.
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleShareToGoogle}
+                    className="flex-1 bg-gradient-to-r from-brand-gold to-amber-500 hover:from-amber-400 hover:to-brand-gold text-brand-navy font-bold text-xs py-2.5 px-3 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>🌐</span> Post on Google (1-Click)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShareToTrustpilot}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>★</span> Trustpilot
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setSubmitted(false);
+                onClose();
+                setTitle('');
+                setComment('');
+                setCopied(false);
+              }}
+              className="text-xs text-slate-500 hover:text-brand-navy font-bold pt-2 cursor-pointer"
+            >
+              Done & Return to Workspace →
+            </button>
           </div>
         ) : (
           <form
@@ -132,7 +196,7 @@ export default function ClientFeedbackModal({
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] font-bold text-brand-navy/70 pt-1">
+              <p className="text-sm font-bold text-brand-navy/70 pt-1">
                 {rating === 5 ? '⭐⭐⭐⭐⭐ Exceptional & Fast' : rating === 4 ? '⭐⭐⭐⭐ Great Experience' : rating === 3 ? '⭐⭐⭐ Satisfactory' : '⚠️ Needs Improvement'}
               </p>
             </div>
@@ -140,7 +204,7 @@ export default function ClientFeedbackModal({
             {/* Division & Name */}
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] font-bold uppercase text-brand-navy/60 block mb-1">Your Name / Initials</label>
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60 block mb-1">Your Name / Initials</label>
                 <input
                   type="text"
                   value={name}
@@ -151,7 +215,7 @@ export default function ClientFeedbackModal({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-brand-navy/60 block mb-1">Division / Service</label>
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60 block mb-1">Division / Service</label>
                 <select
                   value={selectedDivision}
                   onChange={(e) => setSelectedDivision(e.target.value)}
@@ -170,7 +234,7 @@ export default function ClientFeedbackModal({
             {/* Review Title & Counselor */}
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] font-bold uppercase text-brand-navy/60 block mb-1">Headline (Optional)</label>
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60 block mb-1">Headline (Optional)</label>
                 <input
                   type="text"
                   value={title}
@@ -181,7 +245,7 @@ export default function ClientFeedbackModal({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-brand-navy/60 block mb-1">Counselor Name (Optional)</label>
+                <label className="text-[13px] font-bold uppercase text-brand-navy/60 block mb-1">Counselor Name (Optional)</label>
                 <input
                   type="text"
                   value={counselor}
@@ -194,7 +258,7 @@ export default function ClientFeedbackModal({
 
             {/* Review Body */}
             <div>
-              <label className="text-[10px] font-bold uppercase text-brand-navy/60 block mb-1">Your Detailed Experience *</label>
+              <label className="text-[13px] font-bold uppercase text-brand-navy/60 block mb-1">Your Detailed Experience *</label>
               <textarea
                 rows={3}
                 required
@@ -214,7 +278,7 @@ export default function ClientFeedbackModal({
                 onChange={(e) => setConsent(e.target.checked)}
                 className="rounded border-brand-navy/20 text-brand-navy focus:ring-brand-gold mt-0.5"
               />
-              <label htmlFor="consentPublish" className="text-[11px] text-slate-600 leading-tight cursor-pointer">
+              <label htmlFor="consentPublish" className="text-sm text-slate-600 leading-tight cursor-pointer">
                 I agree to have my review featured publicly on the Opus Overseas platform (last name will be formatted with initial for privacy).
               </label>
             </div>

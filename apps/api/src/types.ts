@@ -52,10 +52,9 @@ export interface OpusEnv {
   ERPNEXT_API_KEY?: string;
   ERPNEXT_API_SECRET?: string;
 
-  // Environment
-  ENVIRONMENT?: string;
-
-  // Resume parser mode (B-3). 'mock' = explicitly labeled demo data only;
-  // 'real' = Workers AI parsing (must be implemented; fails loud 501 if not).
-  MANPOWER_AI?: 'mock' | 'real';
+  // Multi-Source Review Aggregator (Google Places & Trustpilot)
+  GOOGLE_PLACES_API_KEY?: string;
+  GOOGLE_PLACE_ID?: string;
+  TRUSTPILOT_API_KEY?: string;
+  TRUSTPILOT_BUSINESS_UNIT_ID?: string;
 }

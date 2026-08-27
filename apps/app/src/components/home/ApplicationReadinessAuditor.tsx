@@ -141,7 +141,7 @@ export default function ApplicationReadinessAuditor() {
         
         {/* Title */}
         <div className="mb-12 text-center space-y-3">
-          <span className="rounded-full bg-brand-gold/15 border border-brand-gold/30 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-gold font-mono">
+          <span className="rounded-full bg-brand-gold/15 border border-brand-gold/30 px-3.5 py-1 text-sm font-bold uppercase tracking-wider text-brand-gold font-mono">
             Interactive Assessment Engine
           </span>
           <h2 className="font-display fluid-h2 font-extrabold text-brand-navy tracking-tight">
@@ -154,14 +154,14 @@ export default function ApplicationReadinessAuditor() {
 
         {/* Division Selector Tabs — swipeable on mobile */}
         <div className="mb-2 flex items-center justify-center">
-          <span className="md:hidden inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-navy/35">
+          <span className="md:hidden inline-flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wider text-brand-navy/35">
             <span className="w-4 h-0.5 bg-brand-gold/30 rounded-full" /> Swipe divisions <span className="animate-pulse">→</span>
           </span>
         </div>
         <div className="mb-8 -mx-5 px-5 flex flex-nowrap md:flex-wrap md:justify-center gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth pb-2">
           {[
             { key: 'study', label: '🎓 Study Abroad' },
-            { key: 'visa', label: '✈️ Visa Filing' },
+            { key: 'visa', label: '🛂 Visa Filing' },
             { key: 'umrah', label: '🕌 Umrah & Travel' },
             { key: 'attestation', label: '📜 Attestation' },
             { key: 'recruitment', label: '💼 Overseas Careers' },
@@ -187,7 +187,7 @@ export default function ApplicationReadinessAuditor() {
             {division === 'study' && (
               <>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Target Study Country
                   </label>
                   <select
@@ -203,7 +203,7 @@ export default function ApplicationReadinessAuditor() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Academic Background & Gaps
                   </label>
                   <select
@@ -222,7 +222,7 @@ export default function ApplicationReadinessAuditor() {
             {division === 'visa' && (
               <>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Destination Region
                   </label>
                   <select
@@ -237,7 +237,7 @@ export default function ApplicationReadinessAuditor() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Filing Purpose
                   </label>
                   <select
@@ -256,7 +256,7 @@ export default function ApplicationReadinessAuditor() {
             {division === 'umrah' && (
               <>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Intended Travel Period
                   </label>
                   <select
@@ -270,7 +270,7 @@ export default function ApplicationReadinessAuditor() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Group Size & Special Assistance
                   </label>
                   <select
@@ -289,7 +289,7 @@ export default function ApplicationReadinessAuditor() {
             {division === 'attestation' && (
               <>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Document Category
                   </label>
                   <select
@@ -303,7 +303,7 @@ export default function ApplicationReadinessAuditor() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Destination Authority
                   </label>
                   <select
@@ -321,7 +321,7 @@ export default function ApplicationReadinessAuditor() {
             {division === 'recruitment' && (
               <>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Sector & Profession
                   </label>
                   <select
@@ -336,7 +336,7 @@ export default function ApplicationReadinessAuditor() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                     Experience Level
                   </label>
                   <select
@@ -398,14 +398,14 @@ export default function ApplicationReadinessAuditor() {
                   </p>
                   <a
                     href={`/portal?token=${encodeURIComponent(reportSent)}`}
-                    className="mt-3 inline-block rounded-full bg-brand-navy px-5 py-2 text-[11px] font-bold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all"
+                    className="mt-3 inline-block rounded-full bg-brand-navy px-5 py-2 text-sm font-bold uppercase tracking-wider text-white hover:bg-brand-gold hover:text-brand-navy transition-all"
                   >
                     Track Your Application →
                   </a>
                 </div>
               ) : (
                 <form onSubmit={sendReport} className="mb-6 rounded-2xl border border-brand-gold/30 bg-brand-gold/5 p-4 sm:p-5">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-brand-navy/60 mb-3">
+                  <p className="text-sm font-bold uppercase tracking-wider text-brand-navy/60 mb-3">
                     Get your detailed readiness report on WhatsApp — free
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2.5">
@@ -425,17 +425,17 @@ export default function ApplicationReadinessAuditor() {
                     <button
                       type="submit"
                       disabled={sendingReport}
-                      className="rounded-lg bg-brand-gold px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wider text-brand-navy hover:bg-brand-gold-hover hover:text-white transition-all disabled:opacity-50 cursor-pointer"
+                      className="rounded-lg bg-brand-gold px-5 py-2.5 text-sm font-extrabold uppercase tracking-wider text-brand-navy hover:bg-brand-gold-hover hover:text-white transition-all disabled:opacity-50 cursor-pointer"
                     >
                       {sendingReport ? 'Sending…' : 'Send My Report'}
                     </button>
                   </div>
-                  {reportError && <p className="mt-2 text-[11px] font-semibold text-red-600">{reportError}</p>}
+                  {reportError && <p className="mt-2 text-sm font-semibold text-red-600">{reportError}</p>}
                 </form>
               )}
 
               <div className="rounded-2xl bg-slate-50 border border-brand-navy/5 p-4 sm:p-5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-2.5">
+                <p className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-2.5">
                   How Opus OS Mitigates Rejection Hurdles:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

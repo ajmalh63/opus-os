@@ -175,7 +175,7 @@ export default function ManpowerApplyWizard({ job, token, turnstileToken, active
   };
 
   // ---- UI helpers (WCAG 2.2: 4.5:1, 44px, focus-visible) ----
-  const labelCls = 'block text-[11px] font-bold uppercase tracking-[0.14em] text-brand-navy/70 mb-1.5';
+  const labelCls = 'block text-sm font-bold uppercase tracking-[0.14em] text-brand-navy/70 mb-1.5';
   const inputBase = 'w-full min-h-11 rounded-xl border bg-white px-3.5 py-3 text-sm text-brand-navy placeholder:text-brand-navy/35 focus:outline-none focus:ring-4 focus:ring-brand-gold/20 focus:border-brand-gold transition';
   const inputOk = 'border-brand-navy/15';
   const inputErr = 'border-brand-error/60 bg-red-50/40';
@@ -219,7 +219,7 @@ export default function ManpowerApplyWizard({ job, token, turnstileToken, active
                   </div>
                   <div className="hidden sm:block min-w-0">
                     <p className={`text-xs font-bold leading-none ${active ? 'text-brand-navy' : 'text-brand-navy/50'}`}>{s.title}</p>
-                    <p className="text-[11px] text-brand-navy/50">{s.desc}</p>
+                    <p className="text-sm text-brand-navy/50">{s.desc}</p>
                   </div>
                   {s.id < 4 && <div className={`mx-2 hidden sm:block h-px flex-1 ${done ? 'bg-brand-navy' : 'bg-brand-navy/10'}`} aria-hidden />}
                 </div>
@@ -413,7 +413,7 @@ export default function ManpowerApplyWizard({ job, token, turnstileToken, active
           ) : (
             <button type="button" disabled={submitting || activeCount >= maxQuota} onClick={submit} className="min-h-11 rounded-full bg-brand-gold px-7 text-sm font-extrabold text-brand-navy hover:bg-brand-gold-hover hover:text-white disabled:opacity-40 transition cursor-pointer flex items-center gap-2">
               {submitting ? 'Submitting…' : 'Submit Free Application'}
-              <span aria-hidden className="hidden sm:inline text-[11px] font-bold opacity-70">✓ ILO C181</span>
+              <span aria-hidden className="hidden sm:inline text-sm font-bold opacity-70">✓ ILO C181</span>
             </button>
           )}
         </div>

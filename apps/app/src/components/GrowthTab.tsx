@@ -88,7 +88,7 @@ export default function GrowthTab() {
             <h3 className="font-display font-bold text-sm text-brand-gold">Audience Temperature (Event-Driven Scoring)</h3>
             <p className="text-xs text-brand-navy/40 mt-0.5">Each interaction earns points —  auto band. Gold standard: cold &lt;50 · warm 50€·75 · hot &gt;75.</p>
           </div>
-          <div className="flex gap-3 text-[10px]">
+          <div className="flex gap-3 text-[13px]">
             {segData?.segments?.map(s => (
               <span key={s.name} className="px-2 py-1 rounded border border-brand-navy/10 bg-brand-navy/[0.06] text-brand-navy/70">
                 {s.name}: <b className="text-brand-navy">{s.count ?? s.rules_json?.band}</b>
@@ -98,7 +98,7 @@ export default function GrowthTab() {
         </div>
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] uppercase tracking-wider text-brand-gold">
+            <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[13px] uppercase tracking-wider text-brand-gold">
               <th className="p-4">Client</th>
               <th className="p-4">Score</th>
               <th className="p-4">Band</th>
@@ -110,11 +110,11 @@ export default function GrowthTab() {
               <tr key={l.clientId} className="border-b border-brand-navy/[0.08] hover:bg-brand-navy/[0.04]">
                 <td className="p-4">
                   <p className="font-semibold text-brand-navy">{l.name}</p>
-                  <p className="text-[10px] text-brand-navy/40">{l.clientId}</p>
+                  <p className="text-[13px] text-brand-navy/40">{l.clientId}</p>
                 </td>
                 <td className="p-4 font-mono font-bold text-brand-navy">{l.score}</td>
                 <td className="p-4">
-                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${bandBg(l.band)} ${bandColor(l.band)}`}>{l.band}</span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${bandBg(l.band)} ${bandColor(l.band)}`}>{l.band}</span>
                 </td>
                 <td className="p-4 text-brand-navy/40">{l.interactions}</td>
               </tr>
@@ -171,7 +171,7 @@ export default function GrowthTab() {
           </div>
           <form onSubmit={(e) => { e.preventDefault(); closePeriod.mutate(); }} className="flex items-end gap-2">
             <div className="flex-1">
-              <label className="text-[10px] text-brand-navy/40 font-bold uppercase block mb-1">Period (YYYY-MM)</label>
+              <label className="text-[13px] text-brand-navy/40 font-bold uppercase block mb-1">Period (YYYY-MM)</label>
               <input type="month" value={period} onChange={e => setPeriod(e.target.value)} className="w-full bg-white border border-brand-navy/10 rounded px-3 py-2 text-xs text-brand-navy" />
             </div>
             <button type="submit" className="bg-brand-success hover:opacity-90 text-white px-4 py-2.5 rounded text-xs font-bold">Close Period</button>
@@ -183,11 +183,11 @@ export default function GrowthTab() {
                 <span className="flex gap-3">
                   <span className="text-brand-navy/40">Gross <b className="text-brand-navy">₹{(s.gross / 100).toFixed(2)}</b></span>
                   <span className="text-brand-navy/40">Net <b className="text-brand-success">₹{(s.net / 100).toFixed(2)}</b></span>
-                  <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold ${s.status === 'approved' ? 'bg-brand-success/15 text-brand-success' : 'bg-brand-navy/[0.06] text-brand-navy/70'}`}>{s.status}</span>
+                  <span className={`px-2 py-0.5 rounded text-xs uppercase font-bold ${s.status === 'approved' ? 'bg-brand-success/15 text-brand-success' : 'bg-brand-navy/[0.06] text-brand-navy/70'}`}>{s.status}</span>
                 </span>
               </div>
             ))}
-            {(!stmtData || stmtData.statements.length === 0) && <p className="text-[10px] text-brand-navy/40 text-center py-3">No payout statements yet. Close a period after accruals exist.</p>}
+            {(!stmtData || stmtData.statements.length === 0) && <p className="text-[13px] text-brand-navy/40 text-center py-3">No payout statements yet. Close a period after accruals exist.</p>}
           </div>
         </div>
       </div>

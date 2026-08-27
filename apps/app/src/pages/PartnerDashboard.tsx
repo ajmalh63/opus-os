@@ -231,16 +231,16 @@ const DIVISIONS: DivisionConfig[] = [
     whatsappText: (url) => `Fast-track visa processing with 99% document compliance for 40+ countries via Opus Overseas: ${url}`,
   },
   {
-    id: 'umrah-travel',
-    name: 'Umrah & Hajj Pilgrimage',
-    badge: 'Pilgrimage',
-    path: '/umrah-travel',
-    tagline: '5-Star luxury packages, economy group departures, and direct flights.',
-    avgCommission: '₹5,000 – ₹10,000 / pilgrim',
+    id: 'tours-travels',
+    name: 'Tours & Travels (Holidays & Umrah)',
+    badge: 'Travel & Holidays',
+    path: '/tours-travels',
+    tagline: 'Curated world holidays, 5-Star Umrah packages, and custom getaways.',
+    avgCommission: '₹5,000 – ₹10,000 / booking',
     typicalFee: 85000,
     estRate: 8,
     color: '#16a34a',
-    whatsappText: (url) => `Book all-inclusive, luxury Umrah packages with verified group departures via Opus Overseas: ${url}`,
+    whatsappText: (url) => `Explore world holiday tours, 5-Star Umrah packages, and custom getaways via Opus Overseas: ${url}`,
   },
   {
     id: 'attestation',
@@ -292,7 +292,7 @@ const SWIPE_TEMPLATES = [
     channel: 'LinkedIn & Facebook',
     hint: 'High-trust copy for professional networks, HRs, and educators.',
     body: (url: string) =>
-      `Global ambitions require seamless execution. ✈️🎓\n\nI am proud to partner with Opus Overseas to provide end-to-end pathways for:\n1. Global Higher Education & Scholarships\n2. Compliant Visa & Immigration Services\n3. Embassy Attestation & Apostille Logistics\n4. Verified Overseas Recruitment & Umrah Departures\n\nExplore official offerings or schedule an expert consultation:\n👉 ${url}\n\n#GlobalMobility #StudyAbroad #Immigration #OpusOverseas`,
+      `Global ambitions require seamless execution. 🛂🎓\n\nI am proud to partner with Opus Overseas to provide end-to-end pathways for:\n1. Global Higher Education & Scholarships\n2. Compliant Visa & Immigration Services\n3. Embassy Attestation & Apostille Logistics\n4. Verified Overseas Recruitment & Umrah Departures\n\nExplore official offerings or schedule an expert consultation:\n👉 ${url}\n\n#GlobalMobility #StudyAbroad #Immigration #OpusOverseas`,
   },
   {
     id: 'instagram-bio',
@@ -300,7 +300,7 @@ const SWIPE_TEMPLATES = [
     channel: 'Instagram Bio / Status',
     hint: 'Short & punchy format for bio links or swipe-up stories.',
     body: (url: string) =>
-      `✈️ Official Partner @ Opus Overseas | Study Abroad • Fast-Track Visas • Umrah Packages • MEA Attestation\n🔗 Priority Consultation Link: ${url}`,
+      `🛂 Official Partner @ Opus Overseas | Study Abroad • Fast-Track Visas • Umrah Packages • MEA Attestation\n🔗 Priority Consultation Link: ${url}`,
   },
 ];
 
@@ -349,7 +349,7 @@ function StatusChip({ status }: { status: string }) {
   const cls = statusStyles[status] || statusStyles.unmatured;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${cls}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${cls}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${status === 'matured' || status === 'paid' ? 'bg-emerald-500' : status === 'pending' ? 'bg-amber-500' : 'bg-slate-400'}`} />
       {statusLabel[status] || status}
     </span>
@@ -365,7 +365,7 @@ function MilestoneTimeline({ events }: { events: TimelineEvent[] }) {
           <span className={`absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2 border-white shadow-sm ${isDone(e.state) ? 'bg-brand-gold' : 'bg-slate-300'}`} />
           <div className="min-w-0 flex-1">
             <div className="text-xs font-bold text-brand-navy">{e.label}</div>
-            <div className="text-[10px] text-brand-navy/50">{e.at ? ago(e.at) : 'Pending next stage'}</div>
+            <div className="text-[13px] text-brand-navy/50">{e.at ? ago(e.at) : 'Pending next stage'}</div>
           </div>
         </div>
       ))}
@@ -400,7 +400,7 @@ export default function PartnerDashboard() {
   const [catalogType, setCatalogType] = useState<string>('university');
   const [catalogSearch, setCatalogSearch] = useState<string>('');
   const [utmCampaign, setUtmCampaign] = useState<string>('');
-  const divisionForCatalog = (t: string) => t === 'university' ? 'study-abroad' : t === 'visa' ? 'visa-services' : t === 'umrah_package' ? 'umrah-travel' : t === 'departure' ? 'umrah-travel' : t === 'job' ? 'recruitment' : 'study-abroad';
+  const divisionForCatalog = (t: string) => t === 'university' ? 'study-abroad' : t === 'visa' ? 'visa-services' : t === 'umrah_package' ? 'tours-travels' : t === 'departure' ? 'tours-travels' : t === 'job' ? 'recruitment' : 'study-abroad';
   const deepLinkFor = (item: any) => {
     const base = typeof window !== 'undefined' ? window.location.origin : '';
     const div = divisionForCatalog(item.type);
@@ -980,7 +980,7 @@ export default function PartnerDashboard() {
             <div className="relative z-20 mx-auto max-w-6xl px-5 pt-28 md:px-8">
               {/* Portal Header Pill */}
               <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold shadow-sm backdrop-blur">
+                <span className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-white/80 px-3.5 py-1.5 text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold shadow-sm backdrop-blur">
                   <Logo className="h-4 w-auto" /> Opus Overseas · Growth & Affiliate Network
                 </span>
                 <Link href="/portal" className="rounded-full border border-brand-navy/15 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-brand-navy/70 transition hover:border-brand-gold hover:text-brand-gold backdrop-blur">
@@ -992,7 +992,7 @@ export default function PartnerDashboard() {
               <section className="partner-fade relative z-20 overflow-hidden rounded-[2rem] border border-brand-navy/10 bg-white p-8 shadow-[0_24px_60px_-30px_rgba(10,45,80,0.25)] md:p-12">
                 <div className="pointer-events-none absolute -right-16 -top-20 h-80 w-80 rounded-full bg-brand-gold/10 blur-3xl" aria-hidden="true" />
                 <div className="relative z-10 max-w-3xl">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-brand-gold/10 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-brand-gold/10 px-3.5 py-1 text-[13px] font-bold uppercase tracking-[0.2em] text-brand-gold">
                     <span className="live-pulse-dot text-brand-gold" /> Institutional Affiliate Program
                   </div>
                   <h1 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-brand-navy md:text-5xl lg:leading-[1.1]">
@@ -1012,7 +1012,7 @@ export default function PartnerDashboard() {
                     ].map((item, idx) => (
                       <div key={idx} className="rounded-xl border border-brand-navy/10 bg-brand-cream/70 p-3.5">
                         <div className="text-xs font-extrabold text-brand-navy">{item.label}</div>
-                        <div className="mt-0.5 text-[10px] text-brand-navy/50">{item.sub}</div>
+                        <div className="mt-0.5 text-[13px] text-brand-navy/50">{item.sub}</div>
                       </div>
                     ))}
                   </div>
@@ -1023,17 +1023,17 @@ export default function PartnerDashboard() {
               <section className="partner-fade relative z-20 mt-10 rounded-[2rem] border border-brand-gold/30 bg-gradient-to-br from-white via-white to-brand-gold/5 p-8 shadow-md md:p-10">
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-6">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Interactive Partner Yield Calculator</span>
+                    <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Interactive Partner Yield Calculator</span>
                     <h2 className="mt-1 font-display text-xl font-extrabold text-brand-navy md:text-2xl">
                       Estimate your monthly affiliate revenue
                     </h2>
                   </div>
                   <div className="rounded-2xl border border-brand-gold/40 bg-brand-gold/10 px-5 py-3 text-right">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Estimated Monthly Earnings</div>
+                    <div className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Estimated Monthly Earnings</div>
                     <div className="font-display text-2xl font-black text-brand-gold md:text-3xl">
                       ₹{simulatedMonthlyEarnings.toLocaleString('en-IN')}
                     </div>
-                    <div className="text-[10px] font-semibold text-emerald-700">
+                    <div className="text-[13px] font-semibold text-emerald-700">
                       ≈ ₹{(simulatedMonthlyEarnings * 12).toLocaleString('en-IN')}/year
                     </div>
                   </div>
@@ -1060,7 +1060,7 @@ export default function PartnerDashboard() {
                         onChange={(e) => ctrl.set(parseInt(e.target.value) || 0)}
                         className="mt-3 w-full accent-brand-gold cursor-pointer"
                       />
-                      <div className="mt-2 text-[10px] text-slate-500">{ctrl.rate}</div>
+                      <div className="mt-2 text-[13px] text-slate-500">{ctrl.rate}</div>
                     </div>
                   ))}
                 </div>
@@ -1075,12 +1075,12 @@ export default function PartnerDashboard() {
                       <h2 className="font-display text-xl font-bold text-brand-navy">Become an Opus Partner</h2>
                       <p className="mt-1 text-xs text-brand-navy/60">One-minute onboarding with direct KYC encryption.</p>
                     </div>
-                    <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700">Instant Approval</span>
+                    <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-700">Instant Approval</span>
                   </div>
 
                   <form onSubmit={handleKyc} className="lead-form-wrap mt-6 space-y-4">
                     <div>
-                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Full Name / Agency Name</label>
+                      <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Full Name / Agency Name</label>
                       <input
                         type="text"
                         value={kycName}
@@ -1093,7 +1093,7 @@ export default function PartnerDashboard() {
 
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Official Email</label>
+                        <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Official Email</label>
                         <input
                           type="email"
                           value={kycEmail}
@@ -1104,7 +1104,7 @@ export default function PartnerDashboard() {
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Password (Min 8 chars)</label>
+                        <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Password (Min 8 chars)</label>
                         <input
                           type="password"
                           value={kycPassword}
@@ -1118,8 +1118,8 @@ export default function PartnerDashboard() {
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">PAN Number (10 Chars)</label>
-                        <span className="text-[9px] text-slate-400">Format: ABCDE1234F</span>
+                        <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">PAN Number (10 Chars)</label>
+                        <span className="text-xs text-slate-400">Format: ABCDE1234F</span>
                       </div>
                       <input
                         type="text"
@@ -1134,7 +1134,7 @@ export default function PartnerDashboard() {
 
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Bank Account Number</label>
+                        <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Bank Account Number</label>
                         <input
                           type="text"
                           value={kycBankAccount}
@@ -1146,8 +1146,8 @@ export default function PartnerDashboard() {
                       </div>
                       <div>
                         <div className="flex items-center justify-between">
-                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Bank IFSC Code</label>
-                          <span className="text-[9px] text-slate-400">e.g. HDFC0000001</span>
+                          <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Bank IFSC Code</label>
+                          <span className="text-xs text-slate-400">e.g. HDFC0000001</span>
                         </div>
                         <input
                           type="text"
@@ -1161,7 +1161,7 @@ export default function PartnerDashboard() {
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-3 text-[10px] leading-relaxed text-brand-navy/70 flex items-start gap-2">
+                    <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-3 text-[13px] leading-relaxed text-brand-navy/70 flex items-start gap-2">
                       <span className="text-brand-gold font-bold">🔒</span>
                       <span>
                         <strong>DPDP-2023 Compliant:</strong> Your PAN and banking credentials are AES-GCM encrypted at rest. PII is strictly masked across all portal surfaces.
@@ -1182,7 +1182,7 @@ export default function PartnerDashboard() {
 
                     <form onSubmit={handleLogin} className="lead-form-wrap mt-6 space-y-4">
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Registered Email</label>
+                        <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Registered Email</label>
                         <input
                           type="email"
                           value={loginEmail}
@@ -1192,7 +1192,7 @@ export default function PartnerDashboard() {
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Password</label>
+                        <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Password</label>
                         <input
                           type="password"
                           value={loginPassword}
@@ -1203,7 +1203,7 @@ export default function PartnerDashboard() {
                       </div>
 
                       {authError && (
-                        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-[11px] font-medium text-rose-700">
+                        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">
                           {authError}
                         </div>
                       )}
@@ -1216,7 +1216,7 @@ export default function PartnerDashboard() {
                     <div className="mt-6 border-t border-brand-navy/10 pt-4">
                       <button
                         onClick={() => setShowAccessKey((v) => !v)}
-                        className="text-[11px] font-semibold text-brand-navy/70 transition hover:text-brand-gold cursor-pointer"
+                        className="text-sm font-semibold text-brand-navy/70 transition hover:text-brand-gold cursor-pointer"
                       >
                         {showAccessKey ? '← Return to standard Email Sign In' : 'Have a Legacy Partner ID & Access Key? Click here'}
                       </button>
@@ -1224,21 +1224,21 @@ export default function PartnerDashboard() {
                       {showAccessKey && (
                         <form onSubmit={handleLegacyLogin} className="lead-form-wrap mt-4 space-y-3">
                           <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Partner ID (UUID)</label>
+                            <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Partner ID (UUID)</label>
                             <input
                               value={partnerIdInput}
                               onChange={(e) => setPartnerIdInput(e.target.value)}
                               placeholder="e.g. a8b9c0d1-…"
-                              className={`${baseInput} font-mono text-[11px]`}
+                              className={`${baseInput} font-mono text-sm`}
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Access Key Token</label>
+                            <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Access Key Token</label>
                             <input
                               value={tokenInput}
                               onChange={(e) => setTokenInput(e.target.value)}
                               placeholder="Paste bearer token"
-                              className={`${baseInput} font-mono text-[11px]`}
+                              className={`${baseInput} font-mono text-sm`}
                             />
                           </div>
                           <button type="submit" className={`${navyBtn} w-full py-2.5`}>
@@ -1254,7 +1254,7 @@ export default function PartnerDashboard() {
                     <div className="font-display font-bold text-brand-navy flex items-center gap-2">
                       <span className="gold-dot" /> Institutional Growth Commitment
                     </div>
-                    <p className="text-[11px] text-brand-navy/70">
+                    <p className="text-sm text-brand-navy/70">
                       Opus Overseas guarantees 100% transparent milestone tracking. Every client referred via your link is permanently attributed, with real-time status updates as they advance from document review to visa stamping.
                     </p>
                   </div>
@@ -1279,11 +1279,11 @@ export default function PartnerDashboard() {
                 {/* Top Telemetry Header */}
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold">
+                    <span className="inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.2em] text-brand-gold">
                       <Logo className="h-5 w-auto" /> Partner Command Center
                     </span>
                     <span className="hidden sm:inline-block text-white/30">|</span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-emerald-300">
                       <span className="live-pulse-dot text-emerald-400" /> Active & Verified
                     </span>
                   </div>
@@ -1306,13 +1306,13 @@ export default function PartnerDashboard() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2.5">
                       <span
-                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm"
+                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[13px] font-bold uppercase tracking-wider text-white shadow-sm"
                         style={{ backgroundColor: thrive?.tier?.color || '#b87333' }}
                       >
                         ★ {thrive?.tier?.name || 'Bronze Partner'}
                       </span>
                       {thrive?.tier?.boostPct ? (
-                        <span className="rounded-full border border-brand-gold/50 bg-brand-gold/20 px-2.5 py-0.5 text-[9px] font-extrabold text-brand-gold">
+                        <span className="rounded-full border border-brand-gold/50 bg-brand-gold/20 px-2.5 py-0.5 text-xs font-extrabold text-brand-gold">
                           +{thrive.tier.boostPct}% Boost Active
                         </span>
                       ) : null}
@@ -1360,11 +1360,11 @@ export default function PartnerDashboard() {
                     { label: 'Conversion Rate', val: conversionRate, suffix: '%', highlight: 'text-brand-gold', sub: 'Sign-to-lead ratio' },
                   ].map((card, idx) => (
                     <div key={idx} className="partner-fade rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition hover:border-brand-gold/40">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-white/50">{card.label}</div>
+                      <div className="text-[13px] font-bold uppercase tracking-wider text-white/50">{card.label}</div>
                       <div className={`mt-2 font-display text-xl font-black ${card.highlight}`}>
                         <AnimatedNumber value={card.val} prefix={card.prefix || ''} suffix={card.suffix || ''} />
                       </div>
-                      <div className="mt-1 text-[10px] text-white/40">{card.sub}</div>
+                      <div className="mt-1 text-[13px] text-white/40">{card.sub}</div>
                     </div>
                   ))}
                 </div>
@@ -1396,7 +1396,7 @@ export default function PartnerDashboard() {
                   ))}
                 </div>
 
-                <div className="hidden items-center gap-2 pr-3 text-[10px] font-black uppercase tracking-wider text-brand-gold lg:flex">
+                <div className="hidden items-center gap-2 pr-3 text-[13px] font-black uppercase tracking-wider text-brand-gold lg:flex">
                   <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.9)] animate-pulse" /> Real-Time Telemetry
                 </div>
               </nav>
@@ -1445,7 +1445,7 @@ export default function PartnerDashboard() {
                         return (
                           <div key={div.id} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-white" style={{ backgroundColor: div.color }}>
+                              <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white" style={{ backgroundColor: div.color }}>
                                 {div.badge}
                               </span>
                               <span className="text-xs font-bold text-emerald-700">{div.avgCommission}</span>
@@ -1454,7 +1454,7 @@ export default function PartnerDashboard() {
                               <h4 className="font-display text-sm font-bold text-brand-navy">{div.name}</h4>
                               <p className="mt-1 text-xs text-brand-navy/60">{div.tagline}</p>
                             </div>
-                            <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-2.5 font-mono text-[11px] text-brand-navy/80 truncate">
+                            <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-2.5 font-mono text-sm text-brand-navy/80 truncate">
                               {targetUrl}
                             </div>
                             <div className="flex items-center gap-2 pt-2">
@@ -1487,7 +1487,7 @@ export default function PartnerDashboard() {
                   <section className="partner-fade clay-card p-6 md:p-8">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Ready-to-Use Copy</span>
+                        <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Ready-to-Use Copy</span>
                         <h3 className="mt-0.5 font-display text-lg font-bold text-brand-navy">High-Converting Swipe Files</h3>
                         <p className="text-xs text-brand-navy/60">Pre-approved compliance text with your referral link auto-inserted.</p>
                       </div>
@@ -1501,11 +1501,11 @@ export default function PartnerDashboard() {
                             <div>
                               <div className="flex items-center justify-between">
                                 <h4 className="font-display text-sm font-bold text-brand-navy">{swipe.title}</h4>
-                                <span className="rounded-full bg-brand-gold/15 px-2.5 py-0.5 text-[9px] font-bold uppercase text-brand-gold">
+                                <span className="rounded-full bg-brand-gold/15 px-2.5 py-0.5 text-xs font-bold uppercase text-brand-gold">
                                   {swipe.channel}
                                 </span>
                               </div>
-                              <p className="mt-1 text-[10px] text-brand-navy/50">{swipe.hint}</p>
+                              <p className="mt-1 text-[13px] text-brand-navy/50">{swipe.hint}</p>
                               <div className="mt-3 max-h-36 overflow-y-auto whitespace-pre-wrap rounded-xl border border-brand-navy/10 bg-white p-3 font-sans text-xs leading-relaxed text-brand-navy/80">
                                 {swipeText}
                               </div>
@@ -1528,7 +1528,7 @@ export default function PartnerDashboard() {
                     <section className="partner-fade clay-card p-6 md:p-8">
                       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
                         <div>
-                          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Brand Assets</span>
+                          <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Brand Assets</span>
                           <h3 className="mt-0.5 font-display text-lg font-bold text-brand-navy">Pre-Approved Display Creatives</h3>
                           <p className="text-xs text-brand-navy/60">Official banners and visual assets with your referral code auto-embedded.</p>
                         </div>
@@ -1542,7 +1542,7 @@ export default function PartnerDashboard() {
                             <div key={c.id} className="flex flex-col justify-between rounded-2xl border border-brand-navy/10 bg-slate-50 p-5 space-y-3">
                               <div className="flex items-center justify-between">
                                 <span className="truncate font-display text-sm font-bold text-brand-navy">{c.title}</span>
-                                <span className="rounded-full bg-brand-gold/15 px-2 py-0.5 text-[9px] font-bold uppercase text-brand-gold">
+                                <span className="rounded-full bg-brand-gold/15 px-2 py-0.5 text-xs font-bold uppercase text-brand-gold">
                                   {c.type} {c.size ? `· ${c.size}` : ''}
                                 </span>
                               </div>
@@ -1613,7 +1613,7 @@ export default function PartnerDashboard() {
                           <span className="truncate">{typeof window !== 'undefined' ? `${window.location.origin}/${divisionForCatalog(catalogType)}?ref=${refCode}${utmCampaign.trim() ? `&utm_campaign=${utmCampaign.trim()}` : ''}` : ''}</span>
                         </div>
                       </div>
-                      <div className="text-[11px] text-brand-navy/40">Deep link adds `?country=`/`?pkg=`/`?job=` + `ref` + `utm_campaign` → track per-campaign in Clicks table (FirstPromoter SubID gold).</div>
+                      <div className="text-sm text-brand-navy/40">Deep link adds `?country=`/`?pkg=`/`?job=` + `ref` + `utm_campaign` → track per-campaign in Clicks table (FirstPromoter SubID gold).</div>
                     </div>
 
                     <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1627,7 +1627,7 @@ export default function PartnerDashboard() {
                             <div key={`${item.type}-${item.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-brand-navy/10 bg-slate-50 p-4">
                               <div className="min-w-0 flex-1">
                                 <div className="truncate text-xs font-bold text-brand-navy">{item.title}</div>
-                                <div className="text-[10px] text-slate-500">
+                                <div className="text-[13px] text-slate-500">
                                   {item.meta?.country || item.meta?.date || ''} {item.pricePaise > 0 ? `· ${rs(item.pricePaise)}` : ''} {existingLink ? `· ${existingLink.clicks} clicks` : ''}
                                 </div>
                               </div>
@@ -1635,7 +1635,7 @@ export default function PartnerDashboard() {
                               {existingLink && directUrl ? (
                                 <button
                                   onClick={() => copyToClipboard(directUrl, `cat-${item.id}`, item.title)}
-                                  className="shrink-0 rounded-full border border-brand-gold/50 bg-brand-gold/10 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-gold transition hover:bg-brand-gold hover:text-brand-navy cursor-pointer"
+                                  className="shrink-0 rounded-full border border-brand-gold/50 bg-brand-gold/10 px-3.5 py-1.5 text-[13px] font-bold uppercase tracking-wider text-brand-gold transition hover:bg-brand-gold hover:text-brand-navy cursor-pointer"
                                 >
                                   {copiedLinkKey === `cat-${item.id}` ? '✓ Copied' : 'Copy'}
                                 </button>
@@ -1643,7 +1643,7 @@ export default function PartnerDashboard() {
                                 <button
                                   onClick={() => createLinkMutation.mutate(item)}
                                   disabled={createLinkMutation.isPending}
-                                  className="shrink-0 rounded-full bg-brand-navy px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy disabled:opacity-40 cursor-pointer"
+                                  className="shrink-0 rounded-full bg-brand-navy px-3.5 py-1.5 text-[13px] font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy disabled:opacity-40 cursor-pointer"
                                 >
                                   {createLinkMutation.isPending ? '…' : '+ Link'}
                                 </button>
@@ -1666,7 +1666,7 @@ export default function PartnerDashboard() {
                   <section className="partner-fade clay-card p-6 md:p-8">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-4">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Manual Attribution Station</span>
+                        <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Manual Attribution Station</span>
                         <h3 className="mt-0.5 font-display text-lg font-bold text-brand-navy">Attribute Client Referral</h3>
                         <p className="text-xs text-brand-navy/60">If a client visited directly or applied offline, link their unique Client Token here.</p>
                       </div>
@@ -1674,7 +1674,7 @@ export default function PartnerDashboard() {
 
                     <form onSubmit={handleManualReferral} className="lead-form-wrap mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Client Token</label>
+                        <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Client Token</label>
                         <input
                           type="text"
                           value={manualClientId}
@@ -1686,7 +1686,7 @@ export default function PartnerDashboard() {
                       </div>
 
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Agreed Commission Rate (%)</label>
+                        <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Agreed Commission Rate (%)</label>
                         <input
                           type="number"
                           min={1}
@@ -1724,7 +1724,7 @@ export default function PartnerDashboard() {
                           <button
                             key={st.key}
                             onClick={() => setFilterStatus(st.key)}
-                            className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+                            className={`rounded-full px-3 py-1 text-[13px] font-bold uppercase tracking-wider transition cursor-pointer ${
                               filterStatus === st.key
                                 ? 'bg-brand-navy text-white'
                                 : 'border border-brand-navy/10 text-brand-navy/60 hover:border-brand-gold'
@@ -1757,7 +1757,7 @@ export default function PartnerDashboard() {
                         <div className="hidden overflow-x-auto md:block">
                           <table className="w-full text-left text-xs">
                             <thead>
-                              <tr className="border-b border-brand-navy/10 bg-brand-cream/80 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                              <tr className="border-b border-brand-navy/10 bg-brand-cream/80 text-[13px] font-bold uppercase tracking-wider text-slate-500">
                                 <th className="px-6 py-3.5">Client Token & Name</th>
                                 <th className="px-6 py-3.5">Commission Rate</th>
                                 <th className="px-6 py-3.5">Earned Amount</th>
@@ -1775,12 +1775,12 @@ export default function PartnerDashboard() {
                                         onClick={() => setOpenReferral((cur) => (cur === r.referralId ? null : r.referralId))}
                                         className="flex items-center gap-2.5 text-left cursor-pointer"
                                       >
-                                        <span className={`text-[10px] text-brand-gold transition-transform duration-200 ${openReferral === r.referralId ? 'rotate-90' : ''}`}>
+                                        <span className={`text-[13px] text-brand-gold transition-transform duration-200 ${openReferral === r.referralId ? 'rotate-90' : ''}`}>
                                           ▶
                                         </span>
                                         <div>
                                           <div className="font-bold text-brand-navy">{r.clientName || r.clientId}</div>
-                                          <div className="font-mono text-[10px] text-brand-navy/50">{r.clientId}</div>
+                                          <div className="font-mono text-[13px] text-brand-navy/50">{r.clientId}</div>
                                         </div>
                                       </button>
                                     </td>
@@ -1793,7 +1793,7 @@ export default function PartnerDashboard() {
                                     <td className="px-6 py-4 text-right">
                                       <button
                                         onClick={() => setOpenReferral((cur) => (cur === r.referralId ? null : r.referralId))}
-                                        className="rounded-full border border-brand-navy/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 transition hover:border-brand-gold hover:text-brand-gold cursor-pointer"
+                                        className="rounded-full border border-brand-navy/15 px-3 py-1 text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 transition hover:border-brand-gold hover:text-brand-gold cursor-pointer"
                                       >
                                         {openReferral === r.referralId ? 'Hide History' : 'View Stage'}
                                       </button>
@@ -1805,7 +1805,7 @@ export default function PartnerDashboard() {
                                     <tr className="bg-brand-cream/50 border-b border-brand-navy/10">
                                       <td colSpan={6} className="px-8 py-5">
                                         <div className="max-w-xl">
-                                          <div className="mb-3 text-[10px] font-bold uppercase tracking-wider text-brand-gold">
+                                          <div className="mb-3 text-[13px] font-bold uppercase tracking-wider text-brand-gold">
                                             Referral Lifecycle Milestones
                                           </div>
                                           {r.timeline.length > 0 ? (
@@ -1832,7 +1832,7 @@ export default function PartnerDashboard() {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <div className="text-xs font-bold text-brand-navy">{r.clientName || r.clientId}</div>
-                                  <div className="font-mono text-[10px] text-brand-navy/50">{r.clientId}</div>
+                                  <div className="font-mono text-[13px] text-brand-navy/50">{r.clientId}</div>
                                 </div>
                                 <StatusChip status={r.status} />
                               </div>
@@ -1844,7 +1844,7 @@ export default function PartnerDashboard() {
 
                               <button
                                 onClick={() => setOpenReferral((cur) => (cur === r.referralId ? null : r.referralId))}
-                                className="w-full rounded-xl border border-brand-navy/15 py-1.5 text-center text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 cursor-pointer"
+                                className="w-full rounded-xl border border-brand-navy/15 py-1.5 text-center text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 cursor-pointer"
                               >
                                 {openReferral === r.referralId ? 'Hide Timeline' : 'View Milestones'}
                               </button>
@@ -1854,7 +1854,7 @@ export default function PartnerDashboard() {
                                   {r.timeline.length > 0 ? (
                                     <MilestoneTimeline events={r.timeline} />
                                   ) : (
-                                    <p className="text-[11px] text-brand-navy/50">Stages will update as the client progresses.</p>
+                                    <p className="text-sm text-brand-navy/50">Stages will update as the client progresses.</p>
                                   )}
                                 </div>
                               )}
@@ -1877,22 +1877,22 @@ export default function PartnerDashboard() {
                   <section className="partner-fade clay-card p-6 md:p-8">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-6">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Settlement Station</span>
+                        <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Settlement Station</span>
                         <h3 className="mt-0.5 font-display text-xl font-bold text-brand-navy">Request Earnings Disbursement</h3>
                         <p className="text-xs text-brand-navy/60">Disburse your matured commissions directly to your registered bank account or UPI.</p>
                       </div>
 
                       <div className="text-right">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Matured Payout Balance</div>
+                        <div className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Matured Payout Balance</div>
                         <div className="font-display text-3xl font-black text-emerald-700">{rs(totals.matured)}</div>
-                        <div className="text-[10px] text-slate-400">Available to withdraw now</div>
+                        <div className="text-[13px] text-slate-400">Available to withdraw now</div>
                       </div>
                     </div>
 
                     <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-navy/10 bg-slate-50 p-5">
                       <div className="space-y-1">
                         <div className="text-xs font-bold text-brand-navy">Payout Threshold & Readiness</div>
-                        <p className="text-[11px] text-brand-navy/60">
+                        <p className="text-sm text-brand-navy/60">
                           Configured threshold: <strong>₹{payoutThreshold.toLocaleString('en-IN')}</strong> · Minimum clearance requirement.
                         </p>
                       </div>
@@ -1915,7 +1915,7 @@ export default function PartnerDashboard() {
                             <button disabled className="rounded-full bg-slate-200 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-500 cursor-not-allowed">
                               Threshold Not Met
                             </button>
-                            <div className="mt-1 text-[10px] text-slate-400">
+                            <div className="mt-1 text-[13px] text-slate-400">
                               Requires ₹{Math.max(0, payoutThreshold - Math.round(totals.matured / 100)).toLocaleString('en-IN')} more to unlock withdrawal.
                             </div>
                           </div>
@@ -1945,7 +1945,7 @@ export default function PartnerDashboard() {
                       <form onSubmit={handleSaveConfig} className="lead-form-wrap mt-6 max-w-xl space-y-4">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Disbursement Channel</label>
+                            <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Disbursement Channel</label>
                             <select
                               value={payoutMethod}
                               onChange={(e) => setPayoutMethod(e.target.value as 'bank' | 'upi')}
@@ -1956,7 +1956,7 @@ export default function PartnerDashboard() {
                             </select>
                           </div>
                           <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">Withdrawal Threshold (₹)</label>
+                            <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">Withdrawal Threshold (₹)</label>
                             <input
                               type="number"
                               min={500}
@@ -1969,7 +1969,7 @@ export default function PartnerDashboard() {
                         </div>
 
                         <div>
-                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-gold">
+                          <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-gold">
                             {payoutMethod === 'upi' ? 'UPI ID / VPA' : 'Bank Account Number + IFSC Code'}
                           </label>
                           <input
@@ -1998,17 +1998,17 @@ export default function PartnerDashboard() {
                     ) : (
                       <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-4">
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Method</div>
+                          <div className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Method</div>
                           <div className="mt-1 text-xs font-bold text-brand-navy uppercase">{payoutMethod} Transfer</div>
                         </div>
                         <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-4">
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Destination Detail</div>
+                          <div className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Destination Detail</div>
                           <div className="mt-1 font-mono text-xs font-bold text-brand-navy truncate">
                             {payoutDetail || 'Using KYC Bank Credentials'}
                           </div>
                         </div>
                         <div className="rounded-xl border border-brand-navy/10 bg-slate-50 p-4">
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Minimum Threshold</div>
+                          <div className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Minimum Threshold</div>
                           <div className="mt-1 text-xs font-bold text-brand-navy">₹{payoutThreshold.toLocaleString('en-IN')}</div>
                         </div>
                       </div>
@@ -2033,7 +2033,7 @@ export default function PartnerDashboard() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                           <thead>
-                            <tr className="border-b border-brand-navy/10 bg-brand-cream/80 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            <tr className="border-b border-brand-navy/10 bg-brand-cream/80 text-[13px] font-bold uppercase tracking-wider text-slate-500">
                               <th className="px-6 py-3.5">Requested Date</th>
                               <th className="px-6 py-3.5">Disbursed Amount</th>
                               <th className="px-6 py-3.5">Status</th>
@@ -2046,11 +2046,11 @@ export default function PartnerDashboard() {
                                 <td className="px-6 py-4 text-slate-600">{d(p.requestedAt)}</td>
                                 <td className="px-6 py-4 font-display font-bold text-brand-navy">{rs(p.amountPaise)}</td>
                                 <td className="px-6 py-4">
-                                  <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${payoutStatusStyles[p.status] || 'bg-slate-100 text-slate-700'}`}>
+                                  <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${payoutStatusStyles[p.status] || 'bg-slate-100 text-slate-700'}`}>
                                     {p.status}
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 text-slate-500 font-mono text-[11px]">{p.note || '—'}</td>
+                                <td className="px-6 py-4 text-slate-500 font-mono text-sm">{p.note || '—'}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -2069,13 +2069,13 @@ export default function PartnerDashboard() {
                   <section className="partner-fade clay-card p-6 md:p-8">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-navy/10 pb-6">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">VIP Ladder</span>
+                        <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">VIP Ladder</span>
                         <h3 className="mt-0.5 font-display text-xl font-bold text-brand-navy">Partner Loyalty Tiers</h3>
                         <p className="text-xs text-brand-navy/60">Unlock higher recurring commission boosts and institutional privileges.</p>
                       </div>
 
                       <div className="text-right">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Your Lifetime Points</div>
+                        <div className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Your Lifetime Points</div>
                         <div className="font-display text-3xl font-black text-brand-gold">{(thrive?.totalPoints || 0).toLocaleString()}</div>
                       </div>
                     </div>
@@ -2099,18 +2099,18 @@ export default function PartnerDashboard() {
                           >
                             <div>
                               {isCurrent && (
-                                <span className="absolute -top-3 right-4 rounded-full bg-brand-gold px-3 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-brand-navy shadow-sm">
+                                <span className="absolute -top-3 right-4 rounded-full bg-brand-gold px-3 py-0.5 text-xs font-extrabold uppercase tracking-wider text-brand-navy shadow-sm">
                                   Current Tier
                                 </span>
                               )}
                               <span
-                                className="inline-block rounded-xl px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+                                className="inline-block rounded-xl px-3 py-1 text-[13px] font-bold uppercase tracking-wider text-white"
                                 style={{ backgroundColor: tierCard.color }}
                               >
                                 {tierCard.name}
                               </span>
                               <div className="mt-4 font-display text-2xl font-black text-brand-navy">{tierCard.boost}</div>
-                              <div className="text-[10px] text-slate-500">Requires {tierCard.min.toLocaleString()} points</div>
+                              <div className="text-[13px] text-slate-500">Requires {tierCard.min.toLocaleString()} points</div>
 
                               <ul className="mt-5 space-y-2 text-xs text-brand-navy/70">
                                 {tierCard.perks.map((prk, i) => (
@@ -2149,7 +2149,7 @@ export default function PartnerDashboard() {
             <div className="flex items-center justify-between border-b border-brand-navy/10 pb-3">
               <div>
                 <h3 className="font-display text-base font-bold text-brand-navy">{qrModal.title}</h3>
-                <p className="text-[10px] text-brand-navy/50">Print or present this QR code for instant client attribution.</p>
+                <p className="text-[13px] text-brand-navy/50">Print or present this QR code for instant client attribution.</p>
               </div>
               <button
                 onClick={() => setQrModal({ open: false, title: '', url: '' })}
@@ -2168,7 +2168,7 @@ export default function PartnerDashboard() {
                   includeMargin={true}
                 />
               </div>
-              <div className="mt-3 w-full max-w-xs text-center font-mono text-[10px] text-brand-navy/60 truncate">
+              <div className="mt-3 w-full max-w-xs text-center font-mono text-[13px] text-brand-navy/60 truncate">
                 {qrModal.url}
               </div>
             </div>

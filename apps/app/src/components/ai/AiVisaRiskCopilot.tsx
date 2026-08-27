@@ -71,7 +71,7 @@ export default function AiVisaRiskCopilot({
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               AI Visa Risk Copilot & Profile Scorer
-              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              <span className="text-[13px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                 Staff Only
               </span>
             </h3>
@@ -86,7 +86,7 @@ export default function AiVisaRiskCopilot({
       {/* Input Parameters Form */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Target Country</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Target Country</label>
           <select
             value={targetCountry}
             onChange={(e) => setTargetCountry(e.target.value)}
@@ -103,7 +103,7 @@ export default function AiVisaRiskCopilot({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Program / Degree Level</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Program / Degree Level</label>
           <select
             value={degreeLevel}
             onChange={(e) => setDegreeLevel(e.target.value)}
@@ -118,7 +118,7 @@ export default function AiVisaRiskCopilot({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Academic Grade / GPA</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Academic Grade / GPA</label>
           <input
             type="text"
             value={academicGpaOrPercent}
@@ -129,7 +129,7 @@ export default function AiVisaRiskCopilot({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">IELTS / PTE / English Score</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">IELTS / PTE / English Score</label>
           <input
             type="text"
             value={ieltsOverall}
@@ -140,7 +140,7 @@ export default function AiVisaRiskCopilot({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Education Gap (Years)</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Education Gap (Years)</label>
           <input
             type="number"
             min="0"
@@ -151,7 +151,7 @@ export default function AiVisaRiskCopilot({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Work Experience (Years)</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Work Experience (Years)</label>
           <input
             type="number"
             min="0"
@@ -162,7 +162,7 @@ export default function AiVisaRiskCopilot({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Liquid Financial Proof (INR Lakhs)</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Liquid Financial Proof (INR Lakhs)</label>
           <input
             type="number"
             min="0"
@@ -174,7 +174,7 @@ export default function AiVisaRiskCopilot({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Specific Case Notes</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Specific Case Notes</label>
           <input
             type="text"
             value={notes}
@@ -216,7 +216,7 @@ export default function AiVisaRiskCopilot({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className={`p-4 rounded-2xl border flex items-center justify-between ${getScoreColor(assessment.score)}`}>
               <div>
-                <span className="text-[10px] uppercase font-bold tracking-wider block opacity-70">
+                <span className="text-[13px] uppercase font-bold tracking-wider block opacity-70">
                   Approval Likelihood
                 </span>
                 <span className="text-3xl font-extrabold">{assessment.score}%</span>
@@ -227,7 +227,7 @@ export default function AiVisaRiskCopilot({
             </div>
 
             <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/80">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+              <span className="text-[13px] uppercase font-bold tracking-wider text-slate-400 block">
                 Refusal Risk Tier
               </span>
               <span
@@ -244,7 +244,7 @@ export default function AiVisaRiskCopilot({
             </div>
 
             <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/80">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+              <span className="text-[13px] uppercase font-bold tracking-wider text-slate-400 block">
                 Required Proof Balance
               </span>
               <span className="text-lg font-bold text-indigo-300 mt-1 inline-block">

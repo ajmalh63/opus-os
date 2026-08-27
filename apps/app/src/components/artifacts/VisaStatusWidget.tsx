@@ -73,12 +73,12 @@ export default function VisaStatusWidget() {
         </div>
 
         {/* Quick sample token chips */}
-        <div className="flex items-center gap-1.5 text-[11px] text-brand-textLight">
+        <div className="flex items-center gap-1.5 text-sm text-brand-textLight">
           <span>Try demo token:</span>
           <button
             type="button"
             onClick={() => track('OP-2026-US-894')}
-            className="rounded border border-brand-navy/10 bg-white/80 px-2 py-0.5 font-mono text-[10px] font-bold text-brand-navy hover:border-brand-gold hover:text-brand-gold transition-colors cursor-pointer"
+            className="rounded border border-brand-navy/10 bg-white/80 px-2 py-0.5 font-mono text-[13px] font-bold text-brand-navy hover:border-brand-gold hover:text-brand-gold transition-colors cursor-pointer"
           >
             OP-2026-US-894
           </button>
@@ -95,9 +95,9 @@ export default function VisaStatusWidget() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-bold text-brand-navy">{currentJourney.destination || 'Global Visa Journey'}</p>
-                <p className="text-[10px] font-mono text-brand-textLight">REF: {currentJourney.token || ref}</p>
+                <p className="text-[13px] font-mono text-brand-textLight">REF: {currentJourney.token || ref}</p>
               </div>
-              <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
+              <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[13px] font-bold text-amber-700">
                 In Embassy Queue
               </span>
             </div>
@@ -109,7 +109,7 @@ export default function VisaStatusWidget() {
                   <div className={`h-1.5 rounded-full mb-1 ${
                     s.done ? 'bg-brand-gold' : s.active ? 'bg-brand-navy animate-pulse' : 'bg-slate-200'
                   }`} />
-                  <span className={`text-[9px] block leading-tight font-medium ${
+                  <span className={`text-xs block leading-tight font-medium ${
                     s.active ? 'text-brand-navy font-bold' : 'text-brand-textLight'
                   }`}>
                     {s.label}
@@ -118,7 +118,7 @@ export default function VisaStatusWidget() {
               ))}
             </div>
 
-            <div className="border-t border-brand-navy/5 pt-2 flex items-center justify-between text-[10px] text-brand-textLight">
+            <div className="border-t border-brand-navy/5 pt-2 flex items-center justify-between text-[13px] text-brand-textLight">
               <span>Updated: {currentJourney.updatedAgo || 'Just now'}</span>
               <a
                 href={`/portal?token=${encodeURIComponent(ref || currentJourney.token || 'OP-2026-US-894')}&tab=visa`}
@@ -131,7 +131,7 @@ export default function VisaStatusWidget() {
           </div>
         ) : (
           <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/20 p-3 text-center">
-            <p className="text-[11px] text-brand-navy/80">
+            <p className="text-sm text-brand-navy/80">
               <span className="font-bold text-brand-navy">Transparent Handling:</span> All consular updates synchronize directly to your verified WhatsApp and client dashboard.
             </p>
           </div>

@@ -85,7 +85,7 @@ export default function ShippingPolicyPage() {
               </div>
 
               <div className="p-4 rounded-2xl bg-white border border-brand-navy/10">
-                <p className="font-bold text-brand-navy">✈️ Stamped Passport Return Deliveries</p>
+                <p className="font-bold text-brand-navy">🛂 Stamped Passport Return Deliveries</p>
                 <p className="text-xs text-brand-textLight mt-1">
                   Dispatched immediately upon consular counter handover. Delivered securely to the client registered residential address within <strong>2 to 4 working days</strong>.
                 </p>

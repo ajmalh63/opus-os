@@ -35,14 +35,14 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="grid min-h-screen place-items-center bg-brand-navy p-6">
           <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="inline-block rounded-full border border-rose-500/50 bg-rose-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-rose-600">
+            <div className="inline-block rounded-full border border-rose-500/50 bg-rose-500/10 px-3 py-1 text-[13px] font-bold uppercase tracking-widest text-rose-600">
               {dev ? 'Dev — error captured (root cause)' : 'Something went wrong'}
             </div>
             <h1 className="mt-3 font-display text-lg font-extrabold text-brand-navy">The app hit an unhandled error</h1>
-            <pre className="mt-3 overflow-auto rounded-xl bg-slate-50 p-3 font-mono text-[11px] leading-relaxed text-rose-700">{message}</pre>
-            {dev && stack && <pre className="mt-2 max-h-64 overflow-auto rounded-xl bg-slate-100 p-3 font-mono text-[10px] leading-relaxed text-slate-600">{stack}</pre>}
+            <pre className="mt-3 overflow-auto rounded-xl bg-slate-50 p-3 font-mono text-sm leading-relaxed text-rose-700">{message}</pre>
+            {dev && stack && <pre className="mt-2 max-h-64 overflow-auto rounded-xl bg-slate-100 p-3 font-mono text-[13px] leading-relaxed text-slate-600">{stack}</pre>}
             <button onClick={() => { this.setState({ error: null, windowError: null }); window.location.reload(); }}
-              className="mt-4 rounded-full bg-brand-gold px-5 py-2 text-[11px] font-extrabold uppercase tracking-wider text-brand-navy hover:bg-brand-1 hover:text-white">
+              className="mt-4 rounded-full bg-brand-gold px-5 py-2 text-sm font-extrabold uppercase tracking-wider text-brand-navy hover:bg-brand-1 hover:text-white">
               Reload app
             </button>
           </div>

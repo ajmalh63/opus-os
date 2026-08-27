@@ -456,10 +456,10 @@ export default function StudyAbroadPortal() {
   const deadlineChip = (ts: number | null | undefined) => {
     const d = daysLeft(ts);
     if (d === null) return null;
-    if (d < 0) return <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 text-[9px] font-bold">⏰ {Math.abs(d)}d overdue</span>;
-    if (d <= 7) return <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 text-[9px] font-bold">🔥 {d}d left</span>;
-    if (d <= 14) return <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 text-[9px] font-bold">⏳ {d}d left</span>;
-    return <span className="px-1.5 py-0.5 rounded bg-brand-navy/[0.06] text-brand-navy/50 text-[9px] font-bold">{d}d left</span>;
+    if (d < 0) return <span className="px-2 py-0.5 rounded bg-rose-500/15 text-rose-700 text-xs font-bold">⏰ {Math.abs(d)}d overdue</span>;
+    if (d <= 7) return <span className="px-2 py-0.5 rounded bg-rose-500/15 text-rose-700 text-xs font-bold">🔥 {d}d left</span>;
+    if (d <= 14) return <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-800 text-xs font-bold">⏳ {d}d left</span>;
+    return <span className="px-2 py-0.5 rounded bg-brand-navy/[0.06] text-brand-navy/70 text-xs font-bold">{d}d left</span>;
   };
 
   const getStudentGPA = (s: Student) => {
@@ -523,7 +523,7 @@ export default function StudyAbroadPortal() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Admissions & Counseling Desk</span>
+            <span className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Admissions & Counseling Desk</span>
           </div>
           <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Study Abroad Operations</h1>
           <p className="text-xs text-brand-textLight mt-0.5">Coordinate 35+ country applications, live eligibility matching, and automated SOP synthesis.</p>
@@ -573,7 +573,7 @@ export default function StudyAbroadPortal() {
               <h3 className="text-xs uppercase font-bold text-brand-navy/50 tracking-wider">Student Registry</h3>
               <button
                 onClick={() => setShowAddStudent(true)}
-                className="bg-brand-gold text-brand-navy text-[10px] font-bold px-2.5 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
+                className="bg-brand-gold text-brand-navy text-[13px] font-bold px-2.5 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
               >
                 + Add Student
               </button>
@@ -596,16 +596,16 @@ export default function StudyAbroadPortal() {
                 >
                   <div className="flex justify-between items-start w-full">
                     <span className="font-bold text-brand-navy line-clamp-1">{s.name}</span>
-                    <span className="text-[10px] text-brand-navy/50 font-mono shrink-0">{s.id}</span>
+                    <span className="text-[13px] text-brand-navy/50 font-mono shrink-0">{s.id}</span>
                   </div>
-                  <div className="flex justify-between text-[10px] text-brand-navy/40 font-medium w-full">
+                  <div className="flex justify-between text-[13px] text-brand-navy/40 font-medium w-full">
                     <span>GPA: {getStudentGPA(s)}</span>
                     <span className="text-brand-gold uppercase">{getStudentCountry(s)}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="flex-1 h-1 rounded bg-brand-navy/[0.08] overflow-hidden"><div className="h-full bg-brand-gold" style={{ width: `${studentCompleteness(s).pct}%` }} /></div>
-                    <span className={`text-[8px] font-bold ${studentCompleteness(s).pct === 100 ? 'text-emerald-700' : 'text-amber-700'}`}>{studentCompleteness(s).pct}%</span>
-                    {s.notes && <span title="Has notes" className="text-[9px]">📝</span>}
+                    <span className={`text-sm font-bold ${studentCompleteness(s).pct === 100 ? 'text-emerald-700' : 'text-amber-700'}`}>{studentCompleteness(s).pct}%</span>
+                    {s.notes && <span title="Has notes" className="text-xs">📝</span>}
                   </div>
                 </button>
               ))}
@@ -630,7 +630,7 @@ export default function StudyAbroadPortal() {
                         <h2 className="font-display text-xl font-extrabold text-brand-navy">{selectedStudent.name}</h2>
                         <span className="text-sm">🇮🇳</span>
                       </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-brand-navy/50 font-mono text-[10px] mt-1 font-semibold">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-brand-navy/50 font-mono text-[13px] mt-1 font-semibold">
                         <span className="text-emerald-700 font-bold">#{selectedStudent.id.split('-').pop()}</span>
                         <span>•</span>
                         <span>{selectedStudent.email}</span>
@@ -722,19 +722,19 @@ export default function StudyAbroadPortal() {
                       {/* Applications summary strip */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                         <div className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.03] p-3">
-                          <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">Applications</div>
+                          <div className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">Applications</div>
                           <div className="font-display font-extrabold text-brand-navy text-lg mt-0.5">{appsData?.applications?.length || 0}</div>
                         </div>
                         <div className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.03] p-3">
-                          <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">In Progress</div>
+                          <div className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">In Progress</div>
                           <div className="font-display font-extrabold text-brand-navy text-lg mt-0.5">{(appsData?.applications || []).filter(a => !['enrolled', 'rejected', 'withdrawn'].includes(a.status)).length}</div>
                         </div>
                         <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
-                          <div className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">Offers</div>
+                          <div className="text-xs font-bold uppercase tracking-widest text-emerald-700">Offers</div>
                           <div className="font-display font-extrabold text-emerald-700 text-lg mt-0.5">{(appsData?.applications || []).filter(a => a.status === 'offer_letter').length}</div>
                         </div>
                         <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3">
-                          <div className="text-[9px] font-bold uppercase tracking-widest text-rose-600">Next Deadline</div>
+                          <div className="text-xs font-bold uppercase tracking-widest text-rose-600">Next Deadline</div>
                           <div className="font-display font-extrabold text-rose-600 text-sm mt-0.5">
                             {(() => {
                               const deadlines = (appsData?.applications || [])
@@ -749,16 +749,16 @@ export default function StudyAbroadPortal() {
                               .map(a => ({ uni: a.university.name, d: a.university.deadline }))
                               .filter(x => x.d && x.d > Date.now() / 1000)
                               .sort((a, b) => a.d! - b.d!);
-                            return deadlines.length ? <div className="text-[9px] text-rose-600/70 mt-0.5 line-clamp-1">{deadlines[0].uni}</div> : null;
+                            return deadlines.length ? <div className="text-xs text-rose-600/70 mt-0.5 line-clamp-1">{deadlines[0].uni}</div> : null;
                           })()}
                         </div>
                       </div>
                     {/* Communication timeline — anyone can pick up the case */}
                     <div className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm mb-6">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">💬 Communication Log</h4>
+                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">💬 Communication Log</h4>
                         <div className="flex gap-1.5">
-                          <select value={noteChannel} onChange={(e) => setNoteChannel(e.target.value as any)} className="border border-brand-navy/10 bg-white rounded px-1.5 py-1 text-[9px] text-brand-navy outline-none cursor-pointer font-bold [&>option]:bg-white">
+                          <select value={noteChannel} onChange={(e) => setNoteChannel(e.target.value as any)} className="border border-brand-navy/10 bg-white rounded px-1.5 py-1 text-xs text-brand-navy outline-none cursor-pointer font-bold [&>option]:bg-white">
                             <option value="note">Note</option>
                             <option value="whatsapp">WhatsApp</option>
                             <option value="email">Email</option>
@@ -768,20 +768,20 @@ export default function StudyAbroadPortal() {
                             onChange={(e) => setNoteText(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter' && noteText.trim()) logNoteMutation.mutate({ channel: noteChannel, body: noteText.trim() }); }}
                             placeholder="Log a call / note… (Enter to save)"
-                            className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-56"
+                            className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[13px] text-brand-navy outline-none focus:border-brand-gold w-56"
                           />
                         </div>
                       </div>
                       <div className="space-y-1.5 max-h-40 overflow-y-auto">
                         {(clientDetails?.timeline || []).slice(0, 8).map((c: any) => (
-                          <div key={c.id} className="flex items-start gap-2 text-[10px]">
-                            <span className={`shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${c.channel === 'whatsapp' ? 'bg-emerald-500/15 text-emerald-700' : c.channel === 'email' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{c.channel}</span>
+                          <div key={c.id} className="flex items-start gap-2 text-[13px]">
+                            <span className={`shrink-0 px-1.5 py-0.5 rounded text-sm font-bold uppercase ${c.channel === 'whatsapp' ? 'bg-emerald-500/15 text-emerald-700' : c.channel === 'email' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{c.channel}</span>
                             <span className="text-brand-navy/70 flex-1">{c.body}</span>
                             <span className="text-brand-navy/30 shrink-0">{c.senderName || 'client'} · {new Date(c.createdAt * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
                           </div>
                         ))}
                         {(clientDetails?.timeline || []).length === 0 && (
-                          <p className="text-[10px] text-brand-navy/40 italic">No communication logged yet. Log your first call above.</p>
+                          <p className="text-[13px] text-brand-navy/40 italic">No communication logged yet. Log your first call above.</p>
                         )}
                       </div>
                     </div>
@@ -789,7 +789,7 @@ export default function StudyAbroadPortal() {
                     {/* Internal notes — staff-only */}
                     <div className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm mb-6">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">📝 Internal Notes</h4>
+                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">📝 Internal Notes</h4>
                         <button
                           onClick={() => {
                             if (notesDirty) {
@@ -798,7 +798,7 @@ export default function StudyAbroadPortal() {
                             }
                           }}
                           disabled={!notesDirty}
-                          className={`text-[9px] font-bold px-2.5 py-1 rounded transition-all cursor-pointer ${notesDirty ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90' : 'bg-brand-navy/[0.04] text-brand-navy/30 cursor-not-allowed'}`}
+                          className={`text-xs font-bold px-2.5 py-1 rounded transition-all cursor-pointer ${notesDirty ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90' : 'bg-brand-navy/[0.04] text-brand-navy/30 cursor-not-allowed'}`}
                         >
                           {notesDirty ? 'Save Notes ✓' : 'Saved'}
                         </button>
@@ -815,7 +815,7 @@ export default function StudyAbroadPortal() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-5">
                         <div className="flex justify-between items-center border-b border-brand-navy/[0.08] pb-2">
-                          <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Academic Profile</h4>
+                          <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">Academic Profile</h4>
                           <button
                             onClick={() => {
                               if (isEditingAcademic) {
@@ -907,7 +907,7 @@ export default function StudyAbroadPortal() {
                       </div>
 
                       <div className="space-y-5">
-                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px] border-b border-brand-navy/[0.08] pb-2">Target Preferences</h4>
+                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px] border-b border-brand-navy/[0.08] pb-2">Target Preferences</h4>
                         
                         <div className="space-y-3.5">
                           <div className="flex justify-between items-center">
@@ -978,10 +978,10 @@ export default function StudyAbroadPortal() {
                   {activeTab === 'shortlist' && (
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Applications ({appsData?.applications?.length || 0})</h4>
+                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">Applications ({appsData?.applications?.length || 0})</h4>
                         <button
                           onClick={() => setShowAppModal(true)}
-                          className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
+                          className="bg-brand-gold text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
                         >
                           + New Application
                         </button>
@@ -989,13 +989,13 @@ export default function StudyAbroadPortal() {
 
                       {/* Per-student mini-pipeline: this student's applications across the lifecycle */}
                       <div className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm">
-                        <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-2">🎯 {selectedStudent?.name.split(' ')[0]}'s Pipeline</div>
+                        <div className="text-xs font-bold uppercase tracking-widest text-brand-navy/40 mb-2">🎯 {selectedStudent?.name.split(' ')[0]}'s Pipeline</div>
                         <div className="grid grid-cols-4 md:grid-cols-8 gap-1.5">
                           {APP_COLUMNS.map(col => {
                             const count = (appsData?.applications || []).filter(a => a.status === col.key).length;
                             return (
                               <div key={col.key} className={`rounded-lg border p-2 text-center ${count > 0 ? 'border-brand-gold/50 bg-brand-gold/[0.06]' : 'border-brand-navy/[0.06] bg-brand-navy/[0.02]'}`}>
-                                <div className={`text-[8px] font-bold uppercase tracking-wider ${count > 0 ? 'text-brand-navy' : 'text-brand-navy/30'}`}>{col.title}</div>
+                                <div className={`text-sm font-bold uppercase tracking-wider ${count > 0 ? 'text-brand-navy' : 'text-brand-navy/30'}`}>{col.title}</div>
                                 <div className={`font-display font-extrabold text-sm mt-0.5 ${count > 0 ? 'text-brand-gold' : 'text-brand-navy/30'}`}>{count}</div>
                               </div>
                             );
@@ -1022,27 +1022,27 @@ export default function StudyAbroadPortal() {
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-bold text-brand-navy text-sm">{app.university.name}</span>
-                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${TIER_STYLE[app.match.tier]}`}>{TIER_LABEL[app.match.tier]} {app.match.score}</span>
+                                    <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${TIER_STYLE[app.match.tier]}`}>{TIER_LABEL[app.match.tier]} {app.match.score}</span>
                                   </div>
-                                  <div className="text-[10px] text-brand-navy/40 mt-0.5">
+                                  <div className="text-[13px] text-brand-navy/40 mt-0.5">
                                     {app.university.country}{app.university.city ? ` · ${app.university.city}` : ''} · {app.university.program} · {app.university.degreeLevel} · {app.university.intake}
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {deadlineChip(app.university.deadline)}
-                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${APP_COLUMNS.find(c => c.key === app.status)?.color || 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{APP_STATUS_LABEL[app.status] || app.status}</span>
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${APP_COLUMNS.find(c => c.key === app.status)?.color || 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{APP_STATUS_LABEL[app.status] || app.status}</span>
                                 </div>
                               </div>
 
                               {/* Match reasons */}
                               {app.match.reasons.length > 0 && (
-                                <div className="text-[9px] text-brand-navy/50 bg-brand-navy/[0.03] rounded-lg px-2.5 py-1.5">{app.match.reasons.join(' · ')}</div>
+                                <div className="text-xs text-brand-navy/50 bg-brand-navy/[0.03] rounded-lg px-2.5 py-1.5">{app.match.reasons.join(' · ')}</div>
                               )}
 
                               {/* Docs checklist */}
                               <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                  <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">Document checklist {docsTotal > 0 && `(${docsDone}/${docsTotal})`}</span>
+                                  <span className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">Document checklist {docsTotal > 0 && `(${docsDone}/${docsTotal})`}</span>
                                   {docsTotal > 0 && <div className="flex-1 h-1 rounded bg-brand-navy/[0.08] overflow-hidden ml-3"><div className="h-full bg-brand-gold" style={{ width: `${Math.round((docsDone / docsTotal) * 100)}%` }} /></div>}
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
@@ -1055,7 +1055,7 @@ export default function StudyAbroadPortal() {
                                         updateAppDocsMutation.mutate({ id: app.id, docs: { [k]: nextState } });
                                       }}
                                       title={`${DOC_LABEL[k]}: ${docs[k] || 'missing'} — click to cycle`}
-                                      className={`px-2 py-0.5 rounded text-[9px] font-bold border cursor-pointer transition-all ${(docs[k] || 'missing') === 'verified' ? 'bg-emerald-500/15 text-emerald-700 border-emerald-200' : (docs[k] || 'missing') === 'received' ? 'bg-blue-500/15 text-blue-700 border-blue-200' : 'bg-brand-navy/[0.04] text-brand-navy/40 border-brand-navy/10'}`}
+                                      className={`px-2 py-0.5 rounded text-xs font-bold border cursor-pointer transition-all ${(docs[k] || 'missing') === 'verified' ? 'bg-emerald-500/15 text-emerald-700 border-emerald-200' : (docs[k] || 'missing') === 'received' ? 'bg-blue-500/15 text-blue-700 border-blue-200' : 'bg-brand-navy/[0.04] text-brand-navy/40 border-brand-navy/10'}`}
                                     >
                                       {DOC_LABEL[k]}: {docs[k] || 'missing'}
                                     </button>
@@ -1067,10 +1067,10 @@ export default function StudyAbroadPortal() {
                               {app.status === 'offer_letter' && (
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 space-y-2">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">📬 Offer Letter</span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${app.offer.offerDecision === 'accepted' ? 'bg-emerald-500/15 text-emerald-700' : app.offer.offerDecision === 'declined' ? 'bg-rose-500/15 text-rose-600' : 'bg-amber-500/15 text-amber-700'}`}>{app.offer.offerDecision}</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-emerald-700">📬 Offer Letter</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${app.offer.offerDecision === 'accepted' ? 'bg-emerald-500/15 text-emerald-700' : app.offer.offerDecision === 'declined' ? 'bg-rose-500/15 text-rose-600' : 'bg-amber-500/15 text-amber-700'}`}>{app.offer.offerDecision}</span>
                                   </div>
-                                  <div className="text-[10px] text-brand-navy/70 space-y-0.5">
+                                  <div className="text-[13px] text-brand-navy/70 space-y-0.5">
                                     <div>Type: <b>{app.offer.offerType || '—'}</b>{app.offer.offerLetterKey && <span className="ml-2 text-brand-gold font-bold">📄 uploaded</span>}</div>
                                     {app.offer.offerConditions.length > 0 && <div>Conditions: {app.offer.offerConditions.join('; ')}</div>}
                                     <div className="flex flex-wrap gap-x-4">
@@ -1082,14 +1082,14 @@ export default function StudyAbroadPortal() {
                                     <button
                                       onClick={() => updateAppOfferMutation.mutate({ id: app.id, payload: { offerDecision: 'accepted' } })}
                                       disabled={app.offer.offerDecision !== 'pending'}
-                                      className="bg-emerald-600 text-white text-[9px] font-bold px-3 py-1.5 rounded hover:bg-emerald-700 transition-all cursor-pointer disabled:opacity-40"
+                                      className="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded hover:bg-emerald-700 transition-all cursor-pointer disabled:opacity-40"
                                     >
                                       ✓ Accept Offer
                                     </button>
                                     <button
                                       onClick={() => updateAppOfferMutation.mutate({ id: app.id, payload: { offerDecision: 'declined' } })}
                                       disabled={app.offer.offerDecision !== 'pending'}
-                                      className="border border-rose-300 text-rose-600 text-[9px] font-bold px-3 py-1.5 rounded hover:bg-rose-50 transition-all cursor-pointer disabled:opacity-40"
+                                      className="border border-rose-300 text-rose-600 text-xs font-bold px-3 py-1.5 rounded hover:bg-rose-50 transition-all cursor-pointer disabled:opacity-40"
                                     >
                                       ✕ Decline
                                     </button>
@@ -1098,14 +1098,14 @@ export default function StudyAbroadPortal() {
                               )}
 
                               {app.status === 'rejected' && app.rejectionReason && (
-                                <div className="rounded-lg bg-rose-500/10 border border-rose-200 p-2.5 text-[10px] text-rose-700">
+                                <div className="rounded-lg bg-rose-500/10 border border-rose-200 p-2.5 text-[13px] text-rose-700">
                                   <b>Rejected:</b> {app.rejectionReason}
                                 </div>
                               )}
 
                               {/* Actions */}
                               <div className="flex items-center justify-between border-t border-brand-navy/[0.08] pt-2.5">
-                                <div className="text-[9px] text-brand-navy/40">
+                                <div className="text-xs text-brand-navy/40">
                                   {app.university.applicationFeePaise ? `Fee ${INR(app.university.applicationFeePaise)}` : ''}
                                   {app.university.portalUrl ? ` · Portal: ${app.university.portalUrl}` : ''}
                                 </div>
@@ -1126,7 +1126,7 @@ export default function StudyAbroadPortal() {
                                           }
                                         });
                                       }}
-                                      className="text-[9px] font-bold text-brand-gold hover:underline cursor-pointer"
+                                      className="text-xs font-bold text-brand-gold hover:underline cursor-pointer"
                                     >
                                       📄 Record offer details
                                     </button>
@@ -1143,7 +1143,7 @@ export default function StudyAbroadPortal() {
                                           updateAppStatusMutation.mutate({ id: app.id, status: target });
                                         }
                                       }}
-                                      className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[9px] text-brand-navy outline-none cursor-pointer font-bold [&>option]:bg-white"
+                                      className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-xs text-brand-navy outline-none cursor-pointer font-bold [&>option]:bg-white"
                                     >
                                       <option value={app.status}>{APP_STATUS_LABEL[app.status] || app.status}</option>
                                       {next.map(n => <option key={n} value={n}>{APP_STATUS_LABEL[n] || n}</option>)}
@@ -1160,7 +1160,7 @@ export default function StudyAbroadPortal() {
 
                   {activeTab === 'docs' && (
                     <div className="space-y-4">
-                      <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Admission Checklist / Vault</h4>
+                      <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">Admission Checklist / Vault</h4>
                       <div className="rounded-xl border border-brand-navy/10 divide-y divide-brand-navy/[0.08] bg-brand-navy/[0.04]">
                         {[
                           { key: 'transcript', label: '10th, 12th & Degree Transcripts' },
@@ -1176,28 +1176,28 @@ export default function StudyAbroadPortal() {
                               <div>
                                 <span className="font-semibold text-brand-navy/70 block">{doc.label}</span>
                                 {docObj && (
-                                  <span className="text-[9px] text-brand-navy/50 block font-mono">{docObj.fileName}</span>
+                                  <span className="text-xs text-brand-navy/50 block font-mono">{docObj.fileName}</span>
                                 )}
                               </div>
                               <div className="flex items-center gap-3">
                                 {docObj ? (
                                   <>
                                     {docObj.scanStatus === 'flagged' && (
-                                      <span title={docObj.scanNote || 'Suspicious content'} className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                                      <span title={docObj.scanNote || 'Suspicious content'} className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                                         ⚠️ Flagged — review before use
                                       </span>
                                     )}
                                     {docObj.docLabel && (
-                                      <span className="text-[9px] font-bold text-brand-navy/60 bg-brand-navy/[0.04] px-2 py-0.5 rounded">{docObj.docLabel}</span>
+                                      <span className="text-xs font-bold text-brand-navy/60 bg-brand-navy/[0.04] px-2 py-0.5 rounded">{docObj.docLabel}</span>
                                     )}
-                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                                    <span className="text-[13px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                                       Uploaded ✓
                                     </span>
                                     <a
                                       href={`/api/clients/${selectedStudent.id}/documents/${docObj.id}/download`}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="text-[9px] text-brand-gold hover:underline font-bold"
+                                      className="text-xs text-brand-gold hover:underline font-bold"
                                     >
                                       Download 📥
                                     </a>
@@ -1205,23 +1205,23 @@ export default function StudyAbroadPortal() {
                                       <div className="flex gap-1.5">
                                         <button
                                           onClick={() => reviewDocMutation.mutate({ docId: docObj.id, status: 'verified' })}
-                                          className="bg-emerald-600 text-white text-[9px] font-bold px-2 py-1 rounded hover:bg-emerald-700 transition-all cursor-pointer"
+                                          className="bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded hover:bg-emerald-700 transition-all cursor-pointer"
                                         >
                                           ✓ Approve
                                         </button>
                                         <button
                                           onClick={() => { if (confirm('Reject this document?')) reviewDocMutation.mutate({ docId: docObj.id, status: 'rejected' }); }}
-                                          className="border border-rose-300 text-rose-600 text-[9px] font-bold px-2 py-1 rounded hover:bg-rose-50 transition-all cursor-pointer"
+                                          className="border border-rose-300 text-rose-600 text-xs font-bold px-2 py-1 rounded hover:bg-rose-50 transition-all cursor-pointer"
                                         >
                                           ✕ Reject
                                         </button>
                                       </div>
                                     )}
                                     {docObj.status === 'verified' && (
-                                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">✓ Verified</span>
+                                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">✓ Verified</span>
                                     )}
                                     {docObj.status === 'rejected' && (
-                                      <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">✕ Rejected</span>
+                                      <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">✕ Rejected</span>
                                     )}
                                   </>
                                 ) : (
@@ -1231,7 +1231,7 @@ export default function StudyAbroadPortal() {
                                       const file = e.target.files?.[0];
                                       if (file) handleUploadDoc(doc.key, file);
                                     }}
-                                    className="text-[10px] text-brand-navy/40 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-brand-gold/15 file:text-brand-navy hover:file:bg-brand-gold/25 cursor-pointer"
+                                    className="text-[13px] text-brand-navy/40 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[13px] file:font-semibold file:bg-brand-gold/15 file:text-brand-navy hover:file:bg-brand-gold/25 cursor-pointer"
                                   />
                                 )}
                               </div>
@@ -1242,25 +1242,25 @@ export default function StudyAbroadPortal() {
 
                       {/* Other documents — agent uploads with a label (same as student side) */}
                       <div className="rounded-xl border border-dashed border-brand-navy/15 bg-white p-4 space-y-3">
-                        <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">📎 Other documents (labeled)</div>
+                        <div className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">📎 Other documents (labeled)</div>
                         <div className="space-y-1.5">
                           {docsList.filter((d: any) => d.docLabel).map((d: any) => (
                             <div key={d.id} className="flex items-center justify-between gap-2 rounded-lg border border-brand-navy/10 bg-brand-navy/[0.02] px-3 py-2">
                               <div className="min-w-0">
-                                <div className="text-[10px] font-bold text-brand-navy truncate">{d.docLabel}</div>
-                                <div className="text-[9px] text-brand-navy/40 font-mono truncate">{d.fileName}</div>
+                                <div className="text-[13px] font-bold text-brand-navy truncate">{d.docLabel}</div>
+                                <div className="text-xs text-brand-navy/40 font-mono truncate">{d.fileName}</div>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
                                 {d.scanStatus === 'flagged' && (
-                                  <span title={d.scanNote || 'Suspicious content'} className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">⚠️ Flagged</span>
+                                  <span title={d.scanNote || 'Suspicious content'} className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">⚠️ Flagged</span>
                                 )}
-                                <span className={`text-[9px] font-bold uppercase ${d.status === 'verified' ? 'text-emerald-700' : d.status === 'rejected' ? 'text-rose-600' : 'text-brand-navy/40'}`}>{d.status}</span>
-                                <a href={`/api/clients/${selectedStudent.id}/documents/${d.id}/download`} target="_blank" rel="noreferrer" className="text-[9px] text-brand-gold hover:underline font-bold">Download 📥</a>
+                                <span className={`text-xs font-bold uppercase ${d.status === 'verified' ? 'text-emerald-700' : d.status === 'rejected' ? 'text-rose-600' : 'text-brand-navy/40'}`}>{d.status}</span>
+                                <a href={`/api/clients/${selectedStudent.id}/documents/${d.id}/download`} target="_blank" rel="noreferrer" className="text-xs text-brand-gold hover:underline font-bold">Download 📥</a>
                               </div>
                             </div>
                           ))}
                           {docsList.filter((d: any) => d.docLabel).length === 0 && (
-                            <p className="text-[10px] text-brand-navy/40 italic">No labeled documents yet.</p>
+                            <p className="text-[13px] text-brand-navy/40 italic">No labeled documents yet.</p>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
@@ -1268,7 +1268,7 @@ export default function StudyAbroadPortal() {
                             value={otherDocLabel}
                             onChange={(e) => setOtherDocLabel(e.target.value)}
                             placeholder="Label — e.g. Gap year certificate, Work experience letter…"
-                            className="flex-1 rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[10px] text-brand-navy outline-none focus:border-brand-gold"
+                            className="flex-1 rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[13px] text-brand-navy outline-none focus:border-brand-gold"
                           />
                           <label className="cursor-pointer shrink-0">
                             <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" className="hidden" onChange={(e) => {
@@ -1280,7 +1280,7 @@ export default function StudyAbroadPortal() {
                                 setOtherDocLabel('');
                               }
                             }} />
-                            <span className="bg-brand-navy text-white text-[9px] font-bold px-3 py-2 rounded hover:bg-brand-navy/90 transition-all">Upload</span>
+                            <span className="bg-brand-navy text-white text-xs font-bold px-3 py-2 rounded hover:bg-brand-navy/90 transition-all">Upload</span>
                           </label>
                         </div>
                       </div>
@@ -1290,7 +1290,7 @@ export default function StudyAbroadPortal() {
                   {activeTab === 'apps' && (
                     <div className="space-y-4 rounded-xl border border-brand-navy/10 bg-white p-5 backdrop-blur-sm">
                       <div className="flex justify-between items-center pb-2 border-b border-brand-navy/10">
-                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Admission Portal Tracking</h4>
+                        <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">Admission Portal Tracking</h4>
                         <button
                           onClick={() => {
                             const existingContext = selectedStudent.intakeContext ? JSON.parse(selectedStudent.intakeContext) : {};
@@ -1306,7 +1306,7 @@ export default function StudyAbroadPortal() {
                             });
                             alert('Credentials saved successfully!');
                           }}
-                          className="bg-brand-gold text-brand-navy font-bold hover:bg-brand-gold/90 px-3 py-1 rounded-lg transition-colors cursor-pointer text-[10px]"
+                          className="bg-brand-gold text-brand-navy font-bold hover:bg-brand-gold/90 px-3 py-1 rounded-lg transition-colors cursor-pointer text-[13px]"
                         >
                           Save Credentials ✓
                         </button>
@@ -1334,7 +1334,7 @@ export default function StudyAbroadPortal() {
                         </div>
                         <div className="space-y-1">
                           <label className="font-semibold text-brand-navy/40">Portal Credentials</label>
-                          <div className="rounded border border-brand-navy/10 bg-brand-navy/[0.03] px-3 py-1.5 text-[10px] text-brand-navy/50">
+                          <div className="rounded border border-brand-navy/10 bg-brand-navy/[0.03] px-3 py-1.5 text-[13px] text-brand-navy/50">
                             🔒 Passwords stay in your partner tools — never stored in OpusOS.
                           </div>
                         </div>
@@ -1376,37 +1376,37 @@ export default function StudyAbroadPortal() {
           {/* Pipeline Health strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">Total Applications</div>
+              <div className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">Total Applications</div>
               <div className="font-display font-extrabold text-brand-navy text-xl mt-1">{pipelineData?.total ?? 0}</div>
             </div>
             <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 shadow-sm">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-amber-700">🪨 Stuck (&gt;7d)</div>
+              <div className="text-xs font-bold uppercase tracking-widest text-amber-700">🪨 Stuck (&gt;7d)</div>
               <div className="font-display font-extrabold text-amber-700 text-xl mt-1">{pipelineData?.stuck.length ?? 0}</div>
               {pipelineData && pipelineData.stuck.length > 0 && (
-                <div className="text-[9px] text-amber-700/70 mt-1 line-clamp-1">{pipelineData.stuck.map(s => s.university).join(', ')}</div>
+                <div className="text-xs text-amber-700/70 mt-1 line-clamp-1">{pipelineData.stuck.map(s => s.university).join(', ')}</div>
               )}
             </div>
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 shadow-sm">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">📬 Decisions Pending</div>
+              <div className="text-xs font-bold uppercase tracking-widest text-emerald-700">📬 Decisions Pending</div>
               <div className="font-display font-extrabold text-emerald-700 text-xl mt-1">{pipelineData?.decisionsPending.length ?? 0}</div>
               {pipelineData && pipelineData.decisionsPending.length > 0 && (
-                <div className="text-[9px] text-emerald-700/70 mt-1 line-clamp-1">{pipelineData.decisionsPending.map(d => d.university).join(', ')}</div>
+                <div className="text-xs text-emerald-700/70 mt-1 line-clamp-1">{pipelineData.decisionsPending.map(d => d.university).join(', ')}</div>
               )}
             </div>
             <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 shadow-sm">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-rose-600">🔥 Deadlines This Week</div>
+              <div className="text-xs font-bold uppercase tracking-widest text-rose-600">🔥 Deadlines This Week</div>
               <div className="font-display font-extrabold text-rose-600 text-xl mt-1">{pipelineData?.deadlinesSoon.length ?? 0}</div>
               {pipelineData && pipelineData.deadlinesSoon.length > 0 && (
-                <div className="text-[9px] text-rose-600/70 mt-1 line-clamp-1">{pipelineData.deadlinesSoon.map(d => `${d.university} (${d.kind})`).join(', ')}</div>
+                <div className="text-xs text-rose-600/70 mt-1 line-clamp-1">{pipelineData.deadlinesSoon.map(d => `${d.university} (${d.kind})`).join(', ')}</div>
               )}
             </div>
           </div>
 
           {/* Filters + New Application */}
           <div className="flex flex-wrap items-center gap-2">
-            <input value={appFilter.country} onChange={e => setAppFilter(f => ({ ...f, country: e.target.value }))} placeholder="🌍 Filter country…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-36" />
-            <input value={appFilter.intake} onChange={e => setAppFilter(f => ({ ...f, intake: e.target.value }))} placeholder="🎓 Filter intake…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-36" />
-            <select value={appFilter.tier} onChange={e => setAppFilter(f => ({ ...f, tier: e.target.value }))} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+            <input value={appFilter.country} onChange={e => setAppFilter(f => ({ ...f, country: e.target.value }))} placeholder="🌍 Filter country…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[13px] text-brand-navy outline-none focus:border-brand-gold w-36" />
+            <input value={appFilter.intake} onChange={e => setAppFilter(f => ({ ...f, intake: e.target.value }))} placeholder="🎓 Filter intake…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[13px] text-brand-navy outline-none focus:border-brand-gold w-36" />
+            <select value={appFilter.tier} onChange={e => setAppFilter(f => ({ ...f, tier: e.target.value }))} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[13px] text-brand-navy outline-none cursor-pointer">
               <option value="">All tiers</option>
               <option value="match">✓ Match</option>
               <option value="reach">⚠ Reach</option>
@@ -1414,7 +1414,7 @@ export default function StudyAbroadPortal() {
             </select>
             <button
               onClick={() => { if (!selectedStudent) { alert('Select a student first (Student Profiles tab).'); return; } setShowAppModal(true); }}
-              className="ml-auto bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
+              className="ml-auto bg-brand-gold text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
             >
               + New Application
             </button>
@@ -1433,8 +1433,8 @@ export default function StudyAbroadPortal() {
               return (
                 <div key={col.key} className="bg-brand-navy/[0.04] border border-brand-navy/10 rounded-2xl p-3 flex flex-col gap-2.5 min-w-[220px] max-h-[640px] overflow-y-auto">
                   <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
-                    <h3 className={`font-bold text-[10px] px-2 py-0.5 rounded ${col.color}`}>{col.title}</h3>
-                    <span className="text-[9px] font-bold text-brand-navy/40">{colApps.length}</span>
+                    <h3 className={`font-bold text-[13px] px-2 py-0.5 rounded ${col.color}`}>{col.title}</h3>
+                    <span className="text-xs font-bold text-brand-navy/40">{colApps.length}</span>
                   </div>
                   <div className="space-y-2.5 flex-1">
                     {colApps.map(app => {
@@ -1446,27 +1446,27 @@ export default function StudyAbroadPortal() {
                         <div key={app.id} className="bg-white border border-brand-navy/10 rounded-xl p-3 shadow-sm hover:border-brand-gold/60 transition-all space-y-2">
                           <div className="flex justify-between items-start gap-1">
                             <div className="min-w-0">
-                              <div className="font-bold text-brand-navy text-[10px] leading-tight line-clamp-1">{app.university.name}</div>
-                              <div className="text-[9px] text-brand-navy/40">{app.university.country} · {app.university.intake}</div>
+                              <div className="font-bold text-brand-navy text-[13px] leading-tight line-clamp-1">{app.university.name}</div>
+                              <div className="text-xs text-brand-navy/40">{app.university.country} · {app.university.intake}</div>
                             </div>
-                            <span className={`shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold ${TIER_STYLE[app.match.tier]}`}>{TIER_LABEL[app.match.tier]} {app.match.score}</span>
+                            <span className={`shrink-0 px-1.5 py-0.5 rounded text-sm font-bold ${TIER_STYLE[app.match.tier]}`}>{TIER_LABEL[app.match.tier]} {app.match.score}</span>
                           </div>
-                          <div className="text-[9px] text-brand-navy/60 font-semibold line-clamp-1">{app.university.program}</div>
+                          <div className="text-xs text-brand-navy/60 font-semibold line-clamp-1">{app.university.program}</div>
                           <div className="flex flex-wrap items-center gap-1">
-                            {student && <span className="px-1.5 py-0.5 rounded bg-brand-navy/[0.06] text-brand-navy/60 text-[8px] font-bold line-clamp-1 max-w-[110px]">{student.name}</span>}
+                            {student && <span className="px-1.5 py-0.5 rounded bg-brand-navy/[0.06] text-brand-navy/60 text-sm font-bold line-clamp-1 max-w-[110px]">{student.name}</span>}
                             {deadlineChip(app.university.deadline)}
-                            {app.offer.offerDecision === 'pending' && app.status === 'offer_letter' && <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 text-[8px] font-bold">📬 decision</span>}
+                            {app.offer.offerDecision === 'pending' && app.status === 'offer_letter' && <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 text-sm font-bold">📬 decision</span>}
                           </div>
                           {docsTotal > 0 && (
                             <div className="flex items-center gap-1.5">
                               <div className="flex-1 h-1 rounded bg-brand-navy/[0.08] overflow-hidden"><div className="h-full bg-brand-gold" style={{ width: `${Math.round((docsDone / docsTotal) * 100)}%` }} /></div>
-                              <span className="text-[8px] text-brand-navy/40 font-bold">{docsDone}/{docsTotal} docs</span>
+                              <span className="text-sm text-brand-navy/40 font-bold">{docsDone}/{docsTotal} docs</span>
                             </div>
                           )}
                           <div className="flex justify-between items-center border-t border-brand-navy/[0.08] pt-2">
                             <button
                               onClick={() => { if (student) handleStudentSelect(student); setViewMode('profiles'); setActiveTab('apps'); }}
-                              className="text-[9px] font-bold text-brand-gold hover:underline cursor-pointer"
+                              className="text-xs font-bold text-brand-gold hover:underline cursor-pointer"
                             >
                               View ➔
                             </button>
@@ -1482,19 +1482,19 @@ export default function StudyAbroadPortal() {
                                     updateAppStatusMutation.mutate({ id: app.id, status: target });
                                   }
                                 }}
-                                className="border border-brand-navy/10 bg-white rounded px-1.5 py-0.5 text-[8px] text-brand-navy outline-none cursor-pointer font-bold [&>option]:bg-white"
+                                className="border border-brand-navy/10 bg-white rounded px-1.5 py-0.5 text-sm text-brand-navy outline-none cursor-pointer font-bold [&>option]:bg-white"
                               >
                                 <option value={app.status}>{APP_STATUS_LABEL[app.status] || app.status}</option>
                                 {next.map(n => <option key={n} value={n}>{APP_STATUS_LABEL[n] || n}</option>)}
                               </select>
                             ) : (
-                              <span className="text-[8px] font-bold text-brand-navy/30 uppercase">{app.status}</span>
+                              <span className="text-sm font-bold text-brand-navy/30 uppercase">{app.status}</span>
                             )}
                           </div>
                         </div>
                       );
                     })}
-                    {colApps.length === 0 && <p className="text-[9px] text-brand-navy/40 italic py-4 text-center">No applications.</p>}
+                    {colApps.length === 0 && <p className="text-xs text-brand-navy/40 italic py-4 text-center">No applications.</p>}
                   </div>
                 </div>
               );

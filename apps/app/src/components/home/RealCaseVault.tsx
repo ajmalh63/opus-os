@@ -81,7 +81,7 @@ export default function RealCaseVault() {
         
         {/* Editorial Section Header */}
         <div className="mb-10 text-center space-y-2">
-          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-brand-gold">
+          <span className="font-mono text-sm font-bold uppercase tracking-[0.2em] text-brand-gold">
             Proven Case Vault
           </span>
           <h2 className="font-display fluid-h2 font-extrabold text-brand-navy tracking-tight">
@@ -94,7 +94,7 @@ export default function RealCaseVault() {
 
         {/* Division Tab Switcher — swipeable on mobile with snap + 3D hint */}
         <div className="mb-2 flex items-center justify-center">
-          <span className="md:hidden inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-navy/35">
+          <span className="md:hidden inline-flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wider text-brand-navy/35">
             <span className="w-4 h-0.5 bg-brand-gold/30 rounded-full" /> Swipe divisions <span className="animate-pulse">→</span>
           </span>
         </div>
@@ -132,20 +132,20 @@ export default function RealCaseVault() {
               </h3>
             </div>
             <div className="text-left sm:text-right shrink-0">
-              <span className="text-[10px] uppercase font-bold text-brand-textLight block">Applicant Profile</span>
+              <span className="text-[13px] uppercase font-bold text-brand-textLight block">Applicant Profile</span>
               <span className="text-xs font-semibold text-brand-navy">{activeCase.applicant}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
             <div className="rounded-2xl bg-white border border-rose-100 p-4 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 flex items-center gap-1">
+              <span className="text-[13px] font-bold uppercase tracking-wider text-rose-700 flex items-center gap-1">
                 <span>⚠️</span> The Initial Hurdle
               </span>
               <p className="text-xs leading-relaxed text-brand-navy/80">{activeCase.hurdle}</p>
             </div>
             <div className="rounded-2xl bg-white border border-emerald-100 p-4 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
+              <span className="text-[13px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
                 <span>✓</span> The Opus Solution
               </span>
               <p className="text-xs leading-relaxed text-brand-navy/80">{activeCase.solution}</p>
@@ -158,7 +158,7 @@ export default function RealCaseVault() {
               <span>{activeCase.outcome}</span>
             </span>
             <div className="flex items-center gap-3">
-              <span className="font-mono text-[11px] text-brand-textLight bg-white px-3 py-1 rounded-full border border-brand-navy/10">
+              <span className="font-mono text-sm text-brand-textLight bg-white px-3 py-1 rounded-full border border-brand-navy/10">
                 ⚡ {activeCase.turnaround}
               </span>
               <a

@@ -91,19 +91,19 @@ export default function AboutUsPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div>
             <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">1,500+</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Global University Portals</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand-textLight mt-1">Global University Portals</p>
           </div>
           <div>
             <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-gold">Free Guidance</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Student Counselling & SOP Guidance</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand-textLight mt-1">Student Counselling & SOP Guidance</p>
           </div>
           <div>
             <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">Building Certified Guidance</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Working towards certification — transparently</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand-textLight mt-1">Working towards certification — transparently</p>
           </div>
           <div>
             <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">Secure Handling</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Privacy-first — building as we launch</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand-textLight mt-1">Privacy-first — building as we launch</p>
           </div>
         </div>
       </section>
@@ -128,7 +128,7 @@ export default function AboutUsPage() {
             <p className="text-xs text-brand-textLight leading-relaxed">
               Certified UK Knowledge Agent & Education Counsellor (Awarded to Ajmal Hussain, Certificate Code #115050, Valid through 2028). Adhering to the National Code of Ethical Practice for UK education.
             </p>
-            <span className="inline-block font-mono text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+            <span className="inline-block font-mono text-[13px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
               ● Code: 115050 · Valid 2028
             </span>
           </div>
@@ -141,21 +141,21 @@ export default function AboutUsPage() {
             <p className="text-xs text-brand-textLight leading-relaxed">
               Candidate guidance as we build a verified employer network — transparently, with no inflated claims.
             </p>
-            <span className="inline-block font-mono text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+            <span className="inline-block font-mono text-[13px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
               ● Verified Sourcing Network
             </span>
           </div>
 
           <div className="clay-card p-6 space-y-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-2xl">
-              🕋
+              🧳
             </div>
-            <h3 className="font-display text-base font-bold text-brand-navy">End-to-End Sacred Logistics</h3>
+            <h3 className="font-display text-base font-bold text-brand-navy">World Holidays &amp; Sacred Logistics</h3>
             <p className="text-xs text-brand-textLight leading-relaxed">
-              Wholesale flight booking allocations from Hyderabad, pre-vetted Haram proximity hotel tie-ups in Makkah & Madinah, and dedicated scholar-led spiritual guidance.
+              Direct flight allocations, pre-vetted luxury hotels across global destinations, Haram-facing Makkah &amp; Madinah accommodations, and 24/7 concierge support.
             </p>
-            <span className="inline-block font-mono text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-              ● Full Logistic Support
+            <span className="inline-block font-mono text-[13px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+              ● Global Tour Network
             </span>
           </div>
         </div>

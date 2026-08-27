@@ -27,6 +27,12 @@ interface Departure {
 interface UmrahPackage {
   id: string;
   name: string;
+  category?: 'umrah_pilgrimage' | 'international_holiday' | 'domestic' | 'custom_group';
+  destinationCountry?: string | null;
+  destinationCity?: string | null;
+  hotelName?: string | null;
+  hotelStars?: number | null;
+  sightseeingHighlightsJson?: string | null;
   tier: 'economy' | 'standard' | 'premium' | 'luxury';
   totalDays: number;
   makkahNights: number;
@@ -134,6 +140,9 @@ export default function UmrahPortal() {
   const [selectedDepartureId, setSelectedDepartureId] = useState<string | null>(null);
   const [packagesBusy, setPackagesBusy] = useState(false);
 
+  // Category filter state
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
+
   // Calendar month state
   const [calMonth, setCalMonth] = useState(() => new Date());
   const [announceDate, setAnnounceDate] = useState<Date | null>(null);
@@ -148,6 +157,39 @@ export default function UmrahPortal() {
   const [showPkgModal, setShowPkgModal] = useState(false);
   const [editingPkg, setEditingPkg] = useState<UmrahPackage | null>(null);
   const [pkgForm, setPkgForm] = useState<Record<string, any>>(emptyPkg());
+
+  const openCreateForCategory = (category: string) => {
+    setEditingPkg(null);
+    const defaults = emptyPkg();
+    defaults.category = category;
+    if (category === 'international_holiday') {
+      defaults.name = 'Dubai & Abu Dhabi 5D/4N Family Tour';
+      defaults.destinationCountry = 'United Arab Emirates';
+      defaults.destinationCity = 'Dubai';
+      defaults.hotelName = 'Grand Hyatt Dubai';
+      defaults.hotelStars = 4;
+      defaults.totalDays = 5;
+      defaults.mealsPlan = 'breakfast';
+      defaults.sightseeingHighlightsJson = JSON.stringify(['Burj Khalifa 124th Floor', 'Desert Safari with BBQ', 'Marina Dhow Cruise']);
+    } else if (category === 'domestic') {
+      defaults.name = 'Kashmir Paradise Circuit 6D/5N';
+      defaults.destinationCountry = 'India';
+      defaults.destinationCity = 'Srinagar';
+      defaults.hotelName = 'Dal Lake Luxury Houseboat';
+      defaults.hotelStars = 4;
+      defaults.totalDays = 6;
+      defaults.mealsPlan = 'half_board';
+      defaults.sightseeingHighlightsJson = JSON.stringify(['Shikara Ride Dal Lake', 'Gulmarg Gondola Pass', 'Pahalgam Valley']);
+    } else if (category === 'custom_group') {
+      defaults.name = 'Corporate Annual Retreat & Offsite';
+      defaults.destinationCountry = 'India';
+      defaults.destinationCity = 'Goa';
+      defaults.totalDays = 4;
+      defaults.specialNeeds = 'Banquet hall with AV equipment for 50 attendees, Gala dinner';
+    }
+    setPkgForm(defaults);
+    setShowPkgModal(true);
+  };
 
   // Book seat modal (select a pilgrim client)
   const [showBook, setShowBook] = useState(false);
@@ -406,6 +448,12 @@ export default function UmrahPortal() {
   const submitPkg = () => {
     const body: Record<string, any> = {
       name: pkgForm.name, tier: pkgForm.tier,
+      category: pkgForm.category || 'umrah_pilgrimage',
+      destinationCountry: pkgForm.destinationCountry || undefined,
+      destinationCity: pkgForm.destinationCity || undefined,
+      hotelName: pkgForm.hotelName || undefined,
+      hotelStars: num(pkgForm.hotelStars),
+      sightseeingHighlightsJson: pkgForm.sightseeingHighlightsJson || undefined,
       totalDays: num(pkgForm.totalDays) ?? 7, makkahNights: num(pkgForm.makkahNights) ?? 0, madinahNights: num(pkgForm.madinahNights) ?? 0,
       flightType: pkgForm.flightType, airline: pkgForm.airline || undefined, departureCity: pkgForm.departureCity || undefined,
       arrivalAirport: pkgForm.arrivalAirport || undefined, baggageAllowance: pkgForm.baggageAllowance || undefined,
@@ -439,7 +487,7 @@ export default function UmrahPortal() {
   };
 
   const inputCls = 'w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold text-xs';
-  const labelCls = 'font-semibold text-brand-navy/40 block mb-1 text-[10px] uppercase tracking-wider';
+  const labelCls = 'font-semibold text-brand-navy/40 block mb-1 text-[13px] uppercase tracking-wider';
 
   return (
     <div className="space-y-6 font-sans">
@@ -447,13 +495,13 @@ export default function UmrahPortal() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Pilgrimage & Sacred Travel Desk</span>
+            <span className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Tours, Holidays & Pilgrimage Desk</span>
           </div>
-          <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Umrah Operations & Manifests</h1>
-          <p className="text-xs text-brand-textLight mt-0.5">Manage 30-pax group departures, hotel allotments (Makkah & Madinah), and visa checklists.</p>
+          <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Tours & Travels Operations & Manifests</h1>
+          <p className="text-xs text-brand-textLight mt-0.5">Manage tour packages (Umrah, World Holidays, Domestic & MICE), group departures, and client manifests.</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-1.5 rounded-full border shadow-xs ${inventoryEnabled ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700' : 'bg-brand-navy/[0.04] border-brand-navy/15 text-brand-textLight'}`}>
+          <span className={`text-[13px] font-extrabold uppercase tracking-wider px-3.5 py-1.5 rounded-full border shadow-xs ${inventoryEnabled ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700' : 'bg-brand-navy/[0.04] border-brand-navy/15 text-brand-textLight'}`}>
             {inventoryEnabled ? '● Live Booking Active' : '○ Coming Soon Mode'}
           </span>
           {isManager && (
@@ -495,51 +543,87 @@ export default function UmrahPortal() {
       {/* ══════════ PACKAGES TAB ══════════ */}
       {activeSubTab === 'packages' && (
         <div className="space-y-4">
-          {/* Tier guide — what each tier means (staff + client see the same) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {Object.entries(TIER_INFO).map(([k, info]) => (
-              <div key={k} className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${k === 'premium' ? 'bg-brand-gold/15 text-brand-gold' : k === 'luxury' ? 'bg-purple-500/15 text-purple-700' : k === 'standard' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{TIER_LABEL[k]}</span>
-                </div>
-                <p className="text-[10px] text-brand-navy/50 mt-1.5 leading-relaxed">{info}</p>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-brand-navy/40">{pkgsLoading ? 'Loading packages…' : `${packages.length} packages in inventory`}</p>
+          {/* Category Filter Pills & Specialized Modal Launchers */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-brand-navy/10 shadow-xs">
+            <div className="flex flex-wrap gap-1.5 text-xs font-bold">
+              {[
+                { key: 'all', label: '🌐 All Tours' },
+                { key: 'umrah_pilgrimage', label: '🕋 Umrah & Pilgrimage' },
+                { key: 'international_holiday', label: '🏖️ International Holidays' },
+                { key: 'domestic', label: '🏞️ Domestic Tours' },
+                { key: 'custom_group', label: '👥 Custom Group' },
+              ].map((c) => (
+                <button
+                  key={c.key}
+                  onClick={() => setSelectedCategoryFilter(c.key)}
+                  className={`rounded-xl px-3.5 py-1.5 transition cursor-pointer ${
+                    selectedCategoryFilter === c.key
+                      ? 'bg-brand-navy text-brand-gold shadow-xs'
+                      : 'bg-brand-navy/5 text-brand-navy/60 hover:bg-brand-navy/10'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
             {isManager && (
-              <button
-                onClick={openCreatePkg}
-                className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
-              >
-                + New Package
-              </button>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <button
+                  onClick={() => openCreateForCategory('umrah_pilgrimage')}
+                  className="rounded-xl bg-emerald-700 text-white font-bold px-3 py-1.5 hover:bg-emerald-800 transition cursor-pointer shadow-xs"
+                >
+                  🕋 + Umrah Package
+                </button>
+                <button
+                  onClick={() => openCreateForCategory('international_holiday')}
+                  className="rounded-xl bg-brand-navy text-brand-gold font-bold px-3 py-1.5 hover:bg-brand-navy/90 transition cursor-pointer shadow-xs"
+                >
+                  🏖️ + International
+                </button>
+                <button
+                  onClick={() => openCreateForCategory('domestic')}
+                  className="rounded-xl bg-amber-600 text-white font-bold px-3 py-1.5 hover:bg-amber-700 transition cursor-pointer shadow-xs"
+                >
+                  🏞️ + Domestic
+                </button>
+                <button
+                  onClick={() => openCreateForCategory('custom_group')}
+                  className="rounded-xl bg-purple-700 text-white font-bold px-3 py-1.5 hover:bg-purple-800 transition cursor-pointer shadow-xs"
+                >
+                  👥 + Custom Group
+                </button>
+              </div>
             )}
           </div>
           {pkgsLoading ? (
             <p className="text-xs text-brand-navy/50 italic">Loading…</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {packages.map(p => {
+              {packages.filter(p => selectedCategoryFilter === 'all' || (p.category || 'umrah_pilgrimage') === selectedCategoryFilter).map(p => {
                 const fill = p.totalSeats ? Math.round(((p.filledSeats || 0) / p.totalSeats) * 100) : 0;
+                const isUmrah = !p.category || p.category === 'umrah_pilgrimage';
+                const catLabel = p.category === 'international_holiday' ? '🏖️ International' : p.category === 'domestic' ? '🏞️ Domestic' : p.category === 'custom_group' ? '👥 Custom Group' : '🕋 Umrah';
                 return (
                   <div key={p.id} className="rounded-xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-3 hover:border-brand-gold/60 hover:bg-brand-navy/[0.04] backdrop-blur-sm transition-all duration-300">
                     <div className="flex items-center justify-between">
-                      <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${p.tier === 'premium' ? 'bg-brand-gold/15 text-brand-gold' : p.tier === 'luxury' ? 'bg-purple-500/15 text-purple-700' : p.tier === 'standard' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{TIER_LABEL[p.tier]} Tier</span>
                       <div className="flex items-center gap-1.5">
-                        {p.featured && <span className="text-[9px] font-bold uppercase text-brand-gold">★ Featured</span>}
-                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${p.status === 'open' ? 'bg-emerald-500/15 text-emerald-700' : p.status === 'draft' ? 'bg-brand-navy/[0.06] text-brand-navy/50' : p.status === 'paused' ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{p.status}</span>
+                        <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-navy/10 text-brand-navy">{catLabel}</span>
+                        <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded ${p.tier === 'premium' ? 'bg-brand-gold/15 text-brand-gold' : p.tier === 'luxury' ? 'bg-purple-500/15 text-purple-700' : p.tier === 'standard' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{TIER_LABEL[p.tier]}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {p.featured && <span className="text-xs font-bold uppercase text-brand-gold">★ Featured</span>}
+                        <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${p.status === 'open' ? 'bg-emerald-500/15 text-emerald-700' : p.status === 'draft' ? 'bg-brand-navy/[0.06] text-brand-navy/50' : p.status === 'paused' ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{p.status}</span>
                       </div>
                     </div>
                     <div>
                       <div className="text-brand-navy font-bold text-sm">{p.name}</div>
-                      <div className="text-[10px] text-brand-navy/40 mt-0.5">
-                        {p.totalDays} days · {p.makkahNights}N Makkah / {p.madinahNights}N Madinah · {p.flightType.replace('_', ' ')}
+                      <div className="text-[13px] text-brand-navy/40 mt-0.5">
+                        {p.totalDays} days · {isUmrah ? `${p.makkahNights}N Makkah / ${p.madinahNights}N Madinah` : `${p.destinationCity || p.destinationCountry || 'Multiple Destinations'}`} · {p.flightType.replace('_', ' ')}
                         {p.departureCity ? ` · from ${p.departureCity}` : ''}
                       </div>
                     </div>
-                    <div className="text-[10px] text-brand-navy/40 space-y-1">
+                    <div className="text-[13px] text-brand-navy/40 space-y-1">
                       <div>Retail: <span className="font-bold text-brand-gold">{INR(p.retailPricePaise)}</span> · Advance: {INR(p.advanceFeePaise)} (non-refundable)</div>
                       <div>Wholesale: <span className="font-mono">{INR(p.wholesalePricePaise)}</span> · Margin: <span className="font-bold text-emerald-700">{p.retailPricePaise > 0 ? Math.round(((p.retailPricePaise - p.wholesalePricePaise) / p.retailPricePaise) * 100) : 0}%</span></div>
                       <div>Departures: <span className="font-bold text-brand-navy">{p.openDepartureCount || 0} open</span> · {p.departureCount || 0} total</div>
@@ -548,19 +632,19 @@ export default function UmrahPortal() {
                           <div className="h-1.5 flex-1 rounded-full bg-brand-navy/[0.08] overflow-hidden">
                             <div className={`h-full rounded-full ${fill >= 100 ? 'bg-rose-500' : fill >= 70 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, fill)}%` }} />
                           </div>
-                          <span className="font-mono text-[9px]">{p.filledSeats}/{p.totalSeats} seats</span>
+                          <span className="font-mono text-xs">{p.filledSeats}/{p.totalSeats} seats</span>
                         </div>
                       ) : (
-                        <div className="text-[9px] italic text-brand-navy/30">No open departures announced yet</div>
+                        <div className="text-xs italic text-brand-navy/30">No open departures announced yet</div>
                       )}
                     </div>
                     {isManager && (
                       <div className="flex flex-wrap gap-2 pt-1">
-                        <button onClick={() => openEditPkg(p)} className="border border-brand-navy/15 bg-brand-navy/[0.04] text-brand-navy text-[10px] font-bold px-2.5 py-1 rounded hover:border-brand-gold/50 transition-all cursor-pointer">✎ Edit</button>
-                        {p.status === 'draft' && <button onClick={() => pkgStatusMutation.mutate({ id: p.id, status: 'open' })} className="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1 rounded hover:bg-emerald-700 transition-all cursor-pointer">Publish</button>}
-                        {p.status === 'open' && <button onClick={() => pkgStatusMutation.mutate({ id: p.id, status: 'paused' })} className="border border-amber-300 text-amber-700 text-[10px] font-bold px-2.5 py-1 rounded hover:bg-amber-50 transition-all cursor-pointer">Pause</button>}
-                        {p.status === 'paused' && <button onClick={() => pkgStatusMutation.mutate({ id: p.id, status: 'open' })} className="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1 rounded hover:bg-emerald-700 transition-all cursor-pointer">Resume</button>}
-                        {(p.status === 'open' || p.status === 'paused') && <button onClick={() => pkgStatusMutation.mutate({ id: p.id, status: 'closed' })} className="border border-rose-300 text-rose-600 text-[10px] font-bold px-2.5 py-1 rounded hover:bg-rose-50 transition-all cursor-pointer">Close</button>}
+                        <button onClick={() => openEditPkg(p)} className="border border-brand-navy/15 bg-brand-navy/[0.04] text-brand-navy text-[13px] font-bold px-2.5 py-1 rounded hover:border-brand-gold/50 transition-all cursor-pointer">✎ Edit</button>
+                        {p.status === 'draft' && <button onClick={() => pkgStatusMutation.mutate({ id: p.id, status: 'open' })} className="bg-emerald-600 text-white text-[13px] font-bold px-2.5 py-1 rounded hover:bg-emerald-700 transition-all cursor-pointer">Publish</button>}
+                        {p.status === 'open' && <button onClick={() => pkgStatusMutation.mutate({ id: p.id, status: 'paused' })} className="border border-amber-300 text-amber-700 text-[13px] font-bold px-2.5 py-1 rounded hover:bg-amber-50 transition-all cursor-pointer">Pause</button>}
+                        {p.status === 'paused' && <button onClick={() => pkgStatusMutation.mutate({ id: p.id, status: 'open' })} className="bg-emerald-600 text-white text-[13px] font-bold px-2.5 py-1 rounded hover:bg-emerald-700 transition-all cursor-pointer">Resume</button>}
+                        {(p.status === 'open' || p.status === 'paused') && <button onClick={() => pkgStatusMutation.mutate({ id: p.id, status: 'closed' })} className="border border-rose-300 text-rose-600 text-[13px] font-bold px-2.5 py-1 rounded hover:bg-rose-50 transition-all cursor-pointer">Close</button>}
                       </div>
                     )}
                   </div>
@@ -603,29 +687,29 @@ export default function UmrahPortal() {
                 <div className="space-y-1.5 text-brand-navy/70">
                   <div className="font-bold text-brand-navy">{fmtDate(selectedDay.date)}{selectedDay.endDate && selectedDay.endDate !== selectedDay.date ? ` → ${fmtDate(selectedDay.endDate)}` : ''}</div>
                   <div>{selectedDay.packageName || 'Standalone departure'} · <span className="font-bold text-brand-gold">{TIER_LABEL[selectedDay.tier] || selectedDay.tier}</span></div>
-                  {TIER_INFO[selectedDay.tier] && <div className="text-[10px] text-brand-navy/50 italic">{TIER_INFO[selectedDay.tier]}</div>}
+                  {TIER_INFO[selectedDay.tier] && <div className="text-[13px] text-brand-navy/50 italic">{TIER_INFO[selectedDay.tier]}</div>}
                   {selectedDay.departureCity && <div>From {selectedDay.departureCity}</div>}
                   <div className="flex items-center gap-2">
                     <div className="h-2 flex-1 rounded-full bg-brand-navy/[0.08] overflow-hidden">
                       <div className={`h-full rounded-full ${selectedDay.fillPct >= 100 ? 'bg-rose-500' : selectedDay.fillPct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, selectedDay.fillPct)}%` }} />
                     </div>
-                    <span className="font-mono text-[10px]">{selectedDay.bookedSeats}/{selectedDay.capacity} booked</span>
+                    <span className="font-mono text-[13px]">{selectedDay.bookedSeats}/{selectedDay.capacity} booked</span>
                   </div>
                   <div>Available: <span className={`font-bold ${selectedDay.available > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>{selectedDay.available} seats</span></div>
                   <div>Retail {INR(selectedDay.retailPricePaise)} · Advance {INR(selectedDay.advanceFeePaise)}</div>
-                  <div className="text-[10px] text-brand-navy/40">Status: <span className="font-bold uppercase">{selectedDay.status}</span></div>
+                  <div className="text-[13px] text-brand-navy/40">Status: <span className="font-bold uppercase">{selectedDay.status}</span></div>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <button
                     onClick={() => { setSelectedDepartureId(selectedDay.id); setActiveSubTab('groups'); }}
-                    className="flex-1 bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded hover:bg-brand-gold/90 transition-all cursor-pointer"
+                    className="flex-1 bg-brand-gold text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded hover:bg-brand-gold/90 transition-all cursor-pointer"
                   >
                     View Manifest
                   </button>
                   {isManager && (
                     <button
                       onClick={() => { setShowBook(true); setSelectedDay(null); }}
-                      className="flex-1 border border-brand-navy/15 bg-brand-navy/[0.04] text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded hover:border-brand-gold/50 transition-all cursor-pointer"
+                      className="flex-1 border border-brand-navy/15 bg-brand-navy/[0.04] text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded hover:border-brand-gold/50 transition-all cursor-pointer"
                     >
                       + Book Seat
                     </button>
@@ -634,7 +718,7 @@ export default function UmrahPortal() {
                     <button
                       onClick={() => { if (confirm(`Cancel this departure (${fmtDate(selectedDay.date)})? All linked bookings will be released.`)) cancelDepartureMutation.mutate(selectedDay.id); }}
                       disabled={cancelDepartureMutation.isPending}
-                      className="w-full border border-rose-300 text-rose-600 text-[10px] font-bold px-3 py-1.5 rounded hover:bg-rose-50 transition-all cursor-pointer disabled:opacity-50"
+                      className="w-full border border-rose-300 text-rose-600 text-[13px] font-bold px-3 py-1.5 rounded hover:bg-rose-50 transition-all cursor-pointer disabled:opacity-50"
                     >
                       Cancel Departure
                     </button>
@@ -644,7 +728,7 @@ export default function UmrahPortal() {
             ) : (
               <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-6 text-center text-xs text-brand-navy/40">
                 Select a date on the calendar to see departure details.
-                {isManager && <p className="mt-2 text-[10px]">Tip: click an empty future date to announce a departure (capacity 30).</p>}
+                {isManager && <p className="mt-2 text-[13px]">Tip: click an empty future date to announce a departure (capacity 30).</p>}
               </div>
             )}
           </div>
@@ -665,7 +749,7 @@ export default function UmrahPortal() {
                     className={`w-full text-left p-3 rounded-xl border text-xs transition-all cursor-pointer flex flex-col gap-1 ${selectedDep?.id === d.id ? 'border-brand-gold bg-brand-gold/10 font-semibold' : 'border-brand-navy/10 hover:border-brand-gold/50 bg-brand-navy/[0.04]'}`}
                   >
                     <span className="font-bold text-brand-navy">{TIER_LABEL[d.packageTier]} · {fmtDate(d.departureDate)}</span>
-                    <span className="text-[10px] text-brand-navy/40 font-mono">{d.bookedSeats}/{d.capacity} seats · {INR(d.price)}</span>
+                    <span className="text-[13px] text-brand-navy/40 font-mono">{d.bookedSeats}/{d.capacity} seats · {INR(d.price)}</span>
                   </button>
                 ))}
                 {departures.length === 0 && <p className="text-xs text-brand-navy/50 italic">No departures yet.</p>}
@@ -679,13 +763,13 @@ export default function UmrahPortal() {
                 <div className="flex items-center justify-between border-b border-brand-navy/[0.08] pb-3">
                   <div>
                     <h3 className="font-display font-bold text-brand-navy text-sm">Passenger Manifest</h3>
-                    <p className="text-[10px] text-brand-navy/50 mt-0.5">{TIER_LABEL[selectedDep.packageTier]} · {fmtDate(selectedDep.departureDate)} · {manifest.length} passengers</p>
+                    <p className="text-[13px] text-brand-navy/50 mt-0.5">{TIER_LABEL[selectedDep.packageTier]} · {fmtDate(selectedDep.departureDate)} · {manifest.length} passengers</p>
                   </div>
                   <div className="flex gap-2">
                     {isManager && (
                       <button
                         onClick={() => setShowBook(true)}
-                        className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded hover:bg-brand-gold/90 transition-all cursor-pointer"
+                        className="bg-brand-gold text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded hover:bg-brand-gold/90 transition-all cursor-pointer"
                       >
                         + Book Seat
                       </button>
@@ -693,7 +777,7 @@ export default function UmrahPortal() {
                     <button
                       onClick={exportCsv}
                       disabled={manifest.length === 0}
-                      className="border border-brand-navy/15 bg-brand-navy/[0.04] text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded hover:border-brand-gold/50 transition-all cursor-pointer disabled:opacity-40"
+                      className="border border-brand-navy/15 bg-brand-navy/[0.04] text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded hover:border-brand-gold/50 transition-all cursor-pointer disabled:opacity-40"
                     >
                       Export Manifest (CSV)
                     </button>
@@ -705,7 +789,7 @@ export default function UmrahPortal() {
                 ) : (
                   <div className="overflow-hidden rounded-xl border border-brand-navy/10 bg-white">
                     <table className="w-full text-left text-xs">
-                      <thead className="border-b border-brand-navy/[0.08] bg-brand-navy/[0.04] text-[10px] uppercase font-bold tracking-wider text-brand-gold">
+                      <thead className="border-b border-brand-navy/[0.08] bg-brand-navy/[0.04] text-[13px] uppercase font-bold tracking-wider text-brand-gold">
                         <tr>
                           <th className="px-4 py-3">Pilgrim / Party</th>
                           <th className="px-4 py-3">Booking</th>
@@ -725,21 +809,21 @@ export default function UmrahPortal() {
                               {m.paxCount > 1 && (
                                 <div className="mt-1 space-y-0.5">
                                   {m.passengers?.map((p, i) => (
-                                    <div key={i} className="text-[9px] text-brand-navy/50 flex items-center gap-1">
+                                    <div key={i} className="text-xs text-brand-navy/50 flex items-center gap-1">
                                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand-gold/60" />
                                       {p.name} <span className="text-brand-navy/30">· {CATEGORY_SHORT[p.category] || p.category}{p.passportNumber ? ` · ${p.passportNumber}` : ''}</span>
                                     </div>
                                   ))}
                                 </div>
                               )}
-                              {m.paxCount > 1 && <span className="mt-1 inline-flex rounded-full bg-brand-navy/[0.06] px-2 py-0.5 text-[9px] font-bold text-brand-navy/60">👨‍👩‍👧‍👦 {m.paxCount} pax</span>}
+                              {m.paxCount > 1 && <span className="mt-1 inline-flex rounded-full bg-brand-navy/[0.06] px-2 py-0.5 text-xs font-bold text-brand-navy/60">👨‍👩‍👧‍👦 {m.paxCount} pax</span>}
                             </td>
                             <td className="px-4 py-3">
-                              <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${m.status === 'confirmed' ? 'bg-emerald-500/15 text-emerald-700' : m.status === 'waitlist' ? 'bg-amber-500/15 text-amber-700' : m.status === 'reserved' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{m.status}</span>
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase ${m.status === 'confirmed' ? 'bg-emerald-500/15 text-emerald-700' : m.status === 'waitlist' ? 'bg-amber-500/15 text-amber-700' : m.status === 'reserved' ? 'bg-blue-500/15 text-blue-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{m.status}</span>
                             </td>
                             <td className="px-4 py-3">
-                              <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${m.occupancy === 'solo' ? 'bg-purple-500/15 text-purple-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{m.occupancy === 'solo' ? '🧳 Solo' : 'Shared'}</span>
-                              {m.roomConfig && m.paxCount > 1 && <span className="ml-1 inline-flex rounded-full bg-brand-navy/[0.06] px-2 py-0.5 text-[9px] font-bold text-brand-navy/50">{m.roomConfig}</span>}
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase ${m.occupancy === 'solo' ? 'bg-purple-500/15 text-purple-700' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{m.occupancy === 'solo' ? '🧳 Solo' : 'Shared'}</span>
+                              {m.roomConfig && m.paxCount > 1 && <span className="ml-1 inline-flex rounded-full bg-brand-navy/[0.06] px-2 py-0.5 text-xs font-bold text-brand-navy/50">{m.roomConfig}</span>}
                             </td>
                             {(['passportScanned', 'visaIssued', 'vaccineCertificate', 'ticketIssued'] as const).map(key => (
                               <td key={key} className="px-4 py-3">
@@ -757,7 +841,7 @@ export default function UmrahPortal() {
                                   <button
                                     onClick={() => { if (confirm(`Release ${m.name}'s booking? Seat returns to inventory.`)) releaseBookingMutation.mutate(m.bookingId); }}
                                     disabled={releaseBookingMutation.isPending}
-                                    className="border border-rose-300 text-rose-600 text-[9px] font-bold px-2 py-1 rounded hover:bg-rose-50 transition-all cursor-pointer disabled:opacity-50"
+                                    className="border border-rose-300 text-rose-600 text-xs font-bold px-2 py-1 rounded hover:bg-rose-50 transition-all cursor-pointer disabled:opacity-50"
                                   >
                                     Release
                                   </button>
@@ -790,11 +874,24 @@ export default function UmrahPortal() {
               <button onClick={() => setShowPkgModal(false)} className="text-brand-navy/40 hover:text-brand-navy text-lg cursor-pointer">✕</button>
             </div>
             <div className="p-6 space-y-5 text-xs">
-              {/* Identity */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Category & Identity */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="md:col-span-3">
+                  <label className={labelCls}>Tour Category *</label>
+                  <select
+                    className={inputCls + ' font-bold text-brand-navy'}
+                    value={pkgForm.category || 'umrah_pilgrimage'}
+                    onChange={(e) => setF('category', e.target.value)}
+                  >
+                    <option value="umrah_pilgrimage">🕋 Umrah &amp; Sacred Pilgrimage</option>
+                    <option value="international_holiday">🏖️ International Holiday Tour</option>
+                    <option value="domestic">🏞️ Domestic Vacation &amp; Getaway</option>
+                    <option value="custom_group">👥 Custom Group / Corporate Tour (MICE)</option>
+                  </select>
+                </div>
                 <div className="md:col-span-2">
                   <label className={labelCls}>Package Name *</label>
-                  <input className={inputCls} value={pkgForm.name} onChange={(e) => setF('name', e.target.value)} placeholder="e.g. Economy 7-Night Umrah — Hyderabad" />
+                  <input className={inputCls} value={pkgForm.name} onChange={(e) => setF('name', e.target.value)} placeholder="e.g. Dubai 5D/4N Family Adventure" />
                 </div>
                 <div>
                   <label className={labelCls}>Tier</label>
@@ -802,36 +899,61 @@ export default function UmrahPortal() {
                     <option value="economy">Economy</option><option value="standard">Standard</option><option value="premium">Premium</option><option value="luxury">Luxury</option>
                   </select>
                 </div>
-                <div>
-                  <label className={labelCls}>Status</label>
-                  <select className={inputCls} value={pkgForm.status} onChange={(e) => setF('status', e.target.value)}>
-                    <option value="draft">Draft</option><option value="open">Open</option><option value="paused">Paused</option><option value="closed">Closed</option><option value="archived">Archived</option>
-                  </select>
-                </div>
               </div>
+
+              {/* International / Domestic Destination Section */}
+              {pkgForm.category !== 'umrah_pilgrimage' && (
+                <div className="rounded-xl border border-brand-navy/10 bg-brand-cream/40 p-4 space-y-3">
+                  <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold">🌍 Destination &amp; Hotel</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className={labelCls}>Destination Country</label>
+                      <input className={inputCls} value={pkgForm.destinationCountry || ''} onChange={(e) => setF('destinationCountry', e.target.value)} placeholder="e.g. United Arab Emirates" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Destination City / State</label>
+                      <input className={inputCls} value={pkgForm.destinationCity || ''} onChange={(e) => setF('destinationCity', e.target.value)} placeholder="e.g. Dubai / Srinagar" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Hotel / Resort Stars</label>
+                      <input type="number" min={1} max={7} className={inputCls} value={pkgForm.hotelStars || 4} onChange={(e) => setF('hotelStars', e.target.value)} />
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className={labelCls}>Hotel / Resort Name</label>
+                      <input className={inputCls} value={pkgForm.hotelName || ''} onChange={(e) => setF('hotelName', e.target.value)} placeholder="e.g. Grand Hyatt Dubai / Dal Lake Luxury Houseboat" />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Duration */}
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">Duration</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">Duration</h4>
                 <div className="grid grid-cols-3 gap-3">
                   <div><label className={labelCls}>Total Days</label><input type="number" className={inputCls} value={pkgForm.totalDays} onChange={(e) => setF('totalDays', e.target.value)} /></div>
-                  <div><label className={labelCls}>Makkah Nights</label><input type="number" className={inputCls} value={pkgForm.makkahNights} onChange={(e) => setF('makkahNights', e.target.value)} /></div>
-                  <div><label className={labelCls}>Madinah Nights</label><input type="number" className={inputCls} value={pkgForm.madinahNights} onChange={(e) => setF('madinahNights', e.target.value)} /></div>
+                  {pkgForm.category === 'umrah_pilgrimage' ? (
+                    <>
+                      <div><label className={labelCls}>Makkah Nights</label><input type="number" className={inputCls} value={pkgForm.makkahNights} onChange={(e) => setF('makkahNights', e.target.value)} /></div>
+                      <div><label className={labelCls}>Madinah Nights</label><input type="number" className={inputCls} value={pkgForm.madinahNights} onChange={(e) => setF('madinahNights', e.target.value)} /></div>
+                    </>
+                  ) : (
+                    <div className="col-span-2"><label className={labelCls}>Nights Total</label><input type="number" className={inputCls} value={Math.max(0, (pkgForm.totalDays || 1) - 1)} readOnly /></div>
+                  )}
                 </div>
               </div>
 
               {/* Flight */}
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">✈️ Flight</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">🧳 Flight &amp; Transport</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div><label className={labelCls}>Flight Type</label>
                     <select className={inputCls} value={pkgForm.flightType} onChange={(e) => setF('flightType', e.target.value)}>
                       <option value="direct">Direct</option><option value="one_stop">1 Stop</option><option value="two_stop">2 Stops</option><option value="varies">Varies</option>
                     </select>
                   </div>
-                  <div><label className={labelCls}>Airline</label><input className={inputCls} value={pkgForm.airline} onChange={(e) => setF('airline', e.target.value)} placeholder="Saudia / IndiGo" /></div>
+                  <div><label className={labelCls}>Airline</label><input className={inputCls} value={pkgForm.airline} onChange={(e) => setF('airline', e.target.value)} placeholder="Saudia / IndiGo / Emirates" /></div>
                   <div><label className={labelCls}>Departure City</label><input className={inputCls} value={pkgForm.departureCity} onChange={(e) => setF('departureCity', e.target.value)} placeholder="Hyderabad" /></div>
-                  <div><label className={labelCls}>Arrival Airport</label><input className={inputCls} value={pkgForm.arrivalAirport} onChange={(e) => setF('arrivalAirport', e.target.value)} placeholder="Jeddah (JED)" /></div>
+                  <div><label className={labelCls}>Arrival Airport</label><input className={inputCls} value={pkgForm.arrivalAirport} onChange={(e) => setF('arrivalAirport', e.target.value)} placeholder="Jeddah / Dubai (DXB)" /></div>
                   <div><label className={labelCls}>Baggage Allowance</label><input className={inputCls} value={pkgForm.baggageAllowance} onChange={(e) => setF('baggageAllowance', e.target.value)} placeholder="30 kg + 7 kg hand" /></div>
                   <div><label className={labelCls}>Class</label>
                     <select className={inputCls} value={pkgForm.flightClass} onChange={(e) => setF('flightClass', e.target.value)}>
@@ -839,47 +961,52 @@ export default function UmrahPortal() {
                     </select>
                   </div>
                 </div>
-                <label className="flex items-center gap-2 mt-2 text-brand-navy/60 cursor-pointer">
-                  <input type="checkbox" checked={bool(pkgForm.zamzamIncluded)} onChange={(e) => setF('zamzamIncluded', e.target.checked)} className="h-3.5 w-3.5 accent-brand-gold" />
-                  Zamzam (5L) included
-                </label>
+                {pkgForm.category === 'umrah_pilgrimage' && (
+                  <label className="flex items-center gap-2 mt-2 text-brand-navy/60 cursor-pointer">
+                    <input type="checkbox" checked={bool(pkgForm.zamzamIncluded)} onChange={(e) => setF('zamzamIncluded', e.target.checked)} className="h-3.5 w-3.5 accent-brand-gold" />
+                    Zamzam (5L) included
+                  </label>
+                )}
               </div>
 
-              {/* Makkah hotel */}
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">🏨 Makkah Hotel</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="md:col-span-2"><label className={labelCls}>Hotel</label><input className={inputCls} value={pkgForm.makkahHotel} onChange={(e) => setF('makkahHotel', e.target.value)} placeholder="Swissôtel Al Maqam" /></div>
-                  <div><label className={labelCls}>Stars</label><input type="number" min={1} max={7} className={inputCls} value={pkgForm.makkahHotelStars} onChange={(e) => setF('makkahHotelStars', e.target.value)} /></div>
-                  <div><label className={labelCls}>Distance (m)</label><input type="number" className={inputCls} value={pkgForm.makkahDistanceMeters} onChange={(e) => setF('makkahDistanceMeters', e.target.value)} placeholder="150" /></div>
-                  <div><label className={labelCls}>Walk (min)</label><input type="number" className={inputCls} value={pkgForm.makkahWalkMinutes} onChange={(e) => setF('makkahWalkMinutes', e.target.value)} placeholder="2" /></div>
-                  <div><label className={labelCls}>Haram View</label>
-                    <select className={inputCls} value={pkgForm.makkahHaramView} onChange={(e) => setF('makkahHaramView', e.target.value)}>
-                      <option value="none">None</option><option value="partial">Partial</option><option value="full">Full</option>
-                    </select>
+              {/* Makkah & Madinah Hotels (Only if Umrah) */}
+              {pkgForm.category === 'umrah_pilgrimage' && (
+                <>
+                  <div>
+                    <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">🏨 Makkah Hotel</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="md:col-span-2"><label className={labelCls}>Hotel</label><input className={inputCls} value={pkgForm.makkahHotel} onChange={(e) => setF('makkahHotel', e.target.value)} placeholder="Swissôtel Al Maqam" /></div>
+                      <div><label className={labelCls}>Stars</label><input type="number" min={1} max={7} className={inputCls} value={pkgForm.makkahHotelStars} onChange={(e) => setF('makkahHotelStars', e.target.value)} /></div>
+                      <div><label className={labelCls}>Distance (m)</label><input type="number" className={inputCls} value={pkgForm.makkahDistanceMeters} onChange={(e) => setF('makkahDistanceMeters', e.target.value)} placeholder="150" /></div>
+                      <div><label className={labelCls}>Walk (min)</label><input type="number" className={inputCls} value={pkgForm.makkahWalkMinutes} onChange={(e) => setF('makkahWalkMinutes', e.target.value)} placeholder="2" /></div>
+                      <div><label className={labelCls}>Haram View</label>
+                        <select className={inputCls} value={pkgForm.makkahHaramView} onChange={(e) => setF('makkahHaramView', e.target.value)}>
+                          <option value="none">None</option><option value="partial">Partial</option><option value="full">Full</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Madinah hotel */}
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">🏨 Madinah Hotel</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="md:col-span-2"><label className={labelCls}>Hotel</label><input className={inputCls} value={pkgForm.madinahHotel} onChange={(e) => setF('madinahHotel', e.target.value)} placeholder="Mövenpick Anwar Al Madinah" /></div>
-                  <div><label className={labelCls}>Stars</label><input type="number" min={1} max={7} className={inputCls} value={pkgForm.madinahHotelStars} onChange={(e) => setF('madinahHotelStars', e.target.value)} /></div>
-                  <div><label className={labelCls}>Distance (m)</label><input type="number" className={inputCls} value={pkgForm.madinahDistanceMeters} onChange={(e) => setF('madinahDistanceMeters', e.target.value)} placeholder="400" /></div>
-                  <div><label className={labelCls}>Walk (min)</label><input type="number" className={inputCls} value={pkgForm.madinahWalkMinutes} onChange={(e) => setF('madinahWalkMinutes', e.target.value)} placeholder="5" /></div>
-                  <div><label className={labelCls}>Haram View</label>
-                    <select className={inputCls} value={pkgForm.madinahHaramView} onChange={(e) => setF('madinahHaramView', e.target.value)}>
-                      <option value="none">None</option><option value="partial">Partial</option><option value="full">Full</option>
-                    </select>
+                  <div>
+                    <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">🏨 Madinah Hotel</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="md:col-span-2"><label className={labelCls}>Hotel</label><input className={inputCls} value={pkgForm.madinahHotel} onChange={(e) => setF('madinahHotel', e.target.value)} placeholder="Mövenpick Anwar Al Madinah" /></div>
+                      <div><label className={labelCls}>Stars</label><input type="number" min={1} max={7} className={inputCls} value={pkgForm.madinahHotelStars} onChange={(e) => setF('madinahHotelStars', e.target.value)} /></div>
+                      <div><label className={labelCls}>Distance (m)</label><input type="number" className={inputCls} value={pkgForm.madinahDistanceMeters} onChange={(e) => setF('madinahDistanceMeters', e.target.value)} placeholder="400" /></div>
+                      <div><label className={labelCls}>Walk (min)</label><input type="number" className={inputCls} value={pkgForm.madinahWalkMinutes} onChange={(e) => setF('madinahWalkMinutes', e.target.value)} placeholder="5" /></div>
+                      <div><label className={labelCls}>Haram View</label>
+                        <select className={inputCls} value={pkgForm.madinahHaramView} onChange={(e) => setF('madinahHaramView', e.target.value)}>
+                          <option value="none">None</option><option value="partial">Partial</option><option value="full">Full</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </>
+              )}
 
               {/* Room & meals */}
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">🛏️ Room &amp; Meals</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">🛏️ Room &amp; Meals</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div><label className={labelCls}>Room Sharing</label>
                     <select className={inputCls} value={pkgForm.roomSharing} onChange={(e) => setF('roomSharing', e.target.value)}>
@@ -897,13 +1024,13 @@ export default function UmrahPortal() {
                   <label className="flex items-center gap-2 text-brand-navy/70 cursor-pointer">
                     <input type="checkbox" checked={bool(pkgForm.soloAvailable)} onChange={(e) => setF('soloAvailable', e.target.checked)} className="h-3.5 w-3.5 accent-brand-gold" />
                     <span className="font-semibold">🧳 Solo travel available</span>
-                    <span className="text-[9px] text-brand-navy/40">(client travels alone — private room)</span>
+                    <span className="text-xs text-brand-navy/40">(client travels alone — private room)</span>
                   </label>
                   {bool(pkgForm.soloAvailable) && (
                     <div>
                       <label className={labelCls}>Solo supplement (₹, per person)</label>
                       <input type="number" className={inputCls} value={pkgForm.soloSupplementPaise} onChange={(e) => setF('soloSupplementPaise', e.target.value)} placeholder="e.g. 20000" />
-                      <p className="text-[9px] text-brand-navy/40 mt-1">Added to the retail price when a client books solo occupancy.</p>
+                      <p className="text-xs text-brand-navy/40 mt-1">Added to the retail price when a client books solo occupancy.</p>
                     </div>
                   )}
                 </div>
@@ -911,7 +1038,7 @@ export default function UmrahPortal() {
 
               {/* Transport & tours */}
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">🚌 Transport &amp; Tours</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">🚌 Transport &amp; Tours</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div><label className={labelCls}>Intercity Transport</label>
                     <select className={inputCls} value={pkgForm.intercityTransport} onChange={(e) => setF('intercityTransport', e.target.value)}>
@@ -929,7 +1056,7 @@ export default function UmrahPortal() {
 
               {/* Visa */}
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">🛂 Visa</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">🛂 Visa</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div><label className={labelCls}>Visa Lead (days)</label><input type="number" className={inputCls} value={pkgForm.visaLeadDays} onChange={(e) => setF('visaLeadDays', e.target.value)} /></div>
                   <div className="flex flex-col gap-2 justify-end pb-1">
@@ -941,7 +1068,7 @@ export default function UmrahPortal() {
 
               {/* Pricing */}
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">💰 Pricing (₹)</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">💰 Pricing (₹)</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div><label className={labelCls}>Wholesale (cost)</label><input type="number" className={inputCls} value={pkgForm.wholesalePricePaise} onChange={(e) => setF('wholesalePricePaise', e.target.value)} placeholder="0" /></div>
                   <div><label className={labelCls}>Retail (per person)</label><input type="number" className={inputCls} value={pkgForm.retailPricePaise} onChange={(e) => setF('retailPricePaise', e.target.value)} placeholder="125000" /></div>
@@ -959,7 +1086,7 @@ export default function UmrahPortal() {
 
               {/* Content */}
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">📋 Content</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">📋 Content</h4>
                 <div className="space-y-3">
                   <div><label className={labelCls}>Description</label><textarea className={inputCls} rows={2} value={pkgForm.description} onChange={(e) => setF('description', e.target.value)} placeholder="What makes this package special…" /></div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -996,7 +1123,7 @@ export default function UmrahPortal() {
               <h3 className="font-display font-extrabold text-brand-navy text-sm">Announce Departure</h3>
               <button onClick={() => setAnnounceDate(null)} className="text-brand-navy/40 hover:text-brand-navy text-lg cursor-pointer">✕</button>
             </div>
-            <p className="text-[10px] text-brand-navy/40">Start: <span className="font-bold text-brand-navy">{announceDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span>{announceEndDate ? ` → End: ${new Date(announceEndDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}` : ''}</p>
+            <p className="text-[13px] text-brand-navy/40">Start: <span className="font-bold text-brand-navy">{announceDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span>{announceEndDate ? ` → End: ${new Date(announceEndDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}` : ''}</p>
             <div className="space-y-3">
               <div>
                 <label className="font-semibold text-brand-navy/40 block mb-1">Package</label>
@@ -1074,7 +1201,7 @@ export default function UmrahPortal() {
                 {umrahClients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.id})</option>)}
                 {umrahClients.length === 0 && <option disabled>No umrah-division clients registered</option>}
               </select>
-              <p className="text-[10px] text-brand-navy/40 italic pt-1">Seat booking charges the booking fee to the client&apos;s ledger automatically.</p>
+              <p className="text-[13px] text-brand-navy/40 italic pt-1">Seat booking charges the booking fee to the client&apos;s ledger automatically.</p>
             </div>
             <div className="flex gap-3 pt-2">
               <button onClick={() => setShowBook(false)} className="flex-1 border border-brand-navy/15 bg-brand-navy/[0.04] hover:border-brand-gold/50 py-2 rounded-lg font-bold text-brand-navy cursor-pointer transition-all">Cancel</button>

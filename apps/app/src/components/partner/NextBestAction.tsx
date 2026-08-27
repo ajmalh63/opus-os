@@ -20,7 +20,7 @@ export default function NextBestAction({
 }) {
   return (
     <div className="bg-white text-[#0B1220] rounded-2xl border border-slate-200 p-5 shadow-sm">
-      <p className="text-[11px] tracking-[0.12em] font-black text-slate-500">NEXT BEST ACTION • AI SUGGESTED</p>
+      <p className="text-sm tracking-[0.12em] font-black text-slate-500">NEXT BEST ACTION • AI SUGGESTED</p>
       <h3 className="text-[16px] font-black leading-tight mt-2">{title}</h3>
       <p className="text-xs text-slate-500 mt-2">{hint}</p>
       <button onClick={onAction} className="w-full mt-4 h-9 rounded-full bg-[#0B1220] text-white text-sm font-bold hover:bg-black transition">

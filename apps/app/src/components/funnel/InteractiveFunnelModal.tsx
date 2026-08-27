@@ -189,7 +189,7 @@ export default function InteractiveFunnelModal({
           
           <div className="relative z-10 flex items-start justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/15 px-3 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-brand-gold">
+              <div className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold/15 px-3 py-0.5 text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
                 <span className="live-pulse-dot text-brand-gold" /> Institutional Eligibility Portal
               </div>
               <h2 className="mt-2 font-display text-xl sm:text-2xl font-extrabold tracking-tight text-white">
@@ -214,10 +214,10 @@ export default function InteractiveFunnelModal({
           </div>
 
           {/* Division Switcher */}
-          <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1 text-[10px] font-bold uppercase tracking-wider">
+          <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1 text-[13px] font-bold uppercase tracking-wider">
             {[
               { id: 'study-abroad', label: '🎓 Study Abroad' },
-              { id: 'visa', label: '✈️ Visas' },
+              { id: 'visa', label: '🛂 Visas' },
               { id: 'umrah', label: '🕋 Umrah' },
               { id: 'attestation', label: '📜 Attestation' },
               { id: 'manpower', label: '💼 Careers' },
@@ -252,7 +252,7 @@ export default function InteractiveFunnelModal({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Target Country
                       </label>
                       <select
@@ -270,7 +270,7 @@ export default function InteractiveFunnelModal({
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Degree Level
                       </label>
                       <select
@@ -303,7 +303,7 @@ export default function InteractiveFunnelModal({
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         English Proficiency
                       </label>
                       <select
@@ -319,7 +319,7 @@ export default function InteractiveFunnelModal({
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Annual Tuition Budget
                       </label>
                       <select
@@ -342,7 +342,7 @@ export default function InteractiveFunnelModal({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Destination Country
                       </label>
                       <select
@@ -361,7 +361,7 @@ export default function InteractiveFunnelModal({
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Travel Purpose
                       </label>
                       <select
@@ -378,7 +378,7 @@ export default function InteractiveFunnelModal({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                    <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                       Expected Departure Timeline
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -406,7 +406,7 @@ export default function InteractiveFunnelModal({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Preferred Departure Month
                       </label>
                       <select
@@ -422,7 +422,7 @@ export default function InteractiveFunnelModal({
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Number of Pilgrims
                       </label>
                       <div className="flex items-center gap-2">
@@ -445,7 +445,7 @@ export default function InteractiveFunnelModal({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                    <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                       Hotel & Distance Preference
                     </label>
                     <select
@@ -466,7 +466,7 @@ export default function InteractiveFunnelModal({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Certificate Type
                       </label>
                       <select
@@ -482,7 +482,7 @@ export default function InteractiveFunnelModal({
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Target Country
                       </label>
                       <select
@@ -499,7 +499,7 @@ export default function InteractiveFunnelModal({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                    <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                       Pickup State / City
                     </label>
                     <select
@@ -523,7 +523,7 @@ export default function InteractiveFunnelModal({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Industry / Job Sector
                       </label>
                       <select
@@ -539,7 +539,7 @@ export default function InteractiveFunnelModal({
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                         Preferred Location
                       </label>
                       <select
@@ -556,7 +556,7 @@ export default function InteractiveFunnelModal({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                    <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                       Total Experience
                     </label>
                     <select
@@ -590,7 +590,7 @@ export default function InteractiveFunnelModal({
               {/* Dynamic Instant Assessment Output Card */}
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 sm:p-5 text-emerald-950">
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-800">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-emerald-800">
                     <span className="live-pulse-dot text-emerald-600" /> High Probability Match
                   </span>
                   <span className="font-display text-xs font-extrabold text-emerald-800">
@@ -610,7 +610,7 @@ export default function InteractiveFunnelModal({
                   {division === 'manpower' && `Approved Job Openings Available in ${careerCountry} (${careerSector})`}
                 </h3>
 
-                <p className="mt-1 text-[11px] text-emerald-800/80">
+                <p className="mt-1 text-sm text-emerald-800/80">
                   Enter your direct contact details to unlock your <strong>Personalized Evaluation Report</strong> and connect directly with our Senior Advisory Desk.
                 </p>
               </div>
@@ -618,7 +618,7 @@ export default function InteractiveFunnelModal({
               {/* 3-Field High Converting Lead Form */}
               <div className="space-y-3">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                     Your Full Name *
                   </label>
                   <input
@@ -633,7 +633,7 @@ export default function InteractiveFunnelModal({
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                    <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                       WhatsApp Phone Number *
                     </label>
                     <input
@@ -647,7 +647,7 @@ export default function InteractiveFunnelModal({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                    <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                       Email Address (Optional)
                     </label>
                     <input
@@ -662,12 +662,12 @@ export default function InteractiveFunnelModal({
               </div>
 
               {errorMsg && (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-[11px] font-semibold text-rose-700">
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">
                   {errorMsg}
                 </div>
               )}
 
-              <div className="rounded-xl bg-slate-50 p-3 text-[10px] text-slate-500 flex items-start gap-2">
+              <div className="rounded-xl bg-slate-50 p-3 text-[13px] text-slate-500 flex items-start gap-2">
                 <span>🔒</span>
                 <span>
                   <strong>DPDP-2023 Protected:</strong> Your information is strictly confidential. No spam, no unsolicited calls.
@@ -727,7 +727,7 @@ export default function InteractiveFunnelModal({
                     <h4 className="mt-1 font-display text-sm font-bold text-brand-navy">
                       Book 1-on-1 Session
                     </h4>
-                    <p className="mt-0.5 text-[10px] text-brand-navy/60">
+                    <p className="mt-0.5 text-[13px] text-brand-navy/60">
                       Pick an immediate video/phone slot with a verified counselor.
                     </p>
                   </div>
@@ -745,7 +745,7 @@ export default function InteractiveFunnelModal({
                     <h4 className="mt-1 font-display text-sm font-bold text-brand-navy">
                       Request Detailed Quote
                     </h4>
-                    <p className="mt-0.5 text-[10px] text-brand-navy/60">
+                    <p className="mt-0.5 text-[13px] text-brand-navy/60">
                       Get a tailored package & cost breakdown from our team.
                     </p>
                   </div>
@@ -768,7 +768,7 @@ export default function InteractiveFunnelModal({
                     <h4 className="mt-1 font-display text-sm font-bold text-brand-navy">
                       Track in Client Portal
                     </h4>
-                    <p className="mt-0.5 text-[10px] text-brand-navy/60">
+                    <p className="mt-0.5 text-[13px] text-brand-navy/60">
                       Upload documents, review agreements, and monitor milestone stages.
                     </p>
                   </div>
@@ -787,7 +787,7 @@ export default function InteractiveFunnelModal({
 
               {/* Live Chat Support */}
               <div className="border-t border-brand-navy/10 pt-4 flex items-center justify-between text-xs">
-                <span className="text-brand-navy/60 text-[11px]">Need immediate assistance right now?</span>
+                <span className="text-brand-navy/60 text-sm">Need immediate assistance right now?</span>
                 <button
                   onClick={openChatwoot}
                   className="font-bold text-brand-gold hover:underline cursor-pointer flex items-center gap-1"

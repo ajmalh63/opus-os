@@ -214,7 +214,7 @@ export default function ClientCommandPalette({
               Clear
             </button>
           )}
-          <kbd className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-mono font-bold text-slate-500 shadow-2xs">
+          <kbd className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[13px] font-mono font-bold text-slate-500 shadow-2xs">
             ESC
           </kbd>
         </div>
@@ -224,7 +224,7 @@ export default function ClientCommandPalette({
           {filtered.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-500 space-y-1">
               <p className="font-bold text-brand-navy">No matching commands found.</p>
-              <p className="text-[11px] text-slate-400">Try searching for "upload", "visa", "pay", or "counselor".</p>
+              <p className="text-sm text-slate-400">Try searching for "upload", "visa", "pay", or "counselor".</p>
             </div>
           ) : (
             filtered.map((item, idx) => {
@@ -247,7 +247,7 @@ export default function ClientCommandPalette({
                         {item.title}
                       </div>
                       {item.subtitle && (
-                        <div className={`text-[10px] truncate ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>
+                        <div className={`text-[13px] truncate ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>
                           {item.subtitle}
                         </div>
                       )}
@@ -255,13 +255,13 @@ export default function ClientCommandPalette({
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 pl-2">
-                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-md ${
+                    <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-md ${
                       isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
                     }`}>
                       {item.category}
                     </span>
                     {item.shortcut && (
-                      <kbd className={`hidden sm:inline-block px-1.5 py-0.5 rounded font-mono text-[9px] font-bold ${
+                      <kbd className={`hidden sm:inline-block px-1.5 py-0.5 rounded font-mono text-xs font-bold ${
                         isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600 border border-slate-200'
                       }`}>
                         {item.shortcut}
@@ -275,17 +275,17 @@ export default function ClientCommandPalette({
         </div>
 
         {/* Footer Shortcut Navigation Hints */}
-        <div className="flex items-center justify-between px-5 py-2.5 bg-[#FAF8F4] border-t border-brand-navy/10 text-[10px] text-slate-500 font-medium">
+        <div className="flex items-center justify-between px-5 py-2.5 bg-[#FAF8F4] border-t border-brand-navy/10 text-[13px] text-slate-500 font-medium">
           <div className="flex items-center gap-3">
             <span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-[9px]">↑</kbd>{' '}
-              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-[9px]">↓</kbd> Navigate
+              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-xs">↑</kbd>{' '}
+              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-xs">↓</kbd> Navigate
             </span>
             <span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-[9px]">↵</kbd> Select
+              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono text-xs">↵</kbd> Select
             </span>
           </div>
-          <span className="font-mono text-[10px] text-brand-gold font-bold">OpusOS Command Palette</span>
+          <span className="font-mono text-[13px] text-brand-gold font-bold">OpusOS Command Palette</span>
         </div>
       </div>
     </div>

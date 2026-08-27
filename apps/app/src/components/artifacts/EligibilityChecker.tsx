@@ -52,7 +52,7 @@ export default function EligibilityChecker() {
       <div className="space-y-3.5">
         {/* Country Quick Chips */}
         <div>
-          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">Target Destination</span>
+          <span className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-brand-textLight">Target Destination</span>
           <div className="flex flex-wrap gap-1.5">
             {QUICK_COUNTRIES.map((c) => (
               <button
@@ -75,7 +75,7 @@ export default function EligibilityChecker() {
         {/* Inputs Grid */}
         <div className="grid grid-cols-3 gap-2.5">
           <div className="rounded-xl border border-brand-navy/10 bg-white/90 p-2.5 text-center">
-            <span className="block text-[9px] font-bold uppercase tracking-wider text-brand-textLight">GPA (Max 10)</span>
+            <span className="block text-xs font-bold uppercase tracking-wider text-brand-textLight">GPA (Max 10)</span>
             <input
               type="number"
               min={1}
@@ -88,7 +88,7 @@ export default function EligibilityChecker() {
           </div>
 
           <div className="rounded-xl border border-brand-navy/10 bg-white/90 p-2.5 text-center">
-            <span className="block text-[9px] font-bold uppercase tracking-wider text-brand-textLight">IELTS / PTE</span>
+            <span className="block text-xs font-bold uppercase tracking-wider text-brand-textLight">IELTS / PTE</span>
             <input
               type="number"
               min={1}
@@ -101,7 +101,7 @@ export default function EligibilityChecker() {
           </div>
 
           <div className="rounded-xl border border-brand-navy/10 bg-white/90 p-2.5 text-center">
-            <span className="block text-[9px] font-bold uppercase tracking-wider text-brand-textLight">Budget (Lakh/Yr)</span>
+            <span className="block text-xs font-bold uppercase tracking-wider text-brand-textLight">Budget (Lakh/Yr)</span>
             <input
               type="number"
               min={5}
@@ -149,7 +149,7 @@ export default function EligibilityChecker() {
                   >
                     <div className="min-w-0 pr-2">
                       <p className="truncate text-xs font-bold text-brand-navy">{m.name}</p>
-                      <p className="text-[10px] text-brand-textLight font-medium">{m.country} · {m.intake}</p>
+                      <p className="text-[13px] text-brand-textLight font-medium">{m.country} · {m.intake}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className="rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-extrabold font-mono">

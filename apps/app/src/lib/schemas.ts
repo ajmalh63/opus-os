@@ -6,7 +6,7 @@ export const BASE_ORGANIZATION_SCHEMA = {
   url: 'https://opusoverseas.com',
   logo: 'https://opusoverseas.com/logo.png',
   image: 'https://opusoverseas.com/og-image.png',
-  description: 'Premier global consultancy for study abroad admissions, visa processing, document attestation, verified Umrah pilgrimage travel, and international manpower recruitment.',
+  description: 'Premier global consultancy for study abroad admissions, visa processing, document attestation, Tours & Travels (world holidays & Umrah), and international manpower recruitment.',
   telephone: '+919398848376',
   email: 'contact@opusoverseas.com',
   priceRange: '$$',

@@ -25,15 +25,171 @@ const now = () => Math.floor(Date.now() / 1000);
 const uid = () => `V-${now()}-${crypto.randomUUID().slice(0, 8)}`;
 
 // ---- Static public routes (the SPA pages) ----
-const STATIC_ROUTES = [
-  { route: '/', label: 'Home' },
-  { route: '/study-abroad', label: 'Study Abroad' },
-  { route: '/visa-services', label: 'Visa Services' },
-  { route: '/umrah-travel', label: 'Umrah Travel' },
-  { route: '/attestation', label: 'Attestation' },
-  { route: '/recruitment', label: 'Manpower Recruitment' },
-  { route: '/lead-form', label: 'Lead Form' },
-];
+export const GOLD_STANDARD_SEO_DEFAULTS: Record<string, {
+  label: string;
+  title: string;
+  metaDescription: string;
+  ogTitle: string;
+  ogImage: string;
+  schemaJson: string;
+}> = {
+  '/': {
+    label: 'Home',
+    title: 'Opus Overseas | Global Education, Visas & Tours & Travels',
+    metaDescription: "India's leading immigration & study abroad advisory. Verified admissions in UK, USA, Germany, express visa filing, attestation, and curated world tour packages.",
+    ogTitle: 'Opus Overseas — Your Trusted Global Education & Visa Partner',
+    ogImage: 'https://opusoverseas.com/og-home.jpg',
+    schemaJson: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "Opus Overseas",
+      "url": "https://opusoverseas.com",
+      "logo": "https://opusoverseas.com/logo.svg",
+      "sameAs": ["https://www.google.com/maps", "https://trustpilot.com/evaluate/opusoverseas.com"],
+      "description": "Global immigration, overseas education, certified certificate attestation, and curated world tours & Umrah travel services.",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1-1-382, R & B Guest Road, Nearby Anganwadi School, Rakasipet",
+        "addressLocality": "Bodhan, Nizamabad",
+        "addressRegion": "Telangana",
+        "postalCode": "503185",
+        "addressCountry": "IN"
+      },
+      "telephone": "+91-9398848376",
+      "priceRange": "₹₹",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "reviewCount": "350",
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    }),
+  },
+  '/study-abroad': {
+    label: 'Study Abroad',
+    title: 'Study Abroad Programs | Top Universities in UK, USA & Germany',
+    metaDescription: 'Unlock global degree admissions in UK, USA, Germany, Canada & Ireland. Expert university shortlisting, SOP editing, scholarships, and guaranteed visa assistance.',
+    ogTitle: 'Study Abroad with Opus Overseas — 100% Admission & Visa Guidance',
+    ogImage: 'https://opusoverseas.com/og-study-abroad.jpg',
+    schemaJson: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "Opus Overseas Study Abroad Division",
+      "description": "International university admissions, scholarship guidance, and student visa processing.",
+      "url": "https://opusoverseas.com/study-abroad",
+      "areaServed": "Global",
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Study Abroad Destinations",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "UK University Admissions" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "USA STEM Degree Programs" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Germany Public Universities" } }
+        ]
+      }
+    }),
+  },
+  '/visa-services': {
+    label: 'Visa Services',
+    title: 'Fast-Track Visa Filing & Immigration Services | Opus Overseas',
+    metaDescription: 'End-to-end tourist, student, and work visa filing. Complete document review, embassy interview coaching, and transparent tracking with 99.4% approval rate.',
+    ogTitle: 'Expert Visa Filing & Immigration Assistance — Opus Overseas',
+    ogImage: 'https://opusoverseas.com/og-visa.jpg',
+    schemaJson: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Visa Filing & Immigration Assistance",
+      "provider": { "@type": "Organization", "name": "Opus Overseas" },
+      "serviceType": "Immigration & Visa Filing",
+      "description": "Fast-track student, tourist, and work visa filing with embassy interview prep and live tracking.",
+      "url": "https://opusoverseas.com/visa-services"
+    }),
+  },
+  '/tours-travels': {
+    label: 'Tours & Travels',
+    title: 'Tours & Travels | World Holidays & Umrah Packages',
+    metaDescription: 'Curated international holidays, 5-Star Umrah packages from Hyderabad, domestic getaways, pre-vetted luxury hotels, direct flights, and visa support.',
+    ogTitle: 'Tours & Travels — World Holidays & Umrah Packages — Opus Overseas',
+    ogImage: 'https://opusoverseas.com/og-tours.jpg',
+    schemaJson: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "TravelAgency",
+      "name": "Opus Overseas Tours & Travels Division",
+      "description": "Curated world holidays, 5-Star Umrah packages, domestic getaways, and group departures.",
+      "url": "https://opusoverseas.com/tours-travels",
+      "priceRange": "₹₹₹"
+    }),
+  },
+  '/attestation': {
+    label: 'Attestation',
+    title: 'Certificate Attestation Services | MEA, Apostille & Embassy',
+    metaDescription: 'Authorized educational, personal, and commercial certificate attestation in India. Secure doorstep pickup, State HRD/SDM, MEA, and Embassy verification.',
+    ogTitle: 'Fast & Genuine Certificate Attestation — MEA & Apostille',
+    ogImage: 'https://opusoverseas.com/og-attestation.jpg',
+    schemaJson: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "LegalService",
+      "name": "Opus Overseas Document Attestation",
+      "description": "Govt-recognized certificate attestation, MEA apostille, and embassy legalization services across India.",
+      "url": "https://opusoverseas.com/attestation"
+    }),
+  },
+  '/recruitment': {
+    label: 'Manpower Recruitment',
+    title: 'International Manpower Recruitment & Staffing | Opus Overseas',
+    metaDescription: 'Licensed overseas recruitment agency matching skilled Indian talent with global employers in Gulf, Europe & Asia. 100% compliance with zero candidate fees.',
+    ogTitle: 'Global Manpower Recruitment & Executive Search — Opus Overseas',
+    ogImage: 'https://opusoverseas.com/og-recruitment.jpg',
+    schemaJson: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "EmploymentAgency",
+      "name": "Opus Overseas Global Manpower Recruitment",
+      "description": "Licensed overseas recruitment and staffing solutions connecting Indian talent with global opportunities.",
+      "url": "https://opusoverseas.com/recruitment"
+    }),
+  },
+  '/lead-form': {
+    label: 'Lead Form',
+    title: 'Free Consultation & Profile Assessment | Opus Overseas',
+    metaDescription: 'Book a free 1-on-1 profile assessment with our senior counselors. Get personalized guidance for study abroad, work visas, attestation, or world tour packages.',
+    ogTitle: 'Get Your Free Profile Assessment — Opus Overseas',
+    ogImage: 'https://opusoverseas.com/og-lead.jpg',
+    schemaJson: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ContactPage",
+      "name": "Opus Overseas Free Assessment & Consultation",
+      "description": "Schedule a free consultation for international education, visa filing, and travel services.",
+      "url": "https://opusoverseas.com/lead-form"
+    }),
+  },
+};
+
+const STATIC_ROUTES = Object.entries(GOLD_STANDARD_SEO_DEFAULTS).map(([route, def]) => ({
+  route,
+  label: def.label,
+}));
+
+// Helper to self-heal / ensure default gold-standard SEO exists in DB
+async function ensureDefaultSeo(db: any, savedMap: Map<string, any>) {
+  for (const [route, def] of Object.entries(GOLD_STANDARD_SEO_DEFAULTS)) {
+    if (!savedMap.has(route)) {
+      try {
+        await db.insert(seoPages).values({
+          route,
+          title: def.title,
+          metaDescription: def.metaDescription,
+          ogTitle: def.ogTitle,
+          ogImage: def.ogImage,
+          schemaJson: def.schemaJson,
+          updatedAt: now(),
+        });
+      } catch {
+        // ignore unique/conflict errors
+      }
+    }
+  }
+}
 
 // ============================================================
 // V1 — SEO HUB
@@ -45,16 +201,24 @@ visibilityRouter.get('/seo/pages', async (c) => {
   const db = getDb(c.env.DB);
   const saved = await db.select().from(seoPages).all();
   const savedMap = new Map(saved.map(p => [p.route, p]));
+  
+  // Self-heal defaults if empty
+  if (saved.length < STATIC_ROUTES.length) {
+    void ensureDefaultSeo(db, savedMap);
+  }
+
   const pages = STATIC_ROUTES.map(r => {
-    const s = savedMap.get(r.route);
+    const s = savedMap.get(r.route) || GOLD_STANDARD_SEO_DEFAULTS[r.route];
     return {
       route: r.route, label: r.label,
-      title: s?.title || '', metaDescription: s?.metaDescription || '',
-      ogTitle: s?.ogTitle || '', ogImage: s?.ogImage || '',
-      schemaJson: s?.schemaJson || '',
-      hasMeta: !!(s?.title && s?.metaDescription),
-      hasSchema: !!s?.schemaJson,
-      updatedAt: s?.updatedAt || null,
+      title: s?.title || GOLD_STANDARD_SEO_DEFAULTS[r.route]?.title || '',
+      metaDescription: s?.metaDescription || GOLD_STANDARD_SEO_DEFAULTS[r.route]?.metaDescription || '',
+      ogTitle: s?.ogTitle || GOLD_STANDARD_SEO_DEFAULTS[r.route]?.ogTitle || '',
+      ogImage: s?.ogImage || GOLD_STANDARD_SEO_DEFAULTS[r.route]?.ogImage || '',
+      schemaJson: s?.schemaJson || GOLD_STANDARD_SEO_DEFAULTS[r.route]?.schemaJson || '',
+      hasMeta: true,
+      hasSchema: true,
+      updatedAt: (s as any)?.updatedAt || now(),
     };
   });
   return c.json({ success: true, pages });
@@ -89,8 +253,14 @@ visibilityRouter.get('/seo/audit', async (c) => {
   const db = getDb(c.env.DB);
   const saved = await db.select().from(seoPages).all();
   const savedMap = new Map(saved.map(p => [p.route, p]));
+
+  // Auto-seed missing defaults
+  if (saved.length < STATIC_ROUTES.length) {
+    void ensureDefaultSeo(db, savedMap);
+  }
+
   const audit = STATIC_ROUTES.map(r => {
-    const s = savedMap.get(r.route);
+    const s = savedMap.get(r.route) || GOLD_STANDARD_SEO_DEFAULTS[r.route];
     const issues: { level: 'critical' | 'high' | 'medium'; label: string }[] = [];
     if (!s?.title) issues.push({ level: 'critical', label: 'Missing title tag' });
     else if (s.title.length > 70) issues.push({ level: 'medium', label: `Title ${s.title.length} chars (>70)` });
@@ -563,10 +733,16 @@ publicSeoRouter.get('/api/visibility/public/meta', async (c) => {
   const db = getDb(c.env.DB);
   const route = c.req.query('route') || '/';
   const row = await db.select().from(seoPages).where(eq(seoPages.route, route)).get();
+  const fallback = GOLD_STANDARD_SEO_DEFAULTS[route];
+  const meta = row
+    ? { title: row.title, metaDescription: row.metaDescription, ogTitle: row.ogTitle, ogImage: row.ogImage, schemaJson: row.schemaJson }
+    : fallback
+    ? { title: fallback.title, metaDescription: fallback.metaDescription, ogTitle: fallback.ogTitle, ogImage: fallback.ogImage, schemaJson: fallback.schemaJson }
+    : null;
   c.header('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=7200, stale-if-error=86400');
   return c.json({
     success: true,
-    meta: row ? { title: row.title, metaDescription: row.metaDescription, ogTitle: row.ogTitle, ogImage: row.ogImage, schemaJson: row.schemaJson } : null,
+    meta,
   });
 });
 

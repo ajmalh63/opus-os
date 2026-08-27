@@ -123,18 +123,18 @@ return (
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowTranslator(!showTranslator)}
-              className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${showTranslator ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'bg-brand-navy/[0.04] border border-brand-navy/15 text-brand-navy/60 hover:text-brand-navy'}`}
+              className={`px-3.5 py-1.5 rounded-full text-[13px] font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${showTranslator ? 'bg-brand-gold text-brand-navy shadow-xs border border-brand-gold/40' : 'bg-brand-navy/[0.04] border border-brand-navy/15 text-brand-navy/60 hover:text-brand-navy'}`}
             >
               ✨ AI Translator
             </button>
-            <div className="flex gap-1 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-1 text-[10px] font-bold uppercase">
+            <div className="flex gap-1 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] p-1 text-[13px] font-bold uppercase">
               <button onClick={() => setTeamMode(false)} className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${!teamMode ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-navy'}`}>Clients</button>
               <button onClick={() => setTeamMode(true)} className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${teamMode ? 'bg-brand-gold text-brand-navy' : 'text-brand-navy/50 hover:text-brand-navy'}`}>Team</button>
             </div>
             {data?.unreadTotal ? (
-              <span className="rounded-full bg-rose-500/20 px-3 py-1 text-[10px] font-bold text-rose-700">{data.unreadTotal} unread</span>
+              <span className="rounded-full bg-rose-500/20 px-3 py-1 text-[13px] font-bold text-rose-700">{data.unreadTotal} unread</span>
             ) : (
-              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[10px] font-bold text-emerald-700">Live</span>
+              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[13px] font-bold text-emerald-700">Live</span>
             )}
           </div>
         </div>
@@ -143,7 +143,7 @@ return (
           <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm">
             <div className="mb-3 border-b border-brand-navy/10 pb-2">
               <h3 className="font-display font-bold text-sm text-brand-navy">✨ AI Multilingual Communications Translator</h3>
-              <p className="text-[10px] text-brand-navy/40">Translate inbound foreign language inquiries (Arabic, Urdu, Hindi, German, etc.) to English or craft client replies in their native language.</p>
+              <p className="text-[13px] text-brand-navy/40">Translate inbound foreign language inquiries (Arabic, Urdu, Hindi, German, etc.) to English or craft client replies in their native language.</p>
             </div>
             <AiTranslatePanel />
           </div>
@@ -155,7 +155,7 @@ return (
           <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
             {/* Team rooms */}
             <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-3">
-              <div className="mb-3 px-2 text-[10px] font-bold uppercase tracking-wider text-brand-gold">Team Rooms</div>
+              <div className="mb-3 px-2 text-[13px] font-bold uppercase tracking-wider text-brand-gold">Team Rooms</div>
               <div className="space-y-2">
                 {TEAM_ROOMS.map(r => (
                   <button key={r.id} onClick={() => setRoomId(r.id)} className={`w-full rounded-xl p-3 text-left transition-all ${roomId === r.id ? 'bg-brand-gold/15 border border-brand-gold/40' : 'bg-brand-navy/[0.04] border border-transparent hover:bg-brand-navy/[0.06]'}`}>
@@ -167,9 +167,9 @@ return (
             {/* Team thread */}
             <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-4 lg:col-span-2 flex flex-col">
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">{TEAM_ROOMS.find(r => r.id === roomId)?.label} — internal chat</div>
+                <div className="text-[13px] font-bold uppercase tracking-wider text-brand-gold">{TEAM_ROOMS.find(r => r.id === roomId)?.label} — internal chat</div>
                 <div className="relative" ref={membersRef}>
-                  <button onClick={() => setMembersOpen(!membersOpen)} className="flex items-center gap-1.5 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] px-3 py-1 text-[10px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all cursor-pointer">
+                  <button onClick={() => setMembersOpen(!membersOpen)} className="flex items-center gap-1.5 rounded-full border border-brand-navy/15 bg-brand-navy/[0.04] px-3 py-1 text-[13px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all cursor-pointer">
                     👥 Members <span className="text-brand-navy/40">({(teamMembers?.members || []).length})</span>
                     <span className={`transition-transform ${membersOpen ? 'rotate-180' : ''}`}>▾</span>
                   </button>
@@ -177,14 +177,14 @@ return (
                     <div className="absolute right-0 top-8 z-20 w-64 rounded-xl border border-brand-navy/10 bg-white shadow-xl p-2 space-y-1">
                       {(teamMembers?.members || []).map((m: any) => (
                         <div key={m.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-brand-navy/[0.04]">
-                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-navy text-[9px] font-bold text-white">{m.initials}</span>
+                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-navy text-xs font-bold text-white">{m.initials}</span>
                           <div className="min-w-0">
-                            <div className="truncate text-[11px] font-semibold text-brand-navy">{m.name}</div>
-                            <div className="truncate text-[9px] text-brand-navy/40">{m.role} · {m.email}</div>
+                            <div className="truncate text-sm font-semibold text-brand-navy">{m.name}</div>
+                            <div className="truncate text-xs text-brand-navy/40">{m.role} · {m.email}</div>
                           </div>
                         </div>
                       ))}
-                      {(teamMembers?.members || []).length === 0 && <p className="px-2 py-3 text-center text-[10px] text-brand-navy/40">No staff found.</p>}
+                      {(teamMembers?.members || []).length === 0 && <p className="px-2 py-3 text-center text-[13px] text-brand-navy/40">No staff found.</p>}
                     </div>
                   )}
                 </div>
@@ -192,10 +192,10 @@ return (
               <div className="flex-1 space-y-2 overflow-y-auto max-h-[420px] pr-1">
                 {(teamThread?.messages || []).map((m: any) => (
                   <div key={m.id} className={`max-w-[80%] rounded-xl px-3 py-2 text-xs ${m.senderId === me?.id ? 'bg-brand-gold/15 ml-auto' : 'bg-brand-navy/[0.06]'}`}>
-                    <div className="text-[9px] text-brand-navy/40 mb-0.5">{m.senderName || 'staff'} · {fmt(m.createdAt)}</div>
+                    <div className="text-xs text-brand-navy/40 mb-0.5">{m.senderName || 'staff'} · {fmt(m.createdAt)}</div>
                     {m.body}
                     {m.file && (
-                      <a href={`/api/teamhub/files/${encodeURIComponent(m.file.key)}`} download={m.file.name} className="mt-1.5 flex items-center gap-2 rounded-lg border border-brand-navy/15 bg-white px-2.5 py-1.5 text-[10px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all">
+                      <a href={`/api/teamhub/files/${encodeURIComponent(m.file.key)}`} download={m.file.name} className="mt-1.5 flex items-center gap-2 rounded-lg border border-brand-navy/15 bg-white px-2.5 py-1.5 text-[13px] font-bold text-brand-navy hover:border-brand-gold/50 transition-all">
                         📎 {m.file.name}
                         <span className="text-brand-navy/40 font-normal">({(m.file.size / 1024).toFixed(0)} KB)</span>
                       </a>
@@ -217,11 +217,11 @@ return (
           {/* Conversation list */}
           <div className="reveal rounded-2xl border border-brand-navy/10 bg-white/95 p-4 shadow-[0_20px_50px_-20px_rgba(10,45,80,0.10)] backdrop-blur-sm flex flex-col">
             <div className="mb-3 flex items-center justify-between px-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold flex items-center gap-1.5">
+              <span className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-brand-gold flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
                 Active Inbound Streams
               </span>
-              <span className="text-[10px] font-bold text-brand-textLight">{(data?.conversations || []).length} chats</span>
+              <span className="text-[13px] font-bold text-brand-textLight">{(data?.conversations || []).length} chats</span>
             </div>
             <div className="relative mb-3">
               <input
@@ -235,7 +235,7 @@ return (
             {!isLoading && (!data?.conversations || data.conversations.length === 0) && (
               <div className="p-8 text-center">
                 <p className="text-xs font-semibold text-brand-textLight">No conversations yet.</p>
-                <p className="text-[10px] text-brand-textLight mt-1">Inbound WhatsApp, Email, or Web chats will appear here live.</p>
+                <p className="text-[13px] text-brand-textLight mt-1">Inbound WhatsApp, Email, or Web chats will appear here live.</p>
               </div>
             )}
             <div className="space-y-2 overflow-y-auto max-h-[520px] pr-1 scrollbar-thin">
@@ -258,17 +258,17 @@ return (
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-black ${isWa ? 'bg-emerald-500/20 text-emerald-700' : 'bg-blue-500/20 text-blue-700'}`}>
+                      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[13px] font-black ${isWa ? 'bg-emerald-500/20 text-emerald-700' : 'bg-blue-500/20 text-blue-700'}`}>
                         {isWa ? '💬' : '🌐'}
                       </span>
                       <span className="truncate text-xs font-extrabold text-brand-navy tracking-tight">{c.contactName || c.contactKey}</span>
                     </div>
                     {c.unread > 0 && (
-                      <span className="rounded-full bg-rose-500 px-1.5 py-0.2 text-[9px] font-black text-white shadow-[0_0_6px_rgba(244,63,94,0.6)] animate-pulse">{c.unread}</span>
+                      <span className="rounded-full bg-rose-500 px-1.5 py-0.2 text-xs font-black text-white shadow-[0_0_6px_rgba(244,63,94,0.6)] animate-pulse">{c.unread}</span>
                     )}
                   </div>
-                  <p className="mt-1.5 truncate text-[11px] font-medium text-brand-textLight">{c.lastMessage || 'No recent messages'}</p>
-                  <div className="mt-2 flex items-center justify-between pt-1 border-t border-brand-navy/5 text-[9px] font-bold text-brand-navy/40">
+                  <p className="mt-1.5 truncate text-sm font-medium text-brand-textLight">{c.lastMessage || 'No recent messages'}</p>
+                  <div className="mt-2 flex items-center justify-between pt-1 border-t border-brand-navy/5 text-xs font-bold text-brand-navy/40">
                     <span className="uppercase tracking-wider">{c.channel}</span>
                     <span>{fmt(c.lastMessageAt)}</span>
                   </div>
@@ -297,7 +297,7 @@ return (
                     </div>
                     <div>
                       <p className="font-display text-sm font-black text-brand-navy tracking-tight">{thread?.conversation.contactName || thread?.conversation.contactKey}</p>
-                      <p className="text-[10px] font-semibold text-brand-textLight uppercase tracking-wider">{thread?.conversation.channel} · {thread?.conversation.contactKey}</p>
+                      <p className="text-[13px] font-semibold text-brand-textLight uppercase tracking-wider">{thread?.conversation.channel} · {thread?.conversation.contactKey}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -307,7 +307,7 @@ return (
                     >
                       ✨ AI Translator
                     </button>
-                    {me && <span className="hidden sm:inline text-[10px] font-semibold text-brand-textLight">Replying as <strong className="text-brand-navy">{me.name?.split(' ')[0]}</strong></span>}
+                    {me && <span className="hidden sm:inline text-[13px] font-semibold text-brand-textLight">Replying as <strong className="text-brand-navy">{me.name?.split(' ')[0]}</strong></span>}
                   </div>
                 </div>
 
@@ -328,7 +328,7 @@ return (
                         : 'bg-[#f4f1ea] text-brand-navy border border-brand-navy/10 rounded-bl-xs'
                     }`}>
                       <p className="leading-relaxed text-[12px] font-medium">{m.body}</p>
-                      <div className={`mt-1.5 flex items-center justify-end gap-1.5 text-[9px] font-semibold ${isOut ? 'text-white/60' : 'text-brand-navy/40'}`}>
+                      <div className={`mt-1.5 flex items-center justify-end gap-1.5 text-xs font-semibold ${isOut ? 'text-white/60' : 'text-brand-navy/40'}`}>
                         <span>{fmt(m.createdAt)}</span>
                         {isOut && <span>✓✓</span>}
                       </div>
@@ -342,7 +342,7 @@ return (
 
                 {/* Canned macro reply pills */}
                 <div className="mt-3 flex flex-wrap gap-1.5 border-t border-brand-navy/10 pt-3">
-                  <span className="text-[10px] font-bold text-brand-gold uppercase tracking-wider self-center mr-1">Quick:</span>
+                  <span className="text-[13px] font-bold text-brand-gold uppercase tracking-wider self-center mr-1">Quick:</span>
                   {[
                     "Hello! How can we assist you today?",
                     "Documents received. We are reviewing them now.",
@@ -353,7 +353,7 @@ return (
                       key={macro}
                       type="button"
                       onClick={() => setReply(macro)}
-                      className="rounded-lg border border-brand-navy/10 bg-brand-navy/[0.02] px-2.5 py-1 text-[10px] font-medium text-brand-navy hover:border-brand-gold hover:bg-brand-gold/10 transition-colors cursor-pointer"
+                      className="rounded-lg border border-brand-navy/10 bg-brand-navy/[0.02] px-2.5 py-1 text-[13px] font-medium text-brand-navy hover:border-brand-gold hover:bg-brand-gold/10 transition-colors cursor-pointer"
                     >
                       {macro}
                     </button>

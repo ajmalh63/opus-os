@@ -41,8 +41,12 @@ async function releaseExpiredHolds(db: any, now: number): Promise<number> {
 umrahRouter.get('/packages', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
+  const categoryFilter = c.req.query('category');
   try {
-    const pkgs = await db.select().from(umrahPackages).orderBy(desc(umrahPackages.createdAt)).all();
+    let pkgs = await db.select().from(umrahPackages).orderBy(desc(umrahPackages.createdAt)).all();
+    if (categoryFilter && categoryFilter !== 'all') {
+      pkgs = pkgs.filter(p => (p.category || 'umrah_pilgrimage') === categoryFilter);
+    }
     const deps = await db.select().from(groupDepartures).all();
     const list = pkgs.map(p => {
       const pkgDeps = deps.filter(d => d.packageId === p.id);

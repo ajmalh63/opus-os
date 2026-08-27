@@ -10,15 +10,30 @@ export const chatwootAdapter: ToolAdapter = {
   label: 'Chatwoot — unified inbox',
   async snapshot(env: ToolEnv): Promise<ToolSnapshot> {
     const base = { tool: 'chatwoot', label: this.label, fetchedAt: Math.floor(Date.now() / 1000) };
-    if (!env.CHATWOOT_BASE_URL && !env.CHATWOOT_BASE_URL) {
+    const url = env.CHATWOOT_BASE_URL;
+    if (!url || !env.CHATWOOT_API_TOKEN) {
       return { ...base, status: { state: 'unconfigured', label: this.label, summary: 'CHATWOOT_BASE_URL / CHATWOOT_API_TOKEN not set' }, metrics: {}, items: [] };
     }
+    const accountId = env.CHATWOOT_ACCOUNT_ID || '1';
     try {
-      const url = (env.CHATWOOT_BASE_URL || env.CHATWOOT_BASE_URL)!;
-      const res = await fetch(`${url}/api/v1/accounts/:account_id/conversations?page=1`, {
+      const res = await fetch(`${url.replace(/\/$/, '')}/api/v1/accounts/${accountId}/conversations?page=1`, {
         headers: { api_access_token: env.CHATWOOT_API_TOKEN || '' },
+        signal: AbortSignal.timeout(5000),
       }).catch(() => null);
-      if (!res) throw new Error('fetch failed');
+      if (!res) throw new Error('connection timeout or refused');
+      if (!res.ok) {
+        const summary = res.status === 530
+          ? 'Cloudflare Tunnel Offline (HTTP 530)'
+          : res.status === 401 || res.status === 403
+          ? `Auth Failed (${res.status})`
+          : `HTTP ${res.status}`;
+        return {
+          ...base,
+          status: { state: 'error', label: this.label, summary },
+          metrics: { httpStatus: res.status },
+          items: [],
+        };
+      }
       const json: any = await res.json().catch(() => ({}));
       const convs = Array.isArray(json?.payload || json?.conversations) ? (json.payload || json.conversations) : [];
       return {
@@ -32,7 +47,10 @@ export const chatwootAdapter: ToolAdapter = {
         })),
       };
     } catch (e: any) {
-      return { ...base, status: { state: 'error', label: this.label, summary: `fetch failed: ${e?.message || 'unknown'}` }, metrics: {}, items: [] };
+      const summary = String(e?.message).includes('530')
+        ? 'Cloudflare Tunnel Offline (HTTP 530)'
+        : `fetch failed: ${e?.message || 'unknown'}`;
+      return { ...base, status: { state: 'error', label: this.label, summary }, metrics: {}, items: [] };
     }
   },
 };
@@ -49,13 +67,21 @@ export const openwaAdapter: ToolAdapter = {
     try {
       const res = await fetch(`${url.replace(/\/$/, '')}/api/health`, { signal: AbortSignal.timeout(4000) });
       const ok = res.ok;
+      const summary = ok
+        ? 'gateway reachable'
+        : res.status === 530
+        ? 'Cloudflare Tunnel Offline (HTTP 530)'
+        : `HTTP ${res.status}`;
       return {
         ...base,
-        status: { state: ok ? 'ok' : 'error', label: this.label, summary: ok ? 'gateway reachable' : `HTTP ${res.status}` },
+        status: { state: ok ? 'ok' : 'error', label: this.label, summary },
         metrics: { httpStatus: res.status }, items: [],
       };
     } catch (e: any) {
-      return { ...base, status: { state: 'error', label: this.label, summary: `unreachable: ${e?.message || 'unknown'}` }, metrics: {}, items: [] };
+      const summary = String(e?.message).includes('530')
+        ? 'Cloudflare Tunnel Offline (HTTP 530)'
+        : `unreachable: ${e?.message || 'unknown'}`;
+      return { ...base, status: { state: 'error', label: this.label, summary }, metrics: {}, items: [] };
     }
   },
 };

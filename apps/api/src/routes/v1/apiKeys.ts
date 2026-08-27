@@ -21,6 +21,8 @@ const AVAILABLE_SCOPES = [
   'visa:write',
   'umrah:read',
   'umrah:write',
+  'tours:read',
+  'tours:write',
   'attestation:read',
   'attestation:write',
   'webhooks:manage',

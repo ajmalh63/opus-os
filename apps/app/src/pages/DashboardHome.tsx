@@ -185,7 +185,7 @@ export default function DashboardHome() {
           <div className="max-w-2xl">
             <div className="flex items-center gap-2.5">
               <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_10px_rgba(215,160,25,0.9)] animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-gold">
+              <span className="text-[13px] font-black uppercase tracking-[0.24em] text-brand-gold">
                 {me?.role?.replace('_', ' ') || 'Super Admin'} · Executive Command Deck
               </span>
             </div>
@@ -193,7 +193,7 @@ export default function DashboardHome() {
               Welcome back, {me?.name?.split(' ')[0] || 'Ajmal'}
             </h1>
             <p className="mt-2 text-xs leading-relaxed text-slate-300 max-w-xl">
-              Real-time telemetry across Study Abroad, Umrah, Attestation, and Visa operations. All systems operational.
+              Real-time telemetry across Study Abroad, Tours &amp; Travels, Attestation, and Visa operations. All systems operational.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -225,19 +225,19 @@ export default function DashboardHome() {
             <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
             <h3 className="font-display text-sm font-extrabold text-brand-navy tracking-tight">Live Activity Stream</h3>
             {newCount > 0 && (
-              <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-black text-white shadow-[0_0_8px_rgba(244,63,94,0.6)] animate-pulse">
+              <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-black text-white shadow-[0_0_8px_rgba(244,63,94,0.6)] animate-pulse">
                 {newCount} new
               </span>
             )}
           </div>
           <div className="flex items-center gap-3">
             {newCount > 0 && (
-              <button onClick={markAllSeen} className="text-[10px] font-extrabold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer">
+              <button onClick={markAllSeen} className="text-[13px] font-extrabold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer">
                 ✓ Mark all seen
               </button>
             )}
             {alerts.some(a => a.status === 'seen') && (
-              <button onClick={() => { if (confirm('Clear all completed notifications?')) clearSeen(); }} className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight hover:text-rose-500 cursor-pointer transition-colors">
+              <button onClick={() => { if (confirm('Clear all completed notifications?')) clearSeen(); }} className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight hover:text-rose-500 cursor-pointer transition-colors">
                 🗑 Clear done
               </button>
             )}
@@ -271,15 +271,15 @@ export default function DashboardHome() {
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold text-brand-navy truncate tracking-tight">{a.title}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {sev !== 'info' && <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${sevBadge[sev]}`}>{sev}</span>}
+                    {sev !== 'info' && <span className={`px-1.5 py-0.5 rounded text-sm font-black uppercase tracking-wider ${sevBadge[sev]}`}>{sev}</span>}
                     {a.status === 'new' && <span className={`shrink-0 h-2 w-2 rounded-full animate-pulse ${sevDot[sev]}`} />}
                   </div>
                 </div>
-                {a.body && <p className="text-[11px] text-brand-textLight mt-1.5 line-clamp-2 leading-relaxed">{a.body}</p>}
+                {a.body && <p className="text-sm text-brand-textLight mt-1.5 line-clamp-2 leading-relaxed">{a.body}</p>}
                 <div className="flex items-center justify-between mt-3 pt-2 border-t border-brand-navy/5">
-                  <span className="text-[9px] uppercase tracking-wider text-brand-gold font-extrabold">{a.division} · {a.type}</span>
+                  <span className="text-xs uppercase tracking-wider text-brand-gold font-extrabold">{a.division} · {a.type}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-brand-textLight">{new Date(a.createdAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="text-[13px] text-brand-textLight">{new Date(a.createdAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); dismiss(a.id); }}
                       title="Dismiss notification"
@@ -317,11 +317,11 @@ export default function DashboardHome() {
                 </div>
                 {w.visible && (
                   <div className="mt-2.5 flex items-center gap-1.5">
-                    <span className="text-[10px] font-semibold text-brand-navy/40">Size:</span>
+                    <span className="text-[13px] font-semibold text-brand-navy/40">Size:</span>
                     <select
                       value={w.size}
                       onChange={(e) => changeWidgetSize(w.key, e.target.value as any)}
-                      className="rounded border border-brand-navy/10 bg-white px-1.5 py-0.5 text-[9px] text-brand-navy outline-none focus:border-brand-gold/60"
+                      className="rounded border border-brand-navy/10 bg-white px-1.5 py-0.5 text-xs text-brand-navy outline-none focus:border-brand-gold/60"
                     >
                       <option value="small">Small (33%)</option>
                       <option value="medium">Medium (50%)</option>
@@ -354,7 +354,7 @@ export default function DashboardHome() {
               <span className="text-base">🕰️</span>
               <h3 className="font-display font-extrabold text-brand-navy text-sm tracking-tight">Clients Needing Attention ({staleData.stale.length})</h3>
             </div>
-            <span className="text-[11px] font-semibold text-amber-900/60">No contact in 3+ days</span>
+            <span className="text-sm font-semibold text-amber-900/60">No contact in 3+ days</span>
           </div>
           <div className="flex flex-wrap gap-2.5">
             {staleData.stale.slice(0, 8).map((c: any) => (
@@ -364,8 +364,8 @@ export default function DashboardHome() {
                 className="inline-flex items-center gap-2 rounded-xl border border-amber-300/80 bg-white/90 px-3.5 py-2 text-xs font-bold text-brand-navy shadow-xs hover:border-brand-gold hover:shadow-md transition-all cursor-pointer active:scale-95"
               >
                 <span>{c.clientName}</span>
-                <span className="text-[10px] font-extrabold uppercase text-brand-gold tracking-wider">{c.division.replace('-', ' ')}</span>
-                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-black text-amber-800">{c.daysSinceContact}d</span>
+                <span className="text-[13px] font-extrabold uppercase text-brand-gold tracking-wider">{c.division.replace('-', ' ')}</span>
+                <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[13px] font-black text-amber-800">{c.daysSinceContact}d</span>
               </button>
             ))}
           </div>
@@ -378,9 +378,9 @@ export default function DashboardHome() {
           <div className="flex items-start gap-3">
             <span className="text-2xl">{taskToast.urgent ? '🚨' : '🔔'}</span>
             <div className="flex-1">
-              <div className={`text-[10px] font-black uppercase tracking-widest ${taskToast.urgent ? 'text-rose-600' : 'text-brand-gold'}`}>{taskToast.urgent ? 'URGENT TASK DISPATCH' : 'NEW TASK ASSIGNED'}</div>
+              <div className={`text-[13px] font-black uppercase tracking-widest ${taskToast.urgent ? 'text-rose-600' : 'text-brand-gold'}`}>{taskToast.urgent ? 'URGENT TASK DISPATCH' : 'NEW TASK ASSIGNED'}</div>
               <div className="text-xs font-bold text-brand-navy mt-0.5">{taskToast.title}</div>
-              <div className="text-[10px] text-brand-textLight mt-1">Check off in My Assigned Tasks feed.</div>
+              <div className="text-[13px] text-brand-textLight mt-1">Check off in My Assigned Tasks feed.</div>
             </div>
             <button onClick={dismissTaskToast} className="text-brand-navy/40 hover:text-brand-navy cursor-pointer text-sm">✕</button>
           </div>
@@ -430,7 +430,7 @@ export default function DashboardHome() {
                           }}
                         />
                         <span className="font-bold text-brand-navy flex-1 tracking-tight">{t.title}</span>
-                        <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider ${prioBadge[prio] || prioBadge.medium}`}>{prio}</span>
+                        <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs uppercase tracking-wider ${prioBadge[prio] || prioBadge.medium}`}>{prio}</span>
                       </div>
                       );
                     })}
@@ -438,7 +438,7 @@ export default function DashboardHome() {
                       <div className="py-8 text-center">
                         <span className="text-2xl">🎉</span>
                         <p className="text-xs font-bold text-brand-navy mt-1.5">Zero pending tasks</p>
-                        <p className="text-[11px] text-brand-textLight">You are all caught up for today!</p>
+                        <p className="text-sm text-brand-textLight">You are all caught up for today!</p>
                       </div>
                     )}
                   </div>
@@ -500,7 +500,7 @@ export default function DashboardHome() {
                     {(funnel?.funnel || []).length === 0 && <EmptyState title="No stage data yet." hint="Funnel builds as leads move through the pipeline" />}
                     {(funnel?.funnel || []).slice(0, 5).map((s) => (
                       <div key={s.stage}>
-                        <div className="mb-1 flex items-center justify-between text-[11px]">
+                        <div className="mb-1 flex items-center justify-between text-sm">
                           <span className="font-semibold text-brand-navy/70">{LABELS[s.stage] || s.stage}</span>
                           <span className="font-mono text-brand-navy/40">{s.count} · {Math.round(s.conversionRate * 100)}%</span>
                         </div>

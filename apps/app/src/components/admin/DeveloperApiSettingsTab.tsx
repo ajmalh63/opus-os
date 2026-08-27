@@ -173,7 +173,7 @@ export default function DeveloperApiSettingsTab() {
                 <span className="font-bold text-xs text-emerald-900 flex items-center gap-1.5">
                   <span>✅</span> API Key Created Successfully
                 </span>
-                <p className="mt-0.5 text-[11px] text-emerald-800">
+                <p className="mt-0.5 text-sm text-emerald-800">
                   Please copy and store this API key safely. <strong>You will not be able to see it again!</strong>
                 </p>
               </div>
@@ -205,7 +205,7 @@ export default function DeveloperApiSettingsTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-brand-navy/10 text-[10px] font-bold uppercase tracking-wider text-brand-navy/50">
+              <tr className="border-b border-brand-navy/10 text-[13px] font-bold uppercase tracking-wider text-brand-navy/50">
                 <th className="py-2.5">Name</th>
                 <th className="py-2.5">Key Prefix</th>
                 <th className="py-2.5">Granted Scopes</th>
@@ -225,7 +225,7 @@ export default function DeveloperApiSettingsTab() {
                       {k.scopes.map((s) => (
                         <span
                           key={s}
-                          className={`rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold ${
+                          className={`rounded-md px-1.5 py-0.5 font-mono text-xs font-bold ${
                             s === '*'
                               ? 'bg-amber-100 text-amber-900 border border-amber-300'
                               : 'bg-slate-100 text-slate-700'
@@ -242,11 +242,11 @@ export default function DeveloperApiSettingsTab() {
                   </td>
                   <td className="py-3">
                     {k.isRevoked ? (
-                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-bold text-rose-800">
+                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-800">
                         Revoked
                       </span>
                     ) : (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-800">
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
                         Active
                       </span>
                     )}
@@ -306,7 +306,7 @@ export default function DeveloperApiSettingsTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-brand-navy/10 text-[10px] font-bold uppercase tracking-wider text-brand-navy/50">
+              <tr className="border-b border-brand-navy/10 text-[13px] font-bold uppercase tracking-wider text-brand-navy/50">
                 <th className="py-2.5">Listener Name</th>
                 <th className="py-2.5">Target Endpoint URL</th>
                 <th className="py-2.5">Subscribed Events</th>
@@ -321,17 +321,17 @@ export default function DeveloperApiSettingsTab() {
                   <td className="py-3 font-semibold text-brand-navy">{w.name}</td>
                   <td className="py-3 font-mono text-slate-600 truncate max-w-xs">{w.url}</td>
                   <td className="py-3">
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] font-bold text-slate-700">
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-bold text-slate-700">
                       {w.events.join(', ')}
                     </span>
                   </td>
                   <td className="py-3">
                     {w.failureCount === 0 ? (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-800">
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
                         100% Healthy
                       </span>
                     ) : (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-800">
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
                         {w.failureCount} Failures
                       </span>
                     )}
@@ -401,7 +401,7 @@ export default function DeveloperApiSettingsTab() {
               className="mt-4 space-y-4"
             >
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                   Key Name / Description *
                 </label>
                 <input
@@ -415,7 +415,7 @@ export default function DeveloperApiSettingsTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                   Environment
                 </label>
                 <div className="flex gap-2">
@@ -441,7 +441,7 @@ export default function DeveloperApiSettingsTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                   Granted Scopes
                 </label>
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
@@ -464,8 +464,8 @@ export default function DeveloperApiSettingsTab() {
                         className="mt-0.5"
                       />
                       <div>
-                        <div className="font-mono text-[10px] font-bold text-brand-navy">{s.label}</div>
-                        <div className="text-[9px] text-slate-500">{s.desc}</div>
+                        <div className="font-mono text-[13px] font-bold text-brand-navy">{s.label}</div>
+                        <div className="text-xs text-slate-500">{s.desc}</div>
                       </div>
                     </label>
                   ))}
@@ -525,7 +525,7 @@ export default function DeveloperApiSettingsTab() {
               className="mt-4 space-y-4"
             >
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                   Listener Name / Service *
                 </label>
                 <input
@@ -539,7 +539,7 @@ export default function DeveloperApiSettingsTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                   Target Endpoint URL (HTTPS) *
                 </label>
                 <input
@@ -553,7 +553,7 @@ export default function DeveloperApiSettingsTab() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
+                <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-navy/70 mb-1">
                   Subscribed Events
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -569,7 +569,7 @@ export default function DeveloperApiSettingsTab() {
                           setWebhookEvents(webhookEvents.includes(ev) ? without : [...without, ev]);
                         }
                       }}
-                      className={`rounded-lg px-2.5 py-1 font-mono text-[10px] font-bold transition cursor-pointer ${
+                      className={`rounded-lg px-2.5 py-1 font-mono text-[13px] font-bold transition cursor-pointer ${
                         webhookEvents.includes(ev)
                           ? 'bg-brand-navy text-white'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200'

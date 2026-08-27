@@ -21,10 +21,10 @@ export default function ArtifactShell({
           <div className="flex items-center gap-2">
             <p className="font-display text-sm sm:text-base font-bold text-brand-navy tracking-tight">{title}</p>
           </div>
-          {caption && <p className="mt-0.5 text-[11px] text-brand-textLight leading-snug">{caption}</p>}
+          {caption && <p className="mt-0.5 text-sm text-brand-textLight leading-snug">{caption}</p>}
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[13px] font-semibold text-emerald-700">
           <span className="live-pulse-dot text-emerald-500 !h-1.5 !w-1.5" />
           <span className="hidden sm:inline">{statusLabel}</span>
           <span className="sm:hidden">Live</span>

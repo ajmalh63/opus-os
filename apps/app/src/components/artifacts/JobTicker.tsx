@@ -47,27 +47,27 @@ export default function JobTicker() {
               <div className="flex items-center gap-2">
                 <p className="truncate text-xs font-bold text-brand-navy">{j.title}</p>
                 {idx === 0 && (
-                  <span className="rounded bg-emerald-500/15 text-emerald-700 px-1.5 py-0.2 text-[9px] font-extrabold">
+                  <span className="rounded bg-emerald-500/15 text-emerald-700 px-1.5 py-0.2 text-xs font-extrabold">
                     NEW
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-brand-textLight mt-0.5">{j.country} · {j.sector}</p>
+              <p className="text-[13px] text-brand-textLight mt-0.5">{j.country} · {j.sector}</p>
             </div>
 
             <div className="text-right shrink-0">
               <a 
                 href="/portal?tab=jobs"
-                className="inline-flex items-center gap-1 rounded-md bg-brand-navy/10 px-2 py-0.5 text-[10px] font-bold text-brand-navy hover:bg-brand-gold hover:text-brand-navy transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-md bg-brand-navy/10 px-2 py-0.5 text-[13px] font-bold text-brand-navy hover:bg-brand-gold hover:text-brand-navy transition-colors cursor-pointer"
               >
                 <span>💼</span> Apply via Portal
               </a>
-              <span className="text-[9px] text-brand-textLight block mt-0.5">Employer Sponsored</span>
+              <span className="text-xs text-brand-textLight block mt-0.5">Employer Sponsored</span>
             </div>
           </div>
         ))}
 
-        <div className="rounded-xl bg-brand-navy/5 px-3 py-2 flex items-center justify-between text-[10px] text-brand-navy font-medium">
+        <div className="rounded-xl bg-brand-navy/5 px-3 py-2 flex items-center justify-between text-[13px] text-brand-navy font-medium">
           <span>Candidate Sourcing Partner</span>
           <span className="text-brand-gold font-bold">Verified network — building in public</span>
         </div>

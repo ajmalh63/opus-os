@@ -167,7 +167,7 @@ export default function ContactPage() {
                   <a href="tel:+919398848376" className="text-sm sm:text-base font-bold text-brand-navy hover:text-brand-gold transition-colors">
                     +91 93988 48376
                   </a>
-                  <p className="text-[11px] text-brand-textLight mt-0.5">Mon – Sat: 9:30 AM to 6:30 PM IST</p>
+                  <p className="text-sm text-brand-textLight mt-0.5">Mon – Sat: 9:30 AM to 6:30 PM IST</p>
                 </div>
               </div>
 
@@ -188,7 +188,7 @@ export default function ContactPage() {
                   >
                     Open Live Chatwoot Desk →
                   </button>
-                  <p className="text-[11px] text-brand-textLight mt-0.5">Instant counselor assistance & case tracking</p>
+                  <p className="text-sm text-brand-textLight mt-0.5">Instant counselor assistance & case tracking</p>
                 </div>
               </div>
 
@@ -201,7 +201,7 @@ export default function ContactPage() {
                   <a href="mailto:info@opusoverseas.com" className="text-sm sm:text-base font-bold text-brand-navy hover:text-brand-gold transition-colors">
                     info@opusoverseas.com
                   </a>
-                  <p className="text-[11px] text-brand-textLight mt-0.5">Response within 2-4 business hours</p>
+                  <p className="text-sm text-brand-textLight mt-0.5">Response within 2-4 business hours</p>
                 </div>
               </div>
             </div>
@@ -294,45 +294,45 @@ export default function ContactPage() {
                   <form onSubmit={handleSubmitContact} className="space-y-4 lead-form-wrap">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Full Name</label>
+                        <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Full Name</label>
                         <input required placeholder="e.g. Ramesh Reddy" value={name} onChange={(e) => setName(e.target.value)} />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">WhatsApp Phone Number</label>
+                        <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">WhatsApp Phone Number</label>
                         <input required type="tel" placeholder="+91 98765 00001" value={phone} onChange={(e) => setPhone(e.target.value)} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
+                        <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
                         <input required type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Department / Division</label>
+                        <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Department / Division</label>
                         <select value={division} onChange={(e) => setDivision(e.target.value)}>
                           <option value="general">General Inquiry</option>
-                          <option value="study-abroad">Study Abroad & Admissions</option>
+                          <option value="study-abroad">Study Abroad &amp; Admissions</option>
                           <option value="visa">Global Visa Services</option>
-                          <option value="umrah">Umrah & Spiritual Logistics</option>
-                          <option value="attestation">Document Attestation & Apostille</option>
-                          <option value="manpower">Overseas Recruitment & Careers</option>
+                          <option value="umrah">Tours &amp; Travels (Holidays &amp; Umrah)</option>
+                          <option value="attestation">Document Attestation &amp; Apostille</option>
+                          <option value="manpower">Overseas Recruitment &amp; Careers</option>
                         </select>
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Subject</label>
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Subject</label>
                       <input required placeholder="Brief description of your query" value={subject} onChange={(e) => setSubject(e.target.value)} />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Detailed Message</label>
+                      <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Detailed Message</label>
                       <textarea required rows={4} placeholder="How can our specialists assist you today?" value={message} onChange={(e) => setMessage(e.target.value)} />
                     </div>
 
                     <div className="pt-2">
-                      <label className="flex items-start gap-3 text-[11px] leading-relaxed text-brand-textLight cursor-pointer">
+                      <label className="flex items-start gap-3 text-sm leading-relaxed text-brand-textLight cursor-pointer">
                         <input
                           type="checkbox"
                           checked={consent}

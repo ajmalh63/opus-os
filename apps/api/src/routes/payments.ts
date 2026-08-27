@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { createPaymentSchema } from '@opusos/shared';
+import { createPaymentSchema, calculateGstSplit } from '@opusos/shared';
 import { getDb } from '../db/client.js';
 import { payments, engagements, milestones, clients, businessProfile } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -70,29 +70,15 @@ paymentsRouter.post('/', zValidator('json', createPaymentSchema), async (c) => {
     };
 
     if (data.type === 'invoice' || data.type === 'charge') {
-      const isInter = !!data.isInterstate;
-      const taxable = Math.round(data.amount / 1.18);
-      const gstTotal = data.amount - taxable;
-      
-      if (isInter) {
-        gstInfo = {
-          taxableAmount: taxable,
-          cgst: 0,
-          sgst: 0,
-          igst: gstTotal,
-          isInterstate: true
-        };
-      } else {
-        const cgst = Math.floor(gstTotal / 2);
-        const sgst = gstTotal - cgst;
-        gstInfo = {
-          taxableAmount: taxable,
-          cgst,
-          sgst,
-          igst: 0,
-          isInterstate: false
-        };
-      }
+      const rate = typeof data.gstRate === 'number' ? data.gstRate : 18;
+      const split = calculateGstSplit(data.amount, !!data.isInterstate, rate);
+      gstInfo = {
+        taxableAmount: split.taxableAmount,
+        cgst: split.cgst,
+        sgst: split.sgst,
+        igst: split.igst,
+        isInterstate: split.isInterstate
+      };
     }
 
     // 3. Insert payment ledger row (amount is strictly integer paise!)

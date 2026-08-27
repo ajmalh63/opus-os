@@ -207,7 +207,7 @@ export default function UmrahTravelPage() {
                   className="rounded-full border border-white/25 bg-white/5 hover:bg-white/10 px-6 py-3.5 text-xs font-semibold text-white transition-all hover:border-brand-gold hover:text-brand-gold tactile-btn inline-flex items-center gap-1.5"
                 >
                   <span>📝 Custom Package Inquiry</span>
-                  <span className="text-[10px] text-brand-gold">↗</span>
+                  <span className="text-[13px] text-brand-gold">↗</span>
                 </a>
               </div>
             </div>
@@ -227,7 +227,7 @@ export default function UmrahTravelPage() {
                       <p className="font-display text-xs font-bold uppercase tracking-wider text-brand-gold">Haramain Verified</p>
                       <p className="font-display text-sm font-extrabold text-brand-navy">Under 100m Hotel Stays</p>
                     </div>
-                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
+                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-2.5 py-1 text-[13px] font-bold font-mono">
                       ● Direct Flights
                     </span>
                   </div>
@@ -244,22 +244,22 @@ export default function UmrahTravelPage() {
           <div>
             <span className="text-2xl mb-1 block">🕌</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Haram Proximity</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Under 150m walking distance</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Under 150m walking distance</p>
           </div>
           <div>
-            <span className="text-2xl mb-1 block">✈️</span>
+            <span className="text-2xl mb-1 block">🧳</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Direct Saudi Airlines</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Hyderabad to Jeddah direct</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Hyderabad to Jeddah direct</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">🍲</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Indian Buffet Catering</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Breakfast, Lunch & Dinner</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Breakfast, Lunch & Dinner</p>
           </div>
           <div>
             <span className="text-2xl mb-1 block">📜</span>
             <p className="font-display font-extrabold text-sm text-brand-navy">Comprehensive Umrah Visa</p>
-            <p className="text-[11px] text-brand-textLight mt-0.5">Biometric & portal filing assistance</p>
+            <p className="text-sm text-brand-textLight mt-0.5">Biometric & portal filing assistance</p>
           </div>
         </div>
       </section>
@@ -278,10 +278,10 @@ export default function UmrahTravelPage() {
               <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-white/40">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-brand-gold">Haramain Courtyard Access</p>
+                    <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">Haramain Courtyard Access</p>
                     <p className="text-xs sm:text-sm font-extrabold text-brand-navy">5-Star Proximity Guarantee</p>
                   </div>
-                  <span className="rounded-full bg-emerald-500/15 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
+                  <span className="rounded-full bg-emerald-500/15 text-emerald-800 px-2.5 py-1 text-[13px] font-bold font-mono">
                     ● Under 150m Walk
                   </span>
                 </div>
@@ -312,7 +312,7 @@ export default function UmrahTravelPage() {
               </div>
 
               <div className="clay-card p-4 flex items-start gap-3.5 border-l-4 border-l-brand-navy">
-                <span className="text-xl">✈️</span>
+                <span className="text-xl">🧳</span>
                 <div>
                   <h3 className="font-display text-sm font-bold text-brand-navy">Direct Saudi Airlines Flight Allocations</h3>
                   <p className="text-xs text-brand-textLight leading-relaxed mt-0.5">Guaranteed airline group blocks from Hyderabad directly into Jeddah or Madinah with zero multi-city layovers.</p>
@@ -334,7 +334,7 @@ export default function UmrahTravelPage() {
       {/* LIVE DEPARTURES RADAR (Connected to /api/public/umrah/departures) */}
       <section id="departures" className="mx-auto max-w-7xl px-5 sm:px-6 py-20 sm:py-24">
         <div className="mb-12 text-center space-y-3">
-          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-800 font-mono">
+          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-1 text-sm font-bold uppercase tracking-wider text-emerald-800 font-mono">
             Direct Flight Allocations
           </span>
           <h2 className="font-display fluid-h2 font-bold text-brand-navy">
@@ -353,7 +353,7 @@ export default function UmrahTravelPage() {
           </div>
         ) : departures.length === 0 ? (
           <div className="clay-card p-12 text-center text-brand-textLight max-w-lg mx-auto space-y-2">
-            <span className="inline-block rounded-full bg-emerald-500/15 text-emerald-800 px-3 py-1 font-mono text-[10px] font-bold">
+            <span className="inline-block rounded-full bg-emerald-500/15 text-emerald-800 px-3 py-1 font-mono text-[13px] font-bold">
               ● Upcoming Lunar Cycle Flight Allocations
             </span>
             <p className="font-bold text-brand-navy text-sm">Next Scheduled Group Departures Finalizing</p>
@@ -371,7 +371,7 @@ export default function UmrahTravelPage() {
                     <span className="font-mono text-xs font-bold text-brand-gold">
                       📅 {fmtDate(d.departureDate)}
                     </span>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[13px] font-extrabold ${
                       d.availability === 'green' ? 'bg-emerald-100 text-emerald-800' : d.availability === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
                     }`}>
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -390,7 +390,7 @@ export default function UmrahTravelPage() {
 
                 <div className="pt-4 border-t border-brand-navy/5 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight block">Direct Flight & Stay</span>
+                    <span className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight block">Direct Flight & Stay</span>
                     <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-bold text-emerald-800">
                       Confirmed Group Block
                     </span>
@@ -454,7 +454,7 @@ export default function UmrahTravelPage() {
               <div key={pkg.title} className="glass-light p-6 sm:p-7 rounded-2xl sm:rounded-3xl text-brand-navy shadow-2xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="rounded-full bg-brand-gold/20 text-brand-navy px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider font-mono">
+                    <span className="rounded-full bg-brand-gold/20 text-brand-navy px-3 py-0.5 text-[13px] font-bold uppercase tracking-wider font-mono">
                       {pkg.badge}
                     </span>
                   </div>
@@ -531,26 +531,26 @@ export default function UmrahTravelPage() {
             <form onSubmit={handleSubmitBooking} className="space-y-4 lead-form-wrap">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Lead Pilgrim Name</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Lead Pilgrim Name</label>
                   <input required placeholder="As shown on Passport" value={pilgrimName} onChange={(e) => setPilgrimName(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">WhatsApp Phone Number</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">WhatsApp Phone Number</label>
                   <input required type="tel" placeholder="+91 98765 00001" value={pilgrimPhone} onChange={(e) => setPilgrimPhone(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
                   <input required type="email" placeholder="you@example.com" value={pilgrimEmail} onChange={(e) => setPilgrimEmail(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Number of Pilgrims</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Number of Pilgrims</label>
                   <input type="number" min={1} max={30} value={travelersCount} onChange={(e) => setTravelersCount(parseInt(e.target.value) || 1)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Room Occupancy</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Room Occupancy</label>
                   <select value={roomType} onChange={(e) => setRoomType(e.target.value)}>
                     <option value="double">Double Sharing (2 Beds)</option>
                     <option value="triple">Triple Sharing (3 Beds)</option>
@@ -561,7 +561,7 @@ export default function UmrahTravelPage() {
               </div>
 
               <div className="pt-2">
-                <label className="flex items-start gap-3 text-[11px] leading-relaxed text-brand-textLight cursor-pointer">
+                <label className="flex items-start gap-3 text-sm leading-relaxed text-brand-textLight cursor-pointer">
                   <input
                     type="checkbox"
                     checked={consent}

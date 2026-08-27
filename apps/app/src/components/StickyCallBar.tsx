@@ -28,7 +28,7 @@ export default function StickyCallBar({ division, hookText }: Props) {
       case 'study-abroad':
         return '🎓 Fall 2026 Admissions Open · Complimentary Profile Assessment';
       case 'visa':
-        return '✈️ Express Consular Fast-Track · Transparent Document Handling';
+        return '🛂 Express Consular Fast-Track · Transparent Document Handling';
       case 'umrah':
         return '🕋 Customized Umrah Packages · Premium Hotel Stays & Guided Logistics';
       case 'attestation':
@@ -74,7 +74,7 @@ export default function StickyCallBar({ division, hookText }: Props) {
             {/* Top Hook Strip */}
             <div className="flex items-center gap-2 px-1 min-w-0">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-gold animate-pulse shrink-0" />
-              <p className="truncate text-[11px] font-semibold text-white/90">
+              <p className="truncate text-sm font-semibold text-white/90">
                 {getHook()}
               </p>
             </div>
@@ -83,17 +83,17 @@ export default function StickyCallBar({ division, hookText }: Props) {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setModalOpen(true)}
-                className="tactile-btn cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-gold py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] shadow-sm text-center"
+                className="tactile-btn cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-gold py-2.5 px-2 text-sm font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] shadow-sm text-center"
               >
                 <span>⚡ Eligibility Check</span>
               </button>
 
               <button
                 onClick={() => setBookingModalOpen(true)}
-                className="tactile-btn cursor-pointer inline-flex items-center justify-center gap-1 rounded-xl border border-white/25 bg-white/10 py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-white transition hover:border-brand-gold hover:text-brand-gold hover:bg-white/15 active:scale-[0.98] text-center"
+                className="tactile-btn cursor-pointer inline-flex items-center justify-center gap-1 rounded-xl border border-white/25 bg-white/10 py-2.5 px-2 text-sm font-bold uppercase tracking-wider text-white transition hover:border-brand-gold hover:text-brand-gold hover:bg-white/15 active:scale-[0.98] text-center"
               >
                 <span>📅 Book 1-on-1</span>
-                <span className="text-[10px] text-brand-gold">↗</span>
+                <span className="text-[13px] text-brand-gold">↗</span>
               </button>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function StickyCallBar({ division, hookText }: Props) {
                 className="tactile-btn inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:border-brand-gold hover:text-brand-gold hover:bg-white/15 cursor-pointer"
               >
                 <span>📅 Book 1-on-1</span>
-                <span className="text-[10px] text-brand-gold">↗</span>
+                <span className="text-[13px] text-brand-gold">↗</span>
               </button>
 
               {/* Live Chat Action */}

@@ -8,7 +8,7 @@ const PUBLIC_COMMANDS = [
   { key: 'home', label: 'Home — Overview & Live Artifacts', to: '/', section: 'Navigation', icon: 'M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10' },
   { key: 'study-abroad', label: 'Study Abroad Consulting (50+ Countries)', to: '/study-abroad', section: 'Divisions', icon: 'M12 14l9-5-9-5-9 5 9 5zm0 7l-9-5 9-5 9 5-9 5z' },
   { key: 'visa-services', label: 'Global Visa Services & Express Stamping', to: '/visa-services', section: 'Divisions', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
-  { key: 'umrah-travel', label: 'Umrah Packages & Spiritual Logistics', to: '/umrah-travel', section: 'Divisions', icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' },
+  { key: 'tours-travels', label: 'Tours & Travels (Holidays & Umrah)', to: '/tours-travels', section: 'Divisions', icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' },
   { key: 'attestation', label: 'Document Attestation & MEA Apostille', to: '/attestation', section: 'Divisions', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
   { key: 'recruitment', label: 'Overseas Manpower & Global Careers', to: '/recruitment', section: 'Divisions', icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
   { key: 'about', label: 'About Us — Institutional Profile & MEA Authorizations', to: '/about', section: 'Navigation', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
@@ -141,7 +141,7 @@ export default function CommandPalette({ open, onClose }: { open?: boolean; onCl
             placeholder="Type a command or jump to any division, module, or service…"
             className="w-full bg-transparent text-[14px] text-white placeholder:text-white/40 focus:outline-none"
           />
-          <span className="rounded-md border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-white/60">
+          <span className="rounded-md border border-white/20 bg-white/10 px-1.5 py-0.5 text-[13px] font-mono text-white/60">
             ESC
           </span>
         </div>
@@ -173,11 +173,11 @@ export default function CommandPalette({ open, onClose }: { open?: boolean; onCl
                     </svg>
                   </div>
                   <span className="flex-1 truncate text-xs sm:text-[13px]">{item.label}</span>
-                  <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full ${isSelected ? 'bg-brand-navy/20 text-brand-navy' : 'bg-white/10 text-white/50'}`}>
+                  <span className={`text-[13px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full ${isSelected ? 'bg-brand-navy/20 text-brand-navy' : 'bg-white/10 text-white/50'}`}>
                     {item.section}
                   </span>
                   {isSelected && (
-                    <span className="text-[11px] font-mono text-brand-navy/70">↵</span>
+                    <span className="text-sm font-mono text-brand-navy/70">↵</span>
                   )}
                 </button>
               );
@@ -186,7 +186,7 @@ export default function CommandPalette({ open, onClose }: { open?: boolean; onCl
         </div>
 
         {/* Footer shortcuts */}
-        <div className="flex items-center justify-between border-t border-white/10 bg-black/20 px-4 py-2 text-[11px] text-white/40">
+        <div className="flex items-center justify-between border-t border-white/10 bg-black/20 px-4 py-2 text-sm text-white/40">
           <div className="flex items-center gap-3">
             <span><kbd className="font-mono text-white/60">↑↓</kbd> to navigate</span>
             <span><kbd className="font-mono text-white/60">↵</kbd> to open</span>

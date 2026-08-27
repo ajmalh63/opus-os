@@ -28,10 +28,10 @@ function parseGcpCredentials(env: any): GoogleServiceAccountCredentials | undefi
 const CORE_PUBLIC_ROUTES = [
   'https://opusoverseas.com/',
   'https://opusoverseas.com/study-abroad',
-  'https://opusoverseas.com/visa',
-  'https://opusoverseas.com/umrah',
+  'https://opusoverseas.com/visa-services',
+  'https://opusoverseas.com/tours-travels',
   'https://opusoverseas.com/attestation',
-  'https://opusoverseas.com/manpower',
+  'https://opusoverseas.com/recruitment',
   'https://opusoverseas.com/lead-form',
 ];
 

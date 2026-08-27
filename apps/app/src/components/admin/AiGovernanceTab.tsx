@@ -9,6 +9,7 @@ interface ModelInfo {
   contextWindow: string;
   bestFor: string;
   tier: string;
+  taskType?: string;
 }
 
 interface AiSettings {
@@ -33,6 +34,7 @@ export default function AiGovernanceTab() {
   const [customModelMode, setCustomModelMode] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
   const [testing, setTesting] = useState(false);
+  const [copiedModelId, setCopiedModelId] = useState<string | null>(null);
 
   // Catalog Explorer & Filter State
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -62,6 +64,10 @@ export default function AiGovernanceTab() {
           audio: ModelInfo[];
           translation: ModelInfo[];
           embeddings: ModelInfo[];
+          rerank?: ModelInfo[];
+          classification?: ModelInfo[];
+          summarization?: ModelInfo[];
+          objectDetection?: ModelInfo[];
         };
         bound: boolean;
       }>;
@@ -128,6 +134,12 @@ export default function AiGovernanceTab() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedModelId(text);
+    setTimeout(() => setCopiedModelId(null), 2000);
+  };
+
   const allModelsList = useMemo(() => {
     if (!data?.models) return [];
     const text = data.models.text || [];
@@ -136,7 +148,22 @@ export default function AiGovernanceTab() {
     const audio = data.models.audio || [];
     const translation = data.models.translation || [];
     const embeddings = data.models.embeddings || [];
-    return [...text, ...vision, ...imageGen, ...audio, ...translation, ...embeddings];
+    const rerank = data.models.rerank || [];
+    const classification = data.models.classification || [];
+    const summarization = data.models.summarization || [];
+    const objectDetection = data.models.objectDetection || [];
+    return [
+      ...text,
+      ...vision,
+      ...imageGen,
+      ...audio,
+      ...translation,
+      ...embeddings,
+      ...rerank,
+      ...classification,
+      ...summarization,
+      ...objectDetection,
+    ];
   }, [data]);
 
   const uniqueProviders = useMemo(() => {
@@ -157,10 +184,20 @@ export default function AiGovernanceTab() {
         if (selectedCategory === 'audio' && m.tier !== 'audio') return false;
         if (selectedCategory === 'translation' && m.tier !== 'translation') return false;
         if (selectedCategory === 'embeddings' && m.tier !== 'embeddings') return false;
+        if (selectedCategory === 'rerank' && m.tier !== 'rerank') return false;
+        if (selectedCategory === 'classification' && m.tier !== 'classification') return false;
+        if (selectedCategory === 'summarization' && m.tier !== 'summarization') return false;
+        if (selectedCategory === 'objectDetection' && !['objectDetection', 'imageClassification'].includes(m.tier)) return false;
       }
       if (catalogSearch.trim()) {
         const q = catalogSearch.toLowerCase();
-        return m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q) || m.description.toLowerCase().includes(q) || m.bestFor.toLowerCase().includes(q);
+        return (
+          m.name.toLowerCase().includes(q) ||
+          m.id.toLowerCase().includes(q) ||
+          m.description.toLowerCase().includes(q) ||
+          m.bestFor.toLowerCase().includes(q) ||
+          (m.taskType && m.taskType.toLowerCase().includes(q))
+        );
       }
       return true;
     });
@@ -228,7 +265,7 @@ export default function AiGovernanceTab() {
               <h2 className="text-xl font-bold tracking-tight text-white">
                 Cloudflare Workers AI Governance & Model Orchestration
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="px-2.5 py-0.5 rounded-full text-[13px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 {allModelsList.length} Models Active
               </span>
             </div>
@@ -259,7 +296,7 @@ export default function AiGovernanceTab() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
           <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-2">
-            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+            <div className="text-[13px] uppercase font-bold text-slate-400 tracking-wider">
               Daily Neuron Budget
             </div>
             <div className="flex items-center justify-between">
@@ -267,13 +304,13 @@ export default function AiGovernanceTab() {
                 {settings.dailyNeuronBudget.toLocaleString()} <span className="text-xs text-slate-400 font-sans">neurons/day</span>
               </span>
             </div>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[13px] text-slate-400">
               Approx. ${(settings.dailyNeuronBudget * 0.000011).toFixed(2)} USD serverless GPU ceiling.
             </p>
           </div>
 
           <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-2">
-            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+            <div className="text-[13px] uppercase font-bold text-slate-400 tracking-wider">
               Automatic PII Redaction
             </div>
             <div className="flex items-center justify-between">
@@ -287,13 +324,13 @@ export default function AiGovernanceTab() {
                 className="w-4 h-4 rounded text-indigo-600 cursor-pointer"
               />
             </div>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[13px] text-slate-400">
               Redacts sensitive client identifiers before passing untrusted context to models.
             </p>
           </div>
 
           <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-2">
-            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+            <div className="text-[13px] uppercase font-bold text-slate-400 tracking-wider">
               Edge KV Caching
             </div>
             <div className="flex items-center justify-between">
@@ -307,7 +344,7 @@ export default function AiGovernanceTab() {
                 className="w-4 h-4 rounded text-indigo-600 cursor-pointer"
               />
             </div>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[13px] text-slate-400">
               Caches identical prompts at Cloudflare Edge to eliminate duplicate neuron costs.
             </p>
           </div>
@@ -367,12 +404,12 @@ export default function AiGovernanceTab() {
             const current = allModelsList.find((m) => m.id === settings.features.visaRiskCopilot.model);
             return current ? (
               <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 space-y-1">
-                <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                <div className="flex justify-between items-center text-[13px] text-slate-400 font-mono">
                   <span>Provider: {current.provider}</span>
                   <span className="text-indigo-400">{current.contextWindow}</span>
                 </div>
-                <p className="text-[11px] text-slate-300">{current.description}</p>
-                <div className="text-[10px] text-emerald-400 font-semibold">Best for: {current.bestFor}</div>
+                <p className="text-sm text-slate-300">{current.description}</p>
+                <div className="text-[13px] text-emerald-400 font-semibold">Best for: {current.bestFor}</div>
               </div>
             ) : null;
           })()}
@@ -434,12 +471,12 @@ export default function AiGovernanceTab() {
             const current = allModelsList.find((m) => m.id === settings.features.visionOcr.model);
             return current ? (
               <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 space-y-1">
-                <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                <div className="flex justify-between items-center text-[13px] text-slate-400 font-mono">
                   <span>Provider: {current.provider}</span>
                   <span className="text-purple-400">{current.contextWindow}</span>
                 </div>
-                <p className="text-[11px] text-slate-300">{current.description}</p>
-                <div className="text-[10px] text-emerald-400 font-semibold">Best for: {current.bestFor}</div>
+                <p className="text-sm text-slate-300">{current.description}</p>
+                <div className="text-[13px] text-emerald-400 font-semibold">Best for: {current.bestFor}</div>
               </div>
             ) : null;
           })()}
@@ -497,12 +534,12 @@ export default function AiGovernanceTab() {
             const current = allModelsList.find((m) => m.id === settings.features.sopStudio.model);
             return current ? (
               <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 space-y-1">
-                <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                <div className="flex justify-between items-center text-[13px] text-slate-400 font-mono">
                   <span>Provider: {current.provider}</span>
                   <span className="text-emerald-400">{current.contextWindow}</span>
                 </div>
-                <p className="text-[11px] text-slate-300">{current.description}</p>
-                <div className="text-[10px] text-emerald-400 font-semibold">Best for: {current.bestFor}</div>
+                <p className="text-sm text-slate-300">{current.description}</p>
+                <div className="text-[13px] text-emerald-400 font-semibold">Best for: {current.bestFor}</div>
               </div>
             ) : null;
           })()}
@@ -564,12 +601,12 @@ export default function AiGovernanceTab() {
             const current = allModelsList.find((m) => m.id === settings.features.translator.model);
             return current ? (
               <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 space-y-1">
-                <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                <div className="flex justify-between items-center text-[13px] text-slate-400 font-mono">
                   <span>Provider: {current.provider}</span>
                   <span className="text-cyan-400">{current.contextWindow}</span>
                 </div>
-                <p className="text-[11px] text-slate-300">{current.description}</p>
-                <div className="text-[10px] text-emerald-400 font-semibold">Best for: {current.bestFor}</div>
+                <p className="text-sm text-slate-300">{current.description}</p>
+                <div className="text-[13px] text-emerald-400 font-semibold">Best for: {current.bestFor}</div>
               </div>
             ) : null;
           })()}
@@ -599,13 +636,17 @@ export default function AiGovernanceTab() {
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap gap-1.5 bg-slate-950/60 p-1.5 rounded-2xl border border-slate-800">
             {[
-              { key: 'all', label: 'All Categories' },
-              { key: 'text', label: '💬 Text & LLMs' },
-              { key: 'vision', label: '👁️ Vision & OCR' },
-              { key: 'imageGen', label: '🎨 Image Gen' },
-              { key: 'audio', label: '🎙️ Audio/Whisper' },
+              { key: 'all', label: 'All Task Types' },
+              { key: 'text', label: '💬 Text & Reasoning' },
+              { key: 'vision', label: '👁️ Multimodal Vision' },
+              { key: 'imageGen', label: '🎨 Text-to-Image' },
+              { key: 'audio', label: '🎙️ Speech (ASR)' },
               { key: 'translation', label: '🌐 Translation' },
-              { key: 'embeddings', label: '📐 Embeddings' },
+              { key: 'embeddings', label: '🧬 Embeddings' },
+              { key: 'rerank', label: '🎯 Reranking' },
+              { key: 'classification', label: '🏷️ Classification' },
+              { key: 'summarization', label: '📝 Summarization' },
+              { key: 'objectDetection', label: '🔍 Vision Detection' },
             ].map((cat) => (
               <button
                 key={cat.key}
@@ -636,43 +677,76 @@ export default function AiGovernanceTab() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[480px] overflow-y-auto pr-1">
-          {filteredCatalogModels.map((m) => (
-            <div
-              key={m.id}
-              className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 flex flex-col justify-between gap-3 hover:border-slate-700 transition duration-150"
-            >
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-indigo-400 border border-slate-700 font-mono">
-                    {m.provider}
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500">{m.contextWindow}</span>
-                </div>
-                <h4 className="text-sm font-bold text-white line-clamp-1">{m.name}</h4>
-                <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">{m.description}</p>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[520px] overflow-y-auto pr-1">
+          {filteredCatalogModels.map((m) => {
+            const isCopied = copiedModelId === m.id;
+            const getTaskBadgeStyle = (task?: string) => {
+              if (!task) return 'bg-slate-800 text-slate-300 border-slate-700';
+              if (task.includes('Reasoning')) return 'bg-purple-950/80 text-purple-300 border-purple-800/60';
+              if (task.includes('Text Generation')) return 'bg-blue-950/80 text-blue-300 border-blue-800/60';
+              if (task.includes('Vision') || task.includes('Multimodal')) return 'bg-cyan-950/80 text-cyan-300 border-cyan-800/60';
+              if (task.includes('Image') || task.includes('Inpainting')) return 'bg-amber-950/80 text-amber-300 border-amber-800/60';
+              if (task.includes('Speech')) return 'bg-rose-950/80 text-rose-300 border-rose-800/60';
+              if (task.includes('Translation')) return 'bg-teal-950/80 text-teal-300 border-teal-800/60';
+              if (task.includes('Embeddings')) return 'bg-indigo-950/80 text-indigo-300 border-indigo-800/60';
+              if (task.includes('Rerank')) return 'bg-orange-950/80 text-orange-300 border-orange-800/60';
+              if (task.includes('Classification')) return 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60';
+              if (task.includes('Summarization')) return 'bg-yellow-950/80 text-yellow-300 border-yellow-800/60';
+              return 'bg-slate-800 text-slate-300 border-slate-700';
+            };
 
-              <div className="space-y-2 border-t border-slate-800/60 pt-2.5 text-[10px]">
-                <div className="text-emerald-400 font-semibold truncate">🎯 {m.bestFor}</div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-slate-500 truncate">{m.id}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTestModel(m.id);
-                      setCustomModelMode(false);
-                      const el = document.getElementById('model-probe-section');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white font-bold text-[10px] cursor-pointer transition whitespace-nowrap"
-                  >
-                    Test in Shell
-                  </button>
+            return (
+              <div
+                key={m.id}
+                className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 flex flex-col justify-between gap-3 hover:border-slate-700 transition duration-150"
+              >
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2 py-0.5 rounded-md text-[13px] font-bold uppercase tracking-wider bg-slate-800 text-indigo-400 border border-slate-700 font-mono">
+                        {m.provider}
+                      </span>
+                      {m.taskType && (
+                        <span className={`px-2 py-0.5 rounded-md text-xs font-bold tracking-tight border ${getTaskBadgeStyle(m.taskType)}`}>
+                          {m.taskType}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[13px] font-mono text-slate-500">{m.contextWindow}</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white line-clamp-1">{m.name}</h4>
+                  <p className="text-sm text-slate-400 line-clamp-2 leading-relaxed">{m.description}</p>
+                </div>
+
+                <div className="space-y-2 border-t border-slate-800/60 pt-2.5 text-[13px]">
+                  <div className="text-emerald-400 font-semibold truncate">🎯 {m.bestFor}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(m.id)}
+                      title="Click to copy model ID"
+                      className="font-mono text-slate-400 hover:text-indigo-300 transition truncate max-w-[180px] text-left cursor-pointer flex items-center gap-1"
+                    >
+                      <span>{isCopied ? '✓' : '📋'}</span>
+                      <span className="truncate">{m.id}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTestModel(m.id);
+                        setCustomModelMode(false);
+                        const el = document.getElementById('model-probe-section');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white font-bold text-[13px] cursor-pointer transition whitespace-nowrap shrink-0"
+                    >
+                      Test in Shell
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {filteredCatalogModels.length === 0 && (
             <div className="col-span-full py-12 text-center text-slate-500 text-xs italic">
@@ -742,7 +816,7 @@ export default function AiGovernanceTab() {
             <div className="space-y-2">
               {batchResult.results?.map((r: any) => (
                 <div key={r.id} className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                  <div className="text-[10px] text-slate-400 font-mono mb-1">Query #{r.id}: {r.prompt}</div>
+                  <div className="text-[13px] text-slate-400 font-mono mb-1">Query #{r.id}: {r.prompt}</div>
                   <div className="text-slate-200 text-xs leading-relaxed">{r.output}</div>
                 </div>
               ))}

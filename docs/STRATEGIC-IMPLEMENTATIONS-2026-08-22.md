@@ -70,7 +70,7 @@ Metrics: % sessions with Shortlist → Place Order (target +25% activation)
 ## 2) Visa — Instant Checkout Cart (P0, RICE 230)
 
 ### UX Flow
-1. **Entry:** `visa` tab → `✈️ Browse Active Visa Offerings` grid already exists. Add **Eligibility bar** `Nationality: Indian [Detect IP] → Dubai Tourist ✅ Eligible (3-4 Days ₹7200)` (fetched `/api/public/visa/eligibility`).
+1. **Entry:** `visa` tab → `🛂 Browse Active Visa Offerings` grid already exists. Add **Eligibility bar** `Nationality: Indian [Detect IP] → Dubai Tourist ✅ Eligible (3-4 Days ₹7200)` (fetched `/api/public/visa/eligibility`).
 2. **Action:** Card `Dubai Tourist — Single Entry — 3-4 Days — ₹7200 — Passport/Photo/Flight [Add to cart]` → drawer `Cart (1) — Dubai ×1 ₹7200 → + Add another country`.
 3. **Action:** Add `Thailand ×2 ₹9000` → `Cart (2) → Proceed`.
 4. **2-step Checkout** (Baymard 3-4 fields/step):

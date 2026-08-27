@@ -24,7 +24,7 @@ export default function PartnerMobileNav({
           <button
             key={it.key}
             onClick={() => onChange(it.key)}
-            className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-bold ${active === it.key ? 'text-[#CEFF00] bg-white/5' : 'text-slate-400'}`}
+            className={`flex flex-col items-center justify-center gap-0.5 text-sm font-bold ${active === it.key ? 'text-[#CEFF00] bg-white/5' : 'text-slate-400'}`}
           >
             <span className="text-[18px] leading-none">{it.icon}</span>
             <span className="leading-none">{it.label}</span>

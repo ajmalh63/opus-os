@@ -46,9 +46,17 @@ describe('Study Abroad Applications (snapshot model)', () => {
       portal_token: 'OP-2026-9201', name: 'Saurabh Sen', phone: '+91 99999 33333', email: 'saurabh@test.com',
       highest_qualification: 'undergrad', intake_context: JSON.stringify({
         cgpa: 8.2, englishTest: 'IELTS', englishScore: 7.0, targetIntake: 'Fall 2027',
-        targetCountry: 'Canada', tuitionBudget: 25, preferredCourse: 'Computer Science'
+        targetCountry: 'Canada', tuitionBudget: 25, preferredCourse: 'Computer Science',
+        degreeName: 'B.Tech', universitySharingConsent: true, pct10th: 88, pct12th: 91
       }),
       created_at: now, updated_at: now
+    });
+    // Gate booking — scheduled future session (required for docs_ready→submitted)
+    mockD1.tables.bookings.push({
+      id: 'book-gate-1', client_id: 'OP-2026-9201', division: 'study-abroad',
+      attendee_email: 'saurabh@test.com', title: 'Admissions Strategy Call',
+      start_time: now + 86400, end_time: now + 86400 + 1800, status: 'scheduled',
+      created_at: now
     });
     mockD1.tables.engagements.push(
       { id: 'eng-9201', client_id: 'OP-2026-9201', division: 'study-abroad', title: 'Masters Applications', stage_key: 'lead', outstanding_balance: 0, status: 'active', created_at: now, updated_at: now }

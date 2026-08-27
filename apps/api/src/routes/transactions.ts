@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { createPaymentSchema } from '@opusos/shared';
+import { createPaymentSchema, calculateGstSplit } from '@opusos/shared';
 import { getDb } from '../db/client.js';
 import { payments, engagements, clients, businessProfile, erpnextSyncLog, referrals } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -39,8 +39,8 @@ transactionsRouter.post('/entries', zValidator('json', createPaymentSchema), asy
   const now = Math.floor(Date.now() / 1000);
 
   try {
-    const gst = await computeGst(db, data.amount, data.isInterstate);
     const gstRate = data.gstRate ?? 18;
+    const gst = calculateGstSplit(data.amount, !!data.isInterstate, gstRate);
     const paymentId = crypto.randomUUID();
     const draftStatus = 'draft';
     await db.insert(payments).values({
@@ -125,16 +125,9 @@ transactionsRouter.get('/links-summary', async (c) => {
   }
 });
 
-async function computeGst(db: ReturnType<typeof getDb>, amount: number, isInterstate?: boolean) {
-  // GST-INCLUSIVE split (single source of truth — matches routes/payments.ts):
-  // amount is what the client pays; taxable = amount / 1.18, GST = amount − taxable.
-  const taxable = Math.round(amount / 1.18);
-  const gstTotal = amount - taxable;
-  const igst = isInterstate ? gstTotal : 0;
-  const cgst = isInterstate ? 0 : Math.floor(gstTotal / 2);
-  const sgst = isInterstate ? 0 : gstTotal - cgst;
+async function computeGst(db: ReturnType<typeof getDb>, amount: number, isInterstate?: boolean, gstRate: number = 18) {
   void db;
-  return { taxableAmount: taxable, cgst, sgst, igst, isInterstate: !!isInterstate };
+  return calculateGstSplit(amount, !!isInterstate, gstRate);
 }
 
 // Recompute outstanding balance for an engagement from confirmed-only entries

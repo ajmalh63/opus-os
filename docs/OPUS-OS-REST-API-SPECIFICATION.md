@@ -41,8 +41,10 @@ Authorization: Bearer opus_live_sk_8f7b2c91a0d4e5f6...
 | `study-abroad:write` | **Study Abroad Writer** | Create student university application snapshots. |
 | `visa:read` | **Visa Cases Reader** | List active visa cases, appointment schedules, and checklists. |
 | `visa:write` | **Visa Cases Writer** | Update consular checklist milestones and visa granting status. |
-| `umrah:read` | **Umrah Inventory Reader** | Query package pricing tiers and group departure seat counts. |
-| `umrah:write` | **Umrah Booking Writer** | Reserve party/family seats with automatic 24-hour hold windows. |
+| `umrah:read` | **Umrah Inventory Reader** | *Deprecated alias* — use `tours:read`. |
+| `umrah:write` | **Umrah Booking Writer** | *Deprecated alias* — use `tours:write`. |
+| `tours:read` | **Tours & Travels Reader** | Query package pricing tiers and group departure seat counts (canonical, `umrah:read` alias). |
+| `tours:write` | **Tours & Travels Writer** | Reserve party/family seats + dispatch official WhatsApp quotations (alias `umrah:write`). |
 | `attestation:read` | **Attestation Rate Reader** | Query indicative country rate cards and SLA turnarounds. |
 | `attestation:write` | **Attestation Order Writer** | Submit document attestation orders. |
 | `recruitment:read` | **Recruitment Reader** | Query active overseas job demands and vacancies. |
@@ -112,16 +114,19 @@ Each API Key is enforced with a **Token-Bucket Rate Limiter** (default: 120 requ
 ### 🎓 1. Study Abroad & Admissions
 
 #### `POST /api/v1/study-abroad/match`
-Calculate live profile eligibility score (0–100) and categorize into **Match**, **Reach**, or **Safe** tiers against university admission matrices.
+Calculate live profile eligibility score (0–100) and categorize into **Match**, **Reach**, or **Safe** tiers against university admission matrices. **v1.1: 9 English tests supported (`IELTS, TOEFL, PTE, Duolingo, Cambridge, LanguageCert, OET, TOEIC, Other`) normalized to IELTS bands via `normalizeEnglish`. `testPlanned`/`waiver` counts as valid for gate.**
 
 * **Required Scope**: `study-abroad:read`
-* **Request Body**:
+* **Request Body** (backward compat: `ielts` alias):
 ```json
 {
   "gpa": 8.4,
-  "ielts": 7.0,
+  "englishScore": 7.0,
+  "englishTest": "IELTS",
   "targetCountry": "United Kingdom",
-  "tuitionBudgetLakhs": 22
+  "tuitionBudgetLakhs": 22,
+  "minGpa": 6.5,
+  "minEnglishScore": 6.0
 }
 ```
 * **Response (`200 OK`)**:
@@ -147,7 +152,7 @@ List university application snapshots with status filters.
 * **Query Parameters**: `clientId` (optional)
 
 #### `POST /api/v1/study-abroad/applications`
-Create a new university application snapshot for a student.
+Create a new university application snapshot for a student. **Gate enforced:** `docs_ready` / `submitted` requires `80% profile + booked Strategy Session` (`GET /study-abroad/gate`), else `409 BOOKING_REQUIRED` / `GATE_PROFILE_INCOMPLETE`.
 
 * **Required Scope**: `study-abroad:write`
 * **Request Body**:
@@ -161,9 +166,17 @@ Create a new university application snapshot for a student.
 }
 ```
 
+#### `GET /api/v1/study-abroad/gate`
+Strategy Session gate state — profile completeness (80% + `isEnglishValid`), booking status, and prefilled Cal URL.
+
+* **Required Scope**: `study-abroad:read`
+* **Query**: `clientId` (required)
+* **Response**: `{ gatePct: 80, profileComplete, completeness: {pct, missing, done}, sessionStatus: 'required|scheduled|completed', booking, bookingUrl }`
+* **Errors**: `404 Client not found`
+
 ---
 
-### ✈️ 2. Visas & Immigration
+### 🛂 2. Visas & Immigration
 
 #### `GET /api/v1/visas/applications`
 List active visa filings across tourist, student, and work categories.
@@ -184,17 +197,19 @@ Update the status of a visa case (e.g. `document_prep`, `slot_booked`, `granted`
 
 ---
 
-### 🕋 3. Umrah Pilgrimage & Travel
+### 🧳 3. Tours & Travels (Umrah Pilgrimage & World Holidays) — Canonical `/tours`, Alias `/umrah`
 
-#### `GET /api/v1/umrah/packages`
-Browse active wholesale and retail package catalog with hotel star ratings and room sharing tiers.
+> **Tours & Travels** is the canonical division (`umrah` retained as deprecated alias, `umrah:read/write` ↔ `tours:read/write` via gateway alias). All `umrah` scopes/routes remain functional.
 
-* **Required Scope**: `umrah:read`
+#### `GET /api/v1/tours/packages` *(alias `GET /api/v1/umrah/packages`)*
+Browse active Tours & Travels package catalog with hotel star ratings and room sharing tiers.
 
-#### `GET /api/v1/umrah/departures`
+* **Required Scope**: `tours:read` (alias `umrah:read`)
+
+#### `GET /api/v1/tours/departures` *(alias `GET /api/v1/umrah/departures`)*
 List upcoming scheduled group departures with real-time remaining seat capacity.
 
-* **Required Scope**: `umrah:read`
+* **Required Scope**: `tours:read` (alias `umrah:read`)
 * **Response (`200 OK`)**:
 ```json
 {
@@ -217,10 +232,28 @@ List upcoming scheduled group departures with real-time remaining seat capacity.
 }
 ```
 
-#### `POST /api/v1/umrah/bookings`
+#### `POST /api/v1/tours/bookings` *(alias `POST /api/v1/umrah/bookings`)*
 Create a party/family booking and hold seats with a 24-hour window.
 
-* **Required Scope**: `umrah:write`
+* **Required Scope**: `tours:write` (alias `umrah:write`)
+
+#### `POST /api/v1/tours/quote`
+Dispatch official Pax & Rooming quotation on WhatsApp (Utility template, `waOutbox` queued→sent, `staff:global:tours` sync). Works with `packageId`/`departureId` or raw `totalPaise`. Powers the ToursTravelPage estimator.
+
+* **Required Scope**: `tours:write` (alias `umrah:write`)
+* **Request Body**:
+```json
+{
+  "phone": "+919876543210",
+  "name": "Valued Traveller",
+  "packageId": "PKG-PREMIUM-15D",
+  "departureId": "DEP-2026-NOV-15",
+  "paxCount": 3,
+  "occupancy": "shared",
+  "roomConfig": "triple"
+}
+```
+* **Response**: `{ waId, toPhone, totalPaise, balance, advance, waResult }` + `tours.quote_sent` webhook
 * **Request Body**:
 ```json
 {
@@ -437,8 +470,10 @@ Opus OS broadcasts real-time events to external webhooks whenever data changes.
 * `lead.created`
 * `client.stage_changed`
 * `study_abroad.application_created`
+* `study_abroad.gate_checked`
 * `visa.status_changed`
-* `umrah.booking_created`
+* `umrah.booking_created` *(alias `tours.booking_created`)*
+* `tours.quote_sent`
 * `attestation.order_created`
 * `recruitment.job_created`
 * `booking.status_changed`

@@ -27,7 +27,7 @@ export function OnboardingChecklist({ onboarding, token, onUpdate }: { onboardin
     <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="text-xs font-bold text-brand-navy">Onboarding — {pct}%</div>
-        <div className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-gold text-brand-navy">{pct <100 ? `${5 - steps.filter((s:any)=> s.done).length} left` : '✓ Complete'}</div>
+        <div className="text-[13px] font-bold px-2 py-0.5 rounded-full bg-brand-gold text-brand-navy">{pct <100 ? `${5 - steps.filter((s:any)=> s.done).length} left` : '✓ Complete'}</div>
       </div>
       <div className="h-1.5 w-full rounded-full bg-brand-navy/10 overflow-hidden mb-3"><div className="h-full bg-brand-navy rounded-full transition-all" style={{ width: `${pct}%` }} /></div>
       <div className="space-y-2">
@@ -38,14 +38,14 @@ export function OnboardingChecklist({ onboarding, token, onUpdate }: { onboardin
               <input type="checkbox" checked={!!s.done} disabled={s.key==='welcome' || saving===s.key} onChange={e=> toggle(s.key, e.target.checked)} className="w-4 h-4 rounded border-brand-navy/20 text-brand-navy focus:ring-brand-navy" />
               <div className="flex-1 min-w-0">
                 <div className={`text-xs font-bold ${s.done ? 'text-emerald-700' : 'text-brand-navy'}`}>{meta.label}</div>
-                <div className="text-[10px] text-brand-navy/50">{meta.hint}</div>
+                <div className="text-[13px] text-brand-navy/50">{meta.hint}</div>
               </div>
-              {saving===s.key && <span className="text-[10px] text-brand-navy/40">Saving…</span>}
+              {saving===s.key && <span className="text-[13px] text-brand-navy/40">Saving…</span>}
             </label>
           );
         })}
       </div>
-      <p className="text-[10px] text-brand-navy/40 mt-3">Complete in under 4 min — pre-completed Welcome counts. Staff sees your progress live.</p>
+      <p className="text-[13px] text-brand-navy/40 mt-3">Complete in under 4 min — pre-completed Welcome counts. Staff sees your progress live.</p>
     </div>
   );
 }

@@ -32,7 +32,7 @@ export default function EarningsHero({
     <div className="bg-gradient-to-br from-[#0F172A] via-[#0B1220] to-[#070C18] rounded-2xl border border-[#1F2B45] p-5 lg:p-6 text-white flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[11px] tracking-[0.14em] font-black text-slate-400">EARNINGS HERO • WITHDRAW IN ONE TAP</p>
+          <p className="text-sm tracking-[0.14em] font-black text-slate-400">EARNINGS HERO • WITHDRAW IN ONE TAP</p>
           <div className="mt-2 flex items-baseline gap-3">
             <span className="text-3xl lg:text-4xl font-black tracking-tight">{available}</span>
             <span className="text-xs px-2 py-1 rounded-full bg-[#CEFF00] text-black font-black">Available to withdraw</span>
@@ -53,7 +53,7 @@ export default function EarningsHero({
                 {progressPct}%
               </text>
             </svg>
-            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-full bg-[#CEFF00] text-black font-black whitespace-nowrap">
+            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[13px] px-2 py-0.5 rounded-full bg-[#CEFF00] text-black font-black whitespace-nowrap">
               {tier} → {nextTier}
             </span>
           </div>
@@ -69,7 +69,7 @@ export default function EarningsHero({
         </button>
       </div>
 
-      <div className="flex items-center gap-2 text-[11px] text-slate-400">
+      <div className="flex items-center gap-2 text-sm text-slate-400">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live • Last deal approved 14 min ago • Auto-synced from CRM
       </div>
     </div>

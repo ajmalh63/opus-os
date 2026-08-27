@@ -91,7 +91,7 @@ export default function AttestationChain() {
       <div className="space-y-3 max-h-[300px] sm:max-h-none overflow-y-auto sm:overflow-visible pr-1 sm:pr-0">
         {/* Country Selector */}
         <div>
-          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+          <label className="mb-1 block text-[13px] font-bold uppercase tracking-wider text-brand-textLight">
             Select Destination Country / Treaty
           </label>
           <select
@@ -109,16 +109,16 @@ export default function AttestationChain() {
             <ol className="space-y-2">
               {active.steps.map((s, i) => (
                 <li key={i} className="flex items-center gap-3 rounded-xl border border-brand-navy/5 bg-white/95 px-3.5 py-2.5 text-xs shadow-xs hover:border-brand-gold/30 transition-colors">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-gold/15 text-[10px] font-extrabold text-brand-gold font-mono">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-gold/15 text-[13px] font-extrabold text-brand-gold font-mono">
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-bold text-brand-navy">{s.step}</p>
-                    <p className="text-[10px] text-brand-textLight">
+                    <p className="text-[13px] text-brand-textLight">
                       {s.authority ? `${s.authority} · ` : ''}Est. {s.timelineDays} working days
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                  <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[13px] font-bold text-emerald-700">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     {s.status || 'Verified Protocol'}
                   </span>
@@ -128,10 +128,10 @@ export default function AttestationChain() {
 
             {/* Total Summary Footer */}
             <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-brand-gold/20 to-brand-gold/10 border border-brand-gold/30 px-3.5 py-2.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-navy">
+              <span className="text-[13px] font-bold uppercase tracking-wider text-brand-navy">
                 Total Processing SLA: ~{totalDays} Working Days
               </span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-navy bg-white/80 px-2.5 py-1 rounded-lg border border-brand-gold/40 shadow-xs">
+              <span className="inline-flex items-center gap-1 text-sm font-bold text-brand-navy bg-white/80 px-2.5 py-1 rounded-lg border border-brand-gold/40 shadow-xs">
                 🔒 Insured Custody & MEA Apostille
               </span>
             </div>

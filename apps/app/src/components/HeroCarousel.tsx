@@ -5,7 +5,7 @@ import { useLocation } from 'wouter';
 import { prefersReducedMotion, parallaxY } from '../lib/motion';
 import EligibilityChecker from './artifacts/EligibilityChecker';
 import VisaStatusWidget from './artifacts/VisaStatusWidget';
-import DepartureCountdown from './artifacts/DepartureCountdown';
+import ToursExplorer from './artifacts/ToursExplorer';
 import AttestationChain from './artifacts/AttestationChain';
 import JobTicker from './artifacts/JobTicker';
 import LiveWallpaper from './LiveWallpaper';
@@ -15,8 +15,8 @@ gsap.registerPlugin(ScrollTrigger);
 
 const SLIDE_META = [
   { key: 'study', icon: '🎓', label: 'Study Abroad', goTo: '/study-abroad', cta: 'Find Universities & Waivers', ghost: 'Explore 1,500+ Campuses', ghostTo: '/study-abroad' },
-  { key: 'visa', icon: '✈️', label: 'Global Visas', goTo: '/visa-services', cta: 'Calculate Visa Fees', ghost: 'Track Active Case', ghostTo: '/visa-services#tracker' },
-  { key: 'umrah', icon: '🕋', label: 'Umrah Travel', goTo: '/umrah-travel', cta: 'Explore Umrah Packages', ghost: 'View Departure Calendar', ghostTo: '/umrah-travel#calendar' },
+  { key: 'visa', icon: '🛂', label: 'Global Visas', goTo: '/visa-services', cta: 'Calculate Visa Fees', ghost: 'Track Active Case', ghostTo: '/visa-services#tracker' },
+  { key: 'tours', icon: '🧳', label: 'Tours & Travels', goTo: '/tours-travels', cta: 'Explore Tour Packages', ghost: 'View All Itineraries', ghostTo: '/tours-travels#packages' },
   { key: 'attestation', icon: '📜', label: 'Attestation', goTo: '/attestation', cta: 'Calculate Stamping Quote', ghost: 'View Consular Matrix', ghostTo: '/attestation#matrix' },
   { key: 'manpower', icon: '💼', label: 'Global Careers', goTo: '/recruitment', cta: 'Browse Verified Openings', ghost: 'View Employer Demands', ghostTo: '/recruitment#jobs' },
 ] as const;
@@ -218,7 +218,7 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
     case 'study':
       return (
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[13px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
             University Shortlisting & Scholarship Mentorship
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
@@ -236,7 +236,7 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
     case 'visa':
       return (
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[13px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
             Consular Filing · Biometric Scheduling
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
@@ -251,17 +251,17 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
           </div>
         </div>
       );
-    case 'umrah':
+    case 'tours':
       return (
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-brand-gold shimmer-badge mt-6 sm:mt-0">
-            🕋 Sacred Pilgrimage · Proximity Stays
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/40 bg-brand-gold/10 px-3 py-1 sm:px-4 sm:py-1.5 text-[13px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-brand-gold shimmer-badge mt-6 sm:mt-0">
+            🧳 World Holidays · 5★ Umrah · Custom Tours
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
-            Your Sacred Journey, <span className="text-brand-gold">Planned with Care</span>
+            Curated World Holidays, <span className="text-brand-gold">5-Star Umrah &amp; Travel</span>
           </h1>
           <p className="hero-sub mt-4 max-w-xl text-sm sm:text-base leading-relaxed text-white/80">
-            Customized family and group Umrah packages with Haram-proximity hotel arrangements, dedicated ground logistics, and scholar-led guidance.
+            From sacred pilgrimage logistics in Makkah &amp; Madinah to luxury family vacations in Dubai, Europe, and Southeast Asia — with direct flights, visas, and 24/7 concierge.
           </p>
           <div className="hero-ctas mt-8 flex flex-wrap items-center gap-3.5">
             <CtaBtn label={meta.cta} onClick={() => go(meta.goTo)} />
@@ -272,7 +272,7 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
     case 'attestation':
       return (
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/40 bg-sky-500/10 px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-sky-300 shimmer-badge mt-6 sm:mt-0">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/40 bg-sky-500/10 px-3 py-1 sm:px-4 sm:py-1.5 text-[13px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-sky-300 shimmer-badge mt-6 sm:mt-0">
             Document Legalization · Insured Courier
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
@@ -291,7 +291,7 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
     default:
       return (
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[13px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
             Verified Overseas Careers
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
@@ -313,7 +313,8 @@ function Artifact({ metaKey }: { metaKey: string }) {
   switch (metaKey) {
     case 'study': return <EligibilityChecker />;
     case 'visa': return <VisaStatusWidget />;
-    case 'umrah': return <DepartureCountdown />;
+    case 'tours':
+    case 'umrah': return <ToursExplorer />;
     case 'attestation': return <AttestationChain />;
     case 'manpower': return <JobTicker />;
     default: return null;
@@ -328,7 +329,7 @@ function CtaBtn({ onClick, label }: { onClick: () => void; label?: string }) {
       className="inline-flex items-center gap-2.5 rounded-full bg-brand-gold px-7 py-3.5 text-xs font-extrabold uppercase tracking-wider text-brand-navy shadow-[0_10px_30px_rgba(215,160,25,0.38)] transition-all hover:bg-brand-gold-hover hover:text-white cursor-pointer tactile-btn"
     >
       <span>{label}</span>
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-navy/15 text-[10px] font-bold">↗</span>
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-navy/15 text-[13px] font-bold">↗</span>
     </button>
   );
 }

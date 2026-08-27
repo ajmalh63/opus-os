@@ -75,7 +75,7 @@ export default function AiSopStudio({
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               AI Statement of Purpose (SOP) & Cover Letter Studio
-              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              <span className="text-[13px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
                 Staff Only
               </span>
             </h3>
@@ -89,7 +89,7 @@ export default function AiSopStudio({
       {/* Input Parameters Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Student Full Name</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Student Full Name</label>
           <input
             type="text"
             value={name}
@@ -99,7 +99,7 @@ export default function AiSopStudio({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Target Country</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Target Country</label>
           <input
             type="text"
             value={targetCountry}
@@ -109,7 +109,7 @@ export default function AiSopStudio({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Target University</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Target University</label>
           <input
             type="text"
             value={targetUniversity}
@@ -119,7 +119,7 @@ export default function AiSopStudio({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Target Course / Degree</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Target Course / Degree</label>
           <input
             type="text"
             value={targetCourse}
@@ -129,7 +129,7 @@ export default function AiSopStudio({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Educational Background</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Educational Background</label>
           <textarea
             rows={2}
             value={educationalBackground}
@@ -139,7 +139,7 @@ export default function AiSopStudio({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Short & Long-term Career Goals</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Short & Long-term Career Goals</label>
           <textarea
             rows={2}
             value={careerGoals}
@@ -149,7 +149,7 @@ export default function AiSopStudio({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Key Projects & Experience</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Key Projects & Experience</label>
           <textarea
             rows={2}
             value={keyProjects}
@@ -159,7 +159,7 @@ export default function AiSopStudio({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-slate-400 mb-1">Why this University & Faculty</label>
+          <label className="block text-sm font-semibold text-slate-400 mb-1">Why this University & Faculty</label>
           <textarea
             rows={2}
             value={whyUniversity}

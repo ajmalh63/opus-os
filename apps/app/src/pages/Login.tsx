@@ -80,7 +80,7 @@ export default function Login() {
     setBusy(true); setMsg(null);
     try {
       const r = await post('/sign-in/email', { email, password });
-      if (r.status === 200 && r.data?.user && r.data?.token) {
+      if (r.status === 200 && (r.data?.user || r.data?.token || r.data?.session)) {
         if (r.data?.twoFactorSetupRequired) {
           ok('2FA setup required — redirecting to security vault.');
           await finish();
@@ -232,13 +232,13 @@ export default function Login() {
                 <span className="text-base">🔍</span>
                 <div>
                   <p className="font-bold text-brand-navy leading-tight">Tracking an Application?</p>
-                  <p className="text-[11px] text-brand-navy/70">No password needed with your case token</p>
+                  <p className="text-sm text-brand-navy/70">No password needed with your case token</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setLocation('/portal')}
-                className="shrink-0 rounded-xl bg-brand-navy px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-gold hover:bg-brand-navy/90 transition cursor-pointer"
+                className="shrink-0 rounded-xl bg-brand-navy px-3 py-1.5 text-sm font-bold uppercase tracking-wider text-brand-gold hover:bg-brand-navy/90 transition cursor-pointer"
               >
                 Track Token →
               </button>
@@ -264,13 +264,13 @@ export default function Login() {
                       <p className="font-bold flex items-center gap-1.5">
                         <span>🔑</span> Reset Your Account Password
                       </p>
-                      <p className="text-[11px] text-brand-navy/75">
+                      <p className="text-sm text-brand-navy/75">
                         Enter your registered account email. We'll send you a secure 10-minute password reset link to your mailbox.
                       </p>
                     </div>
 
                     <div>
-                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+                      <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-brand-textLight">
                         Registered Account Email
                       </label>
                       <input 
@@ -331,7 +331,7 @@ export default function Login() {
                     {signInMethod === 'password' ? (
                       <form onSubmit={handlePasswordLogin} className="space-y-4">
                         <div>
-                          <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
+                          <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">
                             Email Address
                           </label>
                           <input 
@@ -346,13 +346,13 @@ export default function Login() {
 
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+                            <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight">
                               Password
                             </label>
                             <button
                               type="button"
                               onClick={() => { setForgotPasswordMode(true); setMsg(null); }}
-                              className="text-[11px] font-bold text-brand-gold-hover hover:underline cursor-pointer"
+                              className="text-sm font-bold text-brand-gold-hover hover:underline cursor-pointer"
                             >
                               Forgot Password?
                             </button>
@@ -377,7 +377,7 @@ export default function Login() {
                             </button>
                           </div>
                           {capsLockActive && (
-                            <span className="mt-1 block text-[10px] font-bold text-amber-600 animate-pulse">
+                            <span className="mt-1 block text-[13px] font-bold text-amber-600 animate-pulse">
                               ⚠️ Caps Lock is ON
                             </span>
                           )}
@@ -414,14 +414,14 @@ export default function Login() {
                       <form onSubmit={otpSent ? handleOTP : handleSendOTP} className="space-y-4">
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+                            <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight">
                               Registered Account Email
                             </label>
                             {otpSent && (
                               <button
                                 type="button"
                                 onClick={() => { setOtpSent(false); setOtpCode(''); setMsg(null); }}
-                                className="text-[11px] font-bold text-brand-gold-hover hover:underline cursor-pointer"
+                                className="text-sm font-bold text-brand-gold-hover hover:underline cursor-pointer"
                               >
                                 ✏️ Change Email
                               </button>
@@ -440,7 +440,7 @@ export default function Login() {
 
                         {!otpSent ? (
                           <>
-                            <p className="text-[11px] text-brand-textLight/80">
+                            <p className="text-sm text-brand-textLight/80">
                               🔒 No password needed. We will transmit a 6-digit one-time code to your registered email address.
                             </p>
                             <button 
@@ -455,14 +455,14 @@ export default function Login() {
                           <>
                             <div>
                               <div className="flex items-center justify-between mb-1.5">
-                                <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+                                <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight">
                                   6-Digit Passcode from Email
                                 </label>
                                 <button
                                   type="button"
                                   onClick={() => handleSendOTP()}
                                   disabled={busy}
-                                  className="text-[11px] font-bold text-brand-gold-hover hover:underline cursor-pointer"
+                                  className="text-sm font-bold text-brand-gold-hover hover:underline cursor-pointer"
                                 >
                                   Resend Code
                                 </button>
@@ -512,13 +512,13 @@ export default function Login() {
               <form onSubmit={handleTwoFactor} className="space-y-4">
                 <div className="rounded-2xl bg-sky-50 border border-sky-200 p-4 text-xs text-sky-900 space-y-1">
                   <p className="font-bold">Two-Factor Authentication Active</p>
-                  <p className="text-sky-800 text-[11px]">
+                  <p className="text-sky-800 text-sm">
                     Enter the 6-digit rolling passcode generated by your Google Authenticator or 1Password app.
                   </p>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-brand-textLight">
+                  <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-brand-textLight">
                     Authenticator Code (TOTP)
                   </label>
                   <input 
@@ -550,7 +550,7 @@ export default function Login() {
             )}
 
             {/* Security Trust Badges */}
-            <div className="mt-6 pt-5 border-t border-brand-navy/10 flex items-center justify-between text-[11px] text-brand-textLight">
+            <div className="mt-6 pt-5 border-t border-brand-navy/10 flex items-center justify-between text-sm text-brand-textLight">
               <span className="flex items-center gap-1">
                 🔒 256-Bit TLS
               </span>

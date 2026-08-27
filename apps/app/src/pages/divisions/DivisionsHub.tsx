@@ -30,7 +30,7 @@ export default function DivisionsHub() {
       label: 'Visa Preparation Desk',
       category: 'Immigration & Slots',
       desc: 'Embassy slot appointments, document checklists, visa catalog products, and mock interviews.',
-      icon: '✈️',
+      icon: '🛂',
       accentColor: 'from-emerald-600/20 via-emerald-500/10 to-transparent',
       borderColor: 'border-emerald-500/30',
       badgeBg: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
@@ -47,10 +47,10 @@ export default function DivisionsHub() {
     },
     {
       key: 'umrah',
-      label: 'Umrah & Sacred Travel',
-      category: 'Pilgrimage Operations',
-      desc: 'Group departure manifests (capacity 30), Makkah/Madinah hotel allotments, and visa packs.',
-      icon: '🕋',
+      label: 'Tours & Travels Desk',
+      category: 'Holidays & Pilgrimage Operations',
+      desc: 'Umrah pilgrimages, international holidays, domestic getaways, and group departures.',
+      icon: '🧳',
       accentColor: 'from-purple-600/20 via-purple-500/10 to-transparent',
       borderColor: 'border-purple-500/30',
       badgeBg: 'bg-purple-500/10 text-purple-700 border-purple-500/20'
@@ -103,7 +103,7 @@ export default function DivisionsHub() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Operations Architecture</span>
+            <span className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Operations Architecture</span>
           </div>
           <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Business Division Desks</h1>
           <p className="text-xs text-brand-textLight mt-0.5">Specialized department command centers for admissions, visas, legalizations, and pilgrimage.</p>
@@ -133,12 +133,12 @@ export default function DivisionsHub() {
                   {d.icon}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+                  <span className={`rounded-full border px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider ${
                     isLive ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-slate-100 text-slate-500 border-slate-200'
                   }`}>
                     {isLive ? '● Live' : '○ Closed'}
                   </span>
-                  <span className={`rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${d.badgeBg}`}>
+                  <span className={`rounded-full border px-3 py-1 text-[13px] font-extrabold uppercase tracking-wider ${d.badgeBg}`}>
                     {d.category}
                   </span>
                 </div>
@@ -166,7 +166,7 @@ export default function DivisionsHub() {
 
                   if (items.length === 0) {
                     return (
-                      <span className="rounded-lg bg-brand-navy/[0.04] border border-brand-navy/10 px-2.5 py-1 text-[10px] font-bold text-brand-navy/60">
+                      <span className="rounded-lg bg-brand-navy/[0.04] border border-brand-navy/10 px-2.5 py-1 text-[13px] font-bold text-brand-navy/60">
                         ⚡ Active Pipeline
                       </span>
                     );
@@ -175,7 +175,7 @@ export default function DivisionsHub() {
                   return items.map(([label, n]) => (
                     <span
                       key={label}
-                      className="rounded-lg bg-brand-navy/[0.04] border border-brand-navy/15 px-2.5 py-1 text-[10px] font-black text-brand-navy"
+                      className="rounded-lg bg-brand-navy/[0.04] border border-brand-navy/15 px-2.5 py-1 text-[13px] font-black text-brand-navy"
                     >
                       {label}: <span className="text-brand-gold">{n}</span>
                     </span>

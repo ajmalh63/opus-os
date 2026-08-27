@@ -104,15 +104,21 @@ export function apiKeyAuth(requiredScopes: string[] = []) {
       grantedScopes = [];
     }
 
-    // Scope verification (wildcard '*' grants everything)
+    // Scope verification (wildcard '*' grants everything) — with umrah↔tours alias (v8 Tours consolidation, backward compat)
+    const SCOPE_ALIAS: Record<string, string> = {
+      'umrah:read': 'tours:read',
+      'tours:read': 'umrah:read',
+      'umrah:write': 'tours:write',
+      'tours:write': 'umrah:write',
+    };
     const hasWildcard = grantedScopes.includes('*');
     if (!hasWildcard && requiredScopes.length > 0) {
-      const hasAllRequired = requiredScopes.every((req) => grantedScopes.includes(req));
+      const hasAllRequired = requiredScopes.every((req) => grantedScopes.includes(req) || (SCOPE_ALIAS[req] ? grantedScopes.includes(SCOPE_ALIAS[req]) : false));
       if (!hasAllRequired) {
         return c.json(
           {
             error: 'Forbidden',
-            message: `Insufficient permissions. Required scope(s): [${requiredScopes.join(', ')}]. Granted: [${grantedScopes.join(', ')}]`,
+            message: `Insufficient permissions. Required scope(s): [${requiredScopes.join(', ')}]. Granted: [${grantedScopes.join(', ')}] (umrah↔tours alias)`,
             code: 'INSUFFICIENT_SCOPE',
           },
           403,

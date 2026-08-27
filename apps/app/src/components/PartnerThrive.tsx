@@ -115,23 +115,23 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
               {tier?.key?.[0] || 'B'}
             </span>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold">Loyalty tier</div>
+              <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold">Loyalty tier</div>
               <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight">{tier?.name || 'Bronze Partner'}</h2>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {(tier?.perks || []).map((p) => (
-                  <span key={p} className="rounded-full border border-brand-gold/40 bg-brand-gold/10 px-2 py-0.5 text-[9px] font-bold text-brand-navy/70">{p}</span>
+                  <span key={p} className="rounded-full border border-brand-gold/40 bg-brand-gold/10 px-2 py-0.5 text-xs font-bold text-brand-navy/70">{p}</span>
                 ))}
               </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Loyalty points</div>
+            <div className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Loyalty points</div>
             <div className="font-display text-3xl font-extrabold text-brand-gold">{(thrive?.totalPoints || 0).toLocaleString()}</div>
-            <div className="mt-1 text-[10px] text-slate-400">{tier?.boostPct ? `+${tier.boostPct}% commission boost` : 'Standard commission'}</div>
+            <div className="mt-1 text-[13px] text-slate-400">{tier?.boostPct ? `+${tier.boostPct}% commission boost` : 'Standard commission'}</div>
           </div>
         </div>
         <div className="relative z-10 mt-6">
-          <div className="mb-1.5 flex justify-between text-[11px]">
+          <div className="mb-1.5 flex justify-between text-sm">
             <span className="font-semibold text-slate-600">{tier?.name || 'Bronze'}</span>
             <span className="text-slate-500">{next ? `Next: ${next.name} (${(next.minPoints / 100).toLocaleString('en-IN')} points)` : 'Highest tier reached'}</span>
           </div>
@@ -150,7 +150,7 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
           { label: 'Tier boost', v: tier?.boostPct ? `+${tier.boostPct}%` : '—' },
         ].map((k) => (
           <div key={k.label} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-[0_16px_40px_-20px_rgba(10,45,80,0.14)]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{k.label}</p>
+            <p className="text-[13px] font-bold uppercase tracking-wider text-slate-500">{k.label}</p>
             <p className="mt-2 font-display text-2xl font-extrabold text-brand-navy">{k.v}</p>
           </div>
         ))}
@@ -160,10 +160,10 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
       <section className="flex flex-wrap items-center justify-between gap-4 rounded-[2rem] border border-brand-navy/10 bg-white p-6 shadow-[0_20px_40px_-20px_rgba(10,45,80,0.12)]">
         <div>
           <h3 className="font-display text-sm font-bold text-brand-navy">Payouts</h3>
-          <p className="mt-0.5 text-[10px] text-brand-navy/50">Request your earned balance — the owner approves and it is bank-transferred on the payout cycle.</p>
+          <p className="mt-0.5 text-[13px] text-brand-navy/50">Request your earned balance — the owner approves and it is bank-transferred on the payout cycle.</p>
           <div className="mt-1.5 flex items-center gap-2">
             <span className="font-display text-lg font-extrabold text-emerald-700">{rs(maturedPaise)}</span>
-            <span className="text-[10px] text-slate-400">matured, ready to request</span>
+            <span className="text-[13px] text-slate-400">matured, ready to request</span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -173,16 +173,16 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
               {requestPayout.isPending ? 'Requesting…' : 'Request payout'}
             </button>
           ) : (
-            <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-700">Payout pending approval</span>
+            <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-4 py-2 text-sm font-bold uppercase tracking-wider text-amber-700">Payout pending approval</span>
           )}
         </div>
         {(payouts?.payouts || []).length > 0 && (
           <div className="w-full space-y-1.5 border-t border-brand-navy/10 pt-3">
             {(payouts?.payouts || []).slice(0, 4).map((p) => (
-              <div key={p.id} className="flex items-center justify-between text-[11px]">
+              <div key={p.id} className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">{new Date(p.requestedAt * 1000).toLocaleDateString()}</span>
                 <span className="font-mono font-bold text-brand-navy">{rs(p.amountPaise)}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${p.status === 'paid' ? 'bg-emerald-500/15 text-emerald-700' : p.status === 'requested' ? 'bg-amber-500/15 text-amber-700' : p.status === 'rejected' ? 'bg-rose-500/15 text-rose-700' : 'bg-sky-500/15 text-sky-700'}`}>{p.status}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ${p.status === 'paid' ? 'bg-emerald-500/15 text-emerald-700' : p.status === 'requested' ? 'bg-amber-500/15 text-amber-700' : p.status === 'rejected' ? 'bg-rose-500/15 text-rose-700' : 'bg-sky-500/15 text-sky-700'}`}>{p.status}</span>
               </div>
             ))}
           </div>
@@ -194,12 +194,12 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-navy/10 px-6 py-4">
           <div>
             <h3 className="font-display text-sm font-bold">My Inventory</h3>
-            <p className="text-[10px] text-brand-navy/50">Browse Opus inventory and share items — every click is tracked to you.</p>
+            <p className="text-[13px] text-brand-navy/50">Browse Opus inventory and share items — every click is tracked to you.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {Object.entries(TYPES).map(([k, label]) => (
               <button key={k} onClick={() => setActiveType(k)}
-                className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-all ${activeType === k ? 'bg-brand-navy text-white' : 'border border-brand-navy/15 text-slate-600 hover:border-brand-gold hover:text-brand-gold'}`}>
+                className={`rounded-full px-3 py-1.5 text-sm font-bold transition-all ${activeType === k ? 'bg-brand-navy text-white' : 'border border-brand-navy/15 text-slate-600 hover:border-brand-gold hover:text-brand-gold'}`}>
                 {label}
               </button>
             ))}
@@ -216,18 +216,18 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
               <div key={`${item.type}-${item.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-brand-navy/10 bg-[#FAF8F4] p-4">
                 <div className="min-w-0">
                   <div className="truncate text-xs font-bold text-brand-navy">{item.title}</div>
-                  <div className="mt-0.5 text-[10px] text-slate-500">
+                  <div className="mt-0.5 text-[13px] text-slate-500">
                     {item.meta?.country || item.meta?.date || ''} {item.pricePaise > 0 ? `· ${rs(item.pricePaise)}` : ''} {existing ? `· ${existing.clicks} clicks` : ''}
                   </div>
                 </div>
                 {existing && linkPath ? (
                   <button onClick={() => copy(linkPath, existing.id)}
-                    className="shrink-0 rounded-full border border-brand-gold/50 bg-brand-gold/10 px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-brand-gold transition hover:bg-brand-gold hover:text-brand-navy">
+                    className="shrink-0 rounded-full border border-brand-gold/50 bg-brand-gold/10 px-3.5 py-2 text-[13px] font-bold uppercase tracking-wider text-brand-gold transition hover:bg-brand-gold hover:text-brand-navy">
                     {copiedId === existing.id ? 'Copied!' : 'Copy link'}
                   </button>
                 ) : (
                   <button onClick={() => createLink.mutate(item)} disabled={createLink.isPending}
-                    className="shrink-0 rounded-full bg-brand-navy px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy disabled:opacity-40">
+                    className="shrink-0 rounded-full bg-brand-navy px-3.5 py-2 text-[13px] font-bold uppercase tracking-wider text-white transition hover:bg-brand-gold hover:text-brand-navy disabled:opacity-40">
                     {createLink.isPending ? '…' : 'Create link'}
                   </button>
                 )}

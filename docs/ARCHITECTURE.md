@@ -1,8 +1,8 @@
 # Opus OS — Complete Architecture Map
 
-> **Version:** 2026-08-25 (v7 — Fluent Workspace: Blog Gold + Phase A 4 + Visa/Attestation Gold 14 + C1-C6/P1-P3 + Domain-Native Tunnel + L5/L6/L7 Hardening + Realtime Sync All)  
+> **Version:** 2026-08-26 (v8 — Tours & Travels Architecture Consolidation + Unique Canonical Division Emojis + Member Price Gating & Dynamic Config Engine + Monorepo Sync)  
 > **Status:** Live & Unified (Cloudflare Workers API + D1 97 tables + R2 Vault + SyncHub DO + Domain-Native VPS Tunnel)  
-> **Build:** `typecheck ✓` `build ✓ 2,134kB` `D1 local+remote 97 tables` `secrets domain https://wa.opusoverseas.com`
+> **Build:** `typecheck ✓ 0 errors` `test ✓ 103/103 files passed (671 tests)` `D1 local+remote 97 tables` `secrets domain https://wa.opusoverseas.com`
 
 ---
 
@@ -235,7 +235,7 @@ Three workspaces share single D1 source, synchronized via `SyncHub Durable Objec
 * **Visa Gold V1-V7 (new):** `visaRules` 20 (country×visaType docs JSON, validity 6m, leadDays 14-45) + `visaDeadlines` cascade `biometrics+30d→medical+46d→submit` + `requirements/:bookingId` outstanding diff + `GET /kpis` + **C5 Tracker** `official verbatim + plain explainer + checkedAt` (VP0 anxiety-grade).
 * **Family Hub:** `familyMembers` `father/mother/guardian` + `canReceiveUpdates` + 6m passport expiry guard.
 
-### 6.2 ✈️ Global Visa Processing Division
+### 6.2 🛂 Global Visa Processing Division
 * **Inventory Catalog**: 165+ destinations across 56 standard products (`visa_products`) with entry types, processing turnaround times, and mandatory document checklists — now backed by `visaRules` DB (20 seeded) for live outstanding calc.
 * **Wholesale Margin Guard**: Base consular fees are strictly isolated from customer retail rates.
 * **Document Verification**: Staff review queue with presigned R2 downloads, instant `verified`/`rejected` toggles, and auto-generated client correction tasks.
@@ -383,6 +383,39 @@ Opus OS/
 
 ## 14. Recent Implementations Deep Dive (This Version)
 
+### Tours & Travels Division Architecture & Inventory Consolidation — 2026-08-26 (v8)
+- **Architecture Restructuring**: Repositioned Umrah from a standalone division to an **Inventory Product Line** under the unified **Tours & Travels** division (`umrah` division key retained for zero DB schema churn). Tours & Travels now cohesively encompasses:
+  1. *Umrah Pilgrimage Operations* (Hyderabad direct departures, 54-column package schema, rooming manifests, ₹500 advance hold).
+  2. *International Holiday Tours* (Europe, Gulf, Far East curated packages).
+  3. *Domestic Getaways & Excursions* (Kerala, Kashmir, Golden Triangle).
+  4. *Corporate & MICE Group Departures*.
+- **Staff & Client Surface Alignment**:
+  - `DivisionsHub.tsx` → Synchronized **Tours & Travels Desk** (Holidays & Pilgrimage Operations).
+  - `DivisionControlsTab.tsx` → Synchronized **Tours & Travels Division** (World Holidays, 5-Star Umrah Pilgrimages & Bespoke Group Departures).
+  - `UmrahPortal.tsx` → Synchronized **Tours, Holidays & Pilgrimage Desk** header and manifests management.
+  - `ClientPortal.tsx` & `ClientDashboardHub.tsx` → Synchronized client navigation tabs and dashboard cards to **Tours & Travels**.
+
+### Zero-Collision Canonical Division Emojis — 2026-08-26 (v8)
+- **Eliminated Multi-Desk Collisions**: Fixed identical `✈️` icon collisions between Visa Services and Tours & Travels across the entire monorepo.
+- **Enforced 5-Division Canonical Emoji Standard**:
+  - 🎓 **Study Abroad Desk** (`study-abroad`): Higher Education & University Admissions
+  - 🛂 **Visa Preparation Desk** (`visa`): Consular Processing & Visa Stamping
+  - 🧳 **Tours & Travels Desk** (`umrah`): World Holidays & Umrah Pilgrimage
+  - 📜 **Document Attestation Desk** (`attestation`): MEA Apostille & Legalization
+  - 👷 **Manpower Sourcing Hub** (`manpower`): Overseas Recruitment & Demand Management
+- **Synchronized Across**: `DivisionsHub.tsx`, `DivisionControlsTab.tsx`, `ClientPortal.tsx`, `ClientDashboardHub.tsx`, `ClientMobileNav.tsx`, and `PublicLeadForm.tsx`.
+
+### Public Tours & Travels Modernization & Dynamic Price Gating — 2026-08-26 (v8)
+- **Retro-Funnel Design Alignment**: Fully overhauled `apps/app/src/pages/public/ToursTravelPage.tsx` to match brand design language:
+  - Deep Navy hero gradient (`bg-gradient-to-b from-[#061e38] via-[#092b4c] to-[#0a2d50]`), `DomainBackdrop theme="global"`, `DomainDarkGraphics variant="umrah"`, and ambient lighting orbs.
+  - Strict typography standardization (`font-display font-black` + `font-sans`).
+  - Removed legacy CTAs (e.g. standalone "Dedicated Umrah Portal" buttons).
+- **Member-Only Pricing Policy & Authentication Gate**:
+  - Stripped fabricated public price tags from package cards, hero visual cards, and departure radars.
+  - Enforced policy banner directing users to authenticate (`/login`) to access live rate cards, PNR allocations, wholesale costs, and group manifests.
+- **Interactive Itinerary & Group Configuration Engine**:
+  - Converted static calculator into a live Pax & Rooming Tier group estimator with one-click official WhatsApp quotation dispatch.
+
 ### Blog Engine (Gold) — 2026-08-25
 - **Why:** Writer 80/20 + Google May 15 + Princeton +30% inline citations + FAQ 81% highest. **Build:** 8 pillars, `tldr` 200-350c, `## What is` definition, 40-60w capsule per H2, 1 `| table |`, `FAQ 5×<50w`, `Person sameAs` + `Organization`, `dateModified` auto, `primaryKeyword` unique 409, `pillSlug` cluster, `auditPost()` `overall/SEO/AEO`. **API** `GET /api/blog/posts?division=` `rateLimit 60/min` `flushScheduled()` + `GET /posts/:slug?preview=1` + `POST/PATCH/DELETE` `manager+` + `publishSyncEvent public:blog + staff:global:blog` + **Frontend** `BlogIndex/Post` `refetchInterval 30s` + `VisibilityHub 📝 Blog Studio` `createSyncClient` + `Footer Blog` + `sitemap.xml` `max-age 300` + `llms.txt` 50.
 
@@ -406,15 +439,14 @@ Opus OS/
 
 ## 15. Verification — This Version
 
-| Gate | Result |
-|---|---|
-| `pnpm --filter @opusos/api typecheck` | **✓** |
-| `pnpm --filter @opusos/app typecheck` | **✓** (fixed `portalToken` destructure, `BillingForecast` unused) |
-| `pnpm --filter @opusos/app build` | **✓ 2,134.75kB 474 modules** (+HealthRing etc.) |
-| `D1` `97 tables` | `visa_rules 20 attRules 10` seeded local+remote `1142784` |
-| `Routes` | `app.route('/api/blog')` `/api/family` `/api/ledger` `/api/visa` (`visaGold`+tracker) `/api/attestation` `/api/partner` (`partnerGold`) `/api/sync` |
-| `Frontend routes` | `Route /blog + /blog/:slug` `VisibilityHub 📝` `ClientPortal 7 tabs` `PartnerDashboard 5 tabs` `Footer Blog` |
-| `Realtime` | `16+ publishSyncEvent` `public:blog/visa/attestation/payments/leads` + `staff:global:*` + `client:{id}:*` + `partner:{id}:*` → `createSyncClient` + `refetchInterval 30s` fallback |
-
-*Next pre-completed Welcome + health Green → +25% activation (Vezert) measurable in `DashboardHome` funnel `generate_lead`.*
+| Gate | Result | Notes |
+|---|:---:|---|
+| `pnpm typecheck` (all workspaces) | **✓ 0 errors** | `packages/shared`, `apps/api`, `apps/app` typechecked |
+| `pnpm test` (vitest suite) | **✓ 103/103 passed** | **671 tests passed across all divisions and subsystems** |
+| `pnpm --filter @opusos/app build` | **✓ passed** | Production bundle built cleanly |
+| `D1 Database` | **97 tables** | `visa_rules 20`, `attestation_rules 10`, `umrah_packages` |
+| `Canonical Division Taxonomy` | **5 Unique Desks** | 🎓 Study Abroad · 🛂 Visa · 🧳 Tours & Travels · 📜 Attestation · 👷 Manpower |
+| `Division Emojis` | **0 Collisions** | Unique canonical emoji per division across all portals and forms |
+| `Tours & Travels Surface` | **Member Gated** | Authenticated access for live pricing, PNR manifests, and departures |
+| `Realtime Pub/Sub` | **16+ Channels** | `SyncHub DO` + resilient WS + 30s fallback |
 

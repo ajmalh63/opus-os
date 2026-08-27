@@ -95,14 +95,14 @@ export default function RolesTab() {
         <div className="space-y-4">
           {families.map(fam => (
             <div key={fam}>
-              <span className="text-[10px] uppercase tracking-wider text-brand-navy/40 font-bold block mb-2">{fam}</span>
+              <span className="text-[13px] uppercase tracking-wider text-brand-navy/40 font-bold block mb-2">{fam}</span>
               <div className="flex flex-wrap gap-2">
                 {permissions.filter(p => p.family === fam && !p.ownerOnly).map(p => (
                   <button
                     key={p.code}
                     type="button"
                     onClick={() => togglePerm(p.code)}
-                    className={`px-3 py-1.5 rounded-md border text-[10px] font-semibold transition cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-md border text-[13px] font-semibold transition cursor-pointer ${
                       selectedPerms.includes(p.code)
                         ? 'bg-brand-gold text-brand-navy border-brand-gold'
                         : 'bg-brand-navy/[0.06] text-brand-navy/70 border-brand-navy/10 hover:border-brand-gold/50'
@@ -113,7 +113,7 @@ export default function RolesTab() {
                   </button>
                 ))}
                 {permissions.filter(p => p.family === fam && p.ownerOnly).map(p => (
-                  <span key={p.code} className="px-3 py-1.5 rounded-md border border-brand-navy/10 text-[10px] text-brand-navy/40 line-through" title="Owner-only - locked">{p.code} 📊-’</span>
+                  <span key={p.code} className="px-3 py-1.5 rounded-md border border-brand-navy/10 text-[13px] text-brand-navy/40 line-through" title="Owner-only - locked">{p.code} 📊-’</span>
                 ))}
               </div>
             </div>
@@ -139,7 +139,7 @@ export default function RolesTab() {
         </div>
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[10px] uppercase tracking-wider text-brand-gold">
+            <tr className="bg-brand-navy/[0.04] border-b border-brand-navy/[0.08] text-[13px] uppercase tracking-wider text-brand-gold">
               <th className="p-4">Role</th>
               <th className="p-4">Code</th>
               <th className="p-4">Permissions</th>
@@ -157,14 +157,14 @@ export default function RolesTab() {
                   <td className="p-4">
                     <div className="flex flex-wrap gap-1 max-w-md">
                       {perms.slice(0, 8).map(p => (
-                        <span key={p} className="px-1.5 py-0.5 rounded bg-brand-navy/[0.06] border border-brand-navy/10 text-brand-navy/70 text-[9px]">{p}</span>
+                        <span key={p} className="px-1.5 py-0.5 rounded bg-brand-navy/[0.06] border border-brand-navy/10 text-brand-navy/70 text-xs">{p}</span>
                       ))}
-                      {perms.length > 8 && <span className="text-[9px] text-brand-navy/40">+{perms.length - 8} more</span>}
-                      {perms.length === 0 && <span className="text-[9px] text-brand-navy/40">No permissions</span>}
+                      {perms.length > 8 && <span className="text-xs text-brand-navy/40">+{perms.length - 8} more</span>}
+                      {perms.length === 0 && <span className="text-xs text-brand-navy/40">No permissions</span>}
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${r.system ? 'bg-brand-navy/[0.06] text-brand-navy/70' : 'bg-brand-gold/15 text-brand-gold'}`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${r.system ? 'bg-brand-navy/[0.06] text-brand-navy/70' : 'bg-brand-gold/15 text-brand-gold'}`}>
                       {r.system ? 'System' : 'Custom'}
                     </span>
                   </td>

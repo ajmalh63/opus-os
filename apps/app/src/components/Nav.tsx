@@ -6,7 +6,7 @@ import { useSession } from '../lib/session';
 const LINKS = [
   { label: 'Study Abroad', path: '/study-abroad' },
   { label: 'Visa', path: '/visa-services' },
-  { label: 'Umrah & Travel', path: '/umrah-travel' },
+  { label: 'Tours & Travels', path: '/tours-travels' },
   { label: 'Attestation', path: '/attestation' },
   { label: 'Careers', path: '/recruitment' },
   { label: 'Contact', path: '/contact' },
@@ -82,7 +82,7 @@ export default function Nav() {
                 className="mr-1 hidden cursor-pointer items-center gap-1.5 rounded-full bg-brand-gold px-5 sm:px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition-all hover:bg-brand-gold-hover hover:text-white active:scale-[0.98] sm:inline-flex tactile-btn shadow-xs"
               >
                 Sign In
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-navy/15 text-[10px] font-extrabold">↗</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-navy/15 text-[13px] font-extrabold">↗</span>
               </button>
             )}
 

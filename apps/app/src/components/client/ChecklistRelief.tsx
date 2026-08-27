@@ -39,7 +39,7 @@ export default function ChecklistRelief({
         <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
           <p className="text-sm font-bold text-slate-700">No checklist yet</p>
           <p className="text-xs text-slate-500 mt-1 max-w-[32ch] mx-auto">Apply to Study Abroad, Visa, Umrah, Attestation, or Careers to see your personalized, live checklist here. It updates as you upload and we verify.</p>
-          <p className="text-[11px] text-slate-400 mt-2">Building in public — real tasks, no fake 2/5</p>
+          <p className="text-sm text-slate-400 mt-2">Building in public — real tasks, no fake 2/5</p>
         </div>
       </div>
     );
@@ -74,12 +74,12 @@ export default function ChecklistRelief({
               {it.label} {it.required && !it.done && <span className="text-amber-700 text-xs">• Required</span>}
             </span>
             {it.done ? (
-              <span className="ml-auto text-[11px] px-2 py-1 rounded-full border bg-white">View</span>
+              <span className="ml-auto text-sm px-2 py-1 rounded-full border bg-white">View</span>
             ) : (
               <button
                 onClick={() => onUpload?.(it)}
                 aria-label={`Upload ${it.label}`}
-                className="ml-auto text-[11px] px-3 py-1 rounded-full border bg-brand-navy text-white border-brand-navy hover:bg-black cursor-pointer min-h-[28px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/20"
+                className="ml-auto text-sm px-3 py-1 rounded-full border bg-brand-navy text-white border-brand-navy hover:bg-black cursor-pointer min-h-[28px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/20"
               >
                 Upload
               </button>
@@ -91,7 +91,7 @@ export default function ChecklistRelief({
       <div className="mt-4 h-2 bg-[#FAF3DC] rounded-full overflow-hidden">
         <div className="h-full bg-brand-navy transition-all duration-500" style={{ width: `${pct}%` }} />
       </div>
-      <p className="text-[11px] text-slate-500 mt-2">
+      <p className="text-sm text-slate-500 mt-2">
         {done} of {items.length} • {pct === 100 ? 'All done! 🎉' : `You are ${pct}% done. Keep momentum.`} Avg completion 3.2 days.
       </p>
     </div>

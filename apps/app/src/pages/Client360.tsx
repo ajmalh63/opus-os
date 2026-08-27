@@ -124,6 +124,7 @@ interface Payment {
   sgst: number | null; // paise
   igst: number | null; // paise
   isInterstate: boolean | null;
+  gstRate?: number | null;
   createdAt: number;
 }
 
@@ -1189,7 +1190,7 @@ export default function Client360() {
     { id: 'vault', label: 'Document Vault' },
     ...(meCanAgreements ? [{ id: 'agreements', label: 'Service Agreements' }] : []),
     ...(meRole === 'super_admin' || meRole === 'manager' ? [{ id: 'payments', label: 'Milestones & GST' }] : []),
-    ...(meRole === 'super_admin' || meRole === 'manager' ? [{ id: 'umrah', label: 'Umrah Departure' }] : []),
+    ...(meRole === 'super_admin' || meRole === 'manager' ? [{ id: 'umrah', label: 'Tours & Travels' }] : []),
     { id: 'courier', label: 'Courier Tracker' },
     // Division Specific Desks: dynamically filtered!
     ...(clientDivision === 'study-abroad' ? [{ id: 'study-abroad', label: 'Study Abroad Desk' }] : []),
@@ -1210,7 +1211,7 @@ export default function Client360() {
             <h2 className="font-display font-semibold text-lg text-brand-navy">
               Client Profile: <span className="text-brand-gold">{client.name}</span>
             </h2>
-            <span className="px-3 py-1 bg-brand-navy text-brand-gold border border-brand-gold/30 text-[10px] uppercase font-bold tracking-widest rounded-full">
+            <span className="px-3 py-1 bg-brand-navy text-brand-gold border border-brand-gold/30 text-[13px] uppercase font-bold tracking-widest rounded-full">
               {activeEng?.division || 'General Lead'}
             </span>
           </div>
@@ -1317,15 +1318,15 @@ export default function Client360() {
               <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider">Contact Details</h4>
               <div className="space-y-3 text-xs bg-brand-navy/[0.04] p-3 rounded-lg border border-brand-navy/10">
                 <div>
-                  <span className="text-[10px] text-brand-navy/50 block mb-0.5">Mobile Phone</span>
+                  <span className="text-[13px] text-brand-navy/50 block mb-0.5">Mobile Phone</span>
                   <span className="font-semibold text-brand-navy/80">{client.phone}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-brand-navy/50 block mb-0.5">Email Address</span>
+                  <span className="text-[13px] text-brand-navy/50 block mb-0.5">Email Address</span>
                   <span className="font-semibold text-brand-navy/80">{client.email}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-brand-navy/50 block mb-0.5">Highest Qualification</span>
+                  <span className="text-[13px] text-brand-navy/50 block mb-0.5">Highest Qualification</span>
                   <span className="font-semibold text-brand-navy/80 uppercase">{client.highestQualification}</span>
                 </div>
               </div>
@@ -1336,13 +1337,13 @@ export default function Client360() {
               <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider">PII Passport Vault</h4>
               <div className="space-y-3 text-xs bg-brand-navy/[0.04] p-3 rounded-lg border border-brand-navy/10">
                 <div>
-                  <span className="text-[10px] text-brand-navy/50 block mb-0.5">Passport Number (Masked)</span>
+                  <span className="text-[13px] text-brand-navy/50 block mb-0.5">Passport Number (Masked)</span>
                   <span className="font-mono font-bold tracking-widest text-brand-gold">
                     {client.passportNumber || 'Not Uploaded'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-brand-navy/50 block mb-0.5">Expiry Date</span>
+                  <span className="text-[13px] text-brand-navy/50 block mb-0.5">Expiry Date</span>
                   <span className="font-semibold text-brand-navy/80">{client.passportExpiry || 'Not Provided'}</span>
                 </div>
               </div>
@@ -1353,18 +1354,18 @@ export default function Client360() {
               <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider">DPDP-2023 Consents</h4>
               <div className="space-y-3">
                 {client.consents?.map((consent) => (
-                  <div key={consent.id} className="p-3 bg-brand-navy/[0.04] rounded-lg border border-brand-navy/10 text-[10px] space-y-2">
+                  <div key={consent.id} className="p-3 bg-brand-navy/[0.04] rounded-lg border border-brand-navy/10 text-[13px] space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-brand-gold uppercase">{consent.consentType.replace('-', ' ')}</span>
-                      <span className="px-2 py-0.2 bg-emerald-50 text-brand-success border border-emerald-500/20 rounded font-bold uppercase tracking-widest text-[8px]">
+                      <span className="px-2 py-0.2 bg-emerald-50 text-brand-success border border-emerald-500/20 rounded font-bold uppercase tracking-widest text-sm">
                         GRANTED
                       </span>
                     </div>
                     <div>
                       <span className="text-brand-navy/50 block leading-none">SHA-256 Digest:</span>
-                      <span className="font-mono text-[9px] break-all block mt-1 text-brand-navy/60 font-semibold">{consent.sha256Hash}</span>
+                      <span className="font-mono text-xs break-all block mt-1 text-brand-navy/60 font-semibold">{consent.sha256Hash}</span>
                     </div>
-                    <span className="text-[8px] text-brand-navy/40 block">IP: {consent.ipAddress}  {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
+                    <span className="text-sm text-brand-navy/40 block">IP: {consent.ipAddress}  {new Date(consent.grantedAt * 1000).toLocaleDateString()}</span>
                   </div>
                 ))}
                 {(!client.consents || client.consents.length === 0) && (
@@ -1385,7 +1386,7 @@ export default function Client360() {
               {/* Card 1: Account Health Score & Action State */}
               <div className="bg-white p-5 rounded-2xl border border-brand-navy/10 shadow-sm flex items-center justify-between gap-4">
                 <div>
-                  <span className="text-[10px] text-brand-navy/40 font-bold uppercase tracking-wider block">Case Health Score</span>
+                  <span className="text-[13px] text-brand-navy/40 font-bold uppercase tracking-wider block">Case Health Score</span>
                   <div className="flex items-baseline gap-1.5 mt-1">
                     <span className={`text-2xl font-extrabold ${
                       healthScore >= 80 ? 'text-emerald-700' : healthScore >= 50 ? 'text-amber-600' : 'text-rose-600'
@@ -1394,7 +1395,7 @@ export default function Client360() {
                     </span>
                     <span className="text-xs text-brand-navy/40">Status</span>
                   </div>
-                  <p className="text-[10px] text-brand-navy/50 mt-1 leading-tight">
+                  <p className="text-[13px] text-brand-navy/50 mt-1 leading-tight">
                     {healthScore >= 80 ? '✓ Profile status healthy.' : '⚠️ Open tasks / pending dues.'}
                   </p>
                 </div>
@@ -1412,16 +1413,16 @@ export default function Client360() {
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span className="absolute text-[10px] font-extrabold text-brand-navy/60">Health</span>
+                  <span className="absolute text-[13px] font-extrabold text-brand-navy/60">Health</span>
                 </div>
               </div>
 
               {/* Card 2: DPDP-2023 Consent Audit Desk */}
               <div className="bg-white p-5 rounded-2xl border border-brand-navy/10 shadow-sm flex items-center justify-between gap-4">
                 <div>
-                  <span className="text-[10px] text-brand-navy/40 font-bold uppercase tracking-wider block">DPDP-2023 Consents</span>
+                  <span className="text-[13px] text-brand-navy/40 font-bold uppercase tracking-wider block">DPDP-2023 Consents</span>
                   <div className="flex items-center gap-1.5 mt-2">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider ${
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold border uppercase tracking-wider ${
                       client.consents?.some(c => c.consentType === 'core-processing' && c.status === 'granted')
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         : 'bg-rose-50 text-rose-600 border-rose-200'
@@ -1430,7 +1431,7 @@ export default function Client360() {
                         ? 'Core Granted' : 'Withdrawn / Empty'}
                     </span>
                   </div>
-                  <p className="text-[10px] text-brand-navy/50 mt-2 leading-tight">
+                  <p className="text-[13px] text-brand-navy/50 mt-2 leading-tight">
                     WhatsApp Updates: <span className="font-bold">{client.consents?.some(c => c.consentType === 'whatsapp-updates' && c.status === 'granted') ? 'Active' : 'Muted'}</span>
                   </p>
                 </div>
@@ -1442,7 +1443,7 @@ export default function Client360() {
               {/* Card 3: Milestone & Collection Progress bar */}
               <div className="bg-white p-5 rounded-2xl border border-brand-navy/10 shadow-sm flex flex-col justify-between gap-2">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-[10px] text-brand-navy/40 font-bold uppercase tracking-wider">Milestone Collection</span>
+                  <span className="text-[13px] text-brand-navy/40 font-bold uppercase tracking-wider">Milestone Collection</span>
                   <span className="text-xs font-bold text-brand-gold">{billingSummary.percent}% Collected</span>
                 </div>
                 
@@ -1454,7 +1455,7 @@ export default function Client360() {
                   />
                 </div>
 
-                <div className="flex justify-between items-center text-[10px] text-brand-navy/60 font-semibold mt-1">
+                <div className="flex justify-between items-center text-[13px] text-brand-navy/60 font-semibold mt-1">
                   <span>Paid: ₹{(billingSummary.totalPaid / 100).toFixed(2)}</span>
                   <span>Billed: ₹{(billingSummary.totalInvoiced / 100).toFixed(2)}</span>
                 </div>
@@ -1513,7 +1514,7 @@ export default function Client360() {
                     <h3 className="font-display font-bold text-sm text-brand-gold">Client Tasks</h3>
                     <p className="text-xs text-brand-navy/50 mt-0.5">Assignments, reminders and follow-ups for this client.</p>
                   </div>
-                  <span className="text-[10px] uppercase bg-brand-navy/[0.06] text-brand-navy/50 px-2.5 py-1 rounded font-bold border border-brand-navy/10">
+                  <span className="text-[13px] uppercase bg-brand-navy/[0.06] text-brand-navy/50 px-2.5 py-1 rounded font-bold border border-brand-navy/10">
                     {clientTasks.filter(t => t.status !== 'done').length} open
                   </span>
                 </div>
@@ -1583,13 +1584,13 @@ export default function Client360() {
                               {task.title}
                             </p>
                             {task.dueDate && (
-                              <p className={`text-[10px] ${isOverdue ? 'text-brand-error font-bold' : 'text-brand-navy/40'}`}>
+                              <p className={`text-[13px] ${isOverdue ? 'text-brand-error font-bold' : 'text-brand-navy/40'}`}>
                                 {isOverdue ? 'Overdue · ' : 'Due '}{new Date(task.dueDate * 1000).toLocaleDateString()}
                               </p>
                             )}
                           </div>
                         </div>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 ${
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider shrink-0 ${
                           task.priority === 'urgent' ? 'bg-brand-error/20 text-brand-error'
                           : task.priority === 'high' ? 'bg-brand-warning/20 text-brand-warning'
                           : task.priority === 'medium' ? 'bg-brand-gold/15 text-brand-gold'
@@ -1649,7 +1650,7 @@ export default function Client360() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-brand-navy/[0.04] text-brand-gold font-bold uppercase tracking-wider text-[10px] border-b border-brand-navy/[0.08]">
+                      <tr className="bg-brand-navy/[0.04] text-brand-gold font-bold uppercase tracking-wider text-[13px] border-b border-brand-navy/[0.08]">
                         <th className="p-4 w-8">
                           <input
                             type="checkbox"
@@ -1693,7 +1694,7 @@ export default function Client360() {
                           <td className="p-4 text-brand-navy/50 font-mono">{doc.version}</td>
                           <td className="p-4 text-brand-navy/60">{new Date(doc.uploadedAt * 1000).toLocaleDateString()}</td>
                           <td className="p-4">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold ${
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
                               doc.status === 'verified' 
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                                 : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -1703,7 +1704,7 @@ export default function Client360() {
                           </td>
                           <td className="p-4">
                             {doc.courierTrackingNumber ? (
-                              <span className="px-2 py-0.5 bg-sky-950 text-sky-400 border border-sky-900 rounded font-mono text-[10px]">
+                              <span className="px-2 py-0.5 bg-sky-950 text-sky-400 border border-sky-900 rounded font-mono text-[13px]">
                                 {doc.courierName}: {doc.courierTrackingNumber} ({doc.courierStatus})
                               </span>
                             ) : (
@@ -1738,7 +1739,7 @@ export default function Client360() {
                   
                   <form onSubmit={handleCreateDraftAgreement} className="flex flex-wrap gap-4 items-end bg-brand-navy/[0.04] p-4 rounded-lg border border-brand-navy/10">
                     <div className="flex-1 min-w-[200px]">
-                      <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Standard Templates</label>
+                      <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Standard Templates</label>
                       <select 
                         value={selectedTemplateId}
                         onChange={(e) => setSelectedTemplateId(e.target.value)}
@@ -1777,7 +1778,7 @@ export default function Client360() {
                       >
                         <div className="flex justify-between items-center w-full">
                           <span className="font-bold text-brand-navy truncate max-w-[120px]">ID: {agreement.id.substring(0, 8)}...</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${
+                          <span className={`px-1.5 py-0.5 rounded text-sm font-bold uppercase ${
                             agreement.status === 'signed' 
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                               : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -1785,9 +1786,9 @@ export default function Client360() {
                             {agreement.status}
                           </span>
                         </div>
-                        <p className="text-[10px] text-brand-navy/50">Created: {new Date(agreement.createdAt * 1000).toLocaleDateString()}</p>
+                        <p className="text-[13px] text-brand-navy/50">Created: {new Date(agreement.createdAt * 1000).toLocaleDateString()}</p>
                         {agreement.sha256Hash && (
-                          <div className="mt-1 bg-brand-navy/[0.05] p-1 rounded font-mono text-[9px] text-brand-navy/60 break-all border border-brand-navy/10">
+                          <div className="mt-1 bg-brand-navy/[0.05] p-1 rounded font-mono text-xs text-brand-navy/60 break-all border border-brand-navy/10">
                             Checksum: {agreement.sha256Hash.substring(0, 16)}...
                           </div>
                         )}
@@ -1806,26 +1807,26 @@ export default function Client360() {
                     <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
                       <div>
                         <h4 className="text-xs font-bold text-brand-gold uppercase tracking-wider">Agreement Draft Preview</h4>
-                        <p className="text-[10px] text-brand-navy/50 mt-0.5">Merged clauses audit trail.</p>
+                        <p className="text-[13px] text-brand-navy/50 mt-0.5">Merged clauses audit trail.</p>
                       </div>
                       {selectedAgreement && selectedAgreement.status === 'draft' && (
                         <button
                           onClick={() => handleOpenSignModal(selectedAgreement.id)}
-                          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-1 px-3 rounded text-[10px] transition shadow"
+                          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-1 px-3 rounded text-[13px] transition shadow"
                         >
                           eSign Document
                         </button>
                       )}
                     </div>
 
-                    <div className="flex-1 bg-brand-navy/[0.04] border border-brand-navy/10 rounded p-4 overflow-y-auto text-[11px] font-mono whitespace-pre-wrap text-brand-navy/60">
+                    <div className="flex-1 bg-brand-navy/[0.04] border border-brand-navy/10 rounded p-4 overflow-y-auto text-sm font-mono whitespace-pre-wrap text-brand-navy/60">
                       {selectedAgreement ? selectedAgreement.content : 'Select an agreement from the list to preview merged clauses.'}
                     </div>
 
                     {selectedAgreement && selectedAgreement.sha256Hash && (
                       <div className="bg-brand-navy/[0.04] p-3 rounded-lg border border-brand-navy/10 flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                        <div className="flex-1 font-mono text-[10px] text-brand-navy/60 truncate">
+                        <div className="flex-1 font-mono text-[13px] text-brand-navy/60 truncate">
                           <span className="text-brand-navy/50 font-sans font-bold">SHA-256 Consent Hash:</span> {selectedAgreement.sha256Hash}
                         </div>
                       </div>
@@ -1849,7 +1850,7 @@ export default function Client360() {
                       <p className="text-xs text-brand-navy/50 mt-0.5">UPI ₹ Cards ₹ Netbanking ₹ Wallets ₹ amount computed from the ledger.</p>
                     </div>
                     {razorpayStatus && (
-                      <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${razorpayStatus.type === 'err' ? 'bg-brand-error/20 text-brand-error' : 'bg-brand-success/15 text-brand-success'}`}>
+                      <span className={`text-[13px] px-2 py-1 rounded font-bold uppercase ${razorpayStatus.type === 'err' ? 'bg-brand-error/20 text-brand-error' : 'bg-brand-success/15 text-brand-success'}`}>
                         {razorpayStatus.msg}
                       </span>
                     )}
@@ -1857,7 +1858,7 @@ export default function Client360() {
 
                   <form onSubmit={handleRazorpaySubmit} className="flex flex-wrap gap-3 items-end">
                     <div>
-                      <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Milestone</label>
+                      <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Milestone</label>
                       <input
                         type="text"
                         value={razorpayMilestone}
@@ -1867,7 +1868,7 @@ export default function Client360() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Amount (₹-₹)</label>
+                      <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Amount (₹-₹)</label>
                       <input
                         type="number"
                         min="1"
@@ -1897,7 +1898,7 @@ export default function Client360() {
                       
                       {/* Milestone Name */}
                       <div className="md:col-span-2">
-                        <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Milestone / Item Name</label>
+                        <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Milestone / Item Name</label>
                         <input 
                           type="text" 
                           value={paymentMilestoneName}
@@ -1909,7 +1910,7 @@ export default function Client360() {
 
                       {/* Entry Type */}
                       <div>
-                        <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Entry Type</label>
+                        <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Entry Type</label>
                         <select 
                           value={paymentType}
                           onChange={(e) => setPaymentType(e.target.value as any)}
@@ -1924,7 +1925,7 @@ export default function Client360() {
 
                       {/* Amount in Rupees */}
                       <div>
-                        <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Amount (Rupees ₹-₹)</label>
+                        <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Amount (Rupees ₹-₹)</label>
                         <input 
                           type="number" 
                           step="0.01"
@@ -1943,7 +1944,7 @@ export default function Client360() {
                       {(paymentType === 'receipt' || paymentType === 'refund') ? (
                         <div className="flex gap-4 items-center">
                           <div>
-                            <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Payment Method</label>
+                            <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Payment Method</label>
                             <select 
                               value={paymentMethod}
                               onChange={(e) => setPaymentMethod(e.target.value as any)}
@@ -1955,7 +1956,7 @@ export default function Client360() {
                             </select>
                           </div>
                           <div>
-                            <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Reference Number</label>
+                            <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Reference Number</label>
                             <input 
                               type="text" 
                               value={paymentRefNumber}
@@ -2044,19 +2045,19 @@ export default function Client360() {
                           <div>
                             <div className="flex justify-between items-start">
                               <h4 className="font-bold text-xs text-brand-navy truncate max-w-[130px]">{milestone.label}</h4>
-                              <span className={`px-2 py-0.5 rounded text-[8px] font-bold border ${warningBadgeStyle}`}>
+                              <span className={`px-2 py-0.5 rounded text-sm font-bold border ${warningBadgeStyle}`}>
                                 {warningText.toUpperCase()}
                               </span>
                             </div>
-                            <p className="text-[10px] text-brand-navy/50 mt-1">Due Date: {new Date(milestone.dueDate * 1000).toLocaleDateString()}</p>
+                            <p className="text-[13px] text-brand-navy/50 mt-1">Due Date: {new Date(milestone.dueDate * 1000).toLocaleDateString()}</p>
                           </div>
                           
                           <div className="flex justify-between items-end border-t border-brand-navy/10 pt-2.5">
                             <div>
-                              <span className="text-[9px] text-brand-navy/40 uppercase tracking-widest block leading-none">Milestone Fee</span>
+                              <span className="text-xs text-brand-navy/40 uppercase tracking-widest block leading-none">Milestone Fee</span>
                               <span className="font-mono font-extrabold text-sm text-brand-gold">-₹{(milestone.amount / 100).toFixed(2)}</span>
                             </div>
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                               milestone.status === 'paid' 
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                                 : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -2083,7 +2084,7 @@ export default function Client360() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-brand-navy/[0.04] text-brand-gold font-bold uppercase tracking-wider text-[10px] border-b border-brand-navy/[0.08]">
+                        <tr className="bg-brand-navy/[0.04] text-brand-gold font-bold uppercase tracking-wider text-[13px] border-b border-brand-navy/[0.08]">
                           <th className="p-4">Date</th>
                           <th className="p-4">Transaction / Milestone</th>
                           <th className="p-4">Type</th>
@@ -2124,35 +2125,39 @@ export default function Client360() {
                               <td className="p-4">
                                 <p className="font-semibold text-brand-navy">{ledger.milestoneName}</p>
                                 {ledger.referenceNumber && (
-                                  <span className="text-[10px] text-brand-navy/50 font-mono">Ref: {ledger.referenceNumber} ({ledger.method?.toUpperCase()})</span>
+                                  <span className="text-[13px] text-brand-navy/50 font-mono">Ref: {ledger.referenceNumber} ({ledger.method?.toUpperCase()})</span>
                                 )}
                               </td>
                               <td className="p-4">
-                                <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${typeBadge}`}>
+                                <span className={`px-2 py-0.5 rounded text-sm font-bold uppercase ${typeBadge}`}>
                                   {ledger.type}
                                 </span>
                               </td>
                               <td className="p-4 font-mono text-brand-navy/60">
-                                {hasTax ? `₹-₹${(ledger.taxableAmount! / 100).toFixed(2)}` : '₹'}
+                                {hasTax ? `₹${(ledger.taxableAmount! / 100).toFixed(2)}` : '₹0.00'}
                               </td>
                               <td className="p-4">
                                 {hasTax ? (
-                                  <div className="text-[10px] font-mono text-brand-navy/50 space-y-0.5">
-                                    {ledger.isInterstate ? (
-                                      <div>IGST (18%): ₹-₹{(ledger.igst! / 100).toFixed(2)}</div>
-                                    ) : (
-                                      <>
-                                        <div>CGST (9%): ₹-₹{(ledger.cgst! / 100).toFixed(2)}</div>
-                                        <div>SGST (9%): ₹-₹{(ledger.sgst! / 100).toFixed(2)}</div>
-                                      </>
-                                    )}
+                                  <div className="text-[13px] font-mono text-brand-navy/50 space-y-0.5">
+                                    {(() => {
+                                      const rate = ledger.gstRate || (ledger.taxableAmount ? Math.round((((ledger.cgst || 0) + (ledger.sgst || 0) + (ledger.igst || 0)) / ledger.taxableAmount) * 100) : 18);
+                                      const halfRate = rate / 2;
+                                      return ledger.isInterstate ? (
+                                        <div>IGST ({rate}%): ₹{(ledger.igst! / 100).toFixed(2)}</div>
+                                      ) : (
+                                        <>
+                                          <div>CGST ({halfRate}%): ₹{(ledger.cgst! / 100).toFixed(2)}</div>
+                                          <div>SGST ({halfRate}%): ₹{(ledger.sgst! / 100).toFixed(2)}</div>
+                                        </>
+                                      );
+                                    })()}
                                   </div>
                                 ) : (
                                   <span className="text-brand-navy/40">Exempt / Non-Taxable</span>
                                 )}
                               </td>
                               <td className={`p-4 text-right font-mono font-extrabold ${amountColor}`}>
-                                ₹-₹{(ledger.amount / 100).toFixed(2)}
+                                ₹{(ledger.amount / 100).toFixed(2)}
                               </td>
                             </tr>
                           );
@@ -2200,7 +2205,7 @@ export default function Client360() {
                                 <p className="text-xs text-brand-navy/40 mt-0.5">Package Tier: <span className="uppercase font-bold">{booking.packageTier}</span> | Booked On: {new Date(booking.createdAt).toLocaleDateString()}</p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                <span className={`px-2 py-0.5 rounded text-[13px] font-bold uppercase ${
                                   booking.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                                   booking.status === 'waitlist' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
                                   booking.status === 'cancelled' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-brand-navy/[0.08] text-brand-navy/60'
@@ -2211,7 +2216,7 @@ export default function Client360() {
                                   onClick={() => {
                                     setSelectedBookingId(booking.id);
                                   }}
-                                  className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy font-bold py-1 px-3 rounded text-[11px] transition shadow-sm"
+                                  className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy font-bold py-1 px-3 rounded text-sm transition shadow-sm"
                                 >
                                   {isSelected ? 'Viewing Checklist' : 'Manage Checklist'}
                                 </button>
@@ -2289,7 +2294,7 @@ export default function Client360() {
                                 </div>
 
                                 <div className="flex flex-col gap-2">
-                                  <span className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block">Pilgrim Travel Notes</span>
+                                  <span className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block">Pilgrim Travel Notes</span>
                                   <div className="flex gap-2">
                                     <textarea
                                       defaultValue={checklistData.checklist.notes || ''}
@@ -2349,13 +2354,13 @@ export default function Client360() {
                         <div key={dep.id} className="bg-brand-navy/[0.04] p-5 rounded-xl border border-brand-navy/10 flex flex-col justify-between gap-4">
                           <div className="flex justify-between items-start">
                             <div>
-                              <span className="text-[9px] font-bold text-brand-navy/50 uppercase tracking-widest">Flight Departure Date</span>
+                              <span className="text-xs font-bold text-brand-navy/50 uppercase tracking-widest">Flight Departure Date</span>
                               <h4 className="font-display font-extrabold text-base text-brand-gold mt-0.5">
                                 {new Date(dep.departureDate * 1000).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                               </h4>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[10px] text-brand-navy/50 uppercase font-semibold">Tier: {dep.packageTier}</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase ${
+                                <span className="text-[13px] text-brand-navy/50 uppercase font-semibold">Tier: {dep.packageTier}</span>
+                                <span className={`px-1.5 py-0.5 rounded text-sm font-extrabold uppercase ${
                                   dep.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
                                   dep.status === 'cancelled' ? 'bg-red-50 text-red-600' : 'bg-brand-navy/10 text-brand-navy'
                                 }`}>
@@ -2365,18 +2370,18 @@ export default function Client360() {
                             </div>
                             
                             <div className={`px-2.5 py-1 rounded border text-center ${seatBadgeColor}`}>
-                              <span className="text-[10px] font-bold block leading-none">{remainingSeats}</span>
-                              <span className="text-[7px] uppercase font-bold tracking-wider">Seats Left</span>
+                              <span className="text-[13px] font-bold block leading-none">{remainingSeats}</span>
+                              <span className="text-sm uppercase font-bold tracking-wider">Seats Left</span>
                             </div>
                           </div>
 
                           <div className="bg-white p-3 rounded-lg border border-brand-navy/10 flex justify-between items-center text-xs backdrop-blur-sm">
                             <div>
-                              <span className="text-[8px] text-brand-navy/40 uppercase block">Group Capacity</span>
+                              <span className="text-sm text-brand-navy/40 uppercase block">Group Capacity</span>
                               <span className="font-bold text-brand-navy/50 font-mono">{dep.bookedSeats} / {dep.capacity} Booked</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-[8px] text-brand-navy/40 uppercase block">Booking Fee</span>
+                              <span className="text-sm text-brand-navy/40 uppercase block">Booking Fee</span>
                               <span className="font-bold text-brand-navy/50 font-mono">₹{(dep.bookingFee / 100).toFixed(2)}</span>
                             </div>
                           </div>
@@ -2389,13 +2394,13 @@ export default function Client360() {
                                 <>
                                   <button
                                     onClick={() => updateDepartureStatusMutation.mutate({ departureId: dep.id, status: 'confirmed' })}
-                                    className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-1 px-2.5 rounded text-[10px] transition"
+                                    className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-1 px-2.5 rounded text-[13px] transition"
                                   >
                                     Confirm
                                   </button>
                                   <button
                                     onClick={() => updateDepartureStatusMutation.mutate({ departureId: dep.id, status: 'cancelled' })}
-                                    className="bg-red-700 hover:bg-red-800 text-white font-bold py-1 px-2.5 rounded text-[10px] transition"
+                                    className="bg-red-700 hover:bg-red-800 text-white font-bold py-1 px-2.5 rounded text-[13px] transition"
                                   >
                                     Cancel
                                   </button>
@@ -2437,7 +2442,7 @@ export default function Client360() {
                   
                   <form onSubmit={handleRegisterCourierSubmit} className="space-y-4">
                     <div>
-                      <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Courier Partner</label>
+                      <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Courier Partner</label>
                       <select
                         value={courierPartner}
                         onChange={(e) => setCourierPartner(e.target.value as any)}
@@ -2449,7 +2454,7 @@ export default function Client360() {
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Tracking Number</label>
+                      <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Tracking Number</label>
                       <input 
                         type="text" 
                         value={trackingNumber}
@@ -2460,7 +2465,7 @@ export default function Client360() {
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Delivery Destination Address</label>
+                      <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Delivery Destination Address</label>
                       <textarea
                         value={shippingAddress}
                         onChange={(e) => setShippingAddress(e.target.value)}
@@ -2519,17 +2524,17 @@ export default function Client360() {
                         {/* Summary Header */}
                         <div className="flex justify-between items-center border-b border-brand-navy/10 pb-3 mb-4">
                           <div>
-                            <span className="text-[8px] text-brand-navy/40 uppercase block">Courier Partner</span>
+                            <span className="text-sm text-brand-navy/40 uppercase block">Courier Partner</span>
                             <span className="font-bold text-xs text-brand-navy">{activeTracking.partner}</span>
                           </div>
                           <div>
-                            <span className="text-[8px] text-brand-navy/40 uppercase block">Current Status</span>
-                            <span className="px-2 py-0.5 bg-sky-950 text-sky-400 border border-sky-850 rounded font-bold uppercase tracking-wider text-[9px]">
+                            <span className="text-sm text-brand-navy/40 uppercase block">Current Status</span>
+                            <span className="px-2 py-0.5 bg-sky-950 text-sky-400 border border-sky-850 rounded font-bold uppercase tracking-wider text-xs">
                               {activeTracking.currentStatus.replace('_', ' ')}
                             </span>
                           </div>
                           <div className="text-right">
-                            <span className="text-[8px] text-brand-navy/40 uppercase block">Est Delivery</span>
+                            <span className="text-sm text-brand-navy/40 uppercase block">Est Delivery</span>
                             <span className="font-bold text-xs text-brand-navy/80">
                               {activeTracking.estimatedDelivery 
                                 ? new Date(activeTracking.estimatedDelivery * 1000).toLocaleDateString()
@@ -2548,9 +2553,9 @@ export default function Client360() {
                               <div className="space-y-1">
                                 <div className="flex justify-between items-baseline">
                                   <span className="font-bold text-xs text-brand-navy uppercase">{ev.status.replace('_', ' ')}</span>
-                                  <span className="text-[10px] text-brand-navy/40">{new Date(ev.timestamp * 1000).toLocaleString()}</span>
+                                  <span className="text-[13px] text-brand-navy/40">{new Date(ev.timestamp * 1000).toLocaleString()}</span>
                                 </div>
-                                <p className="text-[10px] text-brand-navy/50">Location: <span className="text-brand-navy/80 font-semibold">{ev.location}</span></p>
+                                <p className="text-[13px] text-brand-navy/50">Location: <span className="text-brand-navy/80 font-semibold">{ev.location}</span></p>
                                 <p className="text-xs text-brand-navy/60">{ev.description}</p>
                               </div>
                             </div>
@@ -2612,12 +2617,12 @@ export default function Client360() {
             {/* Timeline Filter Header */}
             <div className="p-4 border-b border-brand-navy/[0.08] flex items-center justify-between bg-brand-navy/[0.02]">
               <h3 className="font-display font-bold text-xs text-brand-gold uppercase tracking-wider">Communication Logs</h3>
-              <div className="flex gap-1 text-[10px]">
+              <div className="flex gap-1 text-[13px]">
                 {(['all', 'whatsapp', 'email', 'system'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setTimelineFilter(tab)}
-                    className={`px-2 py-1 rounded transition duration-200 text-[9px] font-bold ${
+                    className={`px-2 py-1 rounded transition duration-200 text-xs font-bold ${
                       timelineFilter === tab 
                         ? 'bg-brand-gold text-brand-navy' 
                         : 'hover:bg-brand-navy/[0.05] text-brand-navy/50'
@@ -2639,7 +2644,7 @@ export default function Client360() {
 
                   return (
                     <div key={item.id} className="flex gap-2 text-xs text-brand-navy/50 flex-row">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[9px] shrink-0 border select-none ${
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 border select-none ${
                         isWhatsApp 
                           ? 'bg-emerald-600 text-white border-emerald-700' 
                           : isEmail 
@@ -2658,10 +2663,10 @@ export default function Client360() {
                       }`}>
                         <p className="font-bold text-brand-navy/80">{item.sender || 'System Operator'}</p>
                         {item.subject && (
-                          <p className="text-[10px] mt-0.5 text-brand-gold font-semibold">Subj: {item.subject}</p>
+                          <p className="text-[13px] mt-0.5 text-brand-gold font-semibold">Subj: {item.subject}</p>
                         )}
-                        <p className="text-[11px] mt-1 text-brand-navy/60 whitespace-pre-wrap">{item.body || item.message}</p>
-                        <span className="text-[9px] text-brand-navy/40 block mt-2">
+                        <p className="text-sm mt-1 text-brand-navy/60 whitespace-pre-wrap">{item.body || item.message}</p>
+                        <span className="text-xs text-brand-navy/40 block mt-2">
                           {new Date(item.createdAt * 1000).toLocaleString()}
                         </span>
                       </div>
@@ -2690,7 +2695,7 @@ export default function Client360() {
                     key={tab.id}
                     type="button"
                     onClick={() => setEditorTab(tab.id as any)}
-                    className={`px-2.5 py-1 rounded text-[10px] font-bold transition duration-200 ${
+                    className={`px-2.5 py-1 rounded text-[13px] font-bold transition duration-200 ${
                       editorTab === tab.id 
                         ? 'bg-brand-gold text-brand-navy' 
                         : 'text-brand-navy/50 hover:bg-brand-navy/[0.05] hover:text-brand-navy'
@@ -2704,7 +2709,7 @@ export default function Client360() {
               {/* Subject if email */}
               {editorTab === 'email' && (
                 <div>
-                  <label className="text-[9px] text-brand-navy/50 font-bold uppercase block mb-1">Subject</label>
+                  <label className="text-xs text-brand-navy/50 font-bold uppercase block mb-1">Subject</label>
                   <input 
                     type="text" 
                     value={messageSubject}
@@ -2717,10 +2722,10 @@ export default function Client360() {
 
               {/* Quick templates */}
               <div className="flex justify-between items-center">
-                <label className="text-[9px] text-brand-navy/50 font-bold uppercase">Quick Templates</label>
+                <label className="text-xs text-brand-navy/50 font-bold uppercase">Quick Templates</label>
                 <select 
                   onChange={handleTemplateChange}
-                  className="text-[10px] border border-brand-navy/10 rounded px-2 py-1 bg-brand-navy/[0.06] text-brand-navy focus:ring-1 focus:ring-brand-gold"
+                  className="text-[13px] border border-brand-navy/10 rounded px-2 py-1 bg-brand-navy/[0.06] text-brand-navy focus:ring-1 focus:ring-brand-gold"
                 >
                   <option value="custom">-- Custom --</option>
                   <option value="welcome">Welcome Onboarding</option>
@@ -2740,7 +2745,7 @@ export default function Client360() {
 
               {/* Submit message */}
               <div className="flex justify-between items-center">
-                <span className="text-[9px] text-emerald-700 flex items-center gap-1 font-semibold">
+                <span className="text-xs text-emerald-700 flex items-center gap-1 font-semibold">
                   <span className="w-1 h-1 rounded-full bg-emerald-400 inline-block animate-ping"></span>
                   Dynamic consent check: Active
                 </span>
@@ -2776,12 +2781,12 @@ export default function Client360() {
 
             <div className="p-6 flex-1 overflow-y-auto space-y-4">
               
-              <div className="bg-brand-navy/[0.04] p-4 border border-brand-navy/10 rounded font-mono text-[10px] text-brand-navy/50 whitespace-pre-wrap max-h-48 overflow-y-auto">
+              <div className="bg-brand-navy/[0.04] p-4 border border-brand-navy/10 rounded font-mono text-[13px] text-brand-navy/50 whitespace-pre-wrap max-h-48 overflow-y-auto">
                 {selectedAgreement.content}
               </div>
 
               <div>
-                <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">eSign Verification Method</label>
+                <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">eSign Verification Method</label>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="flex items-center gap-2 bg-brand-navy/[0.06] border border-brand-navy/10 p-3 rounded-lg cursor-pointer text-xs">
                     <input 
@@ -2793,7 +2798,7 @@ export default function Client360() {
                     />
                     <div>
                       <span className="font-bold text-brand-navy block">Aadhaar eSign</span>
-                      <span className="text-[10px] text-brand-navy/50">UIDAI verified</span>
+                      <span className="text-[13px] text-brand-navy/50">UIDAI verified</span>
                     </div>
                   </label>
                   
@@ -2807,7 +2812,7 @@ export default function Client360() {
                     />
                     <div>
                       <span className="font-bold text-brand-navy block">OTP Signature</span>
-                      <span className="text-[10px] text-brand-navy/50">Mobile OTP verified</span>
+                      <span className="text-[13px] text-brand-navy/50">Mobile OTP verified</span>
                     </div>
                   </label>
                 </div>
@@ -2821,7 +2826,7 @@ export default function Client360() {
                   onChange={(e) => setEsignChecked(e.target.checked)}
                   className="rounded border-brand-navy/10 bg-brand-navy/[0.05] text-brand-gold focus:ring-0 w-4 h-4 mt-0.5"
                 />
-                <label htmlFor="consent-declaration" className="text-[10px] text-brand-navy/60 font-medium cursor-pointer leading-relaxed">
+                <label htmlFor="consent-declaration" className="text-[13px] text-brand-navy/60 font-medium cursor-pointer leading-relaxed">
                   I hereby declare my explicit consent to electronically sign this Service Agreement under the regulations of DPDP Act 2023. I verify that all details mapped here are accurate, and I agree to bind the legal terms of this transaction.
                 </label>
               </div>
@@ -2942,7 +2947,7 @@ function StudyAbroadTabPanel({ clientId, sessionToken, showToast }: { clientId: 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-brand-navy/10 text-brand-navy/50 font-bold uppercase text-[10px]">
+              <tr className="border-b border-brand-navy/10 text-brand-navy/50 font-bold uppercase text-[13px]">
                 <th className="py-2.5">University</th>
                 <th className="py-2.5">Country</th>
                 <th className="py-2.5">Intake</th>
@@ -2957,7 +2962,7 @@ function StudyAbroadTabPanel({ clientId, sessionToken, showToast }: { clientId: 
                   <td className="py-3 text-brand-navy/40">{item.country}</td>
                   <td className="py-3 text-brand-navy/40 font-mono">{item.intake}</td>
                   <td className="py-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${
                       item.status === 'admitted' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                       : item.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-200'
                       : item.status === 'applied' ? 'bg-sky-50 text-sky-600 border border-sky-200'
@@ -2970,7 +2975,7 @@ function StudyAbroadTabPanel({ clientId, sessionToken, showToast }: { clientId: 
                     <select
                       value={item.status}
                       onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                      className="rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1 text-[10px] font-bold uppercase text-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold cursor-pointer"
+                      className="rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1 text-[13px] font-bold uppercase text-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold cursor-pointer"
                     >
                       <option value="pending">Pending</option>
                       <option value="applied">Applied</option>
@@ -3002,19 +3007,19 @@ function StudyAbroadTabPanel({ clientId, sessionToken, showToast }: { clientId: 
             return (
               <div key={uni.id} className="bg-brand-navy/[0.04] rounded-lg p-4 border border-brand-navy/10 flex flex-col justify-between gap-3 hover:shadow-md transition">
                 <div>
-                  <span className="text-[9px] uppercase font-bold text-brand-gold tracking-widest">{uni.country}</span>
+                  <span className="text-xs uppercase font-bold text-brand-gold tracking-widest">{uni.country}</span>
                   <h4 className="font-bold text-xs text-brand-navy mt-1">{uni.name}</h4>
-                  <div className="grid grid-cols-3 gap-2 mt-3 text-[10px] text-brand-navy/40 font-mono">
+                  <div className="grid grid-cols-3 gap-2 mt-3 text-[13px] text-brand-navy/40 font-mono">
                     <div>
-                      <span className="block text-[8px] text-brand-navy/50 uppercase">Min GPA</span>
+                      <span className="block text-sm text-brand-navy/50 uppercase">Min GPA</span>
                       <span>{uni.minGpa}</span>
                     </div>
                     <div>
-                      <span className="block text-[8px] text-brand-navy/50 uppercase">Min IELTS</span>
+                      <span className="block text-sm text-brand-navy/50 uppercase">Min IELTS</span>
                       <span>{uni.ieltsMin}</span>
                     </div>
                     <div>
-                      <span className="block text-[8px] text-brand-navy/50 uppercase">Min Budget</span>
+                      <span className="block text-sm text-brand-navy/50 uppercase">Min Budget</span>
                       <span>{uni.budgetLpaMin} LPA</span>
                     </div>
                   </div>
@@ -3022,7 +3027,7 @@ function StudyAbroadTabPanel({ clientId, sessionToken, showToast }: { clientId: 
                 <button
                   onClick={() => handleShortlist(uni.id)}
                   disabled={isAdded}
-                  className={`cursor-pointer w-full text-center py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition ${
+                  className={`cursor-pointer w-full text-center py-2 rounded-lg text-[13px] font-bold uppercase tracking-wider transition ${
                     isAdded 
                       ? 'bg-brand-navy/[0.05] text-brand-navy/40 cursor-not-allowed'
                       : 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90'
@@ -3194,7 +3199,7 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-brand-navy/10 text-brand-navy/50 font-bold uppercase text-[10px]">
+              <tr className="border-b border-brand-navy/10 text-brand-navy/50 font-bold uppercase text-[13px]">
                 <th className="py-2.5">Country</th>
                 <th className="py-2.5">Visa Type</th>
                 <th className="py-2.5">Appointment</th>
@@ -3213,7 +3218,7 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
                       : 'Not Scheduled'}
                   </td>
                   <td className="py-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${
                       app.status === 'granted' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                       : app.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-200'
                       : app.status === 'slot_booked' ? 'bg-sky-50 text-sky-600 border border-sky-200'
@@ -3226,7 +3231,7 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
                     <select
                       value={app.status}
                       onChange={(e) => handleStatusChange(app.id, e.target.value)}
-                      className="rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1 text-[10px] font-bold uppercase text-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold cursor-pointer"
+                      className="rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1 text-[13px] font-bold uppercase text-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold cursor-pointer"
                     >
                       <option value="document_prep">Document Prep</option>
                       <option value="slot_booked">Slot Booked</option>
@@ -3254,20 +3259,20 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
           <h3 className="font-display font-bold text-sm text-brand-navy">Create Visa Tracker</h3>
           <form onSubmit={handleAddApplication} className="space-y-3">
             <div>
-              <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Target Country</label>
+              <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Target Country</label>
               <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. United Kingdom" required className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold focus:bg-brand-navy/[0.06]" />
             </div>
             <div>
-              <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Visa Type / Class</label>
+              <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Visa Type / Class</label>
               <input type="text" value={visaType} onChange={(e) => setVisaType(e.target.value)} placeholder="e.g. Student Tier 4" required className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold focus:bg-brand-navy/[0.06]" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">VFS / consulate Date</label>
+                <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">VFS / consulate Date</label>
                 <input type="datetime-local" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)} className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold focus:bg-brand-navy/[0.06]" />
               </div>
               <div>
-                <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Location</label>
+                <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Location</label>
                 <input type="text" value={appointmentLocation} onChange={(e) => setAppointmentLocation(e.target.value)} placeholder="e.g. Hyderabad" className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy focus:ring-1 focus:ring-brand-gold focus:bg-brand-navy/[0.06]" />
               </div>
             </div>
@@ -3283,12 +3288,12 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
             {mockInterviews.map((m) => (
               <div key={m.id} className="bg-brand-navy/[0.04] border border-brand-navy/[0.08] rounded p-3 flex justify-between items-center text-xs">
                 <div>
-                  <span className="text-[9px] uppercase font-bold text-brand-gold block">
+                  <span className="text-xs uppercase font-bold text-brand-gold block">
                     {new Date(m.scheduledAt * 1000).toLocaleString()}
                   </span>
                   <span className="font-medium text-brand-navy">Mock Prep Session</span>
                   {m.score !== null && (
-                    <div className="mt-1 text-[10px] text-brand-navy/40 font-medium">
+                    <div className="mt-1 text-[13px] text-brand-navy/40 font-medium">
                       Score: <span className="font-bold text-brand-gold">{m.score}/10</span> - "{m.feedback}"
                     </div>
                   )}
@@ -3297,12 +3302,12 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
                   {m.status === 'scheduled' ? (
                     <button
                       onClick={() => setFeedbackId(m.id)}
-                      className="cursor-pointer bg-brand-gold hover:bg-brand-goldHover text-brand-navy font-bold text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded transition shadow-sm"
+                      className="cursor-pointer bg-brand-gold hover:bg-brand-goldHover text-brand-navy font-bold text-[13px] uppercase tracking-wider px-2.5 py-1.5 rounded transition shadow-sm"
                     >
                       Complete & Rate
                     </button>
                   ) : (
-                    <span className="text-[9px] uppercase font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                    <span className="text-xs uppercase font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                       Completed
                     </span>
                   )}
@@ -3312,7 +3317,7 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
 
             <form onSubmit={handleScheduleMock} className="pt-2 border-t border-brand-navy/10 flex gap-2">
               <input type="datetime-local" value={mockTime} onChange={(e) => setMockTime(e.target.value)} required className="flex-1 text-xs p-2 rounded bg-white border border-brand-navy/10 text-brand-navy focus:bg-brand-navy/[0.08]" />
-              <button type="submit" className="bg-brand-navy text-brand-navy text-[10px] font-bold uppercase tracking-wider px-3 rounded hover:bg-brand-navy/90 transition shadow">
+              <button type="submit" className="bg-brand-navy text-brand-navy text-[13px] font-bold uppercase tracking-wider px-3 rounded hover:bg-brand-navy/90 transition shadow">
                 Schedule Mock
               </button>
             </form>
@@ -3329,11 +3334,11 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
             </div>
             <form onSubmit={handleSubmitEvaluation} className="space-y-4">
               <div>
-                <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Session score rating (1 - 10)</label>
+                <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Session score rating (1 - 10)</label>
                 <input type="number" min="1" max="10" value={mockScore} onChange={(e) => setMockScore(parseInt(e.target.value) || 8)} required className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy" />
               </div>
               <div>
-                <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Counselor assessment notes</label>
+                <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Counselor assessment notes</label>
                 <textarea rows={3} value={mockFeedback} onChange={(e) => setMockFeedback(e.target.value)} placeholder="Provide detailing on mock queries response..." required className="w-full text-xs p-2.5 rounded bg-white border border-brand-navy/10 text-brand-navy" />
               </div>
               <div className="flex justify-end gap-2 pt-2">
@@ -3444,7 +3449,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
               <div key={app.id} className="border border-brand-navy/10 rounded-xl bg-white p-5 space-y-4 backdrop-blur-sm">
                 <div className="flex justify-between items-start flex-wrap gap-2">
                   <div>
-                    <span className="text-[9px] font-bold text-brand-gold uppercase tracking-wider bg-brand-navy/5 px-2 py-0.5 rounded">
+                    <span className="text-xs font-bold text-brand-gold uppercase tracking-wider bg-brand-navy/5 px-2 py-0.5 rounded">
                       {app.documentType.replace('_', ' ')}
                     </span>
                     <h4 className="font-bold text-xs text-brand-navy mt-1">
@@ -3456,7 +3461,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
                     <select
                       value={app.currentStep}
                       onChange={(e) => handleUpdate(app.id, { currentStep: e.target.value })}
-                      className="rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1 text-[10px] font-bold uppercase text-brand-gold focus:outline-none"
+                      className="rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1 text-[13px] font-bold uppercase text-brand-gold focus:outline-none"
                     >
                       {steps.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
                     </select>
@@ -3464,7 +3469,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
                     <select
                       value={app.status}
                       onChange={(e) => handleUpdate(app.id, { status: e.target.value })}
-                      className="rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1 text-[10px] font-bold uppercase text-brand-gold focus:outline-none"
+                      className="rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1 text-[13px] font-bold uppercase text-brand-gold focus:outline-none"
                     >
                       <option value="pending">Pending</option>
                       <option value="in_transit">In Transit</option>
@@ -3483,14 +3488,14 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
                     return (
                       <React.Fragment key={step.key}>
                         <div className="flex flex-col items-center flex-1 relative">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border transition ${
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border transition ${
                             isCompleted ? 'bg-emerald-600 text-white border-emerald-700 font-extrabold'
                             : isActive ? 'bg-brand-gold text-brand-navy border-brand-gold font-extrabold shadow-md animate-pulse'
                             : 'bg-brand-navy/[0.05] text-brand-navy/50 border-brand-navy/10'
                           }`}>
                             {idx + 1}
                           </div>
-                          <span className={`text-[8px] font-bold uppercase mt-1 tracking-wider text-center ${
+                          <span className={`text-sm font-bold uppercase mt-1 tracking-wider text-center ${
                             isCompleted ? 'text-emerald-600'
                             : isActive ? 'text-brand-gold font-extrabold'
                             : 'text-brand-navy/50'
@@ -3509,7 +3514,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
                 </div>
 
                 {app.notes && (
-                  <p className="text-[10px] text-brand-navy/40 bg-brand-navy/[0.05] p-2.5 rounded border border-brand-navy/[0.08] font-mono">
+                  <p className="text-[13px] text-brand-navy/40 bg-brand-navy/[0.05] p-2.5 rounded border border-brand-navy/[0.08] font-mono">
                     Notes: {app.notes}
                   </p>
                 )}
@@ -3530,7 +3535,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
         <form onSubmit={handleInitiate} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Document Category</label>
+              <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Document Category</label>
               <select
                 value={documentType}
                 onChange={(e) => setDocumentType(e.target.value as any)}
@@ -3544,7 +3549,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
               </select>
             </div>
             <div>
-              <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Target Country</label>
+              <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Target Country</label>
               <input 
                 type="text" 
                 value={destinationCountry} 
@@ -3556,7 +3561,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
             </div>
           </div>
           <div>
-            <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Details & Remarks</label>
+            <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Details & Remarks</label>
             <textarea
               rows={2}
               value={notes}
@@ -3664,7 +3669,7 @@ function ManpowerTabPanel({ clientId, sessionToken, showToast }: { clientId: str
             <div key={dep.id} className="border border-brand-navy/10 rounded-xl bg-white p-5 space-y-4 backdrop-blur-sm">
               <div className="flex justify-between items-start flex-wrap gap-2">
                 <div>
-                  <span className="text-[9px] font-bold text-brand-gold uppercase tracking-wider bg-brand-navy/5 px-2 py-0.5 rounded">
+                  <span className="text-xs font-bold text-brand-gold uppercase tracking-wider bg-brand-navy/5 px-2 py-0.5 rounded">
                     Deployment Pipeline
                   </span>
                   <h4 className="font-bold text-xs text-brand-navy mt-1">
@@ -3675,11 +3680,11 @@ function ManpowerTabPanel({ clientId, sessionToken, showToast }: { clientId: str
 
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-white p-4 rounded-xl border border-brand-navy/[0.08] backdrop-blur-sm">
                 <div className="space-y-1">
-                  <label className="text-[8px] text-brand-navy/50 font-bold uppercase tracking-wider block">1. Sourcing Selection</label>
+                  <label className="text-sm text-brand-navy/50 font-bold uppercase tracking-wider block">1. Sourcing Selection</label>
                   <select
                     value={dep.selectionStatus}
                     onChange={(e) => handleUpdate(dep.id, 'selection', e.target.value)}
-                    className="w-full rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1.5 text-[10px] font-bold uppercase text-brand-gold"
+                    className="w-full rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1.5 text-[13px] font-bold uppercase text-brand-gold"
                   >
                     <option value="applied">Applied</option>
                     <option value="shortlisted">Shortlisted</option>
@@ -3689,11 +3694,11 @@ function ManpowerTabPanel({ clientId, sessionToken, showToast }: { clientId: str
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[8px] text-brand-navy/50 font-bold uppercase tracking-wider block">2. Medical Fitness</label>
+                  <label className="text-sm text-brand-navy/50 font-bold uppercase tracking-wider block">2. Medical Fitness</label>
                   <select
                     value={dep.medicalStatus}
                     onChange={(e) => handleUpdate(dep.id, 'medical', e.target.value)}
-                    className="w-full rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1.5 text-[10px] font-bold uppercase text-brand-gold"
+                    className="w-full rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1.5 text-[13px] font-bold uppercase text-brand-gold"
                   >
                     <option value="pending">Pending</option>
                     <option value="fit">Fit</option>
@@ -3703,11 +3708,11 @@ function ManpowerTabPanel({ clientId, sessionToken, showToast }: { clientId: str
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[8px] text-brand-navy/50 font-bold uppercase tracking-wider block">3. Visa Endorsement</label>
+                  <label className="text-sm text-brand-navy/50 font-bold uppercase tracking-wider block">3. Visa Endorsement</label>
                   <select
                     value={dep.visaStatus}
                     onChange={(e) => handleUpdate(dep.id, 'visa', e.target.value)}
-                    className="w-full rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1.5 text-[10px] font-bold uppercase text-brand-gold"
+                    className="w-full rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1.5 text-[13px] font-bold uppercase text-brand-gold"
                   >
                     <option value="pending">Pending</option>
                     <option value="submitted">Submitted</option>
@@ -3717,11 +3722,11 @@ function ManpowerTabPanel({ clientId, sessionToken, showToast }: { clientId: str
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[8px] text-brand-navy/50 font-bold uppercase tracking-wider block">4. Travel Flight</label>
+                  <label className="text-sm text-brand-navy/50 font-bold uppercase tracking-wider block">4. Travel Flight</label>
                   <select
                     value={dep.flightStatus}
                     onChange={(e) => handleUpdate(dep.id, 'flight', e.target.value)}
-                    className="w-full rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1.5 text-[10px] font-bold uppercase text-brand-gold"
+                    className="w-full rounded border border-brand-navy/15 bg-brand-navy/[0.05] px-2 py-1.5 text-[13px] font-bold uppercase text-brand-gold"
                   >
                     <option value="pending">Pending</option>
                     <option value="booked">Booked</option>
@@ -3744,7 +3749,7 @@ function ManpowerTabPanel({ clientId, sessionToken, showToast }: { clientId: str
         <h3 className="font-display font-bold text-sm text-brand-navy">Associate with Job Opening</h3>
         <form onSubmit={handleAssociate} className="flex gap-3 items-end">
           <div className="flex-1">
-            <label className="text-[10px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Select Job Posting</label>
+            <label className="text-[13px] text-brand-navy/50 font-bold uppercase tracking-wider block mb-1">Select Job Posting</label>
             <select
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}

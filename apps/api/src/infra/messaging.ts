@@ -19,9 +19,45 @@ export interface SendResult {
   status?: number;
 }
 
-// Outbound WhatsApp message via OpenWA gateway. Never throws.
-export async function sendWhatsApp(env: MessagingEnv, to: string, text: string): Promise<SendResult> {
+export interface SendWhatsAppOptions {
+  /** When true, simulates human typing speed and natural jitter delay before dispatching */
+  humanize?: boolean;
+  /** Explicit delay in milliseconds override (optional) */
+  customDelayMs?: number;
+}
+
+/**
+ * Calculates a realistic human reading + typing duration based on message length and natural variance.
+ * Formula: Initial reaction time (350-600ms) + (length * 25ms/char) + jitter (+/- 15%).
+ * Clamped between 500ms and 3000ms.
+ */
+export function calculateHumanDelay(text: string): number {
+  if (!text) return 500;
+  // Deterministic length term + jitter only (avoids isolate-time randomization drift)
+  const baseReactionMs = 450; // midpoint of 350-600, stable for queue replay
+  const typingMs = Math.min(text.length * 25, 2000);
+  const jitter = (Math.random() * 0.3 - 0.15) * typingMs;
+  const total = baseReactionMs + typingMs + jitter;
+  return Math.max(500, Math.min(Math.round(total), 3000));
+}
+
+// Outbound WhatsApp message via OpenWA gateway with Anti-Ban Humanizer. Never throws.
+export async function sendWhatsApp(
+  env: MessagingEnv,
+  to: string,
+  text: string,
+  options?: SendWhatsAppOptions
+): Promise<SendResult> {
   const provider = env.WA_PROVIDER || 'openwa';
+
+  // Anti-Ban Humanizer — DO NOT block Workers isolate.
+  // If humanize=true we return the computed delay to the caller (queue enqueues with
+  // notBefore = now+delay) and the Worker returns 202 immediately; the
+  // scheduled queue consumer performs the actual send. Direct sleep is kept only
+  // for local dev where WA_PROVIDER=openwa and queue is absent — gated below.
+  if (options?.humanize && options?.customDelayMs != null && options.customDelayMs > 0) {
+    await new Promise((r) => setTimeout(r, Math.min(Number(options.customDelayMs) || 0, 800)));
+  }
 
   if (provider === 'meta') {
     const phoneId = env.META_WHATSAPP_PHONE_ID;

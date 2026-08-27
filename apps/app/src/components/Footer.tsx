@@ -26,15 +26,15 @@ export default function Footer() {
               <Logo variant="footer" className="h-14 sm:h-16 w-auto" />
             </div>
             <p className="max-w-sm text-xs sm:text-sm leading-relaxed text-white/65">
-              Your trusted gateway to the world — empowering global education, express visas, sacred Umrah pilgrimages, government attestation, and international careers.
+              Your trusted gateway to the world — empowering global education, express visas, curated world tours &amp; Umrah pilgrimages, government attestation, and international careers.
             </p>
             <div className="pt-2 flex items-center gap-3">
               <button
                 onClick={triggerOmnibar}
                 className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/70 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
               >
-                <span className="text-[11px]">Quick Jump</span>
-                <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-brand-gold">⌘K</kbd>
+                <span className="text-sm">Quick Jump</span>
+                <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[13px] font-mono text-brand-gold">⌘K</kbd>
               </button>
             </div>
           </div>
@@ -46,7 +46,7 @@ export default function Footer() {
               {[
                 ['Study Abroad', '/study-abroad'],
                 ['Global Visa Services', '/visa-services'],
-                ['Umrah & Spiritual Travel', '/umrah-travel'],
+                ['Tours & Travels', '/tours-travels'],
                 ['Document Attestation', '/attestation'],
                 ['Overseas Careers', '/recruitment'],
               ].map(([label, path]) => (
@@ -79,7 +79,7 @@ export default function Footer() {
                   className="inline-flex items-center gap-1.5 transition-colors hover:text-brand-gold text-white/85 font-medium cursor-pointer"
                 >
                   <span>📅 Book 1-on-1 Session</span>
-                  <span className="text-[10px] text-brand-gold">↗</span>
+                  <span className="text-[13px] text-brand-gold">↗</span>
                 </button>
               </li>
               <li>
@@ -113,7 +113,7 @@ export default function Footer() {
               <li>
                 <a href="mailto:contact@opusoverseas.com" className="hover:text-brand-gold transition-colors">contact@opusoverseas.com</a>
               </li>
-              <li className="text-[11px] text-white/45">Mon–Sat 9:30 AM – 6:30 PM</li>
+              <li className="text-sm text-white/45">Mon–Sat 9:30 AM – 6:30 PM</li>
             </ul>
           </div>
         </div>
@@ -129,7 +129,7 @@ export default function Footer() {
             <button onClick={() => setLocation('/contact')} className="cursor-pointer hover:text-brand-gold transition-colors">Contact Us</button>
             <button 
               onClick={scrollToTop} 
-              className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/15 px-3 py-1 text-[11px] text-white/80 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/15 px-3 py-1 text-sm text-white/80 transition-all cursor-pointer"
             >
               Back to Top ↑
             </button>

@@ -3,7 +3,7 @@ import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
-import { createTemplateSchema, createAgreementSchema, signAgreementSchema } from '@opusos/shared';
+import { createTemplateSchema, createAgreementSchema, signAgreementSchema, dispatchAgreementSchema } from '@opusos/shared';
 import { getDb } from '../db/client.js';
 import { agreements, agreementTemplates, clauseLibrary, clients, consents, referrals, commissionLedger, payments, engagements, verifications } from '../db/schema.js';
 import { eq, inArray } from 'drizzle-orm';
@@ -23,6 +23,183 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+export async function ensureClauseLibraryAndTemplates(db: any) {
+  try {
+    const existingTemplates = await db.select().from(agreementTemplates).all();
+    if (existingTemplates.length > 0) return;
+
+    const now = Math.floor(Date.now() / 1000);
+
+    // 1. Seed standard professional clauses
+    const standardClauses = [
+      {
+        id: 'c-refund-sa',
+        clauseId: 'refund-policy',
+        title: 'Article 1: Retainer Retainer, Service Fees & Refund Schedule',
+        body: '1.1 Initial Retainer: The Client acknowledges that upon execution of this Agreement, the initial registration deposit is designated as an administrative retainer covering profile evaluation, credential assessment, and dedicated counselor allocation, and is strictly non-refundable.\n1.2 Subsequent Milestone Payments: Milestone fees payable upon university offer issuance, visa filing, or departure orientation are non-refundable once the associated milestone deliverable has been transmitted or submitted.\n1.3 Discretionary Consideration: In the extraordinary event of university course cancellation prior to commencement without fault of the Client, Opus Overseas shall provide free transfer of application services to an alternative equivalent institution.',
+        division: 'study-abroad',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-fee-sa',
+        clauseId: 'fee-schedule',
+        title: 'Article 2: Fee Payment Terms, Invoicing & Statutory GST',
+        body: '2.1 Payment Timelines: Invoices raised by Opus Overseas for agreed milestone professional services must be settled in full within seven (7) business days from date of electronic issuance.\n2.2 Statutory Taxation: All professional fees are subject to statutory Goods and Services Tax (GST) at eighteen percent (18% — comprising 9% CGST + 9% SGST for intra-state Telangana clients, or 18% IGST for inter-state clients) in compliance with the Central Goods and Services Tax Act, 2017. Opus Overseas shall issue standard Tax Invoices reflecting GSTIN 36ALPPH3337R1ZE.\n2.3 Currency: All payments shall be remitted in Indian Rupees (INR) via authorized digital payment gateways or designated scheduled bank escrow accounts.',
+        division: 'study-abroad',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-univ-sa',
+        clauseId: 'university-terms',
+        title: 'Article 3: University Admissions Advisory Scope & Client Obligations',
+        body: '3.1 Advisory Scope: Opus Overseas agrees to provide professional evaluation of academic transcripts, suggest optimal university and course shortlists, guide Statement of Purpose (SOP) formulation, and coordinate institutional submissions.\n3.2 Academic Integrity & Documentation: The Client warrants that all transcripts, recommendation letters, test scores (IELTS/TOEFL/GRE/GMAT), and financial statements furnished are authentic and accurate. Opus Overseas disclaims any liability for application rejections resulting from inaccurate or forged documentation provided by the Client.\n3.3 Admission Discretion: The Client expressly understands that admissions decisions, scholarship awards, and conditional offer criteria remain at the sovereign and independent discretion of the receiving educational institution.',
+        division: 'study-abroad',
+        mandatory: false,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-visa-disc',
+        clauseId: 'visa-disclaimer',
+        title: 'Article 1: Consular Sovereign Prerogative & Visa Advisory Scope',
+        body: '1.1 Sovereign Authority: The Client expressly agrees and acknowledges that the authority to grant, condition, delay, or refuse any visa, entry permit, or study clearance rests solely and exclusively with the respective foreign government, embassy, high commission, or consular division.\n1.2 Limitation of Advisory: Opus Overseas acts solely in an advisory, document-scrutiny, and mock-interview preparation capacity. No staff member or representative of Opus Overseas is authorized to provide a guarantee of visa issuance.',
+        division: 'visa',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-visa-sla',
+        clauseId: 'visa-sla',
+        title: 'Article 2: Turnaround Timelines, Financial Proofs & Biometric SLAs',
+        body: '2.1 Document Submission Timeline: The Client shall deliver all verified financial proofs, affidavit of support, tax returns, and civil records to Opus Overseas no later than fourteen (14) calendar days prior to the targeted consular appointment or priority intake window.\n2.2 Biometrics & Medicals: The Client agrees to appear in person for mandatory biometric enrollment, medical examinations, and consular interviews at the scheduled times and centers.',
+        division: 'visa',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-umrah-adv',
+        clauseId: 'umrah-advance',
+        title: 'Article 1: Pilgrimage Manifest Seat Advance & Cancellation Terms',
+        body: '1.1 Manifest Seat Hold: An initial non-refundable advance of INR 500 per pilgrim passenger holds dedicated seats on the designated group departure manifest for a maximum of 72 hours.\n1.2 Confirmation & Balance: The package reservation is confirmed upon receipt of the initial booking deposit within the 72-hour window. Full balance payment must be cleared twenty-one (21) days prior to the group departure date.\n1.3 Cancellation Sliding Scale: Cancellations requested >30 days prior to departure forfeit 25% of the total package value; cancellations requested between 15-30 days forfeit 50%; cancellations within 14 days of departure forfeit 100% of flight and hotel reservation costs in line with Saudi Ministry of Hajj and Umrah regulations.',
+        division: 'umrah',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-umrah-itin',
+        clauseId: 'umrah-itinerary',
+        title: 'Article 2: Accommodation Standards, Ground Logistics & Visa Compliance',
+        body: '2.1 Lodging & Distance Guarantee: Opus Overseas guarantees the hotel classification, room occupancy type, and walking distance to the Haram boundary in Makkah and Madinah as set out in the agreed departure package schedule.\n2.2 Transport & Ziyarat: Ground transfers between Jeddah, Makkah, and Madinah, alongside organized Ziyarat excursions, shall be conducted in air-conditioned authorized tourist coaches.\n2.3 Saudi Regulatory Mandates: All pilgrims must abide by local Saudi civil laws, visa expiration deadlines, and health and safety advisories issued by the General Authority of Civil Aviation (GACA).',
+        division: 'umrah',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-attest-cust',
+        clauseId: 'attestation-custody',
+        title: 'Article 1: Chain of Custody, Insured Logistics & Sovereign Attestation',
+        body: '1.1 Chain of Custody: Opus Overseas maintains strict tamper-evident physical tracking and secure insured transit protocols for original educational, personal, and commercial certificates undergoing legalization.\n1.2 Multi-Tier Verification Chain: Legalization flows sequentially through State HRD/Home Department, Sub-Divisional Magistrate (SDM), Ministry of External Affairs (MEA) Government of India, and the targeted foreign Embassy / Consulate or Apostille registry.\n1.3 Processing Dependencies: Estimated turnaround schedules are indicative and subject to verification turnaround by issuing universities, state secretariats, and consular processing queues.',
+        division: 'attestation',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-manpower-rec',
+        clauseId: 'manpower-terms',
+        title: 'Article 1: Ethical Overseas Recruitment & Employer Sponsorship Terms',
+        body: '1.1 Statutory Compliance: Opus Overseas operates strictly as an authorized overseas manpower facilitator in full compliance with the Emigration Act, 1983 and MEA Oversea Employment guidelines.\n1.2 Fair Recruitment Mandate: Opus Overseas upholds fair and ethical recruitment standards with zero unlawful extraction fees charged to job seekers. All employment terms, salary bands, and working hours reflect verified employer demand letters.',
+        division: 'manpower',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-dpdp-gen',
+        clauseId: 'dpdp-privacy',
+        title: 'Article 4: Digital Personal Data Protection (DPDP) Act 2023 Compliance',
+        body: '4.1 Purpose-Bound Processing: The Client grants explicit, informed, and unambiguous consent under the Digital Personal Data Protection Act, 2023 (DPDP Act) for Opus Overseas to collect, store, verify, and transmit personal data (including passport bio-pages, Aadhaar/National ID, academic transcripts, and financial records).\n4.2 Cross-Border Transmission: Personal data shall be transferred across borders strictly to accredited foreign universities, embassy visa portals, and authorized apostille authorities solely for fulfilling the contracted services.\n4.3 Data Security & Redaction: Opus Overseas employs industry-standard encryption and role-based access control, preventing unauthorized dissemination.',
+        division: 'general',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 'c-juris-gen',
+        clauseId: 'dispute-jurisdiction',
+        title: 'Article 5: Dispute Resolution, Governing Law & Sole Jurisdiction',
+        body: '5.1 Governing Law: This Agreement shall be construed, interpreted, and governed in all respects in accordance with the substantive laws of the Republic of India.\n5.2 Arbitration: Any dispute, claim, or controversy arising out of or relating to this Agreement shall be referred to and resolved by binding arbitration under the Arbitration and Conciliation Act, 1996 by a sole arbitrator mutually appointed by the parties.\n5.3 Exclusive Jurisdiction: The seat and legal venue of arbitration and all court proceedings shall be exclusively located in Hyderabad, Telangana, India.',
+        division: 'general',
+        mandatory: true,
+        version: 'v1.0',
+        createdAt: now,
+      },
+    ];
+
+    for (const c of standardClauses) {
+      await db.insert(clauseLibrary).values(c).onConflictDoNothing();
+    }
+
+    // 2. Seed standard templates across all divisions
+    const standardTemplates = [
+      {
+        id: 't-study-abroad-std',
+        name: 'Master Study Abroad & Academic Advisory Agreement',
+        division: 'study-abroad',
+        clausesJson: JSON.stringify(['refund-policy', 'fee-schedule', 'university-terms', 'dpdp-privacy', 'dispute-jurisdiction']),
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 't-visa-prep-std',
+        name: 'Master Visa Filing & Advisory Service Agreement',
+        division: 'visa',
+        clausesJson: JSON.stringify(['visa-disclaimer', 'visa-sla', 'dpdp-privacy', 'dispute-jurisdiction']),
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 't-umrah-std',
+        name: 'Master Umrah Pilgrim Travel & Booking Agreement',
+        division: 'umrah',
+        clausesJson: JSON.stringify(['umrah-advance', 'umrah-itinerary', 'dpdp-privacy', 'dispute-jurisdiction']),
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 't-attestation-std',
+        name: 'Master Document Attestation & Apostille Service Agreement',
+        division: 'attestation',
+        clausesJson: JSON.stringify(['attestation-custody', 'dpdp-privacy', 'dispute-jurisdiction']),
+        version: 'v1.0',
+        createdAt: now,
+      },
+      {
+        id: 't-manpower-std',
+        name: 'Master Overseas Manpower Placement & Recruitment Agreement',
+        division: 'manpower',
+        clausesJson: JSON.stringify(['manpower-terms', 'dpdp-privacy', 'dispute-jurisdiction']),
+        version: 'v1.0',
+        createdAt: now,
+      },
+    ];
+
+    for (const t of standardTemplates) {
+      await db.insert(agreementTemplates).values(t).onConflictDoNothing();
+    }
+  } catch (err) {
+    console.error('Failed to ensure agreement templates and clauses:', err);
+  }
+}
+
 // GET /api/agreements/templates
 agreementsRouter.get('/templates', async (c) => {
   if (!c.env || !c.env.DB) {
@@ -30,12 +207,30 @@ agreementsRouter.get('/templates', async (c) => {
   }
 
   const db = getDb(c.env.DB);
+  await ensureClauseLibraryAndTemplates(db);
 
   try {
     const list = await db.select().from(agreementTemplates).all();
     return c.json({ templates: list });
   } catch (error: any) {
-    return c.json({ error: "Failed to fetch templates",  }, 500);
+    return c.json({ error: "Failed to fetch templates" }, 500);
+  }
+});
+
+// GET /api/agreements/clauses
+agreementsRouter.get('/clauses', async (c) => {
+  if (!c.env || !c.env.DB) {
+    return c.json({ error: "DB not available" }, 500);
+  }
+
+  const db = getDb(c.env.DB);
+  await ensureClauseLibraryAndTemplates(db);
+
+  try {
+    const list = await db.select().from(clauseLibrary).all();
+    return c.json({ clauses: list });
+  } catch (error: any) {
+    return c.json({ error: "Failed to fetch clauses" }, 500);
   }
 });
 
@@ -62,7 +257,7 @@ agreementsRouter.post('/templates', zValidator('json', createTemplateSchema), as
 
     return c.json({ success: true, id, message: "Agreement template created successfully." });
   } catch (error: any) {
-    return c.json({ error: "Template creation failed",  }, 500);
+    return c.json({ error: "Template creation failed" }, 500);
   }
 });
 
@@ -73,12 +268,13 @@ agreementsRouter.get('/', async (c) => {
   }
 
   const db = getDb(c.env.DB);
+  await ensureClauseLibraryAndTemplates(db);
 
   try {
     const list = await db.select().from(agreements).all();
     return c.json({ agreements: list });
   } catch (error: any) {
-    return c.json({ error: "Failed to fetch agreements",  }, 500);
+    return c.json({ error: "Failed to fetch agreements" }, 500);
   }
 });
 
@@ -124,7 +320,6 @@ agreementsRouter.post('/', zValidator('json', createAgreementSchema), async (c) 
       .all();
 
     const missingMandatory = mandatoryClauses.filter(mc => {
-      // If it matches general or template's division, it is required
       if (mc.division !== 'general' && mc.division !== template.division) return false;
       return !clauseIds.includes(mc.clauseId);
     });
@@ -139,11 +334,64 @@ agreementsRouter.post('/', zValidator('json', createAgreementSchema), async (c) 
     // Sort matched clauses in original order specified in template
     matchedClauses.sort((a, b) => clauseIds.indexOf(a.clauseId) - clauseIds.indexOf(b.clauseId));
 
-    // 4. Assemble content
-    let content = `SERVICE AGREEMENT\n\nParties: Opus Overseas & ${clientRecord.name}\n\n`;
-    matchedClauses.forEach((c, idx) => {
-      content += `Clause ${idx + 1}: ${c.title}\n${c.body}\n\n`;
+    const dateStr = new Date().toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
+
+    // 4. Assemble Executive Legal Contract
+    let content = `================================================================================
+OPUS OVERSEAS EDUCATIONAL & IMMIGRATION SERVICES PVT. LTD.
+Corporate Office: Hyderabad, Telangana, India | GSTIN: 36ALPPH3337R1ZE
+================================================================================
+
+MASTER CLIENT SERVICE AGREEMENT
+Contract Reference: OPUS-AGR-${Date.now().toString(36).toUpperCase()}
+Effective Date: ${dateStr}
+
+This Service Agreement ("Agreement") is made and entered into on this ${dateStr}, by and between:
+
+FIRST PARTY (SERVICE PROVIDER):
+M/s Opus Overseas Educational & Immigration Services Pvt. Ltd., an enterprise duly incorporated under the laws of India, having its corporate registered office in Hyderabad, Telangana (hereinafter referred to as "Opus Overseas" or "Service Provider", which expression shall unless repugnant to the context include its successors and permitted assigns).
+
+AND
+
+SECOND PARTY (CLIENT / APPLICANT):
+Name: ${clientRecord.name}
+Client UID: ${clientRecord.id}
+Contact Phone: ${clientRecord.phone || 'N/A'}
+Contact Email: ${clientRecord.email || 'N/A'}
+Passport Number: ${clientRecord.passportNumber || 'N/A'}
+(hereinafter referred to as the "Client", which expression shall include their heirs, legal representatives, and permitted assigns).
+
+WHEREAS:
+A. Opus Overseas is engaged in professional advisory, university admissions counseling, visa documentation assistance, apostille/attestation verification, overseas employment facilitation, and pilgrim tour logistics.
+B. The Client has engaged Opus Overseas to render specialized services in accordance with the terms, covenants, and conditions set forth hereunder.
+
+NOW, THEREFORE, IT IS MUTUALLY AGREED AS FOLLOWS:
+
+`;
+
+    matchedClauses.forEach((c) => {
+      content += `${c.title}\n--------------------------------------------------------------------------------\n${c.body}\n\n`;
+    });
+
+    content += `================================================================================
+EXECUTION & DIGITAL SIGNATURE ACCEPTANCE
+================================================================================
+By affixing digital signature, Aadhaar OTP authentication, or written execution below, the Parties confirm that they have read, understood, and voluntarily agreed to be bound by all terms, schedules, and conditions of this Agreement.
+
+FOR FIRST PARTY (OPUS OVERSEAS):
+Authorized Signatory: __________________________
+Designation: Managing Director / Operations Head
+Date: ${dateStr}
+
+FOR SECOND PARTY (CLIENT / APPLICANT):
+Name: ${clientRecord.name}
+Signature / E-Sign: [PENDING VERIFICATION]
+Date: ${dateStr}
+`;
 
     // 5. Save agreement draft
     const agreementId = crypto.randomUUID();
@@ -185,7 +433,121 @@ agreementsRouter.post('/', zValidator('json', createAgreementSchema), async (c) 
     });
 
   } catch (error: any) {
-    return c.json({ error: "Failed to generate agreement draft",  }, 500);
+    return c.json({ error: "Failed to generate agreement draft" }, 500);
+  }
+});
+
+// POST /api/agreements/:id/dispatch (Send agreement to client via WhatsApp / Chatwoot / Email)
+agreementsRouter.post('/:id/dispatch', zValidator('json', dispatchAgreementSchema), async (c) => {
+  const agreementId = c.req.param('id');
+  const data = c.req.valid('json');
+
+  if (!c.env || !c.env.DB) {
+    return c.json({ error: "DB not available" }, 500);
+  }
+
+  const db = getDb(c.env.DB);
+
+  try {
+    const agreement = await db.select().from(agreements).where(eq(agreements.id, agreementId)).get();
+    if (!agreement) {
+      return c.json({ error: "Agreement not found" }, 404);
+    }
+
+    const client = await db.select().from(clients).where(eq(clients.id, agreement.clientId)).get();
+    if (!client) {
+      return c.json({ error: "Client record not found" }, 404);
+    }
+
+    const template = await db.select().from(agreementTemplates).where(eq(agreementTemplates.id, agreement.templateId)).get();
+
+    // Mark status as 'sent' if draft
+    if (agreement.status === 'draft') {
+      await db.update(agreements).set({ status: 'sent' }).where(eq(agreements.id, agreementId));
+    }
+
+    const frontendBase = (c.env as any).FRONTEND_URL || 'http://127.0.0.1:5173';
+    const signUrl = `${frontendBase}/sign/${agreement.id}`;
+    const channelsDispatched: string[] = [];
+
+    // 1. WhatsApp & Chatwoot (Unified dispatch)
+    if (data.channel === 'whatsapp' || data.channel === 'chatwoot' || data.channel === 'all') {
+      try {
+        if (client.phone) {
+          const { dispatchUnifiedWhatsApp } = await import('../infra/chatwootBridge.js');
+          await dispatchUnifiedWhatsApp(c.env as any, {
+            phone: client.phone,
+            name: client.name,
+            email: client.email || undefined,
+            templateKey: 'AGREEMENT_SIGN_LINK',
+            variables: {
+              name: client.name,
+              division: template?.name || 'Opus Overseas Service Agreement',
+              signUrl,
+              expiresInHours: '48',
+            },
+            customText: data.note ? `*Action Required: Service Agreement for ${client.name}* ✍️\n\n${data.note}\n\n👉 *Review & Sign Contract:* ${signUrl}` : undefined,
+            division: template?.division || 'general',
+            tags: ['agreement-sent', 'esign-pending'],
+          });
+          channelsDispatched.push('whatsapp', 'chatwoot');
+        }
+      } catch (err: any) {
+        console.error('WhatsApp dispatch failed:', err);
+      }
+    }
+
+    // 2. Email dispatch
+    if (data.channel === 'email' || data.channel === 'all') {
+      try {
+        if (client.email) {
+          const { subject, html } = agreementSignedTemplate({
+            clientName: client.name,
+            agreementTitle: template?.name || 'Service Agreement',
+            downloadUrl: signUrl,
+          });
+          await sendNotification(c.env as any, db as any, {
+            channel: 'email',
+            to: client.email,
+            subject: `Action Required: Please e-Sign your ${template?.name || 'Service Agreement'}`,
+            body: html,
+            templateId: getListmonkTemplateId(c.env as any, 'agreementExecuted'),
+            data: {
+              ClientName: client.name,
+              AgreementTitle: template?.name || 'Service Agreement',
+              SignedDate: 'Action Required',
+              StatusText: 'Ready for e-Sign',
+              DownloadUrl: signUrl,
+              Subject: `Action Required: Please e-Sign your ${template?.name || 'Service Agreement'}`
+            },
+            clientId: client.id,
+          });
+          channelsDispatched.push('email');
+        }
+      } catch (err: any) {
+        console.error('Email dispatch failed:', err);
+      }
+    }
+
+    await auditEvent(c, {
+      action: 'AGREEMENT_DISPATCHED',
+      entityName: 'agreements',
+      entityId: agreement.id,
+      afterState: {
+        clientId: agreement.clientId,
+        channels: channelsDispatched,
+        status: 'sent',
+      }
+    });
+
+    return c.json({
+      success: true,
+      signUrl,
+      channels: channelsDispatched,
+      message: `Agreement dispatched to ${client.name} via ${channelsDispatched.join(', ') || 'link'}.`
+    });
+  } catch (error: any) {
+    return c.json({ error: "Failed to dispatch agreement" }, 500);
   }
 });
 
@@ -582,6 +944,155 @@ portalAgreementsRouter.post('/:id/sign', zValidator('json', portalSignSchema), a
 
     return c.json({ success: true, signedAt: now, hash });
   } catch (error: any) {
-    return c.json({ error: 'Failed to sign agreement',  }, 500);
+    return c.json({ error: 'Failed to sign agreement' }, 500);
+  }
+});
+
+// GET /api/public/portal/agreements/:id/specimen
+// Public endpoint for the client-facing e-Sign modal / page
+portalAgreementsRouter.get('/:id/specimen', async (c) => {
+  const agreementId = c.req.param('id');
+  if (!c.env || !c.env.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+
+  try {
+    const agreement = await db.select().from(agreements).where(eq(agreements.id, agreementId)).get();
+    if (!agreement) return c.json({ error: 'Agreement not found' }, 404);
+
+    const client = await db.select().from(clients).where(eq(clients.id, agreement.clientId)).get();
+    const template = await db.select().from(agreementTemplates).where(eq(agreementTemplates.id, agreement.templateId)).get();
+
+    return c.json({
+      agreement: {
+        id: agreement.id,
+        clientId: agreement.clientId,
+        clientName: client?.name || 'Valued Client',
+        clientPhone: client?.phone || '',
+        clientEmail: client?.email || '',
+        templateName: template?.name || 'Service Agreement',
+        division: template?.division || 'general',
+        content: agreement.content,
+        status: agreement.status,
+        esignMethod: agreement.esignMethod,
+        signedAt: agreement.signedAt,
+        sha256Hash: agreement.sha256Hash,
+        createdAt: agreement.createdAt,
+      }
+    });
+  } catch (error: any) {
+    return c.json({ error: 'Failed to load agreement details' }, 500);
+  }
+});
+
+// POST /api/public/portal/agreements/:id/direct-sign
+// Public e-Sign endpoint (Drawn / Typed Name / OTP)
+portalAgreementsRouter.post('/:id/direct-sign', zValidator('json', signAgreementSchema), async (c) => {
+  const agreementId = c.req.param('id');
+  const data = c.req.valid('json');
+
+  if (!c.env || !c.env.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+
+  try {
+    const agreement = await db.select().from(agreements).where(eq(agreements.id, agreementId)).get();
+    if (!agreement) return c.json({ error: 'Agreement not found' }, 404);
+
+    if (agreement.status === 'signed') {
+      return c.json({ error: 'Agreement already signed' }, 409);
+    }
+
+    const ipAddress = c.req.header('x-real-ip') || c.req.header('cf-connecting-ip') || '127.0.0.1';
+    const userAgent = c.req.header('user-agent') || 'Unknown browser';
+    const now = Math.floor(Date.now() / 1000);
+
+    // SHA-256 Hashing for DPDP evidentiary audit trail
+    const msgBuffer = new TextEncoder().encode(agreement.content + (data.signatureData || ''));
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const sha256Hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    await db.update(agreements).set({
+      status: 'signed',
+      esignMethod: data.esignMethod,
+      ipAddress,
+      userAgent,
+      sha256Hash,
+      signedAt: now
+    }).where(eq(agreements.id, agreementId));
+
+    // Consent notice insertion
+    const consentNotice = `OpusOS E-Sign Consent: Client executed Agreement ID ${agreementId} via ${data.esignMethod} with SHA-256 hash ${sha256Hash}.`;
+    const noticeHash = await sha256Hex(consentNotice);
+
+    await db.insert(consents).values({
+      id: crypto.randomUUID(),
+      clientId: agreement.clientId,
+      consentType: 'core-processing',
+      status: 'granted',
+      ipAddress,
+      sha256Hash: noticeHash,
+      grantedAt: now
+    });
+
+    await auditEvent(c, {
+      action: 'AGREEMENT_SIGNED',
+      entityName: 'agreements',
+      entityId: agreement.id,
+      category: 'compliance',
+      afterState: {
+        clientId: agreement.clientId,
+        esignMethod: data.esignMethod,
+        signedAt: now,
+        sha256Hash
+      }
+    });
+
+    // Partner referral maturation (fail-open)
+    try {
+      const referral = await db.select().from(referrals).where(eq(referrals.clientId, agreement.clientId)).get();
+      if (referral) {
+        const paidRows = await db.select().from(payments).where(eq(payments.clientId, agreement.clientId)).all();
+        const realizedPaise = paidRows.reduce((a: number, p: any) => {
+          if (p.type !== 'receipt' && p.type !== 'refund') return a;
+          if (!['confirmed', 'synced', 'paid'].includes(p.status)) return a;
+          const amt = Number(p.amount || 0);
+          return p.type === 'refund' ? a - Math.abs(amt) : a + amt;
+        }, 0);
+        const commissionPaise = Math.max(0, Math.floor((realizedPaise * (referral.commissionRate || 5)) / 100));
+        const ledgerRow = await db.select().from(commissionLedger).where(eq(commissionLedger.referralId, referral.id)).get();
+        if (ledgerRow && ledgerRow.status !== 'paid') {
+          await db.update(commissionLedger)
+            .set({ amount: commissionPaise, status: 'matured' })
+            .where(eq(commissionLedger.referralId, referral.id));
+        }
+      }
+    } catch {}
+
+    // Confirmation email
+    try {
+      const client = await db.select().from(clients).where(eq(clients.id, agreement.clientId)).get();
+      if (client?.email) {
+        const { subject, html } = agreementSignedTemplate({
+          clientName: client.name || 'Valued Client',
+          agreementTitle: `Service Agreement (${agreement.id})`,
+          downloadUrl: `https://opusoverseas.com/login`,
+        });
+        await sendNotification(c.env as any, db as any, {
+          channel: 'email',
+          to: client.email,
+          subject, body: html,
+          clientId: client.id,
+        });
+      }
+    } catch {}
+
+    return c.json({
+      success: true,
+      sha256Hash,
+      signedAt: now,
+      message: 'Agreement successfully signed and legally executed.'
+    });
+  } catch (error: any) {
+    return c.json({ error: 'Failed to sign agreement' }, 500);
   }
 });

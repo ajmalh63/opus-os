@@ -34,12 +34,12 @@ export default function PaymentConfirmed() {
               : 'Your payment is being processed. You will see a confirmation here and by email once it completes.'}
         </p>
         {(paymentId || linkId) && (
-          <div className="mt-4 rounded-xl bg-slate-50 p-3 font-mono text-[10px] leading-relaxed text-slate-500">
+          <div className="mt-4 rounded-xl bg-slate-50 p-3 font-mono text-[13px] leading-relaxed text-slate-500">
             {paymentId && <div>payment: {paymentId}</div>}
             {linkId && <div>link: {linkId}</div>}
           </div>
         )}
-        <a href="/" className="mt-6 inline-block rounded-full bg-brand-gold px-6 py-2.5 text-[11px] font-extrabold uppercase tracking-wide text-brand-navy transition hover:bg-brand-1 hover:text-white">
+        <a href="/" className="mt-6 inline-block rounded-full bg-brand-gold px-6 py-2.5 text-sm font-extrabold uppercase tracking-wide text-brand-navy transition hover:bg-brand-1 hover:text-white">
           Back to Opus Overseas
         </a>
       </div>

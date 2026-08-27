@@ -423,20 +423,27 @@ export const milestones = sqliteTable('milestones', {
 // ==========================================
 export const umrahPackages = sqliteTable('umrah_packages', {
   id: text('id').primaryKey(),
-  name: text('name').notNull(), // e.g. "Economy 7-Night Umrah — Hyderabad"
+  name: text('name').notNull(), // e.g. "Economy 7-Night Umrah — Hyderabad" or "Dubai 5D/4N Family Tour"
+  category: text('category', { enum: ['umrah_pilgrimage', 'international_holiday', 'domestic', 'custom_group'] }).notNull().default('umrah_pilgrimage'),
   tier: text('tier', { enum: ['economy', 'standard', 'premium', 'luxury'] }).notNull().default('standard'),
+  // ---- Destination (for International & Domestic) ----
+  destinationCountry: text('destination_country'),
+  destinationCity: text('destination_city'),
   // ---- Duration ----
   totalDays: integer('total_days').notNull().default(7),
   makkahNights: integer('makkah_nights').notNull().default(0),
   madinahNights: integer('madinah_nights').notNull().default(0),
   // ---- Flight (per package) ----
   flightType: text('flight_type', { enum: ['direct', 'one_stop', 'two_stop', 'varies'] }).notNull().default('varies'),
-  airline: text('airline'), // e.g. "Saudia / IndiGo"
+  airline: text('airline'), // e.g. "Saudia / IndiGo / Emirates"
   departureCity: text('departure_city'), // default for departures of this package
-  arrivalAirport: text('arrival_airport'), // e.g. "Jeddah (JED)"
+  arrivalAirport: text('arrival_airport'), // e.g. "Jeddah (JED) / Dubai (DXB)"
   baggageAllowance: text('baggage_allowance'), // e.g. "30 kg check-in + 7 kg hand carry"
   flightClass: text('flight_class', { enum: ['economy', 'business'] }).notNull().default('economy'),
   zamzamIncluded: integer('zamzam_included', { mode: 'boolean' }).notNull().default(true),
+  // ---- General Hotel (International & Domestic) ----
+  hotelName: text('hotel_name'),
+  hotelStars: integer('hotel_stars'),
   // ---- Makkah hotel ----
   makkahHotel: text('makkah_hotel'),
   makkahHotelStars: integer('makkah_hotel_stars'), // 3/4/5
@@ -481,6 +488,7 @@ export const umrahPackages = sqliteTable('umrah_packages', {
   infantPricePaise: integer('infant_price_paise'), // infant 0–2 (airfare-only component)
   // ---- Content & trust ----
   description: text('description'),
+  sightseeingHighlightsJson: text('sightseeing_highlights_json').notNull().default('[]'),
   inclusionsJson: text('inclusions_json').notNull().default('[]'),
   exclusionsJson: text('exclusions_json').notNull().default('[]'),
   documentsJson: text('documents_json').notNull().default('[]'), // required docs checklist
@@ -1720,6 +1728,13 @@ export const feedbackSubmissions = sqliteTable('feedback_submissions', {
   isPublicApproved: integer('is_public_approved', { mode: 'boolean' }).notNull().default(false),
   displayOrder: integer('display_order').notNull().default(0),
   counselorName: text('counselor_name'),
+  source: text('source', { enum: ['native', 'google', 'trustpilot', 'whatsapp'] }).notNull().default('native'),
+  externalId: text('external_id'), // Google or Trustpilot review ID for deduplication
+  authorAvatarUrl: text('author_avatar_url'),
+  authorLocation: text('author_location'),
+  sourceUrl: text('source_url'),
+  isFeatured: integer('is_featured', { mode: 'boolean' }).notNull().default(false),
+  verifiedBuyer: integer('verified_buyer', { mode: 'boolean' }).notNull().default(true),
   metadataJson: text('metadata_json').default('{}'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
@@ -1727,5 +1742,8 @@ export const feedbackSubmissions = sqliteTable('feedback_submissions', {
   index('feedback_rating_idx').on(t.rating),
   index('feedback_division_idx').on(t.division),
   index('feedback_public_idx').on(t.isPublicApproved),
+  index('feedback_source_idx').on(t.source),
+  index('feedback_external_id_idx').on(t.externalId),
+  index('feedback_featured_idx').on(t.isFeatured),
 ]);
 

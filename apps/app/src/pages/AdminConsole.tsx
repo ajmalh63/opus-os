@@ -237,22 +237,22 @@ export default function AdminConsole() {
           <div>
             <div className="flex items-center gap-2">
               <span className="gold-dot" />
-              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-brand-gold">Super Admin · Control</span>
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">Super Admin · Control</span>
             </div>
             <h2 className="mt-1 font-display font-extrabold text-xl text-brand-navy tracking-wide">System Control Console</h2>
-            <p className="text-[11px] text-brand-navy/50">Manage staff access controls, scope limits, and master administrative desks</p>
+            <p className="text-sm text-brand-navy/50">Manage staff access controls, scope limits, and master administrative desks</p>
           </div>
 
           <div className="flex gap-4">
             {/* Quick Stats Panel */}
             <div className="flex items-center gap-6 bg-white border border-brand-navy/10 rounded-lg px-4 py-2 text-xs shadow-[0_8px_24px_-14px_rgba(10,45,80,0.25)]">
               <div>
-                <span className="text-brand-navy/40 block text-[9px] uppercase tracking-wider font-semibold">Staff Count</span>
+                <span className="text-brand-navy/40 block text-xs uppercase tracking-wider font-semibold">Staff Count</span>
                 <span className="text-brand-gold font-bold text-sm">{staffData?.staff?.length || 0}</span>
               </div>
               <div className="border-l border-brand-navy/10 h-6"></div>
               <div>
-                <span className="text-brand-navy/40 block text-[9px] uppercase tracking-wider font-semibold">Division Desks</span>
+                <span className="text-brand-navy/40 block text-xs uppercase tracking-wider font-semibold">Division Desks</span>
                 <span className="text-brand-gold font-bold text-sm">{activeDivisionsCount} / 5 Live</span>
               </div>
             </div>
@@ -317,7 +317,7 @@ export default function AdminConsole() {
                 <div className="bg-white border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                      <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[13px] text-brand-gold uppercase tracking-wider font-semibold">
                         <th className="p-4">Staff Member</th>
                         <th className="p-4">Role</th>
                         <th className="p-4">Division Scopes</th>
@@ -331,23 +331,23 @@ export default function AdminConsole() {
                           <tr key={user.id} className="hover:bg-brand-navy/[0.04] transition duration-150">
                             <td className="p-4">
                               <div className="font-semibold text-brand-navy">{user.name}</div>
-                              <div className="text-[10px] text-slate-400">{user.email}</div>
-                              <div className="text-[9px] text-slate-500 mt-0.5">UID: {user.id}</div>
+                              <div className="text-[13px] text-slate-400">{user.email}</div>
+                              <div className="text-xs text-slate-500 mt-0.5">UID: {user.id}</div>
                             </td>
                             <td className="p-4">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${getRoleBadgeStyle(user.role)}`}>
+                              <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${getRoleBadgeStyle(user.role)}`}>
                                 {user.role.replace('_', ' ')}
                               </span>
                             </td>
                             <td className="p-4">
                               {userScopes.length === 0 ? (
-                                <span className="text-slate-500 italic text-[10px]">No active scopes</span>
+                                <span className="text-slate-500 italic text-[13px]">No active scopes</span>
                               ) : (
                                 <div className="flex flex-wrap gap-1">
                                   {userScopes.map(scopeKey => {
                                     const match = DIVISIONS.find(d => d.key === scopeKey);
                                     return (
-                                      <span key={scopeKey} className="px-2 py-0.5 bg-brand-navy/[0.06] text-brand-navy/70 border border-brand-navy/10 rounded text-[9px] font-medium">
+                                      <span key={scopeKey} className="px-2 py-0.5 bg-brand-navy/[0.06] text-brand-navy/70 border border-brand-navy/10 rounded text-xs font-medium">
                                         {match?.label || scopeKey}
                                       </span>
                                     );
@@ -358,7 +358,7 @@ export default function AdminConsole() {
                             <td className="p-4 text-right">
                               <button
                                 onClick={() => handleOpenEditScope(user)}
-                                className="px-3 py-1.5 bg-brand-navy/[0.05] hover:bg-brand-navy/[0.06] border border-brand-navy/15 text-brand-gold text-[10px] uppercase font-semibold tracking-wider rounded transition duration-150 cursor-pointer"
+                                className="px-3 py-1.5 bg-brand-navy/[0.05] hover:bg-brand-navy/[0.06] border border-brand-navy/15 text-brand-gold text-[13px] uppercase font-semibold tracking-wider rounded transition duration-150 cursor-pointer"
                               >
                                 Edit Scope
                               </button>
@@ -389,7 +389,7 @@ export default function AdminConsole() {
               <form onSubmit={handleRegisterSubmit} className="space-y-6 text-xs">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-[10px] uppercase text-slate-400 font-semibold mb-1.5 tracking-wider">
+                    <label className="block text-[13px] uppercase text-slate-400 font-semibold mb-1.5 tracking-wider">
                       Full Name *
                     </label>
                     <input
@@ -402,7 +402,7 @@ export default function AdminConsole() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] uppercase text-slate-400 font-semibold mb-1.5 tracking-wider">
+                    <label className="block text-[13px] uppercase text-slate-400 font-semibold mb-1.5 tracking-wider">
                       Email Address *
                     </label>
                     <input
@@ -417,7 +417,7 @@ export default function AdminConsole() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase text-slate-400 font-semibold mb-1.5 tracking-wider">
+                  <label className="block text-[13px] uppercase text-slate-400 font-semibold mb-1.5 tracking-wider">
                     Role Privilege Group *
                   </label>
                   <select
@@ -431,13 +431,13 @@ export default function AdminConsole() {
                       </option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-slate-400 mt-1">
+                  <p className="text-[13px] text-slate-400 mt-1">
                     Defines API access limits and global menu operations in accordance with RBAC policies.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase text-slate-400 font-semibold mb-2 tracking-wider">
+                  <label className="block text-[13px] uppercase text-slate-400 font-semibold mb-2 tracking-wider">
                     Permitted Division Scopes (Employee Scoping)
                   </label>
                   <div className="bg-white border border-brand-navy/10 rounded p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -464,7 +464,7 @@ export default function AdminConsole() {
                       );
                     })}
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1.5">
+                  <p className="text-[13px] text-slate-400 mt-1.5">
                     For role types like Counselor or Coordinator, their work queue and client data access will be strictly sandboxed within selected divisions.
                   </p>
                 </div>
@@ -511,7 +511,7 @@ export default function AdminConsole() {
             </div>
 
             <div className="space-y-3">
-              <label className="block text-[10px] uppercase text-slate-400 font-bold tracking-wider">
+              <label className="block text-[13px] uppercase text-slate-400 font-bold tracking-wider">
                 Select Permitted Divisions
               </label>
               <div className="space-y-2 bg-brand-navy/[0.04] p-4 border border-brand-navy/10 rounded-lg max-h-60 overflow-y-auto">

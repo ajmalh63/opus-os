@@ -49,11 +49,11 @@ export default function FlowAnalytics() {
     <div ref={rootRef} className="min-h-full space-y-6 text-brand-navy">
       <header className="reveal border-b border-brand-navy/10 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">Analytics & Performance</p>
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand-gold">Analytics & Performance</p>
           <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-brand-navy">Business Intelligence</h1>
         </div>
         
-        <div className="flex bg-brand-navy/[0.05] rounded-lg p-0.5 border border-brand-navy/10 text-[11px] font-bold">
+        <div className="flex bg-brand-navy/[0.05] rounded-lg p-0.5 border border-brand-navy/10 text-sm font-bold">
           <button
             onClick={() => setActiveSubTab('flow')}
             className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${activeSubTab === 'flow' ? 'bg-brand-gold text-brand-navy shadow-xs font-extrabold' : 'text-brand-navy/50 hover:text-brand-navy'}`}
@@ -87,27 +87,27 @@ export default function FlowAnalytics() {
             <div key={division} className="reveal rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-display font-bold text-brand-navy text-sm capitalize">{division.replace('-', ' ')}</h3>
-                <span className="text-[10px] text-brand-navy/40 font-bold">Avg {f.avgDays} days to advance</span>
+                <span className="text-[13px] text-brand-navy/40 font-bold">Avg {f.avgDays} days to advance</span>
               </div>
               <div className="space-y-2">
                 {f.counts.map((c: any) => {
                   const pct = f.counts[0].count > 0 ? Math.round((c.count / f.counts[0].count) * 100) : 0;
                   return (
                     <div key={c.stage} className="flex items-center gap-2">
-                      <span className="w-32 shrink-0 text-[10px] font-bold text-brand-navy/60 capitalize truncate">{c.stage.replace(/_/g, ' ')}</span>
+                      <span className="w-32 shrink-0 text-[13px] font-bold text-brand-navy/60 capitalize truncate">{c.stage.replace(/_/g, ' ')}</span>
                       <div className="flex-1 h-5 rounded bg-brand-navy/[0.04] overflow-hidden">
                         <div className="h-full bg-brand-gold/70 flex items-center justify-end px-1.5" style={{ width: `${Math.max(4, pct)}%` }}>
-                          <span className="text-[8px] font-bold text-brand-navy">{c.count}</span>
+                          <span className="text-sm font-bold text-brand-navy">{c.count}</span>
                         </div>
                       </div>
-                      <span className="w-10 shrink-0 text-right text-[9px] text-brand-navy/40 font-bold">{pct}%</span>
+                      <span className="w-10 shrink-0 text-right text-xs text-brand-navy/40 font-bold">{pct}%</span>
                     </div>
                   );
                 })}
               </div>
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {f.conversions.map((cv: any, i: number) => (
-                  <span key={i} className="bg-brand-navy/[0.05] text-brand-navy/60 rounded px-1.5 py-0.5 text-[9px] font-bold border border-brand-navy/10">
+                  <span key={i} className="bg-brand-navy/[0.05] text-brand-navy/60 rounded px-1.5 py-0.5 text-xs font-bold border border-brand-navy/10">
                     {cv.from.replace(/_/g, ' ')} → {cv.to.replace(/_/g, ' ')}: <b className="text-brand-gold">{cv.pct}%</b>
                   </span>
                 ))}
@@ -145,7 +145,7 @@ export default function FlowAnalytics() {
                   { label: 'Forecast p90', value: `${data.analytics.monteCarlo.p90}d` },
                 ].map((k) => (
                   <div key={k.label} className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-[0_16px_40px_-20px_rgba(10,45,80,0.10)]">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40">{k.label}</p>
+                    <p className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40">{k.label}</p>
                     <p className="mt-2 font-display text-2xl font-extrabold text-brand-navy">{k.value}</p>
                   </div>
                 ))}
@@ -153,10 +153,10 @@ export default function FlowAnalytics() {
 
               {/* CFD */}
               <div className="reveal rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_20px_40px_-20px_rgba(10,45,80,0.10)]">
-                <h3 className="mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold"><span className="gold-dot" />Cumulative Flow Diagram</h3>
+                <h3 className="mb-4 flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold"><span className="gold-dot" />Cumulative Flow Diagram</h3>
                 <div className="flex flex-wrap gap-3 pb-3">
                   {stages.map((s, i) => (
-                    <span key={s} className="inline-flex items-center gap-1.5 text-[10px] text-brand-navy/70">
+                    <span key={s} className="inline-flex items-center gap-1.5 text-[13px] text-brand-navy/70">
                       <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />
                       {s}
                     </span>
@@ -175,17 +175,17 @@ export default function FlowAnalytics() {
                     );
                   })}
                 </div>
-                <p className="mt-3 text-[10px] text-brand-navy/50">{data.analytics.cfd.length} days · stacked per-stage cumulative cards</p>
+                <p className="mt-3 text-[13px] text-brand-navy/50">{data.analytics.cfd.length} days · stacked per-stage cumulative cards</p>
               </div>
 
               {/* Monte Carlo + throughput */}
               <div className="reveal grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_20px_40px_-20px_rgba(10,45,80,0.10)]">
-                  <h3 className="mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold"><span className="gold-dot" />Monte Carlo — days to clear WIP</h3>
+                  <h3 className="mb-4 flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold"><span className="gold-dot" />Monte Carlo — days to clear WIP</h3>
                   <div className="space-y-3">
                     {[['p50', data.analytics.monteCarlo.p50], ['p75', data.analytics.monteCarlo.p75], ['p90', data.analytics.monteCarlo.p90]].map(([k, v]) => (
                       <div key={k as string}>
-                        <div className="mb-1 flex justify-between text-[11px]">
+                        <div className="mb-1 flex justify-between text-sm">
                           <span className="font-semibold text-brand-navy/70">{k as string}</span>
                           <span className="font-mono text-brand-navy/50">{v as number}d</span>
                         </div>
@@ -195,11 +195,11 @@ export default function FlowAnalytics() {
                       </div>
                     ))}
                   </div>
-                  <p className="mt-4 text-[10px] text-brand-navy/50">Simulated from {data.analytics.monteCarlo.samples} draws using observed daily completion rates.</p>
+                  <p className="mt-4 text-[13px] text-brand-navy/50">Simulated from {data.analytics.monteCarlo.samples} draws using observed daily completion rates.</p>
                 </div>
 
                 <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-[0_20px_40px_-20px_rgba(10,45,80,0.10)]">
-                  <h3 className="mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold"><span className="gold-dot" />Throughput (completions / day)</h3>
+                  <h3 className="mb-4 flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.18em] text-brand-gold"><span className="gold-dot" />Throughput (completions / day)</h3>
                   <div className="flex h-40 items-end gap-[2px]">
                     {data.analytics.throughputPerDay.map((t) => (
                       <div key={t.date} className="group relative flex-1" title={`${t.date}: ${t.completed}`}>
@@ -207,7 +207,7 @@ export default function FlowAnalytics() {
                       </div>
                     ))}
                   </div>
-                  <p className="mt-3 text-[10px] text-brand-navy/50">Cards arriving into the final stage each day.</p>
+                  <p className="mt-3 text-[13px] text-brand-navy/50">Cards arriving into the final stage each day.</p>
                 </div>
               </div>
             </>

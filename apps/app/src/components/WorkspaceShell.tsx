@@ -86,7 +86,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { key: 'compliance', label: 'Compliance', to: '/workspaces/compliance', icon: I.compliance, roles: ['super_admin', 'manager'], match: '/workspaces/compliance' },
       { key: 'performance', label: 'Performance', to: '/workspaces/performance', icon: I.performance, roles: ['super_admin'], match: '/workspaces/performance' },
       { key: 'growthmetrics', label: 'Growth Metrics', to: '/workspaces/growth', icon: I.growthmetrics, roles: ['super_admin'], match: '/workspaces/growth' },
-      { key: 'infra', label: 'Infra Health', to: '/workspaces/infra', icon: I.infra, roles: ['super_admin'], match: '/workspaces/infra' },
+       { key: 'infra', label: 'Infra Health', to: '/workspaces/infra', icon: I.infra, roles: ['super_admin'], match: '/workspaces/infra' },
+      { key: 'fleet', label: 'Fleet Console', to: '/workspaces/fleet', icon: I.infra, roles: ['super_admin'], match: '/workspaces/fleet' },
     ],
   },
   {
@@ -254,12 +255,12 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           )}
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2.5 py-4 scrollbar-thin scrollbar-thumb-white/10">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin scrollbar-thumb-white/10">
           {sections.map((section) => (
-            <div key={section.title} className="mb-5">
+            <div key={section.title} className="mb-6">
               {!collapsed && (
-                <div className="mb-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.18em] text-brand-gold/80 flex items-center gap-1.5">
-                  <span className="h-1 w-1 rounded-full bg-brand-gold/60" />
+                <div className="mb-2.5 px-3 text-xs font-extrabold uppercase tracking-[0.16em] text-brand-gold/85 flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-gold/70" />
                   {section.title}
                 </div>
               )}
@@ -267,30 +268,26 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
               <ul className="space-y-1">
                 {section.items.map((item) => {
                   const active = isActive(item.to);
-                  // Staff realtime sync — Hibernatable WS, tenant-prefixed channels, progressive enhancement
-  // Feature flag: VITE_SYNC_ENABLED=false keeps WS disabled (REST poll fallback)
-  // This effect is safe behind flag and does not block render
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return (
+                  return (
                     <li key={item.key}>
                       <button
                         onClick={() => setLocation(item.to)}
                         title={collapsed ? item.label : undefined}
-                        className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-medium transition-all duration-200 cursor-pointer ${
+                        className={`group relative flex w-full items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition-all duration-200 cursor-pointer ${
                           active 
                             ? 'bg-gradient-to-r from-brand-gold/20 via-brand-gold/10 to-transparent text-brand-gold font-bold shadow-xs border-l-2 border-brand-gold' 
                             : 'text-slate-300 hover:bg-white/[0.07] hover:text-white'
                         }`}
                       >
-                        <svg className={`h-[18px] w-[18px] shrink-0 transition-transform group-hover:scale-110 ${active ? 'text-brand-gold drop-shadow-[0_0_8px_rgba(215,160,25,0.6)]' : 'text-slate-400 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2 : 1.6}>
+                        <svg className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110 ${active ? 'text-brand-gold drop-shadow-[0_0_8px_rgba(215,160,25,0.6)]' : 'text-slate-400 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2 : 1.6}>
                           <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
                         </svg>
                         {!collapsed && <span className="truncate tracking-tight">{item.label}</span>}
                         {item.key === 'inbox' && unread > 0 && (
-                          <span className="ml-auto rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white shadow-[0_0_10px_rgba(244,63,94,0.6)] animate-pulse">{unread}</span>
+                          <span className="ml-auto rounded-full bg-rose-500 px-2.5 py-0.5 text-xs font-black text-white shadow-[0_0_10px_rgba(244,63,94,0.6)] animate-pulse">{unread}</span>
                         )}
                         {active && !collapsed && item.key !== 'inbox' && (
-                          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-gold shadow-[0_0_6px_rgba(215,160,25,0.9)]" />
+                          <span className="ml-auto h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_6px_rgba(215,160,25,0.9)]" />
                         )}
                       </button>
                     </li>
@@ -301,16 +298,16 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           ))}
         </nav>
 
-        <div className={`border-t border-white/10 p-3 bg-white/[0.02] ${collapsed ? 'text-center' : ''}`}>
+        <div className={`border-t border-white/10 p-3.5 bg-white/[0.02] ${collapsed ? 'text-center' : ''}`}>
           {!collapsed ? (
             <div className="flex items-center gap-3 rounded-xl p-1.5 hover:bg-white/[0.04] transition-colors">
               <button onClick={() => setLocation('/settings')} title="Settings & Profile"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-gold to-amber-600 text-sm font-black text-brand-navy shadow-md hover:ring-2 hover:ring-brand-gold/60 cursor-pointer transition-all">
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-gold to-amber-600 text-sm font-black text-brand-navy shadow-md hover:ring-2 hover:ring-brand-gold/60 cursor-pointer transition-all">
                 {(me?.name || 'A').trim().charAt(0).toUpperCase()}
               </button>
               <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setLocation('/settings')}>
-                <div className="truncate text-xs font-bold text-white hover:text-brand-gold transition-colors">{me?.name || 'Ajmal'}</div>
-                <div className="truncate text-[10px] uppercase tracking-wider font-semibold text-brand-gold/80">{me?.role?.replace('_', ' ') || 'super admin'}</div>
+                <div className="truncate text-sm font-bold text-white hover:text-brand-gold transition-colors">{me?.name || 'Ajmal'}</div>
+                <div className="truncate text-xs uppercase tracking-wider font-semibold text-brand-gold/80">{me?.role?.replace('_', ' ') || 'super admin'}</div>
               </div>
               <button onClick={() => setLocation('/settings')} title="Settings"
                 className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white">
@@ -324,7 +321,7 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           ) : (
             <div className="flex flex-col items-center gap-2">
               <button onClick={() => setLocation('/settings')} title="Settings & Profile"
-                className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-gold to-amber-600 text-sm font-black text-brand-navy shadow-md hover:ring-2 hover:ring-brand-gold/60 cursor-pointer transition-all">
+                className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-gold to-amber-600 text-sm font-black text-brand-navy shadow-md hover:ring-2 hover:ring-brand-gold/60 cursor-pointer transition-all">
                 {(me?.name || 'A').trim().charAt(0).toUpperCase()}
               </button>
               <button onClick={signOut} title="Sign out"
@@ -340,21 +337,21 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
         <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/10 bg-[#06182c]/90 px-6 backdrop-blur-md shadow-xs">
           {/* Breadcrumb Area */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-400">Workspace</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-400">Workspace</span>
             <span className="text-slate-600">/</span>
-            <div className="text-sm font-black text-white tracking-tight">
+            <div className="text-sm sm:text-base font-black text-white tracking-tight">
               {sections.flatMap((s) => s.items).find((i) => isActive(i.match || i.to))?.label || 'Dashboard'}
             </div>
           </div>
 
           {/* System Health Pulse Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 shadow-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+          <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300 shadow-xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
             <span>Operational</span>
           </div>
 
           {me?.twoFactorEnabled && (
-            <span className="hidden md:inline-flex rounded-full bg-brand-gold/10 border border-brand-gold/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-gold">
+            <span className="hidden md:inline-flex rounded-full bg-brand-gold/10 border border-brand-gold/30 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-brand-gold">
               🛡️ 2FA Verified
             </span>
           )}
@@ -365,7 +362,7 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
                 className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 transition-all hover:bg-amber-500/20 shadow-xs active:scale-95">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
                 <span>My Work</span>
-                <span className="rounded-full bg-amber-400/20 px-1.5 py-0.2 text-[10px]">{openTasks}</span>
+                <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs font-bold">{openTasks}</span>
               </button>
             )}
 
@@ -378,30 +375,30 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                 {newCount > 0 && (
-                  <span className="absolute -top-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-rose-500 text-[9px] font-black text-white shadow-[0_0_8px_rgba(244,63,94,0.8)] animate-pulse">{newCount > 9 ? '9+' : newCount}</span>
+                  <span className="absolute -top-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-rose-500 text-[13px] font-black text-white shadow-[0_0_8px_rgba(244,63,94,0.8)] animate-pulse">{newCount > 9 ? '9+' : newCount}</span>
                 )}
               </button>
               {alertsOpen && (
-                <div className="absolute right-0 top-11 z-50 w-84 rounded-2xl border border-white/15 bg-[#0a233f] shadow-2xl overflow-hidden backdrop-blur-2xl">
+                <div className="absolute right-0 top-11 z-50 w-88 rounded-2xl border border-white/15 bg-[#0a233f] shadow-2xl overflow-hidden backdrop-blur-2xl">
                   <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/[0.02]">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-brand-gold flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-brand-gold animate-pulse" />
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-brand-gold flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-brand-gold animate-pulse" />
                       Live Stream Alerts
                     </span>
-                    {newCount > 0 && <button onClick={markAllSeen} className="text-[10px] font-bold uppercase text-slate-400 hover:text-brand-gold transition-colors cursor-pointer">Mark all seen</button>}
+                    {newCount > 0 && <button onClick={markAllSeen} className="text-xs font-bold uppercase text-slate-400 hover:text-brand-gold transition-colors cursor-pointer">Mark all seen</button>}
                   </div>
                   <div className="max-h-84 overflow-y-auto scrollbar-thin divide-y divide-white/5">
                     {alerts.length === 0 && <p className="px-4 py-8 text-center text-xs text-slate-400">No activity alerts yet.</p>}
                     {alerts.slice(0, 10).map((a) => (
                       <div key={a.id} className={`px-4 py-3 transition-colors ${a.status === 'new' ? 'bg-brand-gold/[0.08]' : 'hover:bg-white/[0.02]'}`}>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-bold text-white truncate">{a.title}</span>
+                          <span className="text-xs sm:text-sm font-bold text-white truncate">{a.title}</span>
                           {a.status === 'new' && <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-brand-gold shadow-[0_0_6px_rgba(215,160,25,0.9)]" />}
                         </div>
-                        {a.body && <p className="text-[11px] text-slate-300 mt-1 line-clamp-2 leading-relaxed">{a.body}</p>}
+                        {a.body && <p className="text-xs text-slate-300 mt-1 line-clamp-2 leading-relaxed">{a.body}</p>}
                         <div className="flex items-center justify-between mt-2 pt-1 border-t border-white/5">
-                          <span className="text-[9px] font-bold text-brand-gold/75 uppercase tracking-wider">{a.division} · {a.type}</span>
-                          <span className="text-[10px] text-slate-400">{new Date(a.createdAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="text-xs font-bold text-brand-gold/80 uppercase tracking-wider">{a.division} · {a.type}</span>
+                          <span className="text-xs text-slate-400">{new Date(a.createdAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                       </div>
                     ))}
@@ -413,19 +410,19 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
             {/* Jump Command Palette Trigger */}
             <button
               onClick={() => setPaletteOpen(true)}
-              className="hidden cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-slate-300 transition-all hover:border-brand-gold/50 hover:bg-white/[0.06] hover:text-white sm:flex active:scale-95 shadow-xs"
+              className="hidden cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs sm:text-sm text-slate-300 transition-all hover:border-brand-gold/50 hover:bg-white/[0.06] hover:text-white sm:flex active:scale-95 shadow-xs"
             >
-              <svg className="h-3.5 w-3.5 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" /></svg>
+              <svg className="h-4 w-4 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" /></svg>
               <span>Command Bar</span>
-              <kbd className="rounded-md border border-white/20 bg-white/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-slate-200">⌘K</kbd>
+              <kbd className="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 font-mono text-xs font-bold text-slate-200">⌘K</kbd>
             </button>
 
             {/* User Chip */}
             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] p-1 pr-3">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-brand-gold to-amber-600 text-xs font-black text-brand-navy shadow-xs">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-brand-gold to-amber-600 text-xs font-black text-brand-navy shadow-xs">
                 {(me?.name || 'A').trim().charAt(0).toUpperCase()}
               </span>
-              <span className="hidden sm:inline text-xs font-bold text-white tracking-tight">
+              <span className="hidden sm:inline text-xs sm:text-sm font-bold text-white tracking-tight">
                 {me?.name || 'Ajmal'}
               </span>
             </div>

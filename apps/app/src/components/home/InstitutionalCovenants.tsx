@@ -24,10 +24,10 @@ export default function InstitutionalCovenants() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2.5 pt-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-white/70 px-3 py-1.5 rounded-full">British Council #115050</span>
-              <span className="text-[11px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-white/70 px-3 py-1.5 rounded-full">Checklist-Built Files</span>
-              <span className="text-[11px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-white/70 px-3 py-1.5 rounded-full">Insured Custody</span>
-              <span className="text-[11px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-white/70 px-3 py-1.5 rounded-full">Audit-Logged</span>
+              <span className="text-sm font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-white/70 px-3 py-1.5 rounded-full">British Council #115050</span>
+              <span className="text-sm font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-white/70 px-3 py-1.5 rounded-full">Checklist-Built Files</span>
+              <span className="text-sm font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-white/70 px-3 py-1.5 rounded-full">Insured Custody</span>
+              <span className="text-sm font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-white/70 px-3 py-1.5 rounded-full">Audit-Logged</span>
             </div>
           </div>
         </div>

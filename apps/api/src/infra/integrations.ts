@@ -15,14 +15,17 @@ export interface IntegrationStatus {
 
 type Env = Record<string, any>;
 
-async function probeHttp(url: string, opts: { auth?: string; timeoutMs?: number } = {}): Promise<{ ok: boolean; latencyMs?: number; status?: number }> {
+async function probeHttp(url: string, opts: { auth?: string; timeoutMs?: number } = {}): Promise<{ ok: boolean; latencyMs?: number; status?: number; authFailed?: boolean }> {
   const started = Date.now();
   try {
     const res = await fetch(url, {
       headers: opts.auth ? { Authorization: opts.auth } : {},
-      signal: AbortSignal.timeout(opts.timeoutMs || 4000),
+      signal: AbortSignal.timeout(opts.timeoutMs || 8000),
     });
-    return { ok: res.ok || [401, 403, 405].includes(res.status), latencyMs: Date.now() - started, status: res.status };
+    const authFailed = [401, 403].includes(res.status);
+    // Do NOT mark 401/403 as live — surface auth failure to caller (audit H1/M1)
+    const ok = res.ok || res.status === 405;
+    return { ok, latencyMs: Date.now() - started, status: res.status, authFailed };
   } catch {
     return { ok: false, latencyMs: Date.now() - started };
   }
@@ -48,21 +51,24 @@ async function probeCal(apiKey: string): Promise<{ ok: boolean; latencyMs?: numb
 
 export async function integrationsStatus(env: Env, db?: any): Promise<IntegrationStatus[]> {
   const out: IntegrationStatus[] = [];
+  const probes: Promise<IntegrationStatus>[] = [];
 
-  // OpenWA (WhatsApp)
+  // OpenWA (WhatsApp) — strict: 401 = auth fail, not live
   if (env.OPENWA_BASE_URL) {
-    const p = await probeHttp(`${env.OPENWA_BASE_URL.replace(/\/$/, '')}/api/health`, { auth: env.OPENWA_API_KEY ? `Bearer ${env.OPENWA_API_KEY}` : undefined });
-    out.push({ key: 'openwa', name: 'OpenWA (WhatsApp)', kind: 'messaging', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
+    probes.push((async () => {
+      const p = await probeHttp(`${env.OPENWA_BASE_URL.replace(/\/$/, '')}/api/health`, { auth: env.OPENWA_API_KEY ? `Bearer ${env.OPENWA_API_KEY}` : undefined });
+      const detail = p.authFailed ? 'auth failed — check OPENWA_API_KEY' : undefined;
+      return { key: 'openwa', name: 'OpenWA (WhatsApp)', kind: 'messaging' as any, state: (p.ok ? 'live' : 'down') as any, latencyMs: p.latencyMs, detail, ...(p.authFailed ? { status: p.status } as any : {}) };
+    })());
   } else {
-    out.push({ key: 'openwa', name: 'OpenWA (WhatsApp)', kind: 'messaging', state: 'stub', detail: 'not configured' });
+    probes.push(Promise.resolve({ key: 'openwa', name: 'OpenWA (WhatsApp)', kind: 'messaging' as any, state: 'stub' as any, detail: 'not configured' }));
   }
 
   // Chatwoot (inbox)
   if (env.CHATWOOT_BASE_URL) {
-    const p = await probeHttp(`${env.CHATWOOT_BASE_URL.replace(/\/$/, '')}/health`);
-    out.push({ key: 'chatwoot', name: 'Chatwoot (Inbox)', kind: 'messaging', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
+    probes.push(probeHttp(`${env.CHATWOOT_BASE_URL.replace(/\/$/, '')}/health`).then((p) => ({ key: 'chatwoot', name: 'Chatwoot (Inbox)', kind: 'messaging' as any, state: (p.ok ? 'live' : 'down') as any, latencyMs: p.latencyMs })));
   } else {
-    out.push({ key: 'chatwoot', name: 'Chatwoot (Inbox)', kind: 'messaging', state: 'stub' });
+    probes.push(Promise.resolve({ key: 'chatwoot', name: 'Chatwoot (Inbox)', kind: 'messaging' as any, state: 'stub' as any }));
   }
 
   // Cal.com cloud (bookings) — status comes from the ACTUAL integration config
@@ -81,6 +87,7 @@ export async function integrationsStatus(env: Env, db?: any): Promise<Integratio
       try { calEventTypes = get('cal_event_types') ? JSON.parse(get('cal_event_types')) : {}; } catch { calEventTypes = {}; }
     } catch { /* keep defaults */ }
   }
+  // Cal.com — sequential (needs DB rows first)
   if (calApiKey) {
     const p = await probeCal(calApiKey);
     const mapped = Object.keys(calEventTypes).length;
@@ -92,60 +99,30 @@ export async function integrationsStatus(env: Env, db?: any): Promise<Integratio
         : p.status === 401 || p.status === 403 ? 'API key rejected by cal.com (invalid/expired)' : 'cal.com API unreachable',
     });
   } else if (env.CAL_BASE_URL) {
-    // Legacy self-hosted Cal.diy instance (tailnet) — kept only as a fallback probe
     const p = await probeHttp(`${env.CAL_BASE_URL.replace(/\/$/, '')}/`);
     out.push({ key: 'calcom', name: 'Cal.com (Bookings)', kind: 'scheduling', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs, detail: 'legacy self-hosted probe — set cal_api_key for cloud status' });
   } else {
     out.push({ key: 'calcom', name: 'Cal.com (Bookings)', kind: 'scheduling', state: 'stub', detail: 'API key not set — Consultations → Cal.com Configuration' });
   }
 
-  // ERPNext (books)
-  if (env.ERPNEXT_BASE_URL) {
-    const p = await probeHttp(`${env.ERPNEXT_BASE_URL.replace(/\/$/, '')}/api/method/ping`, { auth: env.ERPNEXT_API_KEY ? `token ${env.ERPNEXT_API_KEY}:${env.ERPNEXT_API_SECRET}` : undefined });
-    out.push({ key: 'erpnext', name: 'ERPNext (Books)', kind: 'books', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
-  } else {
-    out.push({ key: 'erpnext', name: 'ERPNext (Books)', kind: 'books', state: 'stub' });
-  }
+  // Collect already-awaited (chatwoot/openwa issued above, cal done) — now parallelize remaining 7
+  const first = await Promise.all(probes);
+  out.push(...first);
 
-  // Listmonk (email)
-  if (env.LISTMONK_BASE_URL) {
-    const p = await probeHttp(`${env.LISTMONK_BASE_URL.replace(/\/$/, '')}/subscription/form`, {});
-    out.push({ key: 'listmonk', name: 'Listmonk (Email)', kind: 'email', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
-  } else {
-    out.push({ key: 'listmonk', name: 'Listmonk (Email)', kind: 'email', state: 'stub' });
-  }
-
-  // Umami (analytics — frontend tracker; reachability probe only)
-  if (env.UMAMI_BASE_URL) {
-    const p = await probeHttp(`${env.UMAMI_BASE_URL.replace(/\/$/, '')}/`);
-    out.push({ key: 'umami', name: 'Umami (Analytics)', kind: 'analytics', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
-  } else {
-    out.push({ key: 'umami', name: 'Umami (Analytics)', kind: 'analytics', state: 'stub' });
-  }
-
-  // n8n (automation)
-  if (env.N8N_BASE_URL) {
-    const p = await probeHttp(`${env.N8N_BASE_URL.replace(/\/$/, '')}/healthz`);
-    out.push({ key: 'n8n', name: 'n8n (Automation)', kind: 'automation', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
-  } else {
-    out.push({ key: 'n8n', name: 'n8n (Automation)', kind: 'automation', state: 'stub' });
-  }
-
-  // Uptime Kuma (monitoring)
-  if (env.KUMA_BASE_URL) {
-    const p = await probeHttp(`${env.KUMA_BASE_URL.replace(/\/$/, '')}/`);
-    out.push({ key: 'kuma', name: 'Uptime Kuma (Monitoring)', kind: 'monitoring', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
-  } else {
-    out.push({ key: 'kuma', name: 'Uptime Kuma (Monitoring)', kind: 'monitoring', state: 'stub' });
-  }
-
-  // Twenty (CRM — optional shelf)
-  if (env.TWENTY_BASE_URL) {
-    const p = await probeHttp(`${env.TWENTY_BASE_URL.replace(/\/$/, '')}/`);
-    out.push({ key: 'twenty', name: 'Twenty (CRM — shelved)', kind: 'crm', state: p.ok ? 'live' : 'down', latencyMs: p.latencyMs });
-  } else {
-    out.push({ key: 'twenty', name: 'Twenty (CRM — shelved)', kind: 'crm', state: 'stub' });
-  }
+  const tail = await Promise.all([
+    env.ERPNEXT_BASE_URL ? probeHttp(`${env.ERPNEXT_BASE_URL.replace(/\/$/, '')}/api/method/ping`, { auth: env.ERPNEXT_API_KEY ? `token ${env.ERPNEXT_API_KEY}:${env.ERPNEXT_API_SECRET}` : undefined }).then((p) => ({ key:'erpnext', name:'ERPNext (Books)', kind:'books' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs, detail: p.authFailed ? 'auth failed — check ERPNEXT_API_KEY' : undefined })) : Promise.resolve({ key:'erpnext', name:'ERPNext (Books)', kind:'books' as any, state:'stub' as any }),
+    env.LISTMONK_BASE_URL ? probeHttp(`${env.LISTMONK_BASE_URL.replace(/\/$/, '')}/subscription/form`).then((p)=> ({key:'listmonk', name:'Listmonk (Email)', kind:'email' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs})) : Promise.resolve({key:'listmonk', name:'Listmonk (Email)', kind:'email' as any, state:'stub' as any}),
+    env.UMAMI_BASE_URL ? probeHttp(`${env.UMAMI_BASE_URL.replace(/\/$/, '')}/`).then((p)=> ({key:'umami', name:'Umami (Analytics)', kind:'analytics' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs})) : Promise.resolve({key:'umami', name:'Umami (Analytics)', kind:'analytics' as any, state:'stub' as any}),
+    env.N8N_BASE_URL ? probeHttp(`${env.N8N_BASE_URL.replace(/\/$/, '')}/healthz`).then((p)=> ({key:'n8n', name:'n8n (Automation)', kind:'automation' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs})) : Promise.resolve({key:'n8n', name:'n8n (Automation)', kind:'automation' as any, state:'stub' as any}),
+    env.KUMA_BASE_URL ? probeHttp(`${env.KUMA_BASE_URL.replace(/\/$/, '')}/`).then((p)=> ({key:'kuma', name:'Uptime Kuma (Monitoring)', kind:'monitoring' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs})) : Promise.resolve({key:'kuma', name:'Uptime Kuma (Monitoring)', kind:'monitoring' as any, state:'stub' as any}),
+    env.TWENTY_BASE_URL ? probeHttp(`${env.TWENTY_BASE_URL.replace(/\/$/, '')}/`).then((p)=> ({key:'twenty', name:'Twenty (CRM — shelved)', kind:'crm' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs})) : Promise.resolve({key:'twenty', name:'Twenty (CRM — shelved)', kind:'crm' as any, state:'stub' as any}),
+    // Extended fleet (tunnel-native, not in original registry — added 2026-08-26 audit)
+    env.NOCODB_BASE_URL ? probeHttp(`${env.NOCODB_BASE_URL.replace(/\/$/, '')}/`).then((p)=> ({key:'nocodb', name:'NocoDB (Ops Tables)', kind:'automation' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs})) : Promise.resolve({key:'nocodb', name:'NocoDB (Ops Tables)', kind:'automation' as any, state:'stub' as any}),
+    env.POSTIZ_BASE_URL ? probeHttp(`${env.POSTIZ_BASE_URL.replace(/\/$/, '')}/`).then((p)=> ({key:'postiz', name:'Postiz (Social Composer)', kind:'automation' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs})) : Promise.resolve({key:'postiz', name:'Postiz (Social Composer)', kind:'automation' as any, state:'stub' as any}),
+    env.MAUTIC_URL ? probeHttp(`${env.MAUTIC_URL.replace(/\/$/, '')}/`).then((p)=> ({key:'mautic', name:'Mautic (Nurture)', kind:'email' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs})) : Promise.resolve({key:'mautic', name:'Mautic (Nurture)', kind:'email' as any, state:'stub' as any}),
+    env.INDIA_POST_BASE_URL ? probeHttp(`${env.INDIA_POST_BASE_URL.replace(/\/$/, '')}/health`).then((p)=> ({key:'indiapost', name:'India Post DNK (Logistics)', kind:'automation' as any, state:(p.ok?'live':'down') as any, latencyMs:p.latencyMs})) : Promise.resolve({key:'indiapost', name:'India Post DNK (Logistics)', kind:'automation' as any, state:'stub' as any}),
+  ]);
+  out.push(...(tail as any[]));
 
   return out;
 }

@@ -62,8 +62,7 @@ export interface StudentProfile {
 
 const STEPS = ['Personal', 'Academic', 'Tests', 'Preferences', 'Financial & Family', 'Review & Consent'];
 const INTAKES = ['Fall 2027', 'Spring 2027', 'Summer 2027', 'Fall 2028', 'Spring 2028'];
-// 35+ destination countries (Adventus.io benchmark: 35+ destinations, 1,500+ institutions).
-// Free-text allowed — this list is suggestions only, never a limit.
+// Gold-standard Cal inline + 35+ destinations (Adventus 35+ / 1,500+ benchmark). Free-text allowed.
 const COUNTRIES = [
   'USA', 'UK', 'Canada', 'Australia', 'New Zealand', 'Ireland',
   'Germany', 'France', 'Netherlands', 'Sweden', 'Denmark', 'Finland', 'Norway', 'Switzerland', 'Austria', 'Belgium', 'Spain', 'Italy', 'Portugal', 'Poland', 'Czech Republic', 'Hungary', 'Greece',
@@ -71,26 +70,33 @@ const COUNTRIES = [
   'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Turkey', 'Russia', 'Ukraine',
   'South Africa', 'Egypt', 'Morocco', 'Brazil', 'Mexico', 'Argentina', 'Chile', 'Colombia', 'Other'
 ];
+export const ENGLISH_TESTS = ['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge', 'LanguageCert', 'OET', 'TOEIC', 'Other'] as const;
 
-// Mirror of lib/studyAbroadMatch.ts computeProfileCompleteness (client-side) — universal
+// Unified with apps/api/src/lib/studyAbroadMatch.ts (GATE_PCT=80, exam-valid) — single source of truth
+function isEnglishValidLocal(p: StudentProfile): boolean {
+  if (p.englishWaiver) return true;
+  if (p.testPlanned) return true;
+  const s = p.englishScore;
+  if (s === undefined || s === null || (s as any) === '') return false;
+  // Duolingo 160, PTE 90, TOEFL 120 are valid maxima — trust non-empty
+  return typeof s === 'number' && !Number.isNaN(s);
+}
 export function profileCompleteness(p: StudentProfile): { pct: number; missing: string[]; done: string[] } {
   const checks: [string, string, boolean][] = [
-    ['personal', 'Personal details (name, DOB, nationality)', !!(p.fullName && p.dob && p.nationality)],
-    ['contact', 'Contact (phone, email, address)', !!(p.phone && p.email && p.city)],
     ['academic', 'Academic history (10th/12th or degree)', !!(p.pct10th && p.pct12th) || !!p.degreeName],
-    ['cgpa', 'CGPA / percentage', p.cgpa !== undefined && p.cgpa !== null && p.cgpa !== 0],
-    ['english', 'English score or planned test', (p.englishScore !== undefined && p.englishScore !== null && p.englishScore !== 0) || p.testPlanned === true || !!p.englishWaiver],
+    ['cgpa', 'CGPA / percentage', p.cgpa !== undefined && p.cgpa !== null && (p.cgpa as any) !== '' && p.cgpa !== 0],
+    ['english', 'English score or planned test', isEnglishValidLocal(p)],
     ['country', 'Target country (any destination)', !!p.targetCountry],
     ['intake', 'Target intake', !!p.targetIntake],
     ['course', 'Preferred course', !!p.preferredCourse],
-    ['budget', 'Tuition & living budget', (p.tuitionBudget !== undefined && p.tuitionBudget !== null && p.tuitionBudget !== 0) || (p.livingBudget !== undefined && p.livingBudget !== null && p.livingBudget !== 0)],
-    ['funding', 'Funding source', !!p.fundingSource],
+    ['budget', 'Tuition budget', p.tuitionBudget !== undefined && p.tuitionBudget !== null && (p.tuitionBudget as any) !== '' && p.tuitionBudget !== 0],
     ['consent', 'University-sharing consent (DPDP)', p.universitySharingConsent === true],
   ];
   const done = checks.filter(c => c[2]).map(c => c[1]);
   const missing = checks.filter(c => !c[2]).map(c => c[1]);
   return { pct: Math.round((done.length / checks.length) * 100), missing, done };
 }
+export const GATE_PCT = 80;
 
 interface Props {
   initial: StudentProfile;
@@ -107,8 +113,8 @@ export default function StudentProfileWizard({ initial, highestQualification, on
   const set = (k: keyof StudentProfile, v: any) => setForm(f => ({ ...f, [k]: v }));
   const completeness = profileCompleteness(form);
 
-  const inputCls = 'w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2.5 text-xs text-brand-navy outline-none focus:border-brand-gold min-h-[44px]';
-  const labelCls = 'font-semibold text-brand-navy/40 text-[10px] mb-1 block';
+  const inputCls = 'w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-sm sm:text-base text-brand-navy outline-none focus:border-brand-gold min-h-[44px] transition-all';
+  const labelCls = 'font-semibold text-brand-navy/70 text-xs sm:text-[13px] mb-1.5 block';
   const num = (v: string) => (v === '' ? undefined : Number(v));
 
   const stepValid = () => {
@@ -119,29 +125,29 @@ export default function StudentProfileWizard({ initial, highestQualification, on
   };
 
   return (
-    <div className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-4">
+    <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 sm:p-7 shadow-sm space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="font-display font-bold text-brand-navy text-sm">{title || '🎓 Complete Your Profile'}</h3>
-        {onClose && <button onClick={onClose} className="text-brand-navy/40 hover:text-brand-navy text-lg cursor-pointer">✕</button>}
+        <h3 className="font-display font-bold text-brand-navy text-base sm:text-lg">{title || '🎓 Complete Your Student Profile'}</h3>
+        {onClose && <button onClick={onClose} className="text-brand-navy/40 hover:text-brand-navy text-xl cursor-pointer">✕</button>}
       </div>
 
       {/* Progress */}
       <div>
-        <div className="flex justify-between items-center mb-1.5">
-          <div className="flex gap-1.5">
+        <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {STEPS.map((s, i) => (
               <button
                 key={s}
                 onClick={() => i < step && setStep(i)}
-                className={`px-2.5 py-1 rounded-full text-[9px] font-bold cursor-pointer transition-all ${i === step ? 'bg-brand-gold text-brand-navy' : i < step ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all ${i === step ? 'bg-brand-gold text-brand-navy shadow-sm' : i < step ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}
               >
                 {i < step ? '✓ ' : ''}{s}
               </button>
             ))}
           </div>
-          <span className="text-[10px] font-bold text-brand-navy/50">{completeness.pct}% complete</span>
+          <span className="text-xs font-bold text-brand-navy/60">{completeness.pct}% complete</span>
         </div>
-        <div className="h-2 rounded-full bg-brand-navy/[0.08] overflow-hidden">
+        <div className="h-2.5 rounded-full bg-brand-navy/[0.08] overflow-hidden">
           <div className="h-full bg-brand-gold transition-all duration-500" style={{ width: `${Math.max(20, completeness.pct)}%` }} />
         </div>
       </div>
@@ -149,9 +155,9 @@ export default function StudentProfileWizard({ initial, highestQualification, on
       {/* Step content — Universal, any country */}
       <div className="min-h-[320px]">
         {step === 0 && (
-          <div className="space-y-3">
-            <p className="text-[10px] text-brand-navy/50">Who you are — works for any destination. <b>All fields optional</b> — fill what you have, we guide the rest.</p>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-4">
+            <p className="text-xs sm:text-sm text-brand-navy/60 leading-relaxed">Who you are — works for any destination. <b>All fields optional</b> — fill what you have, we guide the rest.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="col-span-2"><label className={labelCls}>Full name *</label><input className={inputCls} value={form.fullName ?? ''} onChange={e => set('fullName', e.target.value)} placeholder="As on passport" /></div>
               <div><label className={labelCls}>Date of birth</label><input type="date" className={inputCls} value={form.dob ?? ''} onChange={e => set('dob', e.target.value)} /></div>
               <div><label className={labelCls}>Gender</label><select className={inputCls} value={form.gender ?? ''} onChange={e => set('gender', e.target.value)}><option value="">-- Select --</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option><option value="prefer_not_say">Prefer not to say</option></select></div>
@@ -172,7 +178,7 @@ export default function StudentProfileWizard({ initial, highestQualification, on
 
         {step === 1 && (
           <div className="space-y-3">
-            <p className="text-[10px] text-brand-navy/50">Academic history — any board, any degree, any country. Be honest.</p>
+            <p className="text-[13px] text-brand-navy/50">Academic history — any board, any degree, any country. Be honest.</p>
             <div className="grid grid-cols-2 gap-3">
               <div><label className={labelCls}>Highest qualification</label><div className="rounded-lg border border-brand-navy/10 bg-brand-navy/[0.03] px-3 py-2.5 text-xs text-brand-navy/60 uppercase">{highestQualification || '—'}</div></div>
               <div><label className={labelCls}>University / College name</label><input className={inputCls} value={form.universityName ?? ''} onChange={e => set('universityName', e.target.value)} placeholder="Osmania University" /></div>
@@ -194,12 +200,12 @@ export default function StudentProfileWizard({ initial, highestQualification, on
 
         {step === 2 && (
           <div className="space-y-3">
-            <p className="text-[10px] text-brand-navy/50">Tests — any country, any test. Enter what you have or plan.</p>
+            <p className="text-[13px] text-brand-navy/50">Tests — any country, any test. Enter what you have or plan.</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>English test</label>
                 <select className={inputCls} value={form.englishTest || 'IELTS'} onChange={e => set('englishTest', e.target.value)}>
-                  {['IELTS', 'TOEFL', 'PTE', 'Duolingo', 'Cambridge', 'SAT', 'ACT', 'Other'].map(t => <option key={t} value={t}>{t}</option>)}
+                  {ENGLISH_TESTS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div><label className={labelCls}>Score</label><input type="number" min={0} max={160} step={0.5} className={inputCls} value={form.englishScore ?? ''} onChange={e => set('englishScore', num(e.target.value))} placeholder="6.5 / 100 / 120" /></div>
@@ -226,7 +232,7 @@ export default function StudentProfileWizard({ initial, highestQualification, on
 
         {step === 3 && (
           <div className="space-y-3">
-            <p className="text-[10px] text-brand-navy/50">Where & what — any destination, any intake.</p>
+            <p className="text-[13px] text-brand-navy/50">Where & what — any destination, any intake.</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Target country (any)</label>
@@ -258,9 +264,9 @@ export default function StudentProfileWizard({ initial, highestQualification, on
         )}
 
         {step === 4 && (
-          <div className="space-y-3">
-            <p className="text-[10px] text-brand-navy/50">Family & financial — for sponsors, loans, and emergency contact (universal).</p>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-4">
+            <p className="text-xs sm:text-sm text-brand-navy/60 leading-relaxed">Family & financial — for sponsors, loans, and emergency contact (universal).</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div><label className={labelCls}>Parent / guardian name</label><input className={inputCls} value={form.parentName ?? ''} onChange={e => set('parentName', e.target.value)} placeholder="For family updates" /></div>
               <div><label className={labelCls}>Parent phone</label><input className={inputCls} value={form.parentPhone ?? ''} onChange={e => set('parentPhone', e.target.value)} placeholder="+91 …" /></div>
               <div><label className={labelCls}>Parent occupation</label><input className={inputCls} value={form.parentOccupation ?? ''} onChange={e => set('parentOccupation', e.target.value)} placeholder="Business / Service" /></div>
@@ -274,21 +280,29 @@ export default function StudentProfileWizard({ initial, highestQualification, on
         )}
 
         {step === 5 && (
-          <div className="space-y-3">
-            <p className="text-[10px] text-brand-navy/50">Review — check everything, then save. Works for any country.</p>
-            <div className="rounded-lg border border-brand-navy/10 p-3">
-              <label className="flex items-start gap-2 cursor-pointer">
-                <input type="checkbox" checked={!!form.universitySharingConsent} onChange={e => set('universitySharingConsent', e.target.checked)} className="h-4 w-4 accent-brand-gold mt-0.5" />
-                <span className="text-[10px] text-brand-navy/60 leading-relaxed">
-                  <b>Consent (DPDP 2023):</b> I agree that my academic profile and documents may be shared with universities I apply to through Opus Overseas. This consent is recorded with a secure hash and can be withdrawn anytime.
+          <div className="space-y-4">
+            <p className="text-xs sm:text-sm text-brand-navy/60 leading-relaxed">Review — check everything, then save. Works for any country.</p>
+            <div className="rounded-xl border border-brand-navy/15 bg-white p-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={!!form.universitySharingConsent} onChange={e => set('universitySharingConsent', e.target.checked)} className="h-5 w-5 accent-brand-gold mt-0.5 rounded cursor-pointer" />
+                <span className="text-xs sm:text-sm text-brand-navy/70 leading-relaxed">
+                  <b className="text-brand-navy">Consent (DPDP 2023):</b> I agree that my academic profile and documents may be shared with universities I apply to through Opus Overseas. This consent is recorded with a secure hash and can be withdrawn anytime.
                 </span>
               </label>
             </div>
-            <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-1.5">Profile summary</div>
-              <div className="flex flex-wrap gap-1.5">
-                {completeness.done.map(d => <span key={d} className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 text-[9px] font-bold">✓ {d}</span>)}
-                {completeness.missing.map(m => <span key={m} className="px-2 py-0.5 rounded bg-brand-navy/[0.06] text-brand-navy/40 text-[9px] font-bold">○ {m}</span>)}
+            <div className="rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-4">
+              <div className="text-xs font-bold uppercase tracking-wider text-brand-navy/50 mb-2">Profile summary</div>
+              <div className="flex flex-wrap gap-2">
+                {completeness.done.map(d => <span key={d} className="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-800 text-xs font-bold">✓ {d}</span>)}
+                {completeness.missing.map(m => <span key={m} className="px-2.5 py-1 rounded-md bg-brand-navy/[0.06] text-brand-navy/50 text-xs font-medium">○ {m}</span>)}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-brand-gold/40 bg-gradient-to-br from-brand-gold/[0.12] via-white to-brand-gold/[0.04] p-4 text-xs sm:text-sm text-brand-navy/80 flex items-start gap-3 shadow-sm">
+              <span className="text-xl">📅</span>
+              <div className="space-y-1">
+                <b className="text-brand-navy text-sm block">Next Step: 1-on-1 Admissions Strategy Session</b>
+                <p className="text-xs text-brand-navy/70 leading-relaxed">Once saved, you will book your mandatory 30-minute Strategy Call with our Senior Admissions Director to lock your personalized Safe & Reach university shortlists.</p>
               </div>
             </div>
           </div>

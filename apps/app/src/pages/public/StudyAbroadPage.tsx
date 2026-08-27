@@ -229,7 +229,7 @@ export default function StudyAbroadPage() {
                       <p className="font-display text-xs font-bold uppercase tracking-wider text-brand-gold">Global Institutional Access</p>
                       <p className="font-display text-sm font-extrabold text-brand-navy">1,500+ Top University Portals</p>
                     </div>
-                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
+                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-2.5 py-1 text-[13px] font-bold font-mono">
                       ● Fall '26 & '27
                     </span>
                   </div>
@@ -245,19 +245,19 @@ export default function StudyAbroadPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           <div className="text-center">
             <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">1,500+</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Global University Portals</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand-textLight mt-1">Global University Portals</p>
           </div>
           <div className="text-center">
             <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-gold">Free Guidance</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Student Counselling & Shortlisting</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand-textLight mt-1">Student Counselling & Shortlisting</p>
           </div>
           <div className="text-center">
             <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-navy">Building Certified Guidance</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Certified UK Counsellor #115050</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand-textLight mt-1">Certified UK Counsellor #115050</p>
           </div>
           <div className="text-center">
             <p className="font-display text-2xl sm:text-3xl font-extrabold text-brand-gold">96.8%</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-brand-textLight mt-1">Consular Visa Presentation Success</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand-textLight mt-1">Consular Visa Presentation Success</p>
           </div>
         </div>
       </section>
@@ -287,7 +287,7 @@ export default function StudyAbroadPage() {
                       {d.country}
                     </h3>
                   </div>
-                  <span className="rounded-full bg-brand-gold/10 border border-brand-gold/30 px-2.5 py-0.5 text-[10px] font-bold text-brand-navy font-mono">
+                  <span className="rounded-full bg-brand-gold/10 border border-brand-gold/30 px-2.5 py-0.5 text-[13px] font-bold text-brand-navy font-mono">
                     Tier-1 Hub
                   </span>
                 </div>
@@ -299,7 +299,7 @@ export default function StudyAbroadPage() {
                 <div className="space-y-2 border-t border-brand-navy/5 pt-3.5 text-xs">
                   <div className="flex justify-between items-center">
                     <span className="text-brand-textLight">Tuition Bracket:</span>
-                    <span className="inline-flex items-center gap-1 rounded bg-brand-navy/5 border border-brand-navy/10 px-2 py-0.5 text-[10px] font-bold text-brand-navy">
+                    <span className="inline-flex items-center gap-1 rounded bg-brand-navy/5 border border-brand-navy/10 px-2 py-0.5 text-[13px] font-bold text-brand-navy">
                       <span>🔒</span>
                       <span>Sign In to Unlock</span>
                     </span>
@@ -315,10 +315,10 @@ export default function StudyAbroadPage() {
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-brand-navy/5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">Top Campuses:</p>
+                  <p className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1.5">Top Campuses:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {d.topUnis.map((u) => (
-                      <span key={u} className="rounded-md bg-white border border-brand-navy/10 px-2 py-0.5 text-[10px] font-medium text-brand-navy">
+                      <span key={u} className="rounded-md bg-white border border-brand-navy/10 px-2 py-0.5 text-[13px] font-medium text-brand-navy">
                         {u}
                       </span>
                     ))}
@@ -354,10 +354,10 @@ export default function StudyAbroadPage() {
               <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-white/40">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-brand-gold">Building Towards Certified Guidance</p>
+                    <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">Building Towards Certified Guidance</p>
                     <p className="text-xs sm:text-sm font-extrabold text-brand-navy">ID #115050 · Official Advisory</p>
                   </div>
-                  <span className="rounded-full bg-emerald-500/15 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
+                  <span className="rounded-full bg-emerald-500/15 text-emerald-800 px-2.5 py-1 text-[13px] font-bold font-mono">
                     ● Free Guidance Guidance
                   </span>
                 </div>
@@ -412,7 +412,7 @@ export default function StudyAbroadPage() {
         <DomainDarkGraphics variant="study" />
         <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
           <div className="mb-12 text-center space-y-3">
-            <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-gold font-mono">
+            <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3.5 py-1 text-sm font-bold uppercase tracking-wider text-brand-gold font-mono">
               Live Algorithm v2.4
             </span>
             <h2 className="font-display fluid-h2 font-extrabold text-white">
@@ -427,7 +427,7 @@ export default function StudyAbroadPage() {
             {/* Controls panel */}
             <div className="lg:col-span-5 glass-light p-6 sm:p-7 rounded-3xl text-brand-navy shadow-2xl space-y-5">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-2">
                   Destination Country
                 </label>
                 <select
@@ -443,7 +443,7 @@ export default function StudyAbroadPage() {
 
               <div>
                 <div className="flex justify-between text-xs font-bold mb-1">
-                  <span className="text-brand-textLight uppercase tracking-wider text-[10px]">Academic GPA (Out of 10)</span>
+                  <span className="text-brand-textLight uppercase tracking-wider text-[13px]">Academic GPA (Out of 10)</span>
                   <span className="text-brand-navy font-mono text-sm">{gpa.toFixed(1)} / 10.0</span>
                 </div>
                 <input
@@ -459,7 +459,7 @@ export default function StudyAbroadPage() {
 
               <div>
                 <div className="flex justify-between text-xs font-bold mb-1">
-                  <span className="text-brand-textLight uppercase tracking-wider text-[10px]">English Score (IELTS / PTE Equiv.)</span>
+                  <span className="text-brand-textLight uppercase tracking-wider text-[13px]">English Score (IELTS / PTE Equiv.)</span>
                   <span className="text-brand-navy font-mono text-sm">{ielts.toFixed(1)}</span>
                 </div>
                 <input
@@ -475,7 +475,7 @@ export default function StudyAbroadPage() {
 
               <div>
                 <div className="flex justify-between text-xs font-bold mb-1">
-                  <span className="text-brand-textLight uppercase tracking-wider text-[10px]">Institutional Tier Target</span>
+                  <span className="text-brand-textLight uppercase tracking-wider text-[13px]">Institutional Tier Target</span>
                   <span className="text-brand-gold-hover font-mono text-sm">
                     {budget <= 15 ? 'Value & Scholarship Tier' : budget <= 28 ? 'Standard Comprehensive Tier' : 'Global Ivy & Research Tier'}
                   </span>
@@ -524,7 +524,7 @@ export default function StudyAbroadPage() {
                       <div className="min-w-0 pr-4">
                         <div className="flex items-center gap-2">
                           <p className="truncate font-display text-base font-bold text-white">{u.name}</p>
-                          <span className="rounded bg-brand-gold/20 text-brand-gold px-2 py-0.5 text-[10px] font-bold font-mono">
+                          <span className="rounded bg-brand-gold/20 text-brand-gold px-2 py-0.5 text-[13px] font-bold font-mono">
                             {u.intake}
                           </span>
                         </div>
@@ -550,26 +550,26 @@ export default function StudyAbroadPage() {
                           Post-Study Work Permit & 5-Year ROI Projection ({selectedCountry})
                         </h4>
                       </div>
-                      <span className="rounded-full bg-emerald-400/20 text-emerald-200 px-2.5 py-0.5 text-[10px] font-mono font-bold">
+                      <span className="rounded-full bg-emerald-400/20 text-emerald-200 px-2.5 py-0.5 text-[13px] font-mono font-bold">
                         Calculated
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                       <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                        <p className="text-[10px] uppercase tracking-wider text-white/60">Work Rights</p>
+                        <p className="text-[13px] uppercase tracking-wider text-white/60">Work Rights</p>
                         <p className="font-extrabold text-white mt-1">
                           {selectedCountry === 'United States' ? '3 Years STEM OPT' : selectedCountry === 'United Kingdom' ? '2 Years Graduate Route' : selectedCountry === 'Germany' ? '18 Mo. Job Seeking' : '2 to 4 Years PSWP'}
                         </p>
                       </div>
                       <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                        <p className="text-[10px] uppercase tracking-wider text-white/60">Key Growth Sectors</p>
+                        <p className="text-[13px] uppercase tracking-wider text-white/60">Key Growth Sectors</p>
                         <p className="font-extrabold text-emerald-400 mt-1">
                           {selectedCountry === 'United States' ? 'Tech, AI & High-Tech STEM' : selectedCountry === 'United Kingdom' ? 'Financial & Core Engineering' : selectedCountry === 'Germany' ? 'Automotive & Clean Tech' : 'Software & Biotechnology'}
                         </p>
                       </div>
                       <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                        <p className="text-[10px] uppercase tracking-wider text-white/60">Career Trajectory</p>
+                        <p className="text-[13px] uppercase tracking-wider text-white/60">Career Trajectory</p>
                         <p className="font-extrabold text-brand-gold mt-1">Accelerated Global Mobility</p>
                       </div>
                     </div>

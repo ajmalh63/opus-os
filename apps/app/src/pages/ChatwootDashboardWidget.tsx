@@ -134,12 +134,12 @@ export default function ChatwootDashboardWidget() {
           </div>
           <div>
             <h1 className="text-xs font-extrabold tracking-wider text-white uppercase">Opus OS CRM Desk</h1>
-            <p className="text-[10px] text-white/50">Live Counselor Sidebar</p>
+            <p className="text-[13px] text-white/50">Live Counselor Sidebar</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[10px] font-bold text-emerald-400 uppercase">Live</span>
+          <span className="text-[13px] font-bold text-emerald-400 uppercase">Live</span>
         </div>
       </div>
 
@@ -156,18 +156,18 @@ export default function ChatwootDashboardWidget() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 backdrop-blur-md">
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-[9px] font-extrabold uppercase tracking-widest text-brand-gold">
+                <span className="text-xs font-extrabold uppercase tracking-widest text-brand-gold">
                   {data.client.id}
                 </span>
                 <h2 className="text-sm font-extrabold text-white mt-0.5">{data.client.name}</h2>
-                <p className="text-[11px] text-white/60 truncate">{data.client.email}</p>
+                <p className="text-sm text-white/60 truncate">{data.client.email}</p>
                 {data.client.phone && (
-                  <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
+                  <p className="text-sm text-emerald-400 font-semibold mt-0.5">
                     📱 {data.client.phone}
                   </p>
                 )}
               </div>
-              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-300 border border-emerald-500/30">
+              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-bold uppercase text-emerald-300 border border-emerald-500/30">
                 {data.client.status}
               </span>
             </div>
@@ -177,7 +177,7 @@ export default function ChatwootDashboardWidget() {
               {data.portalUrl && (
                 <button
                   onClick={() => copyToClipboard(data.portalUrl!, 'portal')}
-                  className="inline-flex items-center justify-center gap-1 rounded-xl border border-brand-gold/30 bg-brand-gold/10 px-2 py-1.5 text-[10px] font-bold text-brand-gold hover:bg-brand-gold hover:text-brand-navy transition cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1 rounded-xl border border-brand-gold/30 bg-brand-gold/10 px-2 py-1.5 text-[13px] font-bold text-brand-gold hover:bg-brand-gold hover:text-brand-navy transition cursor-pointer"
                 >
                   {copiedKey === 'portal' ? '✅ Copied!' : '🔗 Copy Portal Link'}
                 </button>
@@ -191,7 +191,7 @@ export default function ChatwootDashboardWidget() {
                       'booking',
                     )
                   }
-                  className="inline-flex items-center justify-center gap-1 rounded-xl border border-blue-400/30 bg-blue-500/10 px-2 py-1.5 text-[10px] font-bold text-blue-300 hover:bg-blue-500 hover:text-white transition cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1 rounded-xl border border-blue-400/30 bg-blue-500/10 px-2 py-1.5 text-[13px] font-bold text-blue-300 hover:bg-blue-500 hover:text-white transition cursor-pointer"
                 >
                   {copiedKey === 'booking' ? '✅ Copied!' : '📅 Copy 1-on-1 Link'}
                 </button>
@@ -202,17 +202,17 @@ export default function ChatwootDashboardWidget() {
           {/* ACTIVE ENGAGEMENTS & STAGES */}
           {data.engagements && data.engagements.length > 0 && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/50 mb-2">
+              <p className="text-[13px] font-extrabold uppercase tracking-wider text-white/50 mb-2">
                 Active Services & Stages
               </p>
               <div className="space-y-2">
                 {data.engagements.map((eng) => (
                   <div key={eng.id} className="flex items-center justify-between rounded-xl bg-white/5 p-2 text-xs">
                     <div>
-                      <span className="font-bold text-white block text-[11px]">{eng.title}</span>
-                      <span className="text-[9px] uppercase tracking-wider text-white/40">{eng.division}</span>
+                      <span className="font-bold text-white block text-sm">{eng.title}</span>
+                      <span className="text-xs uppercase tracking-wider text-white/40">{eng.division}</span>
                     </div>
-                    <span className="rounded-md bg-brand-gold/20 px-2 py-0.5 text-[10px] font-bold text-brand-gold uppercase">
+                    <span className="rounded-md bg-brand-gold/20 px-2 py-0.5 text-[13px] font-bold text-brand-gold uppercase">
                       {eng.stageKey}
                     </span>
                   </div>
@@ -224,17 +224,17 @@ export default function ChatwootDashboardWidget() {
           {/* STUDY ABROAD APPLICATIONS SNAPSHOT */}
           {data.studyAbroadApplications && data.studyAbroadApplications.length > 0 && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/50 mb-2">
+              <p className="text-[13px] font-extrabold uppercase tracking-wider text-white/50 mb-2">
                 🎓 University Applications ({data.studyAbroadApplications.length})
               </p>
               <div className="space-y-1.5">
                 {data.studyAbroadApplications.map((app) => (
-                  <div key={app.id} className="rounded-xl bg-white/5 p-2 text-[11px]">
+                  <div key={app.id} className="rounded-xl bg-white/5 p-2 text-sm">
                     <p className="font-bold text-white">{app.universityName}</p>
-                    <p className="text-[10px] text-white/60">
+                    <p className="text-[13px] text-white/60">
                       {app.programName} · {app.targetCountry} ({app.targetIntake})
                     </p>
-                    <span className="mt-1 inline-block text-[9px] font-bold uppercase text-brand-gold">
+                    <span className="mt-1 inline-block text-xs font-bold uppercase text-brand-gold">
                       Status: {app.status}
                     </span>
                   </div>
@@ -246,15 +246,15 @@ export default function ChatwootDashboardWidget() {
           {/* SCHEDULED SESSIONS */}
           {data.bookings && data.bookings.length > 0 && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/50 mb-2">
+              <p className="text-[13px] font-extrabold uppercase tracking-wider text-white/50 mb-2">
                 📅 Scheduled Consultations
               </p>
               <div className="space-y-1.5">
                 {data.bookings.map((b) => (
-                  <div key={b.id} className="rounded-xl bg-white/5 p-2 text-[11px] flex justify-between items-center">
+                  <div key={b.id} className="rounded-xl bg-white/5 p-2 text-sm flex justify-between items-center">
                     <div>
                       <p className="font-bold text-white">{b.title}</p>
-                      <p className="text-[10px] text-white/60">
+                      <p className="text-[13px] text-white/60">
                         {new Date(b.startTime * 1000).toLocaleString('en-IN', {
                           month: 'short',
                           day: 'numeric',
@@ -263,7 +263,7 @@ export default function ChatwootDashboardWidget() {
                         })}
                       </p>
                     </div>
-                    <span className="text-[9px] font-bold uppercase text-emerald-400">{b.status}</span>
+                    <span className="text-xs font-bold uppercase text-emerald-400">{b.status}</span>
                   </div>
                 ))}
               </div>
@@ -277,17 +277,17 @@ export default function ChatwootDashboardWidget() {
         <div className="space-y-3">
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-200">
             <p className="text-xs font-bold">Unregistered Contact</p>
-            <p className="text-[10px] text-amber-300/80 mt-0.5">
+            <p className="text-[13px] text-amber-300/80 mt-0.5">
               This visitor is not yet enrolled in Opus OS CRM.
             </p>
           </div>
 
           <form onSubmit={handleQuickLead} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 space-y-3">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/60">
+            <p className="text-[13px] font-extrabold uppercase tracking-wider text-white/60">
               ⚡ 1-Click Quick Lead Enrollment
             </p>
             <div>
-              <label className="block text-[9px] font-bold uppercase text-white/50 mb-1">Full Name</label>
+              <label className="block text-xs font-bold uppercase text-white/50 mb-1">Full Name</label>
               <input
                 value={quickName || contactName}
                 onChange={(e) => setQuickName(e.target.value)}
@@ -297,7 +297,7 @@ export default function ChatwootDashboardWidget() {
               />
             </div>
             <div>
-              <label className="block text-[9px] font-bold uppercase text-white/50 mb-1">Primary Division</label>
+              <label className="block text-xs font-bold uppercase text-white/50 mb-1">Primary Division</label>
               <select
                 value={quickDivision}
                 onChange={(e) => setQuickDivision(e.target.value)}
@@ -323,7 +323,7 @@ export default function ChatwootDashboardWidget() {
           {/* Direct 1-on-1 Consultation Invite Share */}
           {data?.bookingLinks && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-3 space-y-2">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-white/50">
+              <p className="text-[13px] font-extrabold uppercase tracking-wider text-white/50">
                 Share 1-on-1 Consultation Link
               </p>
               <div className="grid grid-cols-1 gap-1.5">
@@ -331,10 +331,10 @@ export default function ChatwootDashboardWidget() {
                   <button
                     key={div}
                     onClick={() => copyToClipboard(link, div)}
-                    className="w-full text-left flex items-center justify-between rounded-xl bg-white/5 px-2.5 py-2 text-[10px] font-bold text-white/80 hover:bg-white/10 hover:text-white transition cursor-pointer"
+                    className="w-full text-left flex items-center justify-between rounded-xl bg-white/5 px-2.5 py-2 text-[13px] font-bold text-white/80 hover:bg-white/10 hover:text-white transition cursor-pointer"
                   >
                     <span>📅 {div.replace('-', ' ').toUpperCase()}</span>
-                    <span className="text-brand-gold text-[9px]">
+                    <span className="text-brand-gold text-xs">
                       {copiedKey === div ? '✅ Copied' : 'Copy Link ↗'}
                     </span>
                   </button>

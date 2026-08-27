@@ -13,13 +13,13 @@ export function HealthRing({ score, tier }: { score: number, tier: 'green'|'yell
         <div className="absolute inset-0 grid place-items-center">
           <div className="text-center">
             <div className="font-display font-bold text-xl leading-none" style={{ color }}>{score}</div>
-            <div className="text-[9px] font-bold uppercase tracking-wide text-brand-navy/50">Health</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">Health</div>
           </div>
         </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-xs font-bold text-brand-navy">Journey Health</div>
-        <div className="text-[11px] text-brand-navy/60 mt-1">
+        <div className="text-sm text-brand-navy/60 mt-1">
           {tier==='green' ? 'On track — keep momentum.' : tier==='yellow' ? 'Needs attention — one task overdue.' : 'At risk — action needed today.'}
         </div>
         <div className="mt-2 h-1.5 w-full rounded-full bg-brand-navy/10 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${score}%`, background: color }} /></div>

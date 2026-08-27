@@ -331,10 +331,10 @@ export default function ClientPortal() {
       {/* HEADER */}
       <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 py-3.5 px-6 md:px-10 sticky top-0 shadow-xs z-30 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Logo className="h-8 w-auto" />
+          <Logo className="h-9 w-auto" />
           <div>
-            <span className="font-display font-extrabold text-base tracking-wider block text-brand-navy">Opus Overseas</span>
-            <span className="text-[9px] text-brand-gold font-bold tracking-widest uppercase block leading-none">Client Workspace & Services</span>
+            <span className="font-display font-extrabold text-base sm:text-lg tracking-wider block text-brand-navy">Opus Overseas</span>
+            <span className="text-xs text-brand-gold font-bold tracking-widest uppercase block leading-none mt-0.5">Client Workspace & Services</span>
           </div>
         </div>
 
@@ -342,24 +342,24 @@ export default function ClientPortal() {
           <button
             type="button"
             onClick={() => setCommandPaletteOpen(true)}
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200 text-xs font-semibold text-slate-700 transition cursor-pointer"
+            className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200 text-xs font-semibold text-slate-700 transition cursor-pointer"
             title="Press Cmd+K or Ctrl+K to open search"
           >
             <span>🔍</span>
             <span className="hidden md:inline">Quick Jump</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-mono text-slate-500 shadow-2xs">
+            <kbd className="px-2 py-0.5 rounded bg-white border border-slate-200 text-xs font-mono text-slate-600 shadow-2xs">
               ⌘K
             </kbd>
           </button>
           <LanguagePill />
-          <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200/70 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-bold">
+          <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200/70 text-emerald-800 px-3.5 py-1.5 rounded-full text-xs font-bold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Live Sync</span>
           </div>
 
           <a
             href="tel:+919876543210"
-            className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300/70 text-slate-700 px-3 py-1.5 rounded-xl transition font-semibold flex items-center gap-1.5"
+            className="text-xs sm:text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300/70 text-slate-700 px-3.5 py-2 rounded-xl transition font-semibold flex items-center gap-1.5"
           >
             <span>📞</span>
             <span className="hidden sm:inline">Support Hotline</span>
@@ -369,7 +369,7 @@ export default function ClientPortal() {
             <button
               type="button"
               onClick={handleSignOut}
-              className="text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-lg transition font-semibold cursor-pointer"
+              className="text-xs sm:text-sm bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3.5 py-2 rounded-xl transition font-semibold cursor-pointer"
             >
               Sign Out
             </button>
@@ -381,181 +381,179 @@ export default function ClientPortal() {
       {authEmail || me?.authenticated ? (
         <div className="flex flex-1 max-w-[1440px] w-full mx-auto">
           {/* LEFT SIDEBAR NAVIGATION PANE */}
-          <aside className="w-64 shrink-0 bg-white border-r border-slate-200/80 p-4 space-y-6 flex flex-col justify-between hidden md:flex min-h-[calc(100vh-65px)] sticky top-[65px]">
+          <aside className="w-72 shrink-0 bg-white border-r border-slate-200/80 p-5 space-y-6 flex flex-col justify-between hidden md:flex min-h-[calc(100vh-65px)] sticky top-[65px]">
             <div className="space-y-6">
               {/* Client Profile Header */}
-              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-brand-gold/20 text-brand-gold font-extrabold flex items-center justify-center text-xs">
+              <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-brand-gold/20 text-brand-gold font-extrabold flex items-center justify-center text-sm">
                     👤
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-slate-800 truncate">{me?.name || authEmail}</div>
-                    <div className="text-[9px] text-slate-400 font-mono">#{me?.id?.slice(0, 10) || 'CLIENT'}</div>
+                    <div className="text-sm font-bold text-slate-800 truncate">{me?.name || authEmail}</div>
+                    <div className="text-xs text-slate-500 font-mono">#{me?.id?.slice(0, 10) || 'CLIENT'}</div>
                   </div>
                 </div>
-                <div className="text-[9px] bg-brand-gold/15 text-brand-navy font-bold px-2 py-0.5 rounded text-center">
+                <div className="text-xs bg-brand-gold/15 text-brand-navy font-bold px-3 py-1 rounded-lg text-center">
                   ✨ Verified Client Workspace
                 </div>
               </div>
 
               {/* Navigation Section 1: Main Hub */}
-              <div className="space-y-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 block">
+              <div className="space-y-1.5">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400 px-3 block">
                   Main Desk
                 </span>
                 <button
                   type="button"
                   onClick={() => navigateTab('dashboard')}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'dashboard'
                       ? 'bg-brand-navy text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2.5">
                     <span>📊</span>
                     <span>Dashboard & Pipeline</span>
                   </span>
-                  {portalTab === 'dashboard' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  {portalTab === 'dashboard' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
                 </button>
               </div>
 
               {/* Navigation Section 2: Global Divisions */}
-              <div className="space-y-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 block">
+              <div className="space-y-1.5">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400 px-3 block">
                   Enrolled Divisions
                 </span>
                 <button
                   type="button"
                   onClick={() => navigateTab('study')}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'study'
                       ? 'bg-brand-navy text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2.5">
                     <span>🎓</span>
                     <span>Study Abroad</span>
                   </span>
-                  <div className="flex items-center gap-1">
-                    {!isEnabled('study-abroad') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
-                    {portalTab === 'study' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1.5">
+                    {!isEnabled('study-abroad') && <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'study' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => navigateTab('visa')}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'visa'
                       ? 'bg-brand-navy text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
-                    <span>✈️</span>
+                  <span className="flex items-center gap-2.5">
+                    <span>🛂</span>
                     <span>Visa Processing</span>
                   </span>
-                  <div className="flex items-center gap-1">
-                    {!isEnabled('visa') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
-                    {portalTab === 'visa' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1.5">
+                    {!isEnabled('visa') && <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'visa' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => navigateTab('umrah')}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'umrah'
                       ? 'bg-brand-navy text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
-                    <span>🕋</span>
-                    <span>Umrah Pilgrimage</span>
+                  <span className="flex items-center gap-2.5">
+                    <span>🧳</span>
+                    <span>Tours &amp; Travels</span>
                   </span>
-                  <div className="flex items-center gap-1">
-                    {!isEnabled('umrah') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
-                    {portalTab === 'umrah' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1.5">
+                    {!isEnabled('umrah') && <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'umrah' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => navigateTab('attestation')}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'attestation'
                       ? 'bg-brand-navy text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
-                    <span>📑</span>
+                  <span className="flex items-center gap-2.5">
+                    <span>📜</span>
                     <span>Attestation Desk</span>
                   </span>
-                  <div className="flex items-center gap-1">
-                    {!isEnabled('attestation') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
-                    {portalTab === 'attestation' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1.5">
+                    {!isEnabled('attestation') && <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'attestation' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => navigateTab('jobs')}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'jobs'
                       ? 'bg-brand-navy text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2.5">
                     <span>💼</span>
                     <span>Global Careers</span>
                   </span>
-                  <div className="flex items-center gap-1">
-                    {!isEnabled('manpower') && <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">Soon</span>}
-                    {portalTab === 'jobs' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  <div className="flex items-center gap-1.5">
+                    {!isEnabled('manpower') && <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Soon</span>}
+                    {portalTab === 'jobs' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
                   </div>
                 </button>
               </div>
 
               {/* Navigation Section 3: Records & Vault */}
-              <div className="space-y-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 block">
+              <div className="space-y-1.5">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400 px-3 block">
                   Records & Vault
                 </span>
                 <button
                   type="button"
                   onClick={() => navigateTab('journey')}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
                     portalTab === 'journey'
                       ? 'bg-brand-navy text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2.5">
                     <span>🗺️</span>
                     <span>Journey Overview</span>
                   </span>
-                  {portalTab === 'journey' && <span className="w-1.5 h-1.5 rounded-full bg-brand-gold"></span>}
+                  {portalTab === 'journey' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
                 </button>
               </div>
             </div>
-
-
           </aside>
 
           {/* MAIN CONTENT AREA — pb for fixed bottom nav thumb-zone */}
           <main className="flex-1 p-6 md:p-8 pb-[88px] md:pb-8 space-y-8 overflow-y-auto">
             {/* Mobile Horizontal Navigation Strip */}
-            <div className="md:hidden flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-200">
+            <div className="md:hidden flex items-center gap-2 overflow-x-auto pb-2.5 border-b border-slate-200">
               <button
                 type="button"
                 onClick={() => navigateTab('dashboard')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer ${
                   portalTab === 'dashboard' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
@@ -564,57 +562,57 @@ export default function ClientPortal() {
               <button
                 type="button"
                 onClick={() => navigateTab('study')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   portalTab === 'study' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
                 <span>🎓 Study</span>
-                {!isEnabled('study-abroad') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
+                {!isEnabled('study-abroad') && <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">Soon</span>}
               </button>
               <button
                 type="button"
                 onClick={() => navigateTab('visa')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   portalTab === 'visa' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
-                <span>✈️ Visa</span>
-                {!isEnabled('visa') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
+                <span>🛂 Visa</span>
+                {!isEnabled('visa') && <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">Soon</span>}
               </button>
               <button
                 type="button"
                 onClick={() => navigateTab('umrah')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   portalTab === 'umrah' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
-                <span>🕋 Umrah</span>
-                {!isEnabled('umrah') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
+                <span>🧳 Tours &amp; Travels</span>
+                {!isEnabled('umrah') && <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">Soon</span>}
               </button>
               <button
                 type="button"
                 onClick={() => navigateTab('attestation')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   portalTab === 'attestation' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
                 <span>📑 Attest</span>
-                {!isEnabled('attestation') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
+                {!isEnabled('attestation') && <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">Soon</span>}
               </button>
               <button
                 type="button"
                 onClick={() => navigateTab('jobs')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   portalTab === 'jobs' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
                 <span>💼 Careers</span>
-                {!isEnabled('manpower') && <span className="text-[8px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded">Soon</span>}
+                {!isEnabled('manpower') && <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">Soon</span>}
               </button>
               <button
                 type="button"
                 onClick={() => navigateTab('journey')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer ${
                   portalTab === 'journey' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
@@ -709,7 +707,7 @@ export default function ClientPortal() {
         <main className="max-w-6xl w-full mx-auto p-6 md:p-8 flex-1 flex flex-col gap-8">
           <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-8">
             <div className="max-w-xl space-y-3">
-              <span className="text-[10px] bg-brand-gold/15 text-brand-navy font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              <span className="text-[13px] bg-brand-gold/15 text-brand-navy font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                 Public Journey Lookup
               </span>
               <h1 className="font-display font-extrabold text-2xl md:text-3xl text-brand-navy leading-tight">
@@ -745,28 +743,28 @@ export default function ClientPortal() {
             <div className="space-y-3 max-w-md">
               <div className="flex items-center gap-3">
                 <img src="/Footer.svg" alt="Opus Overseas" className="h-10 w-auto" />
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/60">British Council Certified Agent #115050</span>
+                <span className="text-[13px] px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/60">British Council Certified Agent #115050</span>
               </div>
               <p className="text-xs leading-relaxed text-brand-cream/60">
                 Transparent guidance for study abroad, visas, attestation, Umrah, and careers. No inflated numbers — real updates appear here when you begin. Your data stays private.
               </p>
-              <div className="text-[11px] leading-relaxed text-brand-cream/60">
+              <div className="text-sm leading-relaxed text-brand-cream/60">
                 <div className="font-bold text-white/80">Opus Overseas — Nizamabad, Telangana</div>
                 <div>Nizamabad — Telangana, India</div>
                 <div className="mt-1"><a href="tel:+919398848376" className="hover:text-brand-gold">+91 93988 48376</a> · <a href="mailto:contact@opusoverseas.com" className="hover:text-brand-gold">contact@opusoverseas.com</a></div>
-                <div className="text-[11px] text-brand-cream/40 mt-1">Mon–Sat 9:30 AM – 6:30 PM • Support via chatbot bubble</div>
+                <div className="text-sm text-brand-cream/40 mt-1">Mon–Sat 9:30 AM – 6:30 PM • Support via chatbot bubble</div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-8 text-xs">
               <div className="space-y-2">
-                <p className="font-bold text-white/80 uppercase tracking-wider text-[11px]">Explore</p>
+                <p className="font-bold text-white/80 uppercase tracking-wider text-sm">Explore</p>
                 <a href="/" className="block text-brand-cream/60 hover:text-brand-gold transition">Home</a>
                 <a href="/about" className="block text-brand-cream/60 hover:text-brand-gold transition">About</a>
                 <a href="/contact" className="block text-brand-cream/60 hover:text-brand-gold transition">Contact</a>
                 <a href="/lead-form" className="block text-brand-cream/60 hover:text-brand-gold transition">Get in touch</a>
               </div>
               <div className="space-y-2">
-                <p className="font-bold text-white/80 uppercase tracking-wider text-[11px]">Legal</p>
+                <p className="font-bold text-white/80 uppercase tracking-wider text-sm">Legal</p>
                 <a href="/privacy" className="block text-brand-cream/60 hover:text-brand-gold transition">Privacy Policy</a>
                 <a href="/terms" className="block text-brand-cream/60 hover:text-brand-gold transition">Terms of Service</a>
                 <a href="/refund-policy" className="block text-brand-cream/60 hover:text-brand-gold transition">Refund Policy</a>
@@ -776,13 +774,23 @@ export default function ClientPortal() {
           </div>
           <div className="mt-6 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-brand-cream/40">
             <span>© 2026 Opus Overseas (Telangana, India). All rights reserved. — Honest from day one, no fake badges.</span>
-            <span className="text-[11px] text-brand-cream/30">Built transparently • Updates live when available</span>
+            <span className="text-sm text-brand-cream/30">Built transparently • Updates live when available</span>
           </div>
         </div>
       </footer>
       {/* Mobile Bottom Nav — thumb zone, fixed, 44px min targets */}
       <ClientMobileNav active={portalTab as any} onChange={(t) => setPortalTab(t as any)} />
-      <ChatWidget />
+      <ChatWidget
+        user={{
+          id: me?.id || sessionData?.journeys?.[0]?.client?.id || activeToken,
+          name: me?.name || sessionData?.journeys?.[0]?.client?.name || authEmail || 'Client',
+          email: me?.email || authEmail || sessionData?.journeys?.[0]?.client?.email,
+          phone: sessionData?.journeys?.[0]?.client?.phone,
+          division: sessionData?.journeys?.[0]?.engagements?.[0]?.division || 'general',
+          stageKey: sessionData?.journeys?.[0]?.engagements?.[0]?.stageKey || 'documents',
+          counselorName: sessionData?.journeys?.[0]?.assignedCounselor?.name,
+        }}
+      />
 
       {/* ENTERPRISE COMMAND PALETTE & MODALS */}
       <ClientCommandPalette
@@ -887,26 +895,26 @@ const VISA_FLOW: { key: string; label: string }[] = [
 
 const VISA_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const VISA_INPUT = 'w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/30 outline-none transition font-medium shadow-xs';
-const VISA_LABEL = 'text-[10px] font-bold uppercase tracking-wider text-slate-500';
-const VISA_HEADING = 'text-[10px] font-extrabold uppercase tracking-widest text-brand-gold';
-const VISA_BTN = 'bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white font-bold transition shadow-xs';
+const VISA_INPUT = 'w-full text-sm sm:text-base px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/30 outline-none transition font-medium shadow-xs';
+const VISA_LABEL = 'text-xs font-bold uppercase tracking-wider text-slate-600';
+const VISA_HEADING = 'text-xs font-extrabold uppercase tracking-widest text-brand-gold';
+const VISA_BTN = 'bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white font-bold transition shadow-xs text-xs sm:text-sm';
 
 const visaBlockedEdit = (s: string) => ['granted', 'rejected', 'delivered', 'cancelled'].includes(s);
 
 const visaChip = (s: string) =>
   ['granted', 'delivered'].includes(s)
-    ? 'px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200'
+    ? 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200'
     : ['rejected', 'cancelled'].includes(s)
-      ? 'px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200'
-      : 'px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200';
+      ? 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200'
+      : 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200';
 
 const docBadge = (s: string) =>
   s === 'verified'
-    ? 'px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200'
+    ? 'px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200'
     : s === 'rejected'
-      ? 'px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200'
-      : 'px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200';
+      ? 'px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200'
+      : 'px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200';
 
 function validateVisaSection(key: VisaSectionKey, s: Record<string, any> | undefined): string {
   const sec = s || {};
@@ -1068,7 +1076,7 @@ function VPill(props: { label: string; value: string; onChange: (v: string) => v
             key={o.value}
             type="button"
             onClick={() => props.onChange(o.value)}
-            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-[13px] font-bold uppercase tracking-wider transition cursor-pointer ${
               props.value === o.value ? 'bg-brand-navy text-white shadow-xs' : 'text-slate-600 hover:text-brand-navy hover:bg-white/60'
             }`}
           >
@@ -1088,7 +1096,7 @@ function VBool(props: { label: string; value: boolean | undefined; onChange: (v:
         <button
           type="button"
           onClick={() => props.onChange(true)}
-          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+          className={`px-3 py-1.5 rounded-lg text-[13px] font-bold uppercase tracking-wider transition cursor-pointer ${
             on ? 'bg-brand-navy text-white shadow-xs' : 'text-slate-600 hover:text-brand-navy hover:bg-white/60'
           }`}
         >
@@ -1097,7 +1105,7 @@ function VBool(props: { label: string; value: boolean | undefined; onChange: (v:
         <button
           type="button"
           onClick={() => props.onChange(false)}
-          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+          className={`px-3 py-1.5 rounded-lg text-[13px] font-bold uppercase tracking-wider transition cursor-pointer ${
             !on ? 'bg-brand-navy text-white shadow-xs' : 'text-slate-600 hover:text-brand-navy hover:bg-white/60'
           }`}
         >
@@ -1358,7 +1366,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
       <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 flex flex-col gap-4 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest block">Visa Catalogue</span>
+            <span className="text-[13px] font-bold text-brand-gold uppercase tracking-widest block">Visa Catalogue</span>
             <h3 className="font-display font-extrabold text-base text-brand-navy mt-1">Choose your destination</h3>
           </div>
           <div className="w-full md:w-72">
@@ -1398,8 +1406,8 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
       {productsQ.isError && (
         <div className="p-5 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs">
           <p className="font-bold">Catalogue unavailable</p>
-          <p className="text-[11px] mt-0.5 opacity-80">{(productsQ.error as Error)?.message}</p>
-          <button onClick={() => productsQ.refetch()} className="mt-3 text-[10px] font-bold uppercase tracking-wider bg-white border border-rose-300 text-rose-700 px-3 py-1.5 rounded-lg cursor-pointer">
+          <p className="text-sm mt-0.5 opacity-80">{(productsQ.error as Error)?.message}</p>
+          <button onClick={() => productsQ.refetch()} className="mt-3 text-[13px] font-bold uppercase tracking-wider bg-white border border-rose-300 text-rose-700 px-3 py-1.5 rounded-lg cursor-pointer">
             Retry
           </button>
         </div>
@@ -1414,7 +1422,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
 
       {applications.length > 0 && (
         <div className="flex flex-col gap-3">
-          <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest block">Your Applications</span>
+          <span className="text-[13px] font-bold text-brand-gold uppercase tracking-widest block">Your Applications</span>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {applications.map((a: VisaApplicationRow) => (
               <button
@@ -1424,11 +1432,11 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
               >
                 <div className="flex justify-between items-center gap-2">
                   <span className="font-bold text-brand-navy text-xs">{a.country} — {a.visaType}</span>
-                  <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="text-xs font-extrabold uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                     {a.status.replace('_', ' ')}
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1.5">
+                <p className="text-[13px] text-slate-500 mt-1.5">
                   {a.status === 'draft' ? 'Draft in progress — tap to continue.' : `Last updated ${new Date(a.updatedAt * 1000).toLocaleDateString()}`}
                 </p>
               </button>
@@ -1440,21 +1448,21 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
       {country === '__other__' && (
         <div className="rounded-2xl border border-brand-gold/40 bg-amber-50/40 p-6 space-y-4 shadow-xs">
           <div>
-            <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest block">Country not listed?</span>
+            <span className="text-[13px] font-bold text-brand-gold uppercase tracking-widest block">Country not listed?</span>
             <h3 className="font-display font-bold text-sm text-brand-navy mt-1">Request a custom visa</h3>
             <p className="text-xs text-slate-500 mt-1">Tell us the country you need a visa for — our desk will get back to you with options and pricing.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">Country you need *</label>
+              <label className="block text-[13px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">Country you need *</label>
               <input value={inquiryCountry} onChange={(e) => setInquiryCountry(e.target.value)} placeholder="e.g. United Kingdom" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
             </div>
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">Visa type (if known)</label>
+              <label className="block text-[13px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">Visa type (if known)</label>
               <input value={inquiryType} onChange={(e) => setInquiryType(e.target.value)} placeholder="e.g. Tourist / Work / Student" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">Anything else we should know?</label>
+              <label className="block text-[13px] uppercase tracking-wider text-slate-500 font-bold mb-1.5">Anything else we should know?</label>
               <textarea value={inquiryNotes} onChange={(e) => setInquiryNotes(e.target.value)} rows={2} placeholder="Travel dates, purpose, number of travellers…" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-brand-gold focus:outline-none" />
             </div>
           </div>
@@ -1474,9 +1482,9 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
         <span className="text-lg">⏸️</span>
         <div className="flex-1">
           <p className="text-xs font-bold text-amber-900">Applications paused — pricing will be available soon</p>
-          <p className="text-[11px] text-amber-800/80 mt-0.5">We’re refining our visa processing flow for a calmer, step-by-step experience. Save your interest below — we’ll notify you the moment we go live. No fees are charged while paused.</p>
+          <p className="text-sm text-amber-800/80 mt-0.5">We’re refining our visa processing flow for a calmer, step-by-step experience. Save your interest below — we’ll notify you the moment we go live. No fees are charged while paused.</p>
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-wider bg-white border border-amber-200 text-amber-800 px-2.5 py-1 rounded-full shrink-0">Will be available soon</span>
+        <span className="text-[13px] font-bold uppercase tracking-wider bg-white border border-amber-200 text-amber-800 px-2.5 py-1 rounded-full shrink-0">Will be available soon</span>
       </div>
 
       {!productsQ.isLoading && products.length > 0 && country !== '__other__' && (() => {
@@ -1494,15 +1502,15 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
-                <span className="text-[10px] font-bold text-brand-gold uppercase tracking-widest">Your next step</span>
+                <span className="text-[13px] font-bold text-brand-gold uppercase tracking-widest">Your next step</span>
                 <h4 className="font-display font-bold text-brand-navy text-sm mt-1">1. Choose destination → 2. See checklist → 3. Join waitlist</h4>
               </div>
-              <span className="text-[10px] px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-bold">{selected.entryType} · {singleCountry}</span>
+              <span className="text-[13px] px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-bold">{selected.entryType} · {singleCountry}</span>
             </div>
 
             {countryList.length > 1 && (
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Visa type for {singleCountry}</label>
+                <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Visa type for {singleCountry}</label>
                 <select
                   value={selected.id}
                   onChange={(e) => setSelectedVisaByCountry((m) => ({ ...m, [singleCountry]: e.target.value }))}
@@ -1520,7 +1528,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Required documents — prepare early</span>
+                <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider block">Required documents — prepare early</span>
                 <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
                   {(selected.requiredDocs || ['Passport scan', 'Color photograph', 'Supporting docs per checklist']).map((doc: string) => (
                     <li key={doc} className="flex gap-2"><span className="text-slate-300">—</span><span>{doc}</span></li>
@@ -1535,7 +1543,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                 <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-3 flex items-center justify-between">
                   <span className="text-xs text-slate-500">Fee</span>
                   <span className="text-xs font-bold text-slate-400 blur-[3px] select-none">₹••••</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 px-2 py-1 rounded-full">Will be available soon</span>
+                  <span className="text-[13px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 px-2 py-1 rounded-full">Will be available soon</span>
                 </div>
               </div>
             </div>
@@ -1562,7 +1570,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
               </button>
               <button onClick={() => setCountry('__other__')} className="px-4 py-3 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:border-brand-gold cursor-pointer">Need another country? →</button>
             </div>
-            <p className="text-[11px] text-slate-500 text-center">No payment is taken while paused. Your checklist is saved to your portal — we’ll pre-fill it when we go live.</p>
+            <p className="text-sm text-slate-500 text-center">No payment is taken while paused. Your checklist is saved to your portal — we’ll pre-fill it when we go live.</p>
           </div>
         );
       })()}
@@ -1592,13 +1600,13 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     return (
       <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-6 flex flex-col gap-5 shadow-xs">
         {VISA_PAUSED && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 flex items-center gap-2 text-[11px] text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 flex items-center gap-2 text-sm text-amber-800">
             <span>⏸️</span><span className="font-bold">Applications paused — will be available soon.</span><span className="text-amber-700">You can still fill and save your draft; submit will reopen and auto-notify waitlist.</span>
           </div>
         )}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
           <div>
-            <span className={VISA_HEADING + ' block'}>Draft Application {VISA_PAUSED && <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-amber-800">Paused</span>}</span>
+            <span className={VISA_HEADING + ' block'}>Draft Application {VISA_PAUSED && <span className="ml-2 text-[13px] px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-amber-800">Paused</span>}</span>
             <h3 className="font-display font-bold text-base text-brand-navy mt-1">{activeApp.country} — {activeApp.visaType}</h3>
           </div>
           <button onClick={() => setTab('catalogue')} className="text-xs text-slate-500 hover:text-brand-navy font-bold uppercase tracking-wider cursor-pointer">✕ Exit Draft</button>
@@ -1609,7 +1617,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
             <button
               key={s.key}
               onClick={() => { if (i <= step) setStep(i); }}
-              className={`px-3 py-1.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider whitespace-nowrap transition cursor-pointer ${
                 i === step ? 'bg-brand-navy text-white shadow-xs'
                 : i < step ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 : 'bg-white border border-slate-200 text-slate-400'
@@ -1794,9 +1802,9 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                       <div>
                         <span className="font-bold text-xs text-brand-navy block">{docName}</span>
                         {doc ? (
-                          <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">{doc.fileName} · v{doc.version} · {doc.status}</span>
+                          <span className="text-[13px] text-slate-500 font-mono mt-0.5 block">{doc.fileName} · v{doc.version} · {doc.status}</span>
                         ) : (
-                          <span className="text-[10px] text-slate-400 italic mt-0.5 block">Not uploaded yet</span>
+                          <span className="text-[13px] text-slate-400 italic mt-0.5 block">Not uploaded yet</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -1833,7 +1841,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
 
               {reviewErrors.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-xs shadow-xs">
-                  <p className="font-bold uppercase tracking-wider text-[10px] mb-1">Incomplete before submission</p>
+                  <p className="font-bold uppercase tracking-wider text-[13px] mb-1">Incomplete before submission</p>
                   {reviewErrors.map((e) => (
                     <p key={e.key}>• {e.label}: {e.err}</p>
                   ))}
@@ -1868,7 +1876,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                   {VISA_PAUSED ? (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center">
                       <p className="text-xs font-bold text-amber-800">Submit paused — will be available soon</p>
-                      <p className="text-[11px] text-amber-700 mt-1">Your draft is saved. Join the waitlist from the catalogue and we’ll submit it for you when we go live — no re-entry needed.</p>
+                      <p className="text-sm text-amber-700 mt-1">Your draft is saved. Join the waitlist from the catalogue and we’ll submit it for you when we go live — no re-entry needed.</p>
                       <button onClick={() => setTab('catalogue')} className="mt-2 px-4 py-2 rounded-xl bg-brand-navy text-white text-xs font-bold hover:bg-brand-gold hover:text-brand-navy cursor-pointer">Go to Waitlist →</button>
                     </div>
                   ) : (
@@ -1946,25 +1954,25 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
               const current = curIdx === i;
               return (
                 <div key={f.key} className="flex items-center gap-1.5">
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border ${
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
                     done ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-extrabold'
                     : current ? 'text-brand-navy border-brand-gold bg-amber-50 font-extrabold shadow-xs'
                     : 'bg-white text-slate-400 border-slate-200'
                   }`}>
                     {f.label}
                   </span>
-                  {i < VISA_FLOW.length - 1 && <span className="text-slate-300 text-[10px]">→</span>}
+                  {i < VISA_FLOW.length - 1 && <span className="text-slate-300 text-[13px]">→</span>}
                 </div>
               );
             })}
             {isRejected && (
-              <span className="px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border border-rose-200 bg-rose-50 text-rose-700">
+              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-rose-200 bg-rose-50 text-rose-700">
                 {activeApp.status.replace('_', ' ')}
               </span>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-[10px] uppercase tracking-wider text-slate-500">
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] uppercase tracking-wider text-slate-500">
             <span>Submitted: {activeApp.submittedAt ? new Date(activeApp.submittedAt * 1000).toLocaleString() : '—'}</span>
             <span>Decision: {activeApp.decisionAt ? new Date(activeApp.decisionAt * 1000).toLocaleString() : '—'}</span>
             <span>Delivered: {activeApp.deliveredAt ? new Date(activeApp.deliveredAt * 1000).toLocaleString() : '—'}</span>
@@ -1976,7 +1984,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
           <div className="flex items-start gap-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-xs shadow-xs">
             <span>⛔</span>
             <div>
-              <p className="font-bold uppercase tracking-wider text-[10px]">Application {activeApp.status === 'cancelled' ? 'Cancelled' : 'Rejected'}</p>
+              <p className="font-bold uppercase tracking-wider text-[13px]">Application {activeApp.status === 'cancelled' ? 'Cancelled' : 'Rejected'}</p>
               <p className="mt-0.5">{activeApp.rejectionReason}</p>
             </div>
           </div>
@@ -1987,8 +1995,8 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
             <span className={VISA_HEADING + ' block mb-2'}>Embassy Appointment</span>
             {activeApp.appointmentDate ? (
               <div className="space-y-1.5 text-xs text-slate-700">
-                <p><span className="text-slate-400 block text-[10px]">Slot Scheduled Date</span><span className="font-bold text-brand-navy">{new Date(activeApp.appointmentDate * 1000).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span></p>
-                <p><span className="text-slate-400 block text-[10px]">Consulate Location</span><span className="font-semibold text-brand-navy">{activeApp.appointmentLocation || 'To be confirmed'}</span></p>
+                <p><span className="text-slate-400 block text-[13px]">Slot Scheduled Date</span><span className="font-bold text-brand-navy">{new Date(activeApp.appointmentDate * 1000).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span></p>
+                <p><span className="text-slate-400 block text-[13px]">Consulate Location</span><span className="font-semibold text-brand-navy">{activeApp.appointmentLocation || 'To be confirmed'}</span></p>
               </div>
             ) : (
               <p className="text-xs text-slate-400 italic">No slot scheduled yet. Our visa desk will book your embassy slot and update it here.</p>
@@ -2008,7 +2016,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
           <span className={VISA_HEADING + ' block'}>Document Status</span>
           <div className="bg-white border border-slate-200/90 rounded-xl overflow-x-auto shadow-xs">
             <table className="w-full text-left text-xs min-w-[560px]">
-              <thead className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[9px] bg-slate-50">
+              <thead className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-xs bg-slate-50">
                 <tr>
                   <th className="py-2.5 px-3">Document</th>
                   <th className="py-2.5 px-3">File</th>
@@ -2031,12 +2039,12 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                         {doc ? (
                           <span className={docBadge(doc.status)}>{doc.status === 'pending' ? 'Uploaded' : doc.status === 'verified' ? 'Verified' : 'Rejected'}</span>
                         ) : (
-                          <span className="text-[8px] uppercase tracking-wider text-slate-400">Not uploaded</span>
+                          <span className="text-sm uppercase tracking-wider text-slate-400">Not uploaded</span>
                         )}
                       </td>
                       <td className="py-2.5 px-3">
                         {(!doc || doc.status === 'rejected') ? (
-                          <label className="inline-block cursor-pointer bg-slate-100 hover:bg-brand-navy hover:text-white text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider transition shadow-xs">
+                          <label className="inline-block cursor-pointer bg-slate-100 hover:bg-brand-navy hover:text-white text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition shadow-xs">
                             {doc?.status === 'rejected' ? '↻ Re-upload' : '↑ Upload'}
                             <input
                               type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
@@ -2050,7 +2058,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                             />
                           </label>
                         ) : (
-                          <span className="text-[9px] uppercase tracking-wider text-emerald-600 font-bold">{doc.status === 'verified' ? 'Verified ✓' : 'Awaiting review'}</span>
+                          <span className="text-xs uppercase tracking-wider text-emerald-600 font-bold">{doc.status === 'verified' ? 'Verified ✓' : 'Awaiting review'}</span>
                         )}
                       </td>
                     </tr>
@@ -2075,7 +2083,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="font-display font-bold text-lg text-brand-navy">✈️ Visa Services</h2>
+        <h2 className="font-display font-bold text-lg text-brand-navy">🛂 Visa Services</h2>
         <p className="text-xs text-slate-500 mt-0.5">Apply for, draft, and track your embassy visa applications — end to end.</p>
       </div>
 
@@ -2330,9 +2338,9 @@ function ManpowerJobs({ token }: { token: string }) {
   };
 
   const input = 'w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-white placeholder:text-white/30 focus:border-brand-gold focus:outline-none';
-  const label = 'block text-[10px] uppercase tracking-wider text-white/60 font-bold mb-1.5';
-  const pill = (active: boolean) => `px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${active ? 'bg-brand-gold text-brand-navy' : 'border border-white/15 text-white/60 hover:text-white'}`;
-  const sectionTitle = 'text-[10px] font-bold uppercase tracking-widest text-brand-gold border-b border-white/10 pb-2 mb-3';
+  const label = 'block text-[13px] uppercase tracking-wider text-white/60 font-bold mb-1.5';
+  const pill = (active: boolean) => `px-3 py-1.5 rounded-full text-[13px] font-bold uppercase tracking-wider transition cursor-pointer ${active ? 'bg-brand-gold text-brand-navy' : 'border border-white/15 text-white/60 hover:text-white'}`;
+  const sectionTitle = 'text-[13px] font-bold uppercase tracking-widest text-brand-gold border-b border-white/10 pb-2 mb-3';
   // legacy wizard state now delegated to ManpowerApplyWizard — keep refs to satisfy TS (enterprise cleanup pending)
   void applying; void resumeKey; void resumeName; void uploading; void up; void profileReadiness; void uploadResume; void buildFormJson; void submit; void input; void label; void sectionTitle;
 
@@ -2346,12 +2354,12 @@ function ManpowerJobs({ token }: { token: string }) {
         </div>
 
         {/* Anti-Spam Quota Indicator */}
-        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1 text-[10px]">
+        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1 text-[13px]">
           <span className="text-white/50">Active Quota:</span>
           <span className={`font-bold ${activeCount >= maxQuota ? 'text-amber-400' : 'text-emerald-400'}`}>
             {activeCount}/{maxQuota} Active
           </span>
-          <span className="text-[9px] text-white/40 border-l border-white/10 pl-2">🛡️ Cloudflare Bot Guard</span>
+          <span className="text-xs text-white/40 border-l border-white/10 pl-2">🛡️ Cloudflare Bot Guard</span>
         </div>
       </div>
 
@@ -2363,34 +2371,34 @@ function ManpowerJobs({ token }: { token: string }) {
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-bold text-emerald-300">✓ Exclusive Member</p>
-              <p className="text-[10px] text-emerald-300/70 mt-0.5">Plan: {membership.plan} · Expires: {membership.expiresAt ? new Date(membership.expiresAt * 1000).toLocaleDateString() : '—'}</p>
+              <p className="text-[13px] text-emerald-300/70 mt-0.5">Plan: {membership.plan} · Expires: {membership.expiresAt ? new Date(membership.expiresAt * 1000).toLocaleDateString() : '—'}</p>
             </div>
-            <span className="text-[10px] text-emerald-300/70">Secret job offers unlocked</span>
+            <span className="text-[13px] text-emerald-300/70">Secret job offers unlocked</span>
           </div>
         ) : membershipData?.comingSoon ? (
           <div className="rounded-2xl border border-brand-gold/30 bg-brand-gold/[0.06] p-5 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">🔒 Exclusive Jobs Community</p>
-            <p className="text-[11px] text-white/60">Coming soon — we're preparing exclusive job offers. You'll be able to join the paid community once openings are live.</p>
+            <p className="text-[13px] font-bold uppercase tracking-widest text-brand-gold">🔒 Exclusive Jobs Community</p>
+            <p className="text-sm text-white/60">Coming soon — we're preparing exclusive job offers. You'll be able to join the paid community once openings are live.</p>
           </div>
         ) : (
           <div className="rounded-2xl border border-brand-gold/30 bg-brand-gold/[0.06] p-5 space-y-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">🔒 Exclusive Jobs Community</p>
-              <p className="text-[11px] text-white/60 mt-1">Join the paid community to unlock secret job offers. Apply directly, upload your resume, and get shortlisted by our recruitment desk.</p>
+              <p className="text-[13px] font-bold uppercase tracking-widest text-brand-gold">🔒 Exclusive Jobs Community</p>
+              <p className="text-sm text-white/60 mt-1">Join the paid community to unlock secret job offers. Apply directly, upload your resume, and get shortlisted by our recruitment desk.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {plans.map((p) => (
                 <div key={p.key} className="rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold text-white">{p.name}</p>
-                    <p className="text-[10px] text-white/40 mt-0.5">{p.description}</p>
+                    <p className="text-[13px] text-white/40 mt-0.5">{p.description}</p>
                     <p className="text-brand-gold font-bold text-lg mt-2">₹{(p.pricePaise / 100).toLocaleString('en-IN')}</p>
-                    <p className="text-[10px] text-white/40">{p.durationDays} days</p>
+                    <p className="text-[13px] text-white/40">{p.durationDays} days</p>
                   </div>
                   <button
                     disabled={payBusy}
                     onClick={() => subscribe(p.key)}
-                    className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-[11px] font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30 cursor-pointer"
+                    className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-sm font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30 cursor-pointer"
                   >
                     {payBusy ? 'Processing…' : 'Subscribe'}
                   </button>
@@ -2403,17 +2411,17 @@ function ManpowerJobs({ token }: { token: string }) {
         {/* Enterprise KPI Strip — Honest, visible on light */}
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Open Vacancies</p>
+            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">Open Vacancies</p>
             <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-slate-800">{jobs.length}<span className="ml-2 text-xs font-bold text-emerald-600">● Live</span></p>
             <p className="text-xs text-slate-500">{visibleJobs.length} showing · {jobs.filter(j=>j.featured).length} featured</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Exclusive Access</p>
+            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">Exclusive Access</p>
             <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-slate-800">{membership?.isMember ? 'Unlocked' : `${jobs.filter(j=>j.exclusive).length} locked`}</p>
             <p className="text-xs text-slate-500">{membership?.isMember ? 'Secret jobs visible' : 'Join community to unlock'}</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">My Active Quota</p>
+            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">My Active Quota</p>
             <p className={`mt-1 font-display text-2xl font-extrabold tracking-tight ${activeCount >= maxQuota ? 'text-amber-600' : 'text-slate-800'}`}>{activeCount}/{maxQuota}</p>
             <p className="text-xs text-slate-500">{activeCount >= maxQuota ? 'Await decisions' : `${maxQuota - activeCount} slots remaining`}</p>
           </div>
@@ -2430,32 +2438,32 @@ function ManpowerJobs({ token }: { token: string }) {
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-display font-bold text-sm text-slate-800 leading-snug">{j.title}</h3>
-                  {j.featured && <span className="shrink-0 bg-brand-gold/15 text-brand-gold text-[9px] font-bold uppercase px-2 py-0.5 rounded">Featured</span>}
-                  {j.exclusive && <span className="shrink-0 bg-rose-500/15 text-rose-300 text-[9px] font-bold uppercase px-2 py-0.5 rounded">🔒 Exclusive</span>}
+                  {j.featured && <span className="shrink-0 bg-brand-gold/15 text-brand-gold text-xs font-bold uppercase px-2 py-0.5 rounded">Featured</span>}
+                  {j.exclusive && <span className="shrink-0 bg-rose-500/15 text-rose-300 text-xs font-bold uppercase px-2 py-0.5 rounded">🔒 Exclusive</span>}
                 </div>
-                <div className="flex flex-wrap gap-2 text-[10px]">
+                <div className="flex flex-wrap gap-2 text-[13px]">
                   <span className="bg-slate-100 text-slate-600 rounded px-2 py-0.5 font-mono border border-slate-200">{j.country}</span>
                   <span className="bg-slate-100 text-slate-600 rounded px-2 py-0.5">{j.sector}</span>
                   <span className="bg-brand-gold/10 text-brand-gold rounded px-2 py-0.5 font-bold capitalize">{COLLAR[j.collar] || j.collar}</span>
                 </div>
-                {j.employer && <p className="text-[11px] text-slate-500">Employer: <span className="text-slate-700 font-medium">{j.employer}</span></p>}
-                {j.description && <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">{j.description}</p>}
+                {j.employer && <p className="text-sm text-slate-500">Employer: <span className="text-slate-700 font-medium">{j.employer}</span></p>}
+                {j.description && <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">{j.description}</p>}
                 {(j.benefits?.length || 0) > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    {j.benefits!.slice(0, 4).map((b, i) => <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] px-1.5 py-0.5 rounded">{b}</span>)}
+                    {j.benefits!.slice(0, 4).map((b, i) => <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-1.5 py-0.5 rounded">{b}</span>)}
                   </div>
                 )}
                 {(j.requirements?.length || 0) > 0 && (
-                  <p className="text-[10px] text-slate-500">Requires: {j.requirements!.slice(0, 4).join(', ')}</p>
+                  <p className="text-[13px] text-slate-500">Requires: {j.requirements!.slice(0, 4).join(', ')}</p>
                 )}
-                {j.experienceYearsMin ? <p className="text-[10px] text-slate-500">Min {j.experienceYearsMin}+ yrs experience · {j.vacancies} opening{j.vacancies === 1 ? '' : 's'}</p> : null}
+                {j.experienceYearsMin ? <p className="text-[13px] text-slate-500">Min {j.experienceYearsMin}+ yrs experience · {j.vacancies} opening{j.vacancies === 1 ? '' : 's'}</p> : null}
               </div>
               <div className="flex items-center justify-between border-t border-slate-100 pt-3">
                 <span className="text-brand-gold font-bold text-sm">{j.salaryText}</span>
                 <button
                   disabled={activeCount >= maxQuota}
                   onClick={() => { setSelectedJob(j); setView('apply'); setMsg(null); }}
-                  className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-[11px] font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30 cursor-pointer"
+                  className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-sm font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30 cursor-pointer"
                 >
                   {activeCount >= maxQuota ? 'Quota Full (3/3)' : 'Apply Free'}
                 </button>
@@ -2472,19 +2480,19 @@ function ManpowerJobs({ token }: { token: string }) {
           {/* Honest Activity Strip — no fake numbers, building in public */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Nizamabad HQ</p>
+              <p className="text-[13px] text-white/50 uppercase tracking-widest font-bold">Nizamabad HQ</p>
               <p className="text-sm font-bold text-white mt-0.5">Trusted Guidance</p>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Our Aim</p>
+              <p className="text-[13px] text-white/50 uppercase tracking-widest font-bold">Our Aim</p>
               <p className="text-sm font-bold text-emerald-400 mt-0.5">Transparent steps</p>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">Your Data</p>
+              <p className="text-[13px] text-white/50 uppercase tracking-widest font-bold">Your Data</p>
               <p className="text-sm font-bold text-brand-gold mt-0.5">Handled with care</p>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">To Apply</p>
+              <p className="text-[13px] text-white/50 uppercase tracking-widest font-bold">To Apply</p>
               <p className="text-sm font-bold text-white/80 mt-0.5">Free to start</p>
             </div>
           </div>
@@ -2495,7 +2503,7 @@ function ManpowerJobs({ token }: { token: string }) {
               <span>⚠️</span>
               <span>Important: First-Come, First-Served & No-Refund Policy</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] text-white/80 leading-relaxed">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-white/80 leading-relaxed">
               <div className="space-y-1">
                 <p className="font-bold text-white flex items-center gap-1.5">
                   <span className="text-amber-400">1.</span> First-Come, First-Served Employer Review
@@ -2522,7 +2530,7 @@ function ManpowerJobs({ token }: { token: string }) {
                 onChange={(e) => setAcceptedVasTerms(e.target.checked)}
                 className="mt-0.5 rounded border-white/30 text-brand-gold focus:ring-brand-gold cursor-pointer"
               />
-              <span className="text-[11px] text-white/90">
+              <span className="text-sm text-white/90">
                 I understand this is an optional professional career coaching & document enhancement service. It does not guarantee job selection or visa outcome, and fees are non-refundable once work begins.
               </span>
             </label>
@@ -2533,15 +2541,15 @@ function ManpowerJobs({ token }: { token: string }) {
               <div key={plan.key} className="group rounded-2xl border border-white/15 bg-white/[0.06] p-5 flex flex-col justify-between gap-4 backdrop-blur hover:bg-white/[0.08] hover:border-brand-gold/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.25)] transition-all duration-300">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">{plan.durationDays} Days SLA</span>
-                    <span className="text-[10px] bg-white/10 text-white/70 px-2 py-0.5 rounded">Optional VAS</span>
+                    <span className="text-[13px] font-bold uppercase tracking-widest text-brand-gold">{plan.durationDays} Days SLA</span>
+                    <span className="text-[13px] bg-white/10 text-white/70 px-2 py-0.5 rounded">Optional VAS</span>
                   </div>
                   <h4 className="font-display font-bold text-sm text-white">{plan.title}</h4>
-                  <p className="text-[11px] text-white/60 leading-relaxed">{plan.description}</p>
-                  <div className="rounded-lg bg-white/5 border border-white/10 p-2.5 text-[10px] text-white/70">
+                  <p className="text-sm text-white/60 leading-relaxed">{plan.description}</p>
+                  <div className="rounded-lg bg-white/5 border border-white/10 p-2.5 text-[13px] text-white/70">
                     <span className="text-brand-gold font-bold">Deliverable: </span>{plan.deliverable}
                   </div>
-                  <div className="text-[9px] text-emerald-400/90 font-medium">
+                  <div className="text-xs text-emerald-400/90 font-medium">
                     {plan.key === 'ats_revamp' ? '🔥 78 candidates upgraded this month' : plan.key === 'mock_interview' ? '🎙️ 41 candidates prepped this month' : '⚡ 23 candidates fast-tracked this week'}
                   </div>
                 </div>
@@ -2551,7 +2559,7 @@ function ManpowerJobs({ token }: { token: string }) {
                   <button
                     disabled={payBusy || !acceptedVasTerms}
                     onClick={() => purchaseVas(plan.key)}
-                    className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-[11px] font-bold uppercase px-4 py-2 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-sm font-bold uppercase px-4 py-2 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {payBusy ? 'Processing…' : !acceptedVasTerms ? 'Accept Terms' : 'Purchase'}
                   </button>
@@ -2587,21 +2595,21 @@ function ManpowerJobs({ token }: { token: string }) {
                   <div className="flex items-center gap-2">
                     <h3 className="font-display font-bold text-sm text-white">{a.jobTitle}</h3>
                     {a.matchScore !== undefined && (
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${a.matchTier === 'top_match' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : a.matchTier === 'standard' ? 'bg-brand-gold/20 text-brand-gold border border-brand-gold/30' : 'bg-white/10 text-white/60'}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${a.matchTier === 'top_match' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : a.matchTier === 'standard' ? 'bg-brand-gold/20 text-brand-gold border border-brand-gold/30' : 'bg-white/10 text-white/60'}`}>
                         {a.matchTier === 'top_match' ? '🔥 ' : ''}{a.matchScore}% Match
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-white/40 mt-0.5">{a.jobCountry} · applied {a.appliedAt ? new Date(a.appliedAt * 1000).toLocaleDateString() : ''}</p>
+                  <p className="text-[13px] text-white/40 mt-0.5">{a.jobCountry} · applied {a.appliedAt ? new Date(a.appliedAt * 1000).toLocaleDateString() : ''}</p>
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${a.selectionStatus === 'rejected' ? 'bg-rose-500/15 text-rose-300' : a.selectionStatus === 'selected' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-brand-gold/15 text-brand-gold'}`}>{SEL[a.selectionStatus]}</span>
+                <span className={`px-2.5 py-1 rounded-full text-[13px] font-bold uppercase ${a.selectionStatus === 'rejected' ? 'bg-rose-500/15 text-rose-300' : a.selectionStatus === 'selected' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-brand-gold/15 text-brand-gold'}`}>{SEL[a.selectionStatus]}</span>
               </div>
 
               {/* Strengths & Matching Highlights */}
               {(a.matchStrengths?.length || 0) > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {a.matchStrengths!.map((st, i) => (
-                    <span key={i} className="bg-emerald-500/10 text-emerald-300 text-[9px] px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <span key={i} className="bg-emerald-500/10 text-emerald-300 text-xs px-2 py-0.5 rounded-md flex items-center gap-1">
                       <span>✓</span> {st}
                     </span>
                   ))}
@@ -2622,26 +2630,26 @@ function ManpowerJobs({ token }: { token: string }) {
                     <div key={s.label} className="flex flex-1 items-center gap-2">
                       <div className="flex flex-col items-center gap-1">
                         <div className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-extrabold ${s.done ? (s.ok ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-rose-500 text-white border-rose-500') : s.active ? 'bg-brand-gold text-brand-navy border-brand-gold animate-pulse' : 'bg-white/10 text-white/40 border-white/15'}`}>{s.done ? '✓' : i+1}</div>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${s.done ? 'text-white' : s.active ? 'text-brand-gold' : 'text-white/40'}`}>{s.label}</span>
+                        <span className={`text-[13px] font-bold uppercase tracking-wider ${s.done ? 'text-white' : s.active ? 'text-brand-gold' : 'text-white/40'}`}>{s.label}</span>
                       </div>
                       {i < arr.length -1 && <div className={`h-px flex-1 ${s.done ? 'bg-emerald-500/50' : 'bg-white/10'}`} aria-hidden />}
                     </div>
                   ))}
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                  <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"><span className="text-white/50 uppercase text-[10px] font-bold">Medical</span><p className={`font-bold ${a.medicalStatus === 'fit' ? 'text-emerald-300' : a.medicalStatus === 'unfit' ? 'text-rose-300' : 'text-white'}`}>{MED[a.medicalStatus]}</p></div>
-                  <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"><span className="text-white/50 uppercase text-[10px] font-bold">Visa</span><p className={`font-bold ${a.visaStatus === 'stamped' ? 'text-emerald-300' : a.visaStatus === 'rejected' ? 'text-rose-300' : 'text-white'}`}>{VISA[a.visaStatus]}</p></div>
-                  <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"><span className="text-white/50 uppercase text-[10px] font-bold">Flight</span><p className={`font-bold ${a.flightStatus === 'deployed' ? 'text-emerald-300' : 'text-white'}`}>{FLT[a.flightStatus]}</p></div>
+                  <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"><span className="text-white/50 uppercase text-[13px] font-bold">Medical</span><p className={`font-bold ${a.medicalStatus === 'fit' ? 'text-emerald-300' : a.medicalStatus === 'unfit' ? 'text-rose-300' : 'text-white'}`}>{MED[a.medicalStatus]}</p></div>
+                  <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"><span className="text-white/50 uppercase text-[13px] font-bold">Visa</span><p className={`font-bold ${a.visaStatus === 'stamped' ? 'text-emerald-300' : a.visaStatus === 'rejected' ? 'text-rose-300' : 'text-white'}`}>{VISA[a.visaStatus]}</p></div>
+                  <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"><span className="text-white/50 uppercase text-[13px] font-bold">Flight</span><p className={`font-bold ${a.flightStatus === 'deployed' ? 'text-emerald-300' : 'text-white'}`}>{FLT[a.flightStatus]}</p></div>
                 </div>
               </div>
-              {a.rejectionReason && <p className="text-[11px] text-rose-300 bg-rose-500/10 rounded-lg px-3 py-2">Reason: {a.rejectionReason}</p>}
-              {a.notes && <p className="text-[11px] text-white/60 bg-white/5 rounded-lg px-3 py-2">Note: {a.notes}</p>}
+              {a.rejectionReason && <p className="text-sm text-rose-300 bg-rose-500/10 rounded-lg px-3 py-2">Reason: {a.rejectionReason}</p>}
+              {a.notes && <p className="text-sm text-white/60 bg-white/5 rounded-lg px-3 py-2">Note: {a.notes}</p>}
             </div>
           ))}
           {applications.length === 0 && (
             <div className="py-10 text-center space-y-2">
               <p className="text-xs text-white/50">You haven't applied to any vacancies yet.</p>
-              <button onClick={() => setView('browse')} className="bg-brand-gold text-brand-navy text-[11px] font-bold uppercase px-5 py-2.5 rounded-lg">Browse Open Jobs</button>
+              <button onClick={() => setView('browse')} className="bg-brand-gold text-brand-navy text-sm font-bold uppercase px-5 py-2.5 rounded-lg">Browse Open Jobs</button>
             </div>
           )}
         </div>

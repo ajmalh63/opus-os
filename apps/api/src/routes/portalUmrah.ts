@@ -10,7 +10,7 @@ function getPortalToken(c: any): string | undefined {
 }
 import { zValidator } from '@hono/zod-validator';
 import { getDb } from '../db/client.js';
-import { clients, groupDepartures, seatBookings, bookingPassengers, umrahPackages, appSettings, engagements, payments } from '../db/schema.js';
+import { clients, groupDepartures, seatBookings, bookingPassengers, umrahPackages, appSettings, engagements, payments, waOutbox } from '../db/schema.js';
 import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm';
 import { auditEvent, auditBounded } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
@@ -106,10 +106,14 @@ function partyTotalForBooking(
 portalUmrahRouter.get('/packages', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
+  const categoryFilter = c.req.query('category');
   try {
     const enabled = (await isDivisionEnabled(c.env, 'umrah')) && (await inventoryEnabled(db));
     if (!enabled) return c.json({ success: true, comingSoon: true, enabled: false, packages: [] });
-    const pkgs = await db.select().from(umrahPackages).where(eq(umrahPackages.status, 'open')).all();
+    let pkgs = await db.select().from(umrahPackages).where(eq(umrahPackages.status, 'open')).all();
+    if (categoryFilter && categoryFilter !== 'all') {
+      pkgs = pkgs.filter(p => (p.category || 'umrah_pilgrimage') === categoryFilter);
+    }
     const deps = await db.select().from(groupDepartures).where(eq(groupDepartures.status, 'open')).all();
     const list = pkgs.map(p => {
       const { wholesalePricePaise: _, ...safePkg } = p;
@@ -527,6 +531,112 @@ portalUmrahRouter.post('/bookings/:id/verify-balance', zValidator('json', payUmr
     return c.json({ success: true, message: 'Balance received. Your booking is confirmed. May Allah accept your Umrah.', status: 'confirmed' });
   } catch (e: any) {
     return c.json({ error: 'Balance verification failed', details: e?.message }, 500);
+  }
+});
+
+// POST /api/public/portal/tours/quote — Pax & Rooming estimator → official WhatsApp quotation (waOutbox + wa.opusoverseas.com, Template Utility)
+// Works with portal token OR public phone/name (ToursTravelPage estimator before login)
+portalUmrahRouter.post('/quote', async (c) => {
+  const token = getPortalToken(c) || '';
+  const body = await c.req.json().catch(() => ({})) as {
+    packageId?: string; departureId?: string; paxCount?: number; occupancy?: 'shared' | 'solo';
+    roomConfig?: string; passengers?: any[]; phone?: string; name?: string; totalPaise?: number;
+  };
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    let client: any = null;
+    if (token) client = await resolveClientByToken(db, token);
+    const toPhoneRaw = body.phone || client?.phone;
+    const toName = body.name || client?.name || 'Valued Traveller';
+    if (!toPhoneRaw) return c.json({ error: 'phone is required (or login to use saved number)' }, 400);
+    const toPhone = toPhoneRaw.replace(/\s+/g, '').replace(/^0/, '');
+    const normalizedPhone = toPhone.startsWith('+') ? toPhone : `+91${toPhone.replace(/^\+91/, '')}`;
+
+    // Resolve package/departure for pricing context (if provided)
+    let pkg: any = null, dep: any = null;
+    if (body.packageId) pkg = await db.select().from(umrahPackages).where(eq(umrahPackages.id, body.packageId)).get();
+    if (body.departureId) dep = await db.select().from(groupDepartures).where(eq(groupDepartures.id, body.departureId)).get();
+    if (!pkg && dep?.packageId) pkg = await db.select().from(umrahPackages).where(eq(umrahPackages.id, dep.packageId)).get();
+
+    const pax = body.paxCount || body.passengers?.length || 1;
+    const occupancy = body.occupancy === 'solo' ? 'solo' : 'shared';
+    const roomConfig = body.roomConfig || 'quad';
+    // Compute party total if package available, else trust client totalPaise
+    let totalPaise = body.totalPaise ?? 0;
+    let perPersonPaise: any = null, soloSupplementPaise = 0, groupDiscountPct = 0;
+    if (pkg || dep) {
+      const passengers = body.passengers?.length ? body.passengers : Array.from({ length: pax }, (_, i) => ({ name: i === 0 ? toName : `Traveller ${i+1}`, category: 'adult' as const }));
+      const price = computePartyPrice(dep?.price ?? pkg?.retailPricePaise ?? 0, passengers as any, occupancy, pkg);
+      totalPaise = price.totalPaise;
+      perPersonPaise = price.perPersonPaise;
+      soloSupplementPaise = price.soloSupplementPaise;
+      groupDiscountPct = price.groupDiscountPct;
+    }
+
+    const advancePerPax = dep?.bookingFee ?? pkg?.advanceFeePaise ?? 50000;
+    const totalAdvance = advancePerPax * pax;
+    const balance = Math.max(0, totalPaise - totalAdvance);
+
+    const fmt = (p: number) => `₹${(p/100).toLocaleString('en-IN')}`;
+    const lines = [
+      `As-salamu Alaykum ${toName} 🧳`,
+      ``,
+      `*Tours & Travels — Official Quotation*`,
+      pkg ? `Package: *${pkg.name}* (${pkg.tier})` : null,
+      dep ? `Departure: ${new Date(dep.departureDate*1000).toLocaleDateString('en-IN')} — ${dep.departureCity || pkg?.departureCity || 'Hyderabad'}` : null,
+      `Pax: *${pax}* (${occupancy}, ${roomConfig})${groupDiscountPct ? ` — ${groupDiscountPct}% group saving` : ''}`,
+      `Total: *${fmt(totalPaise)}*${perPersonPaise ? ` (${Object.entries(perPersonPaise).map(([k,v]: any) => `${k}: ${fmt(v as number)}`).join(' | ')})` : ''}`,
+      soloSupplementPaise ? `Solo supplement: ${fmt(soloSupplementPaise)}` : null,
+      `Advance (non-refundable): ${fmt(totalAdvance)} — holds seats 72h`,
+      `Balance: ${fmt(balance)} (pay online or at office)`,
+      ``,
+      `Reply *YES* to reserve or call +91 90000 00000 — Opus Overseas, Nizamabad — Tours & Travels Desk 🧳`,
+    ].filter(Boolean).join('\n');
+
+    const waId = crypto.randomUUID();
+    await db.insert(waOutbox).values({
+      id: waId,
+      clientId: client?.id || null,
+      toPhone: normalizedPhone,
+      direction: 'outbound',
+      type: 'template',
+      templateName: 'tours_quotation_v1',
+      body: lines,
+      status: 'queued',
+      category: 'utility',
+      createdAt: now,
+      updatedAt: now,
+    } as any);
+
+    // Fire-and-forget via wa.opusoverseas.com (Meta Cloud primary, OpenWA fallback inside infra/messaging)
+    let waResult: any = { queued: true };
+    try {
+      const base = (c.env as any).OPENWA_BASE_URL || 'https://wa.opusoverseas.com';
+      const key = (c.env as any).OPENWA_API_KEY || '';
+      const sess = (c.env as any).OPENWA_SESSION_ID || 'main';
+      if (base) {
+        const r = await fetch(`${base.replace(/\/$/, '')}/api/sessions/${encodeURIComponent(sess)}/messages/send-text`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(key ? { 'X-API-Key': key } : {}) },
+          body: JSON.stringify({ chatId: `${normalizedPhone.replace(/^\+/, '')}@c.us`, text: lines }),
+        }).catch(() => null) as any;
+        if (r?.ok) {
+          const j = await r.json().catch(() => ({})) as any;
+          waResult = { ok: true, remoteId: j?.messageId || j?.id, wamid: j?.wamid };
+          await db.update(waOutbox).set({ status: 'sent', wamid: j?.wamid || j?.messageId || null, updatedAt: Math.floor(Date.now()/1000) }).where(eq(waOutbox.id, waId));
+        }
+      }
+    } catch {}
+
+    await auditEvent(c as any, { action: 'TOURS_QUOTE_SENT', entityName: 'wa_outbox', entityId: waId, afterState: { toPhone: normalizedPhone, pax, totalPaise, packageId: pkg?.id || body.packageId } }).catch(() => {});
+    try { await publishSyncEvent(c.env as any, { channel: `staff:global:tours`, type: 'TOURS_QUOTE_SENT', payload: { waId, toPhone: normalizedPhone, pax, totalPaise } }, (c as any).executionCtx); } catch {}
+    if (client?.id) { try { await publishSyncEvent(c.env as any, { channel: `client:${client.id}:bookings`, type: 'TOURS_QUOTE_SENT', payload: { waId, totalPaise } }, (c as any).executionCtx); } catch {} }
+
+    return c.json({ success: true, waId, toPhone: normalizedPhone, totalPaise, message: 'Official quotation dispatched on WhatsApp (Utility). Reply YES to reserve.' , waResult });
+  } catch (e: any) {
+    return c.json({ error: 'Quotation dispatch failed', details: e?.message }, 500);
   }
 });
 

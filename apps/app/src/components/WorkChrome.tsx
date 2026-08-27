@@ -27,7 +27,7 @@ export function WorkspaceHeader({
     <div className="mb-8">
       <div className="flex items-center gap-2.5">
         <span className="h-2 w-2 rounded-full bg-brand-gold animate-pulse shadow-[0_0_8px_rgba(215,160,25,0.8)]" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-brand-gold">{eyebrow}</span>
+        <span className="text-[13px] font-bold uppercase tracking-[0.24em] text-brand-gold">{eyebrow}</span>
       </div>
       <h2 className="mt-2 font-display text-2xl font-black tracking-tight text-brand-navy md:text-3xl">
         {title}
@@ -66,7 +66,7 @@ export function PanelHead({
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-brand-navy/10 pb-3.5">
       <div>
         <h3 className="font-display text-sm font-extrabold text-brand-navy tracking-tight">{title}</h3>
-        {caption && <p className="mt-0.5 text-[11px] text-brand-textLight">{caption}</p>}
+        {caption && <p className="mt-0.5 text-sm text-brand-textLight">{caption}</p>}
       </div>
       {right}
     </div>
@@ -80,7 +80,7 @@ export function EmptyState({ title, hint }: { title: string; hint?: string }) {
         <span className="h-2.5 w-2.5 rounded-full bg-brand-gold shadow-[0_0_10px_rgba(215,160,25,0.8)]" />
       </div>
       <p className="mt-3.5 text-xs font-bold text-brand-navy">{title}</p>
-      {hint && <p className="mt-1 text-[11px] text-brand-textLight max-w-sm mx-auto">{hint}</p>}
+      {hint && <p className="mt-1 text-sm text-brand-textLight max-w-sm mx-auto">{hint}</p>}
     </div>
   );
 }
@@ -111,10 +111,10 @@ export function KpiTile({
         <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-brand-gold/15 blur-3xl animate-pulse" />
       )}
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">{label}</p>
+        <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">{label}</p>
       </div>
       <p className={`mt-3.5 font-display text-3xl sm:text-4xl font-black tracking-tight ${valueClass}`} data-count={countKey}>{value}</p>
-      {caption && <p className="mt-1.5 text-[11px] font-medium text-brand-textLight">{caption}</p>}
+      {caption && <p className="mt-1.5 text-sm font-medium text-brand-textLight">{caption}</p>}
     </Panel>
   );
 }
@@ -133,7 +133,7 @@ export function WorkButton({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wider transition-all duration-300 active:scale-[0.97] shadow-sm ${
+      className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-sm font-extrabold uppercase tracking-wider transition-all duration-300 active:scale-[0.97] shadow-sm ${
         gold
           ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90 hover:shadow-[0_12px_28px_-8px_rgba(215,160,25,0.5)]'
           : 'border border-brand-navy/15 bg-white text-brand-navy hover:border-brand-gold hover:bg-brand-navy/5'

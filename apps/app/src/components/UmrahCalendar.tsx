@@ -111,7 +111,7 @@ export default function UmrahCalendar({ days, month, onMonthChange, onSelectDay,
 
       <div className="grid grid-cols-7 gap-1 text-center mb-1">
         {WEEKDAYS.map(w => (
-          <div key={w} className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40 py-1">{w}</div>
+          <div key={w} className="text-xs font-bold uppercase tracking-wider text-brand-navy/40 py-1">{w}</div>
         ))}
       </div>
 
@@ -137,9 +137,9 @@ export default function UmrahCalendar({ days, month, onMonthChange, onSelectDay,
               }}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-bold ${d.getTime() === today.getTime() ? 'text-brand-gold' : 'text-brand-navy/60'}`}>{d.getDate()}</span>
+                <span className={`text-[13px] font-bold ${d.getTime() === today.getTime() ? 'text-brand-gold' : 'text-brand-navy/60'}`}>{d.getDate()}</span>
                 {day && (
-                  <span className={`text-[8px] font-bold uppercase px-1 py-0.5 rounded ${statusChip(day.status)}`}>
+                  <span className={`text-sm font-bold uppercase px-1 py-0.5 rounded ${statusChip(day.status)}`}>
                     {day.status === 'open' ? (day.available === 0 ? 'Full' : 'Open') : day.status}
                   </span>
                 )}
@@ -149,14 +149,14 @@ export default function UmrahCalendar({ days, month, onMonthChange, onSelectDay,
                   <div className="h-1 w-full rounded-full bg-brand-navy/[0.08] overflow-hidden">
                     <div className={`h-full rounded-full ${day.fillPct >= 100 ? 'bg-rose-500' : day.fillPct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, day.fillPct)}%` }} />
                   </div>
-                  <div className="text-[8px] text-brand-navy/50 font-mono leading-tight">
+                  <div className="text-sm text-brand-navy/50 font-mono leading-tight">
                     {isRange ? '↔ trip' : `${day.available}/${day.capacity} left`}
                     {day.tier && <span className={`ml-1 px-1 rounded ${TIER_BADGE[day.tier] || ''}`}>{TIER_LABEL[day.tier] || day.tier}</span>}
                     {extra > 0 && <span className="ml-1 text-brand-gold font-bold">+{extra}</span>}
                   </div>
                 </>
               ) : (
-                <div className="text-[8px] text-brand-navy/30 italic leading-tight">
+                <div className="text-sm text-brand-navy/30 italic leading-tight">
                   {mode === 'staff' && !past ? (hoverDate?.getTime() === d.getTime() ? '+ Announce' : '') : ''}
                 </div>
               )}
@@ -165,7 +165,7 @@ export default function UmrahCalendar({ days, month, onMonthChange, onSelectDay,
         })}
       </div>
 
-      <div className="flex flex-wrap gap-3 mt-3 pt-2 border-t border-brand-navy/[0.06] text-[9px] text-brand-navy/40">
+      <div className="flex flex-wrap gap-3 mt-3 pt-2 border-t border-brand-navy/[0.06] text-xs text-brand-navy/40">
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Open</span>
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> Filling fast (≥70%)</span>
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" /> Full</span>

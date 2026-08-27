@@ -324,7 +324,7 @@ export default function ManpowerPortal() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Recruitment & Deployment</span>
+            <span className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Recruitment & Deployment</span>
           </div>
           <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Manpower Sourcing Operations</h1>
           <p className="text-xs text-brand-textLight mt-0.5">Manage international job openings, recruitment classifications, and candidate flight deployments.</p>
@@ -343,7 +343,7 @@ export default function ManpowerPortal() {
           onClick={() => { setActiveSubTab('deployments'); }}
           className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'deployments' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
         >
-          <span>✈️</span>
+          <span>🧳</span>
           <span>Deployment Status</span>
         </button>
         <button
@@ -360,8 +360,8 @@ export default function ManpowerPortal() {
           <div className="lg:col-span-1 rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-4 h-fit backdrop-blur-sm">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h5 className="font-bold text-brand-gold uppercase tracking-widest text-[9px]">Job Board Tier</h5>
-                <button onClick={() => setShowAddJob(true)} className="bg-brand-gold text-brand-navy text-[10px] font-bold px-2.5 py-1 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ Add</button>
+                <h5 className="font-bold text-brand-gold uppercase tracking-widest text-xs">Job Board Tier</h5>
+                <button onClick={() => setShowAddJob(true)} className="bg-brand-gold text-brand-navy text-[13px] font-bold px-2.5 py-1 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ Add</button>
               </div>
               <div className="flex gap-2">
                 <button
@@ -380,7 +380,7 @@ export default function ManpowerPortal() {
             </div>
 
             <div>
-              <h5 className="font-bold text-brand-gold uppercase tracking-widest text-[9px] mb-2.5">Category Class</h5>
+              <h5 className="font-bold text-brand-gold uppercase tracking-widest text-xs mb-2.5">Category Class</h5>
               <div className="flex gap-2">
                 <button
                   onClick={() => setJobCategory('blue_collar')}
@@ -396,17 +396,17 @@ export default function ManpowerPortal() {
                 </button>
               </div>
             </div>
-            <p className="text-[10px] text-brand-navy/40 italic">Secret roles are staff-visible only and never leak to the public careers page.</p>
+            <p className="text-[13px] text-brand-navy/40 italic">Secret roles are staff-visible only and never leak to the public careers page.</p>
           </div>
 
           <div className="lg:col-span-3">
             <div className="flex flex-wrap items-center gap-1.5 mb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 mr-1">Status:</span>
+              <span className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40 mr-1">Status:</span>
               {['all', 'draft', 'open', 'paused', 'filled', 'closed', 'archived'].map(st => (
                 <button
                   key={st}
                   onClick={() => setJobStatusFilter(st)}
-                  className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider transition cursor-pointer ${jobStatusFilter === st ? 'bg-brand-gold text-brand-navy' : 'bg-brand-navy/[0.04] text-brand-navy/50 hover:text-brand-navy border border-brand-navy/10'}`}
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition cursor-pointer ${jobStatusFilter === st ? 'bg-brand-gold text-brand-navy' : 'bg-brand-navy/[0.04] text-brand-navy/50 hover:text-brand-navy border border-brand-navy/10'}`}
                 >
                   {st}
                 </button>
@@ -422,8 +422,8 @@ export default function ManpowerPortal() {
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="font-bold text-brand-navy text-sm">{j.title}</h4>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          {j.featured && <span className="bg-brand-gold/15 text-brand-gold rounded px-1.5 py-0.5 text-[9px] font-bold uppercase">Featured</span>}
-                          <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                          {j.featured && <span className="bg-brand-gold/15 text-brand-gold rounded px-1.5 py-0.5 text-xs font-bold uppercase">Featured</span>}
+                          <span className={`rounded px-1.5 py-0.5 text-xs font-bold uppercase ${
                             j.status === 'open' ? 'bg-emerald-50 text-emerald-700' :
                             j.status === 'paused' ? 'bg-amber-50 text-amber-700' :
                             j.status === 'filled' ? 'bg-sky-50 text-sky-700' :
@@ -434,16 +434,16 @@ export default function ManpowerPortal() {
                         </div>
                       </div>
                       <div className="flex gap-2 items-center flex-wrap">
-                        <span className="bg-brand-navy/[0.06] text-brand-navy/70 rounded px-1.5 py-0.5 text-[9px] font-mono border border-brand-navy/10">{j.country}</span>
-                        <span className="bg-brand-gold/10 text-brand-gold rounded px-1.5 py-0.5 text-[9px] font-bold capitalize">{COLLAR_LABEL[j.collar] || j.collar.replace('_', ' ')}</span>
-                        {j.tier === 'secret' && <span className="bg-amber-500/15 text-amber-700 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase">Secret</span>}
-                        {typeof j.applicantCount === 'number' && <span className="bg-emerald-500/15 text-emerald-700 rounded px-1.5 py-0.5 text-[9px] font-bold">{j.applicantCount} applied</span>}
+                        <span className="bg-brand-navy/[0.06] text-brand-navy/70 rounded px-1.5 py-0.5 text-xs font-mono border border-brand-navy/10">{j.country}</span>
+                        <span className="bg-brand-gold/10 text-brand-gold rounded px-1.5 py-0.5 text-xs font-bold capitalize">{COLLAR_LABEL[j.collar] || j.collar.replace('_', ' ')}</span>
+                        {j.tier === 'secret' && <span className="bg-amber-500/15 text-amber-700 rounded px-1.5 py-0.5 text-xs font-bold uppercase">Secret</span>}
+                        {typeof j.applicantCount === 'number' && <span className="bg-emerald-500/15 text-emerald-700 rounded px-1.5 py-0.5 text-xs font-bold">{j.applicantCount} applied</span>}
                       </div>
-                      {j.employer && <p className="text-[10px] text-brand-navy/50">Employer: <span className="font-medium text-brand-navy/70">{j.employer}</span></p>}
-                      {j.description && <p className="text-[10px] text-brand-navy/50 leading-relaxed line-clamp-2">{j.description}</p>}
+                      {j.employer && <p className="text-[13px] text-brand-navy/50">Employer: <span className="font-medium text-brand-navy/70">{j.employer}</span></p>}
+                      {j.description && <p className="text-[13px] text-brand-navy/50 leading-relaxed line-clamp-2">{j.description}</p>}
                       {(j.benefits?.length || 0) > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {j.benefits!.slice(0, 4).map((b, i) => <span key={i} className="bg-emerald-500/10 text-emerald-700 text-[9px] px-1.5 py-0.5 rounded">{b}</span>)}
+                          {j.benefits!.slice(0, 4).map((b, i) => <span key={i} className="bg-emerald-500/10 text-emerald-700 text-xs px-1.5 py-0.5 rounded">{b}</span>)}
                         </div>
                       )}
                     </div>
@@ -467,22 +467,22 @@ export default function ManpowerPortal() {
           <div className="flex justify-between items-center border-b border-brand-navy/10 pb-3">
             <div>
               <h3 className="font-display font-extrabold text-brand-navy text-sm">Exclusive Community — Membership Plans</h3>
-              <p className="text-[10px] text-brand-navy/50">Control prices, durations, tiers, and perks for the paid job-seeker community. Active plans appear on the client paywall.</p>
+              <p className="text-[13px] text-brand-navy/50">Control prices, durations, tiers, and perks for the paid job-seeker community. Active plans appear on the client paywall.</p>
             </div>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-2 cursor-pointer select-none">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/50">Community</span>
+                <span className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/50">Community</span>
                 <button
                   onClick={() => toggleCommunityMutation.mutate(!exclusiveEnabled)}
                   className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${exclusiveEnabled ? 'bg-emerald-500' : 'bg-brand-navy/[0.15]'}`}
                 >
                   <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${exclusiveEnabled ? 'left-5' : 'left-0.5'}`} />
                 </button>
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${exclusiveEnabled ? 'text-emerald-700' : 'text-brand-navy/40'}`}>{exclusiveEnabled ? 'Live' : 'Coming Soon'}</span>
+                <span className={`text-[13px] font-bold uppercase tracking-wider ${exclusiveEnabled ? 'text-emerald-700' : 'text-brand-navy/40'}`}>{exclusiveEnabled ? 'Live' : 'Coming Soon'}</span>
               </label>
               <button
                 onClick={() => { setEditPlanId(null); setPlanForm({ key: '', name: '', description: '', pricePaise: '', durationDays: 30, tier: 'basic', perks: '', active: true, sortOrder: 0 }); setShowPlanModal(true); }}
-                className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
+                className="bg-brand-gold text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
               >
                 + New Plan
               </button>
@@ -491,7 +491,7 @@ export default function ManpowerPortal() {
 
           <div className="overflow-x-auto border border-brand-navy/10 rounded-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-brand-navy/[0.04] text-[10px] uppercase font-bold text-brand-gold border-b border-brand-navy/[0.08]">
+              <thead className="bg-brand-navy/[0.04] text-[13px] uppercase font-bold text-brand-gold border-b border-brand-navy/[0.08]">
                 <tr>
                   <th className="px-4 py-3">Plan</th>
                   <th className="px-4 py-3">Tier</th>
@@ -506,13 +506,13 @@ export default function ManpowerPortal() {
                   <tr key={p.id} className="hover:bg-brand-navy/[0.04]">
                     <td className="px-4 py-3">
                       <div className="font-bold text-brand-navy">{p.name}</div>
-                      <div className="text-[10px] text-brand-navy/40 font-mono">{p.key}</div>
+                      <div className="text-[13px] text-brand-navy/40 font-mono">{p.key}</div>
                     </td>
-                    <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${p.tier === 'premium' ? 'bg-purple-50 text-purple-600' : p.tier === 'pro' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>{p.tier}</span></td>
+                    <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${p.tier === 'premium' ? 'bg-purple-50 text-purple-600' : p.tier === 'pro' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>{p.tier}</span></td>
                     <td className="px-4 py-3 text-right font-bold text-brand-gold">₹{(p.pricePaise / 100).toLocaleString('en-IN')}</td>
                     <td className="px-4 py-3 text-right">{p.durationDays} days</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${p.active ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{p.active ? 'Active' : 'Inactive'}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${p.active ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{p.active ? 'Active' : 'Inactive'}</span>
                     </td>
                     <td className="px-4 py-3 text-center space-x-2.5">
                       <button
@@ -541,7 +541,7 @@ export default function ManpowerPortal() {
           <div className="lg:col-span-1 rounded-2xl border border-brand-navy/10 bg-white p-4 h-[500px] overflow-y-auto space-y-3 shadow-sm backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <h3 className="text-xs uppercase font-bold text-brand-gold tracking-wider">Candidate pool</h3>
-              <button onClick={() => setShowDeploy(true)} className="bg-brand-gold text-brand-navy text-[10px] font-bold px-2.5 py-1 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ Deploy</button>
+              <button onClick={() => setShowDeploy(true)} className="bg-brand-gold text-brand-navy text-[13px] font-bold px-2.5 py-1 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ Deploy</button>
             </div>
             <div className="space-y-2">
               {candidates.map(c => (
@@ -551,7 +551,7 @@ export default function ManpowerPortal() {
                   className={`w-full text-left p-3 rounded-xl border text-xs transition-all cursor-pointer flex flex-col gap-1 ${selectedCandidate?.id === c.id ? 'border-brand-gold bg-brand-gold/10 font-semibold' : 'border-brand-navy/10 hover:border-brand-gold/50 bg-brand-navy/[0.04]'}`}
                 >
                   <span className="font-bold text-brand-navy">{c.name}</span>
-                  <span className="text-[10px] text-brand-navy/40 font-mono">{c.id}</span>
+                  <span className="text-[13px] text-brand-navy/40 font-mono">{c.id}</span>
                 </button>
               ))}
               {candidates.length === 0 && <p className="text-xs text-brand-navy/50 italic">No active manpower candidates found.</p>}
@@ -566,11 +566,11 @@ export default function ManpowerPortal() {
                   <div>
                     <h2 className="font-display text-lg font-bold text-brand-navy">{selectedCandidate.name}</h2>
                     <div className="flex items-center gap-2 mt-1.5">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${selectedClientFull?.exclusiveMember ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${selectedClientFull?.exclusiveMember ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>
                         {selectedClientFull?.exclusiveMember ? '✓ Exclusive Member' : 'Free Member'}
                       </span>
-                      {selectedClientFull?.exclusiveExpiresAt && <span className="text-[9px] text-brand-navy/40 font-mono">expires {new Date(selectedClientFull.exclusiveExpiresAt * 1000).toLocaleDateString()}</span>}
-                      {selectedClientFull?.instagramHandle && <span className="text-[9px] text-brand-navy/40 font-mono">@{selectedClientFull.instagramHandle}</span>}
+                      {selectedClientFull?.exclusiveExpiresAt && <span className="text-xs text-brand-navy/40 font-mono">expires {new Date(selectedClientFull.exclusiveExpiresAt * 1000).toLocaleDateString()}</span>}
+                      {selectedClientFull?.instagramHandle && <span className="text-xs text-brand-navy/40 font-mono">@{selectedClientFull.instagramHandle}</span>}
                       <button
                         onClick={() => {
                           if (selectedClientFull?.exclusiveMember) {
@@ -580,12 +580,12 @@ export default function ManpowerPortal() {
                             if (days) grantMembershipMutation.mutate({ clientId: selectedCandidate.id, exclusiveMember: true, planKey: 'exclusive-30', durationDays: parseInt(days, 10) || 30 });
                           }
                         }}
-                        className="text-[9px] font-bold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer"
+                        className="text-xs font-bold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer"
                       >
                         {selectedClientFull?.exclusiveMember ? 'Revoke' : 'Grant'}
                       </button>
                     </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-brand-navy/40 font-mono text-[10px] mt-1">
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-brand-navy/40 font-mono text-[13px] mt-1">
                       <span>{selectedCandidate.id}</span><span>•</span><span>{selectedCandidate.email}</span><span>•</span><span>{selectedCandidate.phone}</span>
                     </div>
                   </div>
@@ -595,37 +595,37 @@ export default function ManpowerPortal() {
                   <div className="flex gap-1">
                     <button
                       onClick={() => setTriageFilter('all')}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'all' ? 'bg-brand-navy text-white' : 'text-brand-navy/60 hover:text-brand-navy'}`}
+                      className={`px-3 py-1 rounded-lg text-[13px] font-bold uppercase transition cursor-pointer ${triageFilter === 'all' ? 'bg-brand-navy text-white' : 'text-brand-navy/60 hover:text-brand-navy'}`}
                     >
                       All ({deployments.length})
                     </button>
                     <button
                       onClick={() => setTriageFilter('paid_vas')}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'paid_vas' ? 'bg-purple-600 text-white font-bold' : 'text-purple-700 bg-purple-50 hover:bg-purple-100'}`}
+                      className={`px-3 py-1 rounded-lg text-[13px] font-bold uppercase transition cursor-pointer ${triageFilter === 'paid_vas' ? 'bg-purple-600 text-white font-bold' : 'text-purple-700 bg-purple-50 hover:bg-purple-100'}`}
                     >
                       ✨ Paid Add-Ons ({deployments.filter(d => d.hasPaidVas).length})
                     </button>
                     <button
                       onClick={() => setTriageFilter('top_match')}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'top_match' ? 'bg-emerald-600 text-white' : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'}`}
+                      className={`px-3 py-1 rounded-lg text-[13px] font-bold uppercase transition cursor-pointer ${triageFilter === 'top_match' ? 'bg-emerald-600 text-white' : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'}`}
                     >
                       🔥 Top Match (≥75%)
                     </button>
                     <button
                       onClick={() => setTriageFilter('standard')}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'standard' ? 'bg-brand-gold text-brand-navy font-bold' : 'text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20'}`}
+                      className={`px-3 py-1 rounded-lg text-[13px] font-bold uppercase transition cursor-pointer ${triageFilter === 'standard' ? 'bg-brand-gold text-brand-navy font-bold' : 'text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20'}`}
                     >
                       ⚡ Standard (50–74%)
                     </button>
                     <button
                       onClick={() => setTriageFilter('cold_pool')}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition cursor-pointer ${triageFilter === 'cold_pool' ? 'bg-slate-600 text-white' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}
+                      className={`px-3 py-1 rounded-lg text-[13px] font-bold uppercase transition cursor-pointer ${triageFilter === 'cold_pool' ? 'bg-slate-600 text-white' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}
                     >
                       ❄️ Cold Pool (&lt;50%)
                     </button>
                   </div>
 
-                  <div className="text-[10px] text-brand-navy/50 flex items-center gap-1.5 font-mono">
+                  <div className="text-[13px] text-brand-navy/50 flex items-center gap-1.5 font-mono">
                     <span>🛡️ AI Guardrails: OWASP LLM01 Active</span>
                   </div>
                 </div>
@@ -642,16 +642,16 @@ export default function ManpowerPortal() {
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-brand-navy text-sm">{d.jobTitle || 'Job'}</span>
-                              <span className="bg-brand-gold/10 text-brand-gold rounded px-1.5 py-0.5 text-[9px] font-bold capitalize">
+                              <span className="bg-brand-gold/10 text-brand-gold rounded px-1.5 py-0.5 text-xs font-bold capitalize">
                                 {COLLAR_LABEL[d.collar || 'blue_collar']}
                               </span>
                               {d.hasPaidVas && (
-                                <span className="bg-purple-100 text-purple-800 border border-purple-300 rounded px-1.5 py-0.5 text-[9px] font-bold flex items-center gap-1">
+                                <span className="bg-purple-100 text-purple-800 border border-purple-300 rounded px-1.5 py-0.5 text-xs font-bold flex items-center gap-1">
                                   <span>✨</span> {d.vasServiceTitle || 'Paid Add-On'}
                                 </span>
                               )}
                               {d.matchScore !== undefined && (
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${
                                   d.matchTier === 'top_match'
                                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                     : d.matchTier === 'standard'
@@ -662,18 +662,18 @@ export default function ManpowerPortal() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-[10px] text-brand-navy/50 mt-0.5">
+                            <div className="text-[13px] text-brand-navy/50 mt-0.5">
                               {d.jobCountry || ''} · {d.jobSector || ''} {d.employer ? `· Employer: ${d.employer}` : ''} · <span className="font-mono">{d.id}</span>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2">
                             {d.profileCompletenessPct !== undefined && (
-                              <span className="text-[10px] font-bold text-brand-navy/60 bg-white px-2 py-1 rounded border border-brand-navy/10">
+                              <span className="text-[13px] font-bold text-brand-navy/60 bg-white px-2 py-1 rounded border border-brand-navy/10">
                                 📋 {d.profileCompletenessPct}% Profile
                               </span>
                             )}
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                            <span className="text-[13px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
                               🛡️ docScan: Verified Clean
                             </span>
                           </div>
@@ -683,12 +683,12 @@ export default function ManpowerPortal() {
                         {(d.matchStrengths?.length || 0) > 0 && (
                           <div className="flex flex-wrap gap-1.5">
                             {d.matchStrengths!.map((st, i) => (
-                              <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] px-2 py-0.5 rounded font-medium">
+                              <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[13px] px-2 py-0.5 rounded font-medium">
                                 ✓ {st}
                               </span>
                             ))}
                             {(d.matchGaps || []).map((gp, i) => (
-                              <span key={i} className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-2 py-0.5 rounded font-medium">
+                              <span key={i} className="bg-amber-50 text-amber-700 border border-amber-200 text-[13px] px-2 py-0.5 rounded font-medium">
                                 ⚠️ {gp}
                               </span>
                             ))}
@@ -701,7 +701,7 @@ export default function ManpowerPortal() {
                             <select
                               value={d.selectionStatus}
                               onChange={(e) => updateDeploymentMutation.mutate({ id: d.id, payload: { selectionStatus: e.target.value } })}
-                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[11px] font-semibold text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
+                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-sm font-semibold text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
                             >
                               {['applied', 'shortlisted', 'selected', 'rejected'].map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
@@ -711,7 +711,7 @@ export default function ManpowerPortal() {
                             <select
                               value={d.medicalStatus}
                               onChange={(e) => updateDeploymentMutation.mutate({ id: d.id, payload: { medicalStatus: e.target.value } })}
-                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[11px] font-semibold text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
+                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-sm font-semibold text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
                             >
                               {['pending', 'fit', 'unfit', 'restricted'].map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
@@ -721,7 +721,7 @@ export default function ManpowerPortal() {
                             <select
                               value={d.visaStatus}
                               onChange={(e) => updateDeploymentMutation.mutate({ id: d.id, payload: { visaStatus: e.target.value } })}
-                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[11px] font-semibold text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
+                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-sm font-semibold text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
                             >
                               {['pending', 'submitted', 'stamped', 'rejected'].map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
@@ -731,7 +731,7 @@ export default function ManpowerPortal() {
                             <select
                               value={d.flightStatus}
                               onChange={(e) => updateDeploymentMutation.mutate({ id: d.id, payload: { flightStatus: e.target.value } })}
-                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[11px] font-semibold text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
+                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-sm font-semibold text-brand-navy outline-none cursor-pointer focus:border-brand-gold [&>option]:bg-white"
                             >
                               {['pending', 'booked', 'deployed'].map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
@@ -740,8 +740,8 @@ export default function ManpowerPortal() {
 
                         {d.formJson && (
                           <details className="mt-3 rounded-lg border border-brand-navy/10 bg-white">
-                            <summary className="cursor-pointer px-3 py-2 text-[11px] font-bold text-brand-navy">📋 Candidate Structured Profile &amp; Form Data</summary>
-                            <div className="px-3 pb-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-brand-navy/80">
+                            <summary className="cursor-pointer px-3 py-2 text-sm font-bold text-brand-navy">📋 Candidate Structured Profile &amp; Form Data</summary>
+                            <div className="px-3 pb-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-brand-navy/80">
                               <p><span className="text-brand-navy/40">Name:</span> {d.formJson.personal?.fullName || '—'}</p>
                               <p><span className="text-brand-navy/40">DOB:</span> {d.formJson.personal?.dob || '—'}</p>
                               <p><span className="text-brand-navy/40">Gender:</span> {d.formJson.personal?.gender || '—'}</p>
@@ -763,12 +763,12 @@ export default function ManpowerPortal() {
 
                         {d.selectionStatus === 'rejected' && (
                           <div className="mt-3">
-                            <label className="text-[10px] font-semibold text-brand-navy/50 block mb-1">Rejection reason</label>
+                            <label className="text-[13px] font-semibold text-brand-navy/50 block mb-1">Rejection reason</label>
                             <input
                               defaultValue={d.rejectionReason || ''}
                               onBlur={(e) => { const v = e.target.value.trim(); if (v) updateDeploymentMutation.mutate({ id: d.id, payload: { rejectionReason: v } }); }}
                               placeholder="Why was this candidate rejected?"
-                              className="w-full border border-brand-navy/10 bg-white rounded px-2 py-1.5 text-[11px] text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold"
+                              className="w-full border border-brand-navy/10 bg-white rounded px-2 py-1.5 text-sm text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold"
                             />
                           </div>
                         )}
@@ -853,97 +853,97 @@ export default function ManpowerPortal() {
           <aside className="fixed top-0 right-0 h-full w-[30rem] max-w-[95vw] bg-white shadow-2xl z-50 overflow-y-auto p-6 space-y-5 border-l border-brand-navy/10 animate-in slide-in-from-right duration-300">
             <div className="flex justify-between items-start border-b border-brand-navy/10 pb-4">
               <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-brand-gold">Job Posting</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-gold">Job Posting</p>
                 <h3 className="font-display font-extrabold text-lg text-brand-navy mt-1">{previewJob.title}</h3>
-                <p className="text-[11px] text-brand-navy/50">{previewJob.country} · {previewJob.sector}</p>
+                <p className="text-sm text-brand-navy/50">{previewJob.country} · {previewJob.sector}</p>
               </div>
               <button onClick={() => setPreviewJob(null)} className="text-brand-navy/50 hover:text-brand-navy text-xl cursor-pointer">✕</button>
             </div>
 
             <div className="flex flex-wrap gap-1.5">
-              <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                 previewJob.status === 'open' ? 'bg-emerald-50 text-emerald-700' :
                 previewJob.status === 'paused' ? 'bg-amber-50 text-amber-700' :
                 previewJob.status === 'filled' ? 'bg-sky-50 text-sky-700' :
                 previewJob.status === 'closed' ? 'bg-rose-50 text-rose-700' :
                 previewJob.status === 'archived' ? 'bg-brand-navy/[0.06] text-brand-navy/40' : 'bg-brand-navy/[0.06] text-brand-navy/40'
               }`}>{previewJob.status || 'open'}</span>
-              <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-brand-navy/[0.06] text-brand-navy/70">{previewJob.tier}</span>
-              <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-brand-gold/10 text-brand-gold">{previewJob.collar?.replace('_', ' ')}</span>
-              {previewJob.featured && <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-brand-gold/15 text-brand-gold">Featured</span>}
+              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-navy/[0.06] text-brand-navy/70">{previewJob.tier}</span>
+              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-gold/10 text-brand-gold">{previewJob.collar?.replace('_', ' ')}</span>
+              {previewJob.featured && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-gold/15 text-brand-gold">Featured</span>}
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Employer</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Employer</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewJob.employer || '—'}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Salary</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Salary</p>
                 <p className="font-bold text-brand-gold mt-0.5">{previewJob.salaryText}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Vacancies</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Vacancies</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewJob.vacancies || 1}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Applicants</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Applicants</p>
                 <p className="font-bold text-brand-navy mt-0.5">{typeof previewJob.applicantCount === 'number' ? previewJob.applicantCount : '—'}</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Experience</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Experience</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewJob.experienceYearsMin || 0}+ yrs</p>
               </div>
               <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-brand-navy/40">Deadline</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-navy/40">Deadline</p>
                 <p className="font-bold text-brand-navy mt-0.5">{previewJob.deadline ? new Date(previewJob.deadline * 1000).toLocaleDateString() : '—'}</p>
               </div>
             </div>
 
             {previewJob.description && (
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 mb-1.5">Description</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40 mb-1.5">Description</h4>
                 <p className="text-xs text-brand-navy/70 leading-relaxed">{previewJob.description}</p>
               </div>
             )}
 
             {(previewJob.benefits?.length || 0) > 0 && (
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 mb-1.5">Benefits</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40 mb-1.5">Benefits</h4>
                 <div className="flex flex-wrap gap-1.5">
-                  {previewJob.benefits!.map((b, i) => <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-100 rounded px-2 py-0.5 text-[10px]">{b}</span>)}
+                  {previewJob.benefits!.map((b, i) => <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-100 rounded px-2 py-0.5 text-[13px]">{b}</span>)}
                 </div>
               </div>
             )}
 
             {(previewJob.requirements?.length || 0) > 0 && (
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 mb-1.5">Requirements</h4>
+                <h4 className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40 mb-1.5">Requirements</h4>
                 <div className="flex flex-wrap gap-1.5">
-                  {previewJob.requirements!.map((r, i) => <span key={i} className="bg-brand-navy/[0.06] text-brand-navy/70 border border-brand-navy/10 rounded px-2 py-0.5 text-[10px]">{r}</span>)}
+                  {previewJob.requirements!.map((r, i) => <span key={i} className="bg-brand-navy/[0.06] text-brand-navy/70 border border-brand-navy/10 rounded px-2 py-0.5 text-[13px]">{r}</span>)}
                 </div>
               </div>
             )}
 
             <div className="border-t border-brand-navy/10 pt-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/40 mb-2">Lifecycle Actions</h4>
+              <h4 className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/40 mb-2">Lifecycle Actions</h4>
               <div className="flex flex-wrap gap-2">
                 {previewJob.status !== 'open' && (
-                  <button onClick={() => setJobStatus(previewJob.id, 'open')} className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Open</button>
+                  <button onClick={() => setJobStatus(previewJob.id, 'open')} className="bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Open</button>
                 )}
                 {previewJob.status !== 'paused' && previewJob.status !== 'archived' && (
-                  <button onClick={() => setJobStatus(previewJob.id, 'paused')} className="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Pause</button>
+                  <button onClick={() => setJobStatus(previewJob.id, 'paused')} className="bg-amber-500 hover:bg-amber-600 text-white text-[13px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Pause</button>
                 )}
                 {previewJob.status !== 'filled' && previewJob.status !== 'archived' && (
-                  <button onClick={() => setJobStatus(previewJob.id, 'filled')} className="bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Mark Filled</button>
+                  <button onClick={() => setJobStatus(previewJob.id, 'filled')} className="bg-sky-600 hover:bg-sky-700 text-white text-[13px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Mark Filled</button>
                 )}
                 {previewJob.status !== 'closed' && previewJob.status !== 'archived' && (
-                  <button onClick={() => setJobStatus(previewJob.id, 'closed')} className="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Close</button>
+                  <button onClick={() => setJobStatus(previewJob.id, 'closed')} className="bg-rose-600 hover:bg-rose-700 text-white text-[13px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Close</button>
                 )}
                 {previewJob.status !== 'archived' && (
-                  <button onClick={() => { if (confirm('Archive this job posting?')) archiveJobMutation.mutate(previewJob.id); }} className="bg-brand-navy/[0.06] hover:bg-brand-navy/[0.1] text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Archive</button>
+                  <button onClick={() => { if (confirm('Archive this job posting?')) archiveJobMutation.mutate(previewJob.id); }} className="bg-brand-navy/[0.06] hover:bg-brand-navy/[0.1] text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Archive</button>
                 )}
-                <button onClick={() => { handleEditJobClick(previewJob); }} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">✎ Edit</button>
+                <button onClick={() => { handleEditJobClick(previewJob); }} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">✎ Edit</button>
               </div>
             </div>
           </aside>

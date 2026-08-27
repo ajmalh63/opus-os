@@ -99,29 +99,29 @@ export default function BlogPost() {
     <div className="min-h-screen bg-[#fcf9f4]">
       <div className="max-w-6xl mx-auto px-5 py-8 grid lg:grid-cols-[1fr_260px] gap-8">
         <article className="bg-white rounded-2xl border border-brand-navy/10 p-6 md:p-8 space-y-4">
-          <div className="flex flex-wrap gap-1 text-[10px]"><Link href="/blog" className="underline">Blog</Link><span>›</span><span className="px-1.5 py-0.5 rounded bg-brand-navy/10 uppercase font-bold">{post.division}</span>{post.category && <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700">{post.category}</span>}</div>
+          <div className="flex flex-wrap gap-1 text-[13px]"><Link href="/blog" className="underline">Blog</Link><span>›</span><span className="px-1.5 py-0.5 rounded bg-brand-navy/10 uppercase font-bold">{post.division}</span>{post.category && <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700">{post.category}</span>}</div>
           <h1 className="font-display font-bold text-2xl md:text-3xl text-brand-navy leading-tight">{post.title}</h1>
-          <div className="text-[11px] text-brand-navy/40">{post.authorName || 'Opus Overseas'} • {post.publishedAt ? new Date(post.publishedAt*1000).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' }) : ''} {post.dateModified ? `• Updated ${new Date(post.dateModified*1000).toLocaleDateString('en-IN')}` : ''} • {post.readingMinutes || 5} min</div>
+          <div className="text-sm text-brand-navy/40">{post.authorName || 'Opus Overseas'} • {post.publishedAt ? new Date(post.publishedAt*1000).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' }) : ''} {post.dateModified ? `• Updated ${new Date(post.dateModified*1000).toLocaleDateString('en-IN')}` : ''} • {post.readingMinutes || 5} min</div>
           {post.tldr && <blockquote className="border-l-4 border-brand-gold bg-amber-50 rounded-r-xl p-3 text-sm text-brand-navy/80 italic">TL;DR — {post.tldr}</blockquote>}
           <div className="prose max-w-none text-sm" dangerouslySetInnerHTML={{ __html: html }} />
           <div className="mt-8 p-4 rounded-xl bg-brand-navy text-white flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm font-bold">Need this done for you?</div>
             <Link href="/lead-form" className="bg-brand-gold text-brand-navy px-4 py-2 rounded-full text-xs font-bold">Talk to a Counselor →</Link>
           </div>
-          <div className="pt-4 border-t border-brand-navy/10 text-[10px] text-brand-navy/40">Primary keyword: <span className="font-mono bg-brand-navy/10 px-1 rounded">{post.primaryKeyword || '—'}</span> {post.pillarSlug && <>• Pillar:  <Link href={`/blog?pillar=${post.pillarSlug}`} className="underline">{post.pillarSlug}</Link></>} • Canonical: <span className="font-mono">{post.canonical || `https://opusoverseas.com/blog/${post.slug}`}</span></div>
+          <div className="pt-4 border-t border-brand-navy/10 text-[13px] text-brand-navy/40">Primary keyword: <span className="font-mono bg-brand-navy/10 px-1 rounded">{post.primaryKeyword || '—'}</span> {post.pillarSlug && <>• Pillar:  <Link href={`/blog?pillar=${post.pillarSlug}`} className="underline">{post.pillarSlug}</Link></>} • Canonical: <span className="font-mono">{post.canonical || `https://opusoverseas.com/blog/${post.slug}`}</span></div>
         </article>
         <aside className="space-y-4">
           {toc.length>0 && <div className="rounded-2xl border border-brand-navy/10 bg-white p-4 sticky top-4">
-            <div className="text-[10px] font-bold uppercase tracking-wide mb-2">On this page</div>
+            <div className="text-[13px] font-bold uppercase tracking-wide mb-2">On this page</div>
             <ul className="space-y-1 text-xs">{toc.map(t=><li key={t.id}><a href={`#${t.id}`} className="hover:underline text-brand-navy/70">{t.text}</a></li>)}</ul>
           </div>}
           {related.length>0 && <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
-            <div className="text-[10px] font-bold uppercase mb-2">Related reading</div>
+            <div className="text-[13px] font-bold uppercase mb-2">Related reading</div>
             <div className="space-y-2">{related.map((r:any)=><Link key={r.id} href={`/blog/${r.slug}`} className="block text-xs hover:underline"><span className="font-bold">{r.title}</span><div className="text-brand-navy/40">{r.division}</div></Link>)}</div>
           </div>}
           <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
-            <div className="text-[10px] font-bold uppercase mb-2">Citation tip</div>
-            <p className="text-[11px] text-brand-navy/60">This guide is structured for AI citations: TL;DR + definition sentence + table + FAQ (5). Ask ChatGPT “What is {post.primaryKeyword} — Opus Overseas?” to see the lift.</p>
+            <div className="text-[13px] font-bold uppercase mb-2">Citation tip</div>
+            <p className="text-sm text-brand-navy/60">This guide is structured for AI citations: TL;DR + definition sentence + table + FAQ (5). Ask ChatGPT “What is {post.primaryKeyword} — Opus Overseas?” to see the lift.</p>
           </div>
         </aside>
       </div>

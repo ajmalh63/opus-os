@@ -15,6 +15,7 @@ export interface ToolEnv {
   MAUTIC_CLIENT_SECRET?: string;
   CHATWOOT_BASE_URL?: string;
   CHATWOOT_API_TOKEN?: string;
+  CHATWOOT_ACCOUNT_ID?: string;
   OPENWA_BASE_URL?: string;
   OPENWA_API_URL?: string;
 }

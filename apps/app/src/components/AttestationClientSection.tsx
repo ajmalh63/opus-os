@@ -140,16 +140,16 @@ export default function AttestationClientSection({ token }: { token: string }) {
     setAttestationCart(c => [...c, { id: Date.now().toString(), country, category, docName: docName.trim(), holderName: holderName.trim(), issuingState: issuingState.trim(), translation }]);
     setDocName(''); setHolderName(''); setIssuingState('');
   };
-  const inputCls = 'w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2.5 text-xs text-brand-navy outline-none focus:border-brand-gold min-h-[44px]';
-  const labelCls = 'font-semibold text-brand-navy/40 text-[10px] mb-1 block';
+  const inputCls = 'w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-sm sm:text-base text-brand-navy outline-none focus:border-brand-gold min-h-[44px] transition-all';
+  const labelCls = 'font-semibold text-brand-navy/70 text-xs sm:text-[13px] mb-1.5 block';
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-display font-bold text-brand-navy text-sm">🧾 Attestation Services</h3>
-        <div className="flex gap-1.5 bg-brand-navy/[0.05] p-1 rounded-xl text-[10px] font-bold text-brand-navy/60">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-display font-bold text-brand-navy text-base sm:text-lg">🧾 Attestation Services</h3>
+        <div className="flex gap-1.5 bg-brand-navy/[0.05] p-1 rounded-xl text-xs font-bold text-brand-navy/70">
           {(['browse', 'tracker'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${tab === t ? 'bg-brand-gold text-brand-navy' : 'hover:text-brand-navy'}`}>
+            <button key={t} onClick={() => setTab(t)} className={`px-3.5 py-2 rounded-lg cursor-pointer transition-all ${tab === t ? 'bg-brand-gold text-brand-navy shadow-sm' : 'hover:text-brand-navy'}`}>
               {t === 'browse' ? 'Get a Quote' : 'My Applications'}
             </button>
           ))}
@@ -159,21 +159,21 @@ export default function AttestationClientSection({ token }: { token: string }) {
       {/* ── BROWSE / QUOTE ── */}
       {tab === 'browse' && (
         <div className="space-y-4">
-          <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3 text-[10px] text-brand-navy/70">
+          <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-4 text-xs sm:text-sm text-brand-navy/80 leading-relaxed">
             {bandsData?.disclaimer || rateData?.disclaimer || 'Prices shown are indicative ranges and are not guaranteed — final cost may vary based on government fees, document type and processing. Subject to change without notice.'}
           </div>
 
           {featuredProducts.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">★ Popular services</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="space-y-2.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-brand-navy/50">★ Popular services</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {featuredProducts.slice(0, 4).map(fp => (
-                  <div key={fp.id} className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm space-y-1">
-                    <div className="font-bold text-brand-navy text-[11px]">{fp.title || `${fp.country} — ${fp.category}`}</div>
-                    {fp.description && <div className="text-[9px] text-brand-navy/50 line-clamp-2">{fp.description}</div>}
-                    <div className="flex items-center justify-between">
-                      <span className="text-brand-gold font-bold text-sm">{INR(fp.pricePaise)}</span>
-                      <button onClick={() => { setCountry(fp.country); setCategory(fp.category); }} className="text-[9px] font-bold text-brand-gold hover:underline cursor-pointer">Quote this →</button>
+                  <div key={fp.id} className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-1.5">
+                    <div className="font-bold text-brand-navy text-sm sm:text-base">{fp.title || `${fp.country} — ${fp.category}`}</div>
+                    {fp.description && <div className="text-xs text-brand-navy/60 line-clamp-2 leading-relaxed">{fp.description}</div>}
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-brand-gold font-bold text-base">{INR(fp.pricePaise)}</span>
+                      <button onClick={() => { setCountry(fp.country); setCategory(fp.category); }} className="text-xs font-bold text-brand-gold hover:underline cursor-pointer">Quote this →</button>
                     </div>
                   </div>
                 ))}
@@ -181,16 +181,16 @@ export default function AttestationClientSection({ token }: { token: string }) {
             </div>
           )}
 
-          <div className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-3">
-            <div className="font-bold text-brand-navy text-xs">Request an attestation quote</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm space-y-4">
+            <div className="font-bold text-brand-navy text-sm sm:text-base">Request an attestation quote</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <div>
                 <label className={labelCls}>Destination country *</label>
                 <select className={inputCls} value={country} onChange={e => setCountry(e.target.value)}>
                   <option value="">-- Select destination --</option>
                   {(rateData?.countries?.length ? rateData.countries : ALL_SERVICE_COUNTRIES).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                {!(rateData?.countries?.length) && <div className="text-[9px] text-amber-700 mt-1">All {ALL_SERVICE_COUNTRIES.length} destinations available — rate cards will refine pricing</div>}
+                {!(rateData?.countries?.length) && <div className="text-xs text-amber-700 mt-1">All {ALL_SERVICE_COUNTRIES.length} destinations available — rate cards will refine pricing</div>}
               </div>
               <div>
                 <label className={labelCls}>Document category</label>
@@ -201,13 +201,13 @@ export default function AttestationClientSection({ token }: { token: string }) {
               <div><label className={labelCls}>Document name *</label><input className={inputCls} value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. B.Tech Degree Certificate" /></div>
               <div><label className={labelCls}>Holder name *</label><input className={inputCls} value={holderName} onChange={e => setHolderName(e.target.value)} placeholder="Name on the document" /></div>
               <div><label className={labelCls}>Issuing state *</label><input className={inputCls} value={issuingState} onChange={e => setIssuingState(e.target.value)} placeholder="e.g. Telangana" /></div>
-              <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-brand-navy/70 cursor-pointer"><input type="checkbox" checked={translation} onChange={e => setTranslation(e.target.checked)} className="h-4 w-4 accent-brand-gold" /> Arabic certified translation needed</label></div>
+              <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-brand-navy/80 text-xs sm:text-sm cursor-pointer"><input type="checkbox" checked={translation} onChange={e => setTranslation(e.target.checked)} className="h-4 w-4 accent-brand-gold rounded" /> Arabic certified translation needed</label></div>
             </div>
 
             {band && (
-              <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3 space-y-1.5">
-                <div className="flex justify-between text-[10px] text-brand-navy/70"><span>Expected range ({ROUTE_LABEL['embassy']})</span><b>{INR(band.min * 100)} – {INR(band.max * 100)}</b></div>
-                <div className="text-[9px] text-brand-navy/40">Indicative only — the exact price is confirmed after we check with our processing partners.</div>
+              <div className="rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3.5 space-y-1.5">
+                <div className="flex justify-between text-xs sm:text-sm text-brand-navy/80"><span>Expected range ({ROUTE_LABEL['embassy']})</span><b>{INR(band.min * 100)} – {INR(band.max * 100)}</b></div>
+                <div className="text-xs text-brand-navy/50">Indicative only — the exact price is confirmed after we check with our processing partners.</div>
               </div>
             )}
 
@@ -225,23 +225,23 @@ export default function AttestationClientSection({ token }: { token: string }) {
               </div>
               <div className="md:col-span-2">
                 <label className={labelCls}>Document scan (helps us quote faster — optional)</label>
-                <label className="flex items-center gap-2 rounded-lg border border-dashed border-brand-navy/20 px-3 py-2.5 cursor-pointer hover:border-brand-gold/50 transition-all">
+                <label className="flex items-center gap-2.5 rounded-xl border border-dashed border-brand-navy/20 px-4 py-3 cursor-pointer hover:border-brand-gold/50 transition-all">
                   <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" className="hidden" onChange={(e) => setScanFile(e.target.files?.[0] || null)} />
-                  <span className="text-[10px] text-brand-navy/60">{scanFile ? `✓ ${scanFile.name}` : '📎 Attach a scan of the document'}</span>
+                  <span className="text-xs sm:text-sm text-brand-navy/70">{scanFile ? `✓ ${scanFile.name}` : '📎 Attach a scan of the document'}</span>
                 </label>
               </div>
             </div>
-            <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-2.5 text-[9px] text-amber-800">
+            <div className="rounded-xl bg-amber-500/10 border border-amber-200 p-3.5 text-xs sm:text-sm text-amber-800 leading-relaxed">
               The range shown is <b>indicative only</b> — it is not compulsory to stay within this bracket and the final price <b>may go up</b> based on government fees and document specifics. We confirm the exact price before you send anything.
             </div>
             {attestationCart.length > 0 && (
-              <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.04] p-3 flex items-center justify-between flex-wrap gap-2">
-                <div className="text-xs font-bold text-brand-navy">Cart ({attestationCart.length}) — {attestationCart.map(i=>i.docName).join(' + ')}</div>
-                <button onClick={() => setAttestationCart([])} className="text-[10px] px-2.5 py-1 rounded-full border border-brand-navy/15 bg-white text-brand-navy hover:bg-brand-navy/5 cursor-pointer">Clear</button>
+              <div className="rounded-2xl border border-brand-gold/30 bg-brand-gold/[0.04] p-4 flex items-center justify-between flex-wrap gap-3">
+                <div className="text-sm font-bold text-brand-navy">Cart ({attestationCart.length}) — {attestationCart.map(i=>i.docName).join(' + ')}</div>
+                <button onClick={() => setAttestationCart([])} className="text-xs font-bold px-3 py-1 rounded-full border border-brand-navy/15 bg-white text-brand-navy hover:bg-brand-navy/5 cursor-pointer">Clear</button>
               </div>
             )}
-            <div className="flex gap-2">
-              <button onClick={addToAttestationCart} disabled={!country || !docName.trim() || !holderName.trim() || !issuingState.trim()} className="flex-1 border border-brand-navy/15 bg-white text-brand-navy py-2.5 rounded-xl font-bold hover:border-brand-gold hover:text-brand-gold disabled:opacity-40 cursor-pointer">
+            <div className="flex gap-3">
+              <button onClick={addToAttestationCart} disabled={!country || !docName.trim() || !holderName.trim() || !issuingState.trim()} className="flex-1 border border-brand-navy/15 bg-white text-brand-navy py-3 rounded-xl font-bold text-sm hover:border-brand-gold hover:text-brand-gold disabled:opacity-40 cursor-pointer transition-all">
                 + Add to Cart
               </button>
               <button
@@ -264,12 +264,12 @@ export default function AttestationClientSection({ token }: { token: string }) {
                   }
                 }}
                 disabled={(!country || !docName.trim() || !holderName.trim() || !issuingState.trim()) && attestationCart.length === 0 || createMutation.isPending}
-                className="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-2.5 rounded-xl font-bold cursor-pointer transition-all disabled:opacity-50"
+                className="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-3 rounded-xl font-bold text-sm cursor-pointer transition-all disabled:opacity-50"
             >
               {createMutation.isPending ? 'Submitting…' : attestationCart.length > 0 ? `Get Bulk Quote (${attestationCart.length + 1})` : 'Get a Quote'}
             </button>
             </div>
-            <div className="text-[9px] text-brand-navy/40">One application per document. We'll confirm the exact price with you — then you send the original to our office and we handle the rest.</div>
+            <div className="text-xs text-brand-navy/50">One application per document. We'll confirm the exact price with you — then you send the original to our office and we handle the rest.</div>
           </div>
         </div>
       )}
@@ -283,59 +283,59 @@ export default function AttestationClientSection({ token }: { token: string }) {
             </div>
           )}
           {(appsData?.applications || []).map(app => (
-            <div key={app.id} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-3 text-xs">
+            <div key={app.id} className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm space-y-4 text-xs sm:text-sm">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-bold text-brand-navy">{app.document.documentName}</div>
-                  <div className="text-[10px] text-brand-navy/40 mt-0.5">{app.document.holderName} · {app.document.issuingState} → {app.destinationCountry} · {ROUTE_LABEL[app.route]}</div>
+                  <div className="font-bold text-brand-navy text-sm sm:text-base">{app.document.documentName}</div>
+                  <div className="text-xs text-brand-navy/50 mt-0.5">{app.document.holderName} · {app.document.issuingState} → {app.destinationCountry} · {ROUTE_LABEL[app.route]}</div>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase shrink-0 ${app.stage === 'delivered' ? 'bg-emerald-600/15 text-emerald-800' : app.stage === 'rejected' ? 'bg-rose-500/15 text-rose-600' : app.stage === 'in_process' ? 'bg-blue-500/15 text-blue-700' : app.stage === 'quote_requested' ? 'bg-amber-500/15 text-amber-700' : app.stage === 'quote_confirmed' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{STAGE_LABEL[app.stage]}</span>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase shrink-0 ${app.stage === 'delivered' ? 'bg-emerald-600/15 text-emerald-800' : app.stage === 'rejected' ? 'bg-rose-500/15 text-rose-600' : app.stage === 'in_process' ? 'bg-blue-500/15 text-blue-700' : app.stage === 'quote_requested' ? 'bg-amber-500/15 text-amber-700' : app.stage === 'quote_confirmed' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/60'}`}>{STAGE_LABEL[app.stage]}</span>
               </div>
 
               {/* Chain timeline */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {app.chain.map((step, i) => (
-                  <div key={step.key} className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-full grid place-items-center text-[8px] font-bold shrink-0 ${step.status === 'done' ? 'bg-emerald-500 text-white' : step.status === 'failed' ? 'bg-rose-500 text-white' : 'bg-brand-navy/[0.08] text-brand-navy/40'}`}>
+                  <div key={step.key} className="flex items-center gap-2.5">
+                    <div className={`w-6 h-6 rounded-full grid place-items-center text-xs font-bold shrink-0 ${step.status === 'done' ? 'bg-emerald-500 text-white' : step.status === 'failed' ? 'bg-rose-500 text-white' : 'bg-brand-navy/[0.08] text-brand-navy/50'}`}>
                       {step.status === 'done' ? '✓' : step.status === 'failed' ? '✕' : i + 1}
                     </div>
-                    <span className={`text-[10px] ${step.status === 'done' ? 'text-brand-navy font-semibold' : 'text-brand-navy/50'}`}>{step.label}</span>
-                    {step.date && <span className="text-[9px] text-brand-navy/30 ml-auto">{new Date(step.date * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>}
+                    <span className={`text-xs sm:text-sm ${step.status === 'done' ? 'text-brand-navy font-semibold' : 'text-brand-navy/60'}`}>{step.label}</span>
+                    {step.date && <span className="text-xs text-brand-navy/40 ml-auto">{new Date(step.date * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>}
                   </div>
                 ))}
               </div>
 
               {/* Fees */}
-              <div className="rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-2.5 text-[10px] text-brand-navy/70 flex justify-between">
+              <div className="rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3.5 text-xs sm:text-sm text-brand-navy/80 flex justify-between">
                 <span>Indicative total{app.translationNeeded ? ' (incl. translation)' : ''}</span>
-                <b>{INR(app.fees.totalQuotePaise)}</b>
+                <b className="text-sm sm:text-base text-brand-navy">{INR(app.fees.totalQuotePaise)}</b>
               </div>
 
               {app.stage === 'quote_requested' && (
-                <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-3 text-[10px] text-amber-800 space-y-1">
+                <div className="rounded-xl bg-amber-500/10 border border-amber-200 p-3.5 text-xs sm:text-sm text-amber-900 space-y-1.5 leading-relaxed">
                   <div><b>Quote requested.</b> Our team is confirming the exact price with our processing partners — we'll update you shortly.</div>
-                  <div className="flex flex-wrap gap-2 text-[9px]">
-                    {app.urgency === 'urgent' && <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 font-bold">⚡ Urgent</span>}
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    {app.urgency === 'urgent' && <span className="px-2 py-0.5 rounded bg-rose-500/15 text-rose-700 font-bold">⚡ Urgent</span>}
                     {app.deadline && <span>Needed by: <b>{new Date(app.deadline * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</b></span>}
                     <span>Scan: <b className={app.documentStatus === 'received' ? 'text-emerald-700' : 'text-brand-navy/50'}>{app.documentStatus === 'received' ? '✓ uploaded' : 'not uploaded'}</b></span>
                   </div>
                 </div>
               )}
               {app.stage === 'quote_confirmed' && (
-                <div className="rounded-lg bg-emerald-500/10 border border-emerald-200 p-3 text-[10px] text-emerald-800">
+                <div className="rounded-xl bg-emerald-500/10 border border-emerald-200 p-3.5 text-xs sm:text-sm text-emerald-900 leading-relaxed">
                   <b>✓ Quote confirmed: {INR(app.fees.totalQuotePaise)}</b> — book the pickup below to send your documents.
                 </div>
               )}
 
               {/* Pickup — client sends docs to US */}
               {(app.stage === 'quote' || app.stage === 'quote_confirmed') && (
-                <div className="rounded-lg border border-brand-gold/30 bg-brand-gold/[0.05] p-3 space-y-2">
-                  <div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/50">📦 Send your documents to us</div>
+                <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.05] p-4 space-y-2.5">
+                  <div className="text-xs font-bold uppercase tracking-wider text-brand-navy/60">📦 Send your documents to us</div>
                   <PickupForm onBook={(address, awb) => pickupMutation.mutate({ id: app.id, address, awb })} busy={pickupMutation.isPending} />
                 </div>
               )}
               {app.stage !== 'quote' && app.pickup.courierInbound && (
-                <div className="text-[9px] text-brand-navy/40">📦 Your documents: {app.pickup.courierInbound}{app.pickup.courierOutbound ? ` · To processing: ${app.pickup.courierOutbound}` : ''}{app.pickup.courierReturn ? ` · Return: ${app.pickup.courierReturn}` : ''}</div>
+                <div className="text-xs text-brand-navy/50">📦 Your documents: {app.pickup.courierInbound}{app.pickup.courierOutbound ? ` · To processing: ${app.pickup.courierOutbound}` : ''}{app.pickup.courierReturn ? ` · Return: ${app.pickup.courierReturn}` : ''}</div>
               )}
             </div>
           ))}
@@ -349,15 +349,15 @@ function PickupForm({ onBook, busy }: { onBook: (address: string, awb: string) =
   const [address, setAddress] = useState('');
   const [awb, setAwb] = useState('');
   return (
-    <div className="space-y-2">
-      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address (we'll courier the docs back here)" className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[10px] text-brand-navy outline-none focus:border-brand-gold" />
+    <div className="space-y-2.5">
+      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address (we'll courier the docs back here)" className="w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-gold" />
       <div className="flex gap-2">
-        <input value={awb} onChange={e => setAwb(e.target.value)} placeholder="Courier AWB (after you ship)" className="flex-1 rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[10px] text-brand-navy outline-none focus:border-brand-gold" />
-        <button onClick={() => address.trim() && onBook(address.trim(), awb.trim())} disabled={!address.trim() || busy} className="bg-brand-navy text-white text-[9px] font-bold px-3 py-2 rounded hover:bg-brand-navy/90 transition-all cursor-pointer disabled:opacity-50 shrink-0">
+        <input value={awb} onChange={e => setAwb(e.target.value)} placeholder="Courier AWB (after you ship)" className="flex-1 rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-gold" />
+        <button onClick={() => address.trim() && onBook(address.trim(), awb.trim())} disabled={!address.trim() || busy} className="bg-brand-navy text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-brand-gold hover:text-brand-navy transition-all cursor-pointer disabled:opacity-50 shrink-0 shadow-sm">
           {busy ? 'Booking…' : 'Book Pickup'}
         </button>
       </div>
-      <div className="text-[9px] text-brand-navy/40">Ship the original document to our office address (shared on WhatsApp). We dispatch to processing and return it to you — tracked at every step.</div>
+      <div className="text-xs text-brand-navy/50">Ship the original document to our office address (shared on WhatsApp). We dispatch to processing and return it to you — tracked at every step.</div>
     </div>
   );
 }

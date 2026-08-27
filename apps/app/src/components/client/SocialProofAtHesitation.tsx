@@ -66,14 +66,14 @@ export default function SocialProofAtHesitation({
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-brand-gold animate-pulse" />
-            <p className="text-[11px] font-black tracking-[0.12em] text-brand-navy uppercase">
+            <p className="text-sm font-black tracking-[0.12em] text-brand-navy uppercase">
               {hasReviews ? 'VERIFIED CLIENT OUTCOMES & REVIEWS' : 'HOW WE BUILD TRUST — HONESTLY'}
             </p>
           </div>
           <button
             type="button"
             onClick={() => setShowModal(true)}
-            className="text-[10px] font-bold text-brand-navy hover:text-brand-gold transition-colors flex items-center gap-1 cursor-pointer"
+            className="text-[13px] font-bold text-brand-navy hover:text-brand-gold transition-colors flex items-center gap-1 cursor-pointer"
           >
             <span>⭐ Share Feedback</span>
             <span>→</span>
@@ -90,12 +90,12 @@ export default function SocialProofAtHesitation({
                     <span key={i}>{i < activeReview.rating ? '★' : '☆'}</span>
                   ))}
                 </div>
-                <span className="text-[11px] font-bold text-brand-navy">{activeReview.clientName}</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-900 text-[9px] font-bold">
+                <span className="text-sm font-bold text-brand-navy">{activeReview.clientName}</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-900 text-xs font-bold">
                   ✓ Verified
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-slate-500 bg-white/80 border border-slate-200/80 px-2 py-0.5 rounded-md">
+              <span className="text-[13px] font-semibold text-slate-500 bg-white/80 border border-slate-200/80 px-2 py-0.5 rounded-md">
                 {divisionLabels[activeReview.division] || activeReview.division}
               </span>
             </div>
@@ -111,7 +111,7 @@ export default function SocialProofAtHesitation({
             </p>
 
             {activeReview.counselorName && (
-              <p className="text-[10px] text-slate-500 font-medium">
+              <p className="text-[13px] text-slate-500 font-medium">
                 Guidance by Counselor: <span className="font-bold text-brand-navy">{activeReview.counselorName}</span>
               </p>
             )}
@@ -165,14 +165,14 @@ export default function SocialProofAtHesitation({
               <button
                 type="button"
                 onClick={() => setShowModal(true)}
-                className="mt-2 text-[11px] font-bold text-brand-navy hover:text-brand-gold transition-colors inline-flex items-center gap-1 cursor-pointer underline"
+                className="mt-2 text-sm font-bold text-brand-navy hover:text-brand-gold transition-colors inline-flex items-center gap-1 cursor-pointer underline"
               >
                 Be the first to share your journey →
               </button>
             </div>
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
               <p className="font-semibold text-slate-700">What you’ll see here after launch:</p>
-              <ul className="mt-1.5 space-y-1 text-slate-600 list-disc list-inside text-[11px]">
+              <ul className="mt-1.5 space-y-1 text-slate-600 list-disc list-inside text-sm">
                 <li>Real, verifiable client outcomes (with consent)</li>
                 <li>Transparent timelines — no hidden steps</li>
                 <li>Your story could be first — helped with care</li>
@@ -181,7 +181,7 @@ export default function SocialProofAtHesitation({
           </>
         )}
 
-        <div className="flex items-center justify-between text-[10px] text-slate-400">
+        <div className="flex items-center justify-between text-[13px] text-slate-400">
           <span>Building in public • Live client reviews</span>
           <button
             type="button"

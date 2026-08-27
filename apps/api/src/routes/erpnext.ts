@@ -245,3 +245,36 @@ erpnextRouter.post('/sync/pending', async (c) => {
   }
   return c.json({ success: true, pushed, failed, total: rows.length });
 });
+
+// GET /api/erpnext/reconcile — two-way financial ledger reconciliation with Frappe ERP
+erpnextRouter.get('/reconcile', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+
+  try {
+    const allPayments = await db.select().from(payments).all();
+    const allLogs = await db.select().from(erpnextSyncLog).where(eq(erpnextSyncLog.entityName, 'payments')).all();
+
+    const syncedPaymentIds = new Set(allLogs.filter((l: any) => l.status === 'synced').map((l: any) => l.entityId));
+    const pendingPaymentIds = new Set(allLogs.filter((l: any) => l.status === 'pending' || l.status === 'failed').map((l: any) => l.entityId));
+
+    const totalPaise = allPayments.reduce((acc: number, p: any) => acc + (p.amountPaise || p.amount || 0), 0);
+    const syncedPaise = allPayments.filter((p: any) => syncedPaymentIds.has(p.id)).reduce((acc: number, p: any) => acc + (p.amountPaise || p.amount || 0), 0);
+    const unSyncedCount = allPayments.filter((p: any) => !syncedPaymentIds.has(p.id)).length;
+
+    return c.json({
+      success: true,
+      summary: {
+        totalLocalPayments: allPayments.length,
+        totalLocalPaise: totalPaise,
+        syncedToErpCount: syncedPaymentIds.size,
+        syncedPaise,
+        unSyncedCount,
+        pendingOrFailedCount: pendingPaymentIds.size,
+        reconciliationStatus: unSyncedCount === 0 ? 'fully_reconciled' : 'sync_pending',
+      },
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Reconciliation check failed', details: e?.message }, 500);
+  }
+});

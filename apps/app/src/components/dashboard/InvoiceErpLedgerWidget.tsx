@@ -21,6 +21,7 @@ interface InvoiceRecord {
   sgstPaise?: number;
   igstPaise?: number;
   isInterstate?: boolean;
+  gstRate?: number;
   createdAt: number;
   erpSyncStatus: "synced" | "failed" | "pending" | "not_synced";
   erpDocName?: string | null;
@@ -285,7 +286,7 @@ export default function InvoiceErpLedgerWidget() {
         right={
           <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold font-mono ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[13px] font-bold font-mono ${
                 erpHealth?.success
                   ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                   : 'bg-amber-50 text-amber-800 border border-amber-200'
@@ -330,35 +331,35 @@ export default function InvoiceErpLedgerWidget() {
       {/* KPI & Summary Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-brand-cream/60 border-b border-brand-navy/10">
         <div className="bg-white p-3 rounded-xl border border-brand-navy/10">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight">Total Invoiced</p>
+          <p className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight">Total Invoiced</p>
           <p className="text-base font-extrabold text-brand-navy">
             {INR(invoices.reduce((a, b) => a + (b.amountPaise || 0), 0))}
           </p>
-          <p className="text-[10px] text-brand-textLight mt-0.5">{invoices.length} total entries</p>
+          <p className="text-[13px] text-brand-textLight mt-0.5">{invoices.length} total entries</p>
         </div>
 
         <div className="bg-white p-3 rounded-xl border border-brand-navy/10">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight">Synced to Books</p>
+          <p className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight">Synced to Books</p>
           <p className="text-base font-extrabold text-emerald-700">
             {invoiceData?.syncedCount || 0}
           </p>
-          <p className="text-[10px] text-emerald-600 mt-0.5">Verified in ERPNext</p>
+          <p className="text-[13px] text-emerald-600 mt-0.5">Verified in ERPNext</p>
         </div>
 
         <div className="bg-white p-3 rounded-xl border border-brand-navy/10">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight">Pending Sync</p>
+          <p className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight">Pending Sync</p>
           <p className="text-base font-extrabold text-amber-600">
             {invoices.filter((i) => i.erpSyncStatus === "not_synced" || i.erpSyncStatus === "pending").length}
           </p>
-          <p className="text-[10px] text-amber-600 mt-0.5">Awaiting push</p>
+          <p className="text-[13px] text-amber-600 mt-0.5">Awaiting push</p>
         </div>
 
         <div className="bg-white p-3 rounded-xl border border-brand-navy/10">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight">GST Statutory</p>
+          <p className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight">GST Statutory</p>
           <p className="text-base font-extrabold text-brand-navy">
             {INR(invoices.reduce((a, b) => a + ((b.cgstPaise || 0) + (b.sgstPaise || 0) + (b.igstPaise || 0)), 0))}
           </p>
-          <p className="text-[10px] text-brand-textLight mt-0.5">CGST / SGST / IGST</p>
+          <p className="text-[13px] text-brand-textLight mt-0.5">CGST / SGST / IGST</p>
         </div>
       </div>
 
@@ -408,7 +409,7 @@ export default function InvoiceErpLedgerWidget() {
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-brand-navy/5 text-[10px] font-bold uppercase tracking-wider text-brand-textLight border-b border-brand-navy/10">
+            <thead className="bg-brand-navy/5 text-[13px] font-bold uppercase tracking-wider text-brand-textLight border-b border-brand-navy/10">
               <tr>
                 <th className="py-2.5 px-4">Invoice #</th>
                 <th className="py-2.5 px-4">Client</th>
@@ -423,7 +424,7 @@ export default function InvoiceErpLedgerWidget() {
                 <tr key={inv.id} className="hover:bg-brand-cream/40 transition">
                   <td className="py-3 px-4 font-mono font-bold text-brand-navy">
                     {inv.invoiceNo}
-                    <div className="text-[10px] text-brand-textLight font-sans font-normal">
+                    <div className="text-[13px] text-brand-textLight font-sans font-normal">
                       {new Date(inv.createdAt * 1000).toLocaleDateString("en-IN", {
                         day: "numeric",
                         month: "short",
@@ -434,12 +435,12 @@ export default function InvoiceErpLedgerWidget() {
 
                   <td className="py-3 px-4">
                     <p className="font-bold text-brand-navy">{inv.clientName}</p>
-                    <p className="text-[10px] text-brand-textLight">{inv.clientEmail || inv.clientPhone || "—"}</p>
+                    <p className="text-[13px] text-brand-textLight">{inv.clientEmail || inv.clientPhone || "—"}</p>
                   </td>
 
                   <td className="py-3 px-4">
                     <p className="font-medium text-brand-navy">{inv.milestoneName}</p>
-                    <span className="inline-block text-[10px] font-mono uppercase text-brand-textLight">
+                    <span className="inline-block text-[13px] font-mono uppercase text-brand-textLight">
                       {inv.method.replace("_", " ")}
                     </span>
                   </td>
@@ -447,7 +448,7 @@ export default function InvoiceErpLedgerWidget() {
                   <td className="py-3 px-4">
                     <p className="font-extrabold text-brand-navy">{INR(inv.amountPaise)}</p>
                     {inv.taxableAmountPaise && (
-                      <p className="text-[10px] text-brand-textLight font-mono">
+                      <p className="text-[13px] text-brand-textLight font-mono">
                         Taxable: {INR(inv.taxableAmountPaise)}
                       </p>
                     )}
@@ -456,22 +457,22 @@ export default function InvoiceErpLedgerWidget() {
                   <td className="py-3 px-4">
                     {inv.erpSyncStatus === "synced" ? (
                       <div>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[13px] font-bold text-emerald-800">
                           <span>✓ Synced:</span>
                           <span className="font-mono">{inv.erpDocName || "Sales Invoice"}</span>
                         </span>
                       </div>
                     ) : inv.erpSyncStatus === "failed" ? (
                       <div>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-bold text-rose-800">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[13px] font-bold text-rose-800">
                           <span>✗ Failed</span>
                         </span>
                         {inv.erpError && (
-                          <p className="text-[9px] text-rose-600 truncate max-w-xs mt-0.5">{inv.erpError}</p>
+                          <p className="text-xs text-rose-600 truncate max-w-xs mt-0.5">{inv.erpError}</p>
                         )}
                       </div>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[13px] font-bold text-amber-800">
                         <span>● Pending Sync</span>
                       </span>
                     )}
@@ -480,7 +481,7 @@ export default function InvoiceErpLedgerWidget() {
                   <td className="py-3 px-4 text-right space-x-1.5">
                     <button
                       onClick={() => setSelectedInvoice(inv)}
-                      className="rounded px-2 py-1 text-[11px] font-bold text-brand-navy hover:bg-brand-gold/20 transition cursor-pointer"
+                      className="rounded px-2 py-1 text-sm font-bold text-brand-navy hover:bg-brand-gold/20 transition cursor-pointer"
                     >
                       View Slip
                     </button>
@@ -488,7 +489,7 @@ export default function InvoiceErpLedgerWidget() {
                       <button
                         onClick={() => syncSingleMutation.mutate(inv.id)}
                         disabled={syncSingleMutation.isPending}
-                        className="rounded bg-brand-gold/20 border border-brand-gold/40 px-2 py-1 text-[11px] font-extrabold text-brand-navy hover:bg-brand-gold hover:text-white transition cursor-pointer"
+                        className="rounded bg-brand-gold/20 border border-brand-gold/40 px-2 py-1 text-sm font-extrabold text-brand-navy hover:bg-brand-gold hover:text-white transition cursor-pointer"
                       >
                         Push to ERP
                       </button>
@@ -512,7 +513,7 @@ export default function InvoiceErpLedgerWidget() {
               <div className="flex items-center gap-2">
                 <span className="text-xl">🧾</span>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-brand-gold font-mono">Official GST Tax Invoice</p>
+                  <p className="text-[13px] font-bold uppercase tracking-wider text-brand-gold font-mono">Official GST Tax Invoice</p>
                   <h3 className="font-display text-base font-extrabold text-brand-navy">{selectedInvoice.invoiceNo}</h3>
                 </div>
               </div>
@@ -558,43 +559,43 @@ export default function InvoiceErpLedgerWidget() {
                       <h4 className="font-display text-base font-extrabold text-brand-navy leading-tight">
                         {activeSettings.brandName || 'OPUS OVERSEAS'}
                       </h4>
-                      <span className="text-[11px] text-brand-textLight font-medium">
+                      <span className="text-sm text-brand-textLight font-medium">
                         ({activeSettings.companyLegalName})
                       </span>
                     </div>
-                    <p className="text-[10px] text-brand-textLight mt-0.5">
+                    <p className="text-[13px] text-brand-textLight mt-0.5">
                       {activeSettings.addressLine1}, {activeSettings.addressLine2 ? `${activeSettings.addressLine2}, ` : ''}{activeSettings.city} - {activeSettings.pincode}
                     </p>
-                    <p className="text-[10px] text-brand-textLight">
+                    <p className="text-[13px] text-brand-textLight">
                       Website: {activeSettings.website} · Email: {activeSettings.billingEmail}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-left sm:text-right shrink-0">
-                  <span className="inline-block rounded-md bg-brand-gold/20 border border-brand-gold/40 px-2.5 py-0.5 text-[10px] font-mono font-extrabold text-brand-navy">
+                  <span className="inline-block rounded-md bg-brand-gold/20 border border-brand-gold/40 px-2.5 py-0.5 text-[13px] font-mono font-extrabold text-brand-navy">
                     GSTIN: {activeSettings.gstin}
                   </span>
-                  <p className="text-[10px] text-brand-textLight mt-1 font-mono">PAN: {activeSettings.pan}</p>
-                  <p className="text-[10px] text-brand-textLight">State: {activeSettings.stateName} (Code: {activeSettings.stateCode})</p>
+                  <p className="text-[13px] text-brand-textLight mt-1 font-mono">PAN: {activeSettings.pan}</p>
+                  <p className="text-[13px] text-brand-textLight">State: {activeSettings.stateName} (Code: {activeSettings.stateCode})</p>
                 </div>
               </div>
 
               {/* Invoice Meta Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-4 rounded-xl border border-brand-navy/10">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight">Billed To (Customer):</p>
+                  <p className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight">Billed To (Customer):</p>
                   <p className="font-display text-sm font-bold text-brand-navy mt-0.5">{selectedInvoice.clientName}</p>
-                  <p className="text-[10px] text-brand-textLight">
+                  <p className="text-[13px] text-brand-textLight">
                     {selectedInvoice.clientEmail ? `Email: ${selectedInvoice.clientEmail}` : ''}
                     {selectedInvoice.clientEmail && selectedInvoice.clientPhone ? ' · ' : ''}
                     {selectedInvoice.clientPhone ? `Phone: ${selectedInvoice.clientPhone}` : ''}
                   </p>
-                  <p className="text-[10px] text-brand-textLight mt-1 font-mono">Client ID: {selectedInvoice.clientId}</p>
+                  <p className="text-[13px] text-brand-textLight mt-1 font-mono">Client ID: {selectedInvoice.clientId}</p>
                 </div>
 
                 <div className="text-left sm:text-right space-y-1">
-                  <div className="flex justify-between sm:justify-end gap-3 text-[10px]">
+                  <div className="flex justify-between sm:justify-end gap-3 text-[13px]">
                     <span className="text-brand-textLight font-medium">Invoice Date:</span>
                     <span className="font-bold text-brand-navy">
                       {new Date(selectedInvoice.createdAt * 1000).toLocaleDateString("en-IN", {
@@ -604,15 +605,15 @@ export default function InvoiceErpLedgerWidget() {
                       })}
                     </span>
                   </div>
-                  <div className="flex justify-between sm:justify-end gap-3 text-[10px]">
+                  <div className="flex justify-between sm:justify-end gap-3 text-[13px]">
                     <span className="text-brand-textLight font-medium">Payment Mode:</span>
                     <span className="font-mono font-bold text-brand-navy uppercase">{selectedInvoice.method.replace('_', ' ')}</span>
                   </div>
-                  <div className="flex justify-between sm:justify-end gap-3 text-[10px]">
+                  <div className="flex justify-between sm:justify-end gap-3 text-[13px]">
                     <span className="text-brand-textLight font-medium">Place of Supply:</span>
                     <span className="font-bold text-brand-navy">{selectedInvoice.isInterstate ? 'Inter-State' : `${activeSettings.stateName} (${activeSettings.stateCode})`}</span>
                   </div>
-                  <div className="flex justify-between sm:justify-end gap-3 text-[10px]">
+                  <div className="flex justify-between sm:justify-end gap-3 text-[13px]">
                     <span className="text-brand-textLight font-medium">Reverse Charge:</span>
                     <span className="font-bold text-brand-navy">No</span>
                   </div>
@@ -622,7 +623,7 @@ export default function InvoiceErpLedgerWidget() {
               {/* Itemized Service Table */}
               <div className="bg-white rounded-xl border border-brand-navy/10 overflow-hidden">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-brand-navy/5 text-[10px] font-bold uppercase tracking-wider text-brand-textLight border-b border-brand-navy/10">
+                  <thead className="bg-brand-navy/5 text-[13px] font-bold uppercase tracking-wider text-brand-textLight border-b border-brand-navy/10">
                     <tr>
                       <th className="py-2.5 px-3">Service Description</th>
                       <th className="py-2.5 px-3">SAC Code</th>
@@ -635,7 +636,7 @@ export default function InvoiceErpLedgerWidget() {
                     <tr>
                       <td className="py-3 px-3">
                         <p className="font-bold text-brand-navy">{selectedInvoice.milestoneName}</p>
-                        <p className="text-[10px] text-brand-textLight">Opus Overseas Verified Dossier & Filing Service</p>
+                        <p className="text-[13px] text-brand-textLight">Opus Overseas Verified Dossier & Filing Service</p>
                       </td>
                       <td className="py-3 px-3 font-mono text-brand-textLight">998311</td>
                       <td className="py-3 px-3 text-right font-mono font-medium">
@@ -660,23 +661,27 @@ export default function InvoiceErpLedgerWidget() {
                     </span>
                   </div>
 
-                  {selectedInvoice.isInterstate ? (
-                    <div className="flex justify-between text-brand-textLight">
-                      <span>Integrated GST (IGST @ 18%):</span>
-                      <span className="font-mono font-bold text-brand-navy">{INR(selectedInvoice.igstPaise || 0)}</span>
-                    </div>
-                  ) : (
-                    <>
+                  {(() => {
+                    const rate = selectedInvoice.gstRate || (selectedInvoice.amountPaise && selectedInvoice.taxableAmountPaise ? Math.round(((selectedInvoice.amountPaise - selectedInvoice.taxableAmountPaise) / selectedInvoice.taxableAmountPaise) * 100) : 18);
+                    const halfRate = rate / 2;
+                    return selectedInvoice.isInterstate ? (
                       <div className="flex justify-between text-brand-textLight">
-                        <span>Central GST (CGST @ 9%):</span>
-                        <span className="font-mono font-bold text-brand-navy">{INR(selectedInvoice.cgstPaise || 0)}</span>
+                        <span>Integrated GST (IGST @ {rate}%):</span>
+                        <span className="font-mono font-bold text-brand-navy">{INR(selectedInvoice.igstPaise || 0)}</span>
                       </div>
-                      <div className="flex justify-between text-brand-textLight">
-                        <span>State GST (SGST @ 9%):</span>
-                        <span className="font-mono font-bold text-brand-navy">{INR(selectedInvoice.sgstPaise || 0)}</span>
-                      </div>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <div className="flex justify-between text-brand-textLight">
+                          <span>Central GST (CGST @ {halfRate}%):</span>
+                          <span className="font-mono font-bold text-brand-navy">{INR(selectedInvoice.cgstPaise || 0)}</span>
+                        </div>
+                        <div className="flex justify-between text-brand-textLight">
+                          <span>State GST (SGST @ {halfRate}%):</span>
+                          <span className="font-mono font-bold text-brand-navy">{INR(selectedInvoice.sgstPaise || 0)}</span>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   <div className="flex justify-between text-sm font-extrabold text-brand-navy pt-2 border-t border-brand-navy/10">
                     <span>Total Invoice Amount (INR):</span>
@@ -686,10 +691,10 @@ export default function InvoiceErpLedgerWidget() {
               </div>
 
               {/* Bottom Instructions & Authorized Signatory */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3.5 rounded-xl border border-brand-navy/10 text-[11px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3.5 rounded-xl border border-brand-navy/10 text-sm">
                 {activeSettings.bankAccountNo ? (
                   <div>
-                    <p className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Bank Remittance Details:</p>
+                    <p className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">Bank Remittance Details:</p>
                     <p className="text-brand-textLight mt-1">Bank Name: <span className="font-bold text-brand-navy">{activeSettings.bankName}</span></p>
                     <p className="text-brand-textLight font-mono">A/C No: <span className="font-bold text-brand-navy">{activeSettings.bankAccountNo}</span></p>
                     <p className="text-brand-textLight font-mono">IFSC Code: <span className="font-bold text-brand-navy">{activeSettings.bankIfsc}</span></p>
@@ -697,31 +702,31 @@ export default function InvoiceErpLedgerWidget() {
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <p className="font-bold text-brand-navy uppercase tracking-wider text-[10px]">Transaction & Acknowledgment Notice:</p>
-                    <p className="text-brand-textLight text-[10px]">
+                    <p className="font-bold text-brand-navy uppercase tracking-wider text-[13px]">Transaction & Acknowledgment Notice:</p>
+                    <p className="text-brand-textLight text-[13px]">
                       Payment received in full and verified via secure electronic gateway. Real-time transaction acknowledgment issued.
                     </p>
-                    <p className="text-brand-textLight text-[10px] font-mono">
+                    <p className="text-brand-textLight text-[13px] font-mono">
                       Place of Supply: {selectedInvoice.isInterstate ? 'Inter-State (IGST 18%)' : `${activeSettings.stateName} (State Code ${activeSettings.stateCode})`}
                     </p>
                   </div>
                 )}
 
                 <div className="flex flex-col justify-between text-right pt-2 sm:pt-0">
-                  <div className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 p-2 rounded-lg text-left">
+                  <div className="text-[13px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 p-2 rounded-lg text-left">
                     <p className="font-bold">ERPNext Synchronized</p>
                     <p className="truncate">Doc: {selectedInvoice.erpDocName || "Sales Invoice Verified"}</p>
                   </div>
                   <div className="mt-4 text-center sm:text-right">
                     <div className="inline-block border-b border-brand-navy/30 pb-1 px-4">
-                      <p className="text-[10px] font-bold text-brand-navy">{activeSettings.authorizedSignatoryText}</p>
+                      <p className="text-[13px] font-bold text-brand-navy">{activeSettings.authorizedSignatoryText}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Legal Notes */}
-              <p className="text-[9px] text-brand-textLight text-center italic">
+              <p className="text-xs text-brand-textLight text-center italic">
                 {activeSettings.invoiceNotes}
               </p>
             </div>
@@ -747,7 +752,7 @@ export default function InvoiceErpLedgerWidget() {
           <div className="w-full max-w-2xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-brand-navy/10 space-y-5 my-8">
             <div className="flex items-center justify-between border-b border-brand-navy/10 pb-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-brand-gold font-mono">Company Profile & ERP Configuration</p>
+                <p className="text-[13px] font-bold uppercase tracking-wider text-brand-gold font-mono">Company Profile & ERP Configuration</p>
                 <h3 className="font-display text-lg font-extrabold text-brand-navy">GST Invoice & Brand Settings</h3>
               </div>
               <button
@@ -774,11 +779,11 @@ export default function InvoiceErpLedgerWidget() {
             >
               {/* Brand Logo & Basic Names */}
               <div className="p-4 bg-brand-cream/60 rounded-2xl space-y-3">
-                <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[11px]">Brand Identity & Legal Name</h4>
+                <h4 className="font-bold text-brand-navy uppercase tracking-wider text-sm">Brand Identity & Legal Name</h4>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       Brand Logo URL / Path
                     </label>
                     <div className="flex items-center gap-2">
@@ -801,7 +806,7 @@ export default function InvoiceErpLedgerWidget() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       Brand Trade Name
                     </label>
                     <input
@@ -815,7 +820,7 @@ export default function InvoiceErpLedgerWidget() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                     Company Registered Legal Name *
                   </label>
                   <input
@@ -831,10 +836,10 @@ export default function InvoiceErpLedgerWidget() {
 
               {/* GSTIN & Tax Details */}
               <div className="p-4 bg-white border border-brand-navy/10 rounded-2xl space-y-3">
-                <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[11px]">GST & Statutory Registrations</h4>
+                <h4 className="font-bold text-brand-navy uppercase tracking-wider text-sm">GST & Statutory Registrations</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       Company GSTIN
                     </label>
                     <input
@@ -846,7 +851,7 @@ export default function InvoiceErpLedgerWidget() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       PAN Number
                     </label>
                     <input
@@ -858,7 +863,7 @@ export default function InvoiceErpLedgerWidget() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       State Name & Code
                     </label>
                     <input
@@ -876,7 +881,7 @@ export default function InvoiceErpLedgerWidget() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       Address Line 1 & Line 2
                     </label>
                     <input
@@ -889,7 +894,7 @@ export default function InvoiceErpLedgerWidget() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                         City
                       </label>
                       <input
@@ -901,7 +906,7 @@ export default function InvoiceErpLedgerWidget() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                         Pincode
                       </label>
                       <input
@@ -918,10 +923,10 @@ export default function InvoiceErpLedgerWidget() {
 
               {/* Bank & Remittance Settings */}
               <div className="p-4 bg-slate-50 border border-brand-navy/10 rounded-2xl space-y-3">
-                <h4 className="font-bold text-brand-navy uppercase tracking-wider text-[11px]">Bank Settlement & UPI Information</h4>
+                <h4 className="font-bold text-brand-navy uppercase tracking-wider text-sm">Bank Settlement & UPI Information</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       Bank Name
                     </label>
                     <input
@@ -933,7 +938,7 @@ export default function InvoiceErpLedgerWidget() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       Account Number
                     </label>
                     <input
@@ -945,7 +950,7 @@ export default function InvoiceErpLedgerWidget() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       IFSC Code
                     </label>
                     <input
@@ -960,7 +965,7 @@ export default function InvoiceErpLedgerWidget() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       UPI ID (VPA)
                     </label>
                     <input
@@ -972,7 +977,7 @@ export default function InvoiceErpLedgerWidget() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                       Authorized Signatory Title
                     </label>
                     <input
@@ -1014,7 +1019,7 @@ export default function InvoiceErpLedgerWidget() {
           <div className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-brand-navy/10 space-y-5">
             <div className="flex items-center justify-between border-b border-brand-navy/10 pb-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-brand-gold font-mono">New Billing Entry</p>
+                <p className="text-[13px] font-bold uppercase tracking-wider text-brand-gold font-mono">New Billing Entry</p>
                 <h3 className="font-display text-lg font-extrabold text-brand-navy">Generate Tax Invoice & Sync to ERPNext</h3>
               </div>
               <button
@@ -1033,7 +1038,7 @@ export default function InvoiceErpLedgerWidget() {
 
             <div className="space-y-3.5">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                   Client Full Name *
                 </label>
                 <input
@@ -1048,7 +1053,7 @@ export default function InvoiceErpLedgerWidget() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                     Client Mobile (WhatsApp)
                   </label>
                   <input
@@ -1060,7 +1065,7 @@ export default function InvoiceErpLedgerWidget() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                     Client Email
                   </label>
                   <input
@@ -1075,7 +1080,7 @@ export default function InvoiceErpLedgerWidget() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                     Total Amount in Rupees (₹) *
                   </label>
                   <input
@@ -1088,7 +1093,7 @@ export default function InvoiceErpLedgerWidget() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                     Payment Method
                   </label>
                   <select
@@ -1106,7 +1111,7 @@ export default function InvoiceErpLedgerWidget() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-textLight mb-1">
+                <label className="block text-sm font-bold uppercase tracking-wider text-brand-textLight mb-1">
                   Service Milestone / Purpose
                 </label>
                 <input

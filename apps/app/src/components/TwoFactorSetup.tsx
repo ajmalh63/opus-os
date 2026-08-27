@@ -115,7 +115,7 @@ export default function TwoFactorSetup() {
           </div>
           <p className="text-xs text-white/60 mt-0.5">Protect your administrative account with time-based one-time passcodes.</p>
         </div>
-        <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3.5 py-1 text-[10px] font-black uppercase tracking-wider text-brand-gold shadow-xs">
+        <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3.5 py-1 text-[13px] font-black uppercase tracking-wider text-brand-gold shadow-xs">
           Disabled
         </span>
       </div>
@@ -138,7 +138,7 @@ export default function TwoFactorSetup() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-brand-gold mb-1.5">
+            <label className="block text-[13px] font-extrabold uppercase tracking-wider text-brand-gold mb-1.5">
               Confirm Current Password to Begin
             </label>
             <input
@@ -170,12 +170,12 @@ export default function TwoFactorSetup() {
               {totpURI && (
                 <div className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-white shadow-2xl border-2 border-brand-gold/50 shrink-0">
                   <QRCodeSVG value={totpURI} size={148} level="M" includeMargin={false} />
-                  <span className="text-[9px] font-black text-brand-navy mt-2 uppercase tracking-widest">Opus Security TOTP</span>
+                  <span className="text-xs font-black text-brand-navy mt-2 uppercase tracking-widest">Opus Security TOTP</span>
                 </div>
               )}
               <div className="min-w-0 flex-1 space-y-3 w-full">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/50 block mb-1">
+                  <span className="text-[13px] font-bold uppercase tracking-wider text-white/50 block mb-1">
                     Or Enter Secret Manually:
                   </span>
                   <input
@@ -214,12 +214,12 @@ export default function TwoFactorSetup() {
                 <button
                   type="button"
                   onClick={() => copyText(backupCodes.join('\n'), 'backup')}
-                  className="rounded-lg bg-brand-gold/20 border border-brand-gold/40 px-2.5 py-1 text-[10px] font-bold text-brand-gold hover:bg-brand-gold hover:text-brand-navy transition cursor-pointer"
+                  className="rounded-lg bg-brand-gold/20 border border-brand-gold/40 px-2.5 py-1 text-[13px] font-bold text-brand-gold hover:bg-brand-gold hover:text-brand-navy transition cursor-pointer"
                 >
                   {copiedKey === 'backup' ? '✓ All Copied' : 'Copy All Codes'}
                 </button>
               </div>
-              <p className="text-[11px] text-white/70 mb-3">
+              <p className="text-sm text-white/70 mb-3">
                 Each code can be used once if you lose access to your authenticator app. Store them securely.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -234,7 +234,7 @@ export default function TwoFactorSetup() {
 
           <form onSubmit={verify} className="space-y-4">
             <div>
-              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 mb-1.5 text-center">
+              <label className="block text-[13px] font-extrabold uppercase tracking-wider text-emerald-400 mb-1.5 text-center">
                 Step 3: Enter 6-Digit Code from Authenticator
               </label>
               <input

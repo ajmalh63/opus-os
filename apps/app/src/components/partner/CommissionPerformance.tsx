@@ -25,7 +25,7 @@ export function CommissionPerformance({ partnerId, token }: { partnerId: string,
     <div className="grid md:grid-cols-2 gap-4">
       <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
         <div className="text-xs font-bold text-brand-navy mb-2">Commission Ledger — Auto (tier boost)</div>
-        <div className="text-[11px] text-brand-navy/60">Collected ₹{((ledger?.totalCollected||0)/100).toLocaleString('en-IN')} • Pending ₹{((ledger?.pending||0)/100).toLocaleString('en-IN')}</div>
+        <div className="text-sm text-brand-navy/60">Collected ₹{((ledger?.totalCollected||0)/100).toLocaleString('en-IN')} • Pending ₹{((ledger?.pending||0)/100).toLocaleString('en-IN')}</div>
         <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
           {(ledger?.ledger||[]).slice(0,5).map((l:any)=> (
             <div key={l.id} className="flex justify-between text-xs border-b border-brand-navy/5 py-1">
@@ -38,11 +38,11 @@ export function CommissionPerformance({ partnerId, token }: { partnerId: string,
       <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
         <div className="text-xs font-bold text-brand-navy mb-2">Performance — Real-time</div>
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="p-2 rounded bg-brand-navy/[0.04]"><div className="text-lg font-bold">{perf?.performance?.bookings||0}</div><div className="text-[9px] uppercase">Bookings</div></div>
-          <div className="p-2 rounded bg-emerald-50"><div className="text-lg font-bold">{perf?.performance?.conversion||0}%</div><div className="text-[9px] uppercase">Conversion</div></div>
-          <div className="p-2 rounded bg-amber-50"><div className="text-lg font-bold">{perf?.performance?.overdue||0}</div><div className="text-[9px] uppercase">Overdue</div></div>
+          <div className="p-2 rounded bg-brand-navy/[0.04]"><div className="text-lg font-bold">{perf?.performance?.bookings||0}</div><div className="text-xs uppercase">Bookings</div></div>
+          <div className="p-2 rounded bg-emerald-50"><div className="text-lg font-bold">{perf?.performance?.conversion||0}%</div><div className="text-xs uppercase">Conversion</div></div>
+          <div className="p-2 rounded bg-amber-50"><div className="text-lg font-bold">{perf?.performance?.overdue||0}</div><div className="text-xs uppercase">Overdue</div></div>
         </div>
-        <div className="text-[10px] text-brand-navy/40 mt-2">Referrals {perf?.performance?.referrals||0} • live via partner:{partnerId}:commissions</div>
+        <div className="text-[13px] text-brand-navy/40 mt-2">Referrals {perf?.performance?.referrals||0} • live via partner:{partnerId}:commissions</div>
       </div>
     </div>
   );

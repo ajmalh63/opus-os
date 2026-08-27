@@ -227,7 +227,7 @@ export default function VisaServicesPage() {
             <div className="lg:col-span-5 glass-light p-6 sm:p-7 rounded-3xl text-brand-navy shadow-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-brand-navy/10 pb-3">
                 <h3 className="font-display text-base font-bold text-brand-navy">Embassy Queue Radar</h3>
-                <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 text-emerald-700 px-2.5 py-0.5 text-[10px] font-bold font-mono">
+                <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 text-emerald-700 px-2.5 py-0.5 text-[13px] font-bold font-mono">
                   ● Live Feed
                 </span>
               </div>
@@ -268,10 +268,10 @@ export default function VisaServicesPage() {
               <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-white/40">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-brand-gold">Consular Presentation</p>
+                    <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">Consular Presentation</p>
                     <p className="text-xs sm:text-sm font-extrabold text-brand-navy">Transparent Filing — Building as We Launch</p>
                   </div>
-                  <span className="rounded-full bg-emerald-500/15 text-emerald-800 px-2.5 py-1 text-[10px] font-bold font-mono">
+                  <span className="rounded-full bg-emerald-500/15 text-emerald-800 px-2.5 py-1 text-[13px] font-bold font-mono">
                     ● 100+ Destinations & More
                   </span>
                 </div>
@@ -324,7 +324,7 @@ export default function VisaServicesPage() {
       {/* UNIFIED INTERACTIVE VISA EVALUATOR & REQUIREMENTS FINDER */}
       <section id="catalog" className="mx-auto max-w-5xl px-5 sm:px-6 py-20 sm:py-24">
         <div className="mb-12 text-center space-y-3">
-          <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-navy font-mono">
+          <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3.5 py-1 text-sm font-bold uppercase tracking-wider text-brand-navy font-mono">
             100+ Destinations & More
           </span>
           <h2 className="font-display fluid-h2 font-bold text-brand-navy">
@@ -368,27 +368,27 @@ export default function VisaServicesPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="rounded-2xl bg-slate-50 p-4 border border-brand-navy/5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight block">Processing SLA</span>
+              <span className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight block">Processing SLA</span>
               <span className="font-display text-base font-extrabold text-brand-navy mt-1 block">
                 {selectedDest.includes('Dubai') || selectedDest.includes('Saudi') ? '24–48 Hours (Express)' : selectedDest.includes('Thailand') || selectedDest.includes('Vietnam') || selectedDest.includes('Malaysia') ? '2–4 Business Days' : '10–15 Consular Days'}
               </span>
-              <p className="text-[11px] text-brand-textLight mt-0.5">Direct embassy digital feed</p>
+              <p className="text-sm text-brand-textLight mt-0.5">Direct embassy digital feed</p>
             </div>
 
             <div className="rounded-2xl bg-slate-50 p-4 border border-brand-navy/5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight block">Document Support</span>
+              <span className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight block">Document Support</span>
               <span className="font-display text-base font-extrabold text-brand-navy mt-1 block">
                 Full Assisted Vetting
               </span>
-              <p className="text-[11px] text-brand-textLight mt-0.5">Forms, Photo Specs, 6M Bank & Itinerary</p>
+              <p className="text-sm text-brand-textLight mt-0.5">Forms, Photo Specs, 6M Bank & Itinerary</p>
             </div>
 
             <div className="rounded-2xl bg-slate-50 p-4 border border-brand-navy/5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-textLight block">Consular Tariffs & Ledger</span>
+              <span className="text-[13px] font-bold uppercase tracking-wider text-brand-textLight block">Consular Tariffs & Ledger</span>
               <span className="font-display text-base font-extrabold text-brand-navy mt-1 block">
                 Updated in Client Desk
               </span>
-              <p className="text-[11px] text-brand-textLight mt-0.5">Sign in to check updated division pricing</p>
+              <p className="text-sm text-brand-textLight mt-0.5">Sign in to check updated division pricing</p>
             </div>
           </div>
 
@@ -414,7 +414,7 @@ export default function VisaServicesPage() {
         <DomainDarkGraphics variant="visa" />
         <div className="relative mx-auto max-w-4xl px-5 sm:px-6">
           <div className="text-center mb-10 space-y-2">
-            <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-gold font-mono">
+            <span className="rounded-full bg-brand-gold/20 border border-brand-gold/40 px-3 py-1 text-[13px] font-bold uppercase tracking-wider text-brand-gold font-mono">
               Consulate Sync
             </span>
             <h2 className="font-display fluid-h2 font-extrabold text-white">
@@ -452,18 +452,18 @@ export default function VisaServicesPage() {
                       <p className="font-display text-sm font-bold text-brand-navy">
                         {trackingStatus.journey?.destination || 'Consulate File'}
                       </p>
-                      <p className="text-[10px] font-mono text-brand-textLight">
+                      <p className="text-[13px] font-mono text-brand-textLight">
                         TOKEN: {trackingStatus.journey?.token || trackingToken}
                       </p>
                     </div>
-                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-3 py-1 text-[10px] font-extrabold font-mono">
+                    <span className="rounded-full bg-emerald-500/20 text-emerald-800 px-3 py-1 text-[13px] font-extrabold font-mono">
                       Active In Pipeline
                     </span>
                   </div>
                   <p className="text-xs font-bold text-brand-navy">
                     Current Stage: <span className="text-brand-gold font-extrabold">{trackingStatus.journey?.stageLabel || trackingStatus.stageKey || 'Processing'}</span>
                   </p>
-                  <p className="text-[11px] text-brand-textLight">
+                  <p className="text-sm text-brand-textLight">
                     Updated: {trackingStatus.journey?.updatedAgo || 'Real-time telemetry active'} · Est. Return: {trackingStatus.journey?.approvalEstimate || '3-5 business days'}
                   </p>
                 </>
@@ -490,32 +490,32 @@ export default function VisaServicesPage() {
             <form onSubmit={handleApplyVisa} className="space-y-4 lead-form-wrap">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Applicant Name</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Applicant Name</label>
                   <input required placeholder="As shown on Passport" value={applicantName} onChange={(e) => setApplicantName(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">WhatsApp Phone Number</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">WhatsApp Phone Number</label>
                   <input required type="tel" placeholder="+91 98765 00001" value={applicantPhone} onChange={(e) => setApplicantPhone(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Email Address</label>
                   <input required type="email" placeholder="you@example.com" value={applicantEmail} onChange={(e) => setApplicantEmail(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Expected Travel Date</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Expected Travel Date</label>
                   <input required type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Number of Travelers</label>
+                  <label className="block text-[13px] font-bold uppercase tracking-wider text-brand-textLight mb-1">Number of Travelers</label>
                   <input type="number" min={1} max={15} value={travelersCount} onChange={(e) => setTravelersCount(parseInt(e.target.value) || 1)} />
                 </div>
               </div>
 
               <div className="pt-2">
-                <label className="flex items-start gap-3 text-[11px] leading-relaxed text-brand-textLight cursor-pointer">
+                <label className="flex items-start gap-3 text-sm leading-relaxed text-brand-textLight cursor-pointer">
                   <input
                     type="checkbox"
                     checked={consent}

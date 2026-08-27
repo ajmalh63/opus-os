@@ -569,7 +569,7 @@ export default function AttestationPortal() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="h-2 w-2 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(215,160,25,0.8)] animate-pulse" />
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Legalization & Stamping</span>
+            <span className="text-[13px] font-extrabold uppercase tracking-[0.2em] text-brand-gold">Legalization & Stamping</span>
           </div>
           <h1 className="font-display text-2xl font-black text-brand-navy tracking-tight">Document Attestation Operations</h1>
           <p className="text-xs text-brand-textLight mt-0.5">Book certificate legalizations, handle HRD/MEA stamps, and process India Post courier consignments.</p>
@@ -599,36 +599,36 @@ export default function AttestationPortal() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-display font-bold text-brand-navy text-sm">Attestation Services</h3>
-              <p className="text-[10px] text-brand-navy/40">Price bands = the indicative ranges clients see · Featured products = optional showcase.</p>
+              <p className="text-[13px] text-brand-navy/40">Price bands = the indicative ranges clients see · Featured products = optional showcase.</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex gap-1 bg-brand-navy/[0.05] p-1 rounded-xl text-[10px] font-bold text-brand-navy/60">
+              <div className="flex gap-1 bg-brand-navy/[0.05] p-1 rounded-xl text-[13px] font-bold text-brand-navy/60">
                 <button onClick={() => setRatesView('bands')} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${ratesView === 'bands' ? 'bg-brand-gold text-brand-navy' : 'hover:text-brand-navy'}`}>💰 Price Bands</button>
                 <button onClick={() => setRatesView('products')} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${ratesView === 'products' ? 'bg-brand-gold text-brand-navy' : 'hover:text-brand-navy'}`}>★ Featured Products</button>
               </div>
               {ratesView === 'products' && (
-                <button onClick={() => openRateModal(null)} className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ New Product</button>
+                <button onClick={() => openRateModal(null)} className="bg-brand-gold text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ New Product</button>
               )}
             </div>
           </div>
 
           {ratesView === 'bands' && (
             <div className="space-y-3">
-              <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3 text-[10px] text-brand-navy/70">
+              <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/[0.06] p-3 text-[13px] text-brand-navy/70">
                 These are the <b>indicative ranges</b> clients see before requesting a quote. The exact price is confirmed after you check with the processing partner — so this is just a reference, set it once and forget it.
               </div>
               <div className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-4">
                 {(['embassy', 'apostille'] as const).map(route => (
                   <div key={route}>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">{route === 'embassy' ? '🏛️ Embassy route (GCC, Malaysia, China…)' : '🕊️ Apostille route (Hague countries)'}</div>
+                    <div className="text-[13px] font-bold uppercase tracking-widest text-brand-gold mb-2">{route === 'embassy' ? '🏛️ Embassy route (GCC, Malaysia, China…)' : '🕊️ Apostille route (Hague countries)'}</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {(['educational', 'personal', 'commercial'] as const).map(cat => (
                         <div key={cat} className="rounded-lg border border-brand-navy/10 p-3 space-y-2">
-                          <div className="text-[10px] font-bold text-brand-navy capitalize">{cat}</div>
+                          <div className="text-[13px] font-bold text-brand-navy capitalize">{cat}</div>
                           <div className="flex items-center gap-2">
-                            <input type="number" min={0} value={((bands || bandsQuery?.bands)?.[route]?.[cat]?.min ?? 0)} onChange={(e: any) => setBand(route, cat, 'min', Number(e.target.value))} placeholder="Min ₹" className="w-full rounded border border-brand-navy/10 bg-white px-2 py-1.5 text-[11px] text-brand-navy outline-none focus:border-brand-gold" />
+                            <input type="number" min={0} value={((bands || bandsQuery?.bands)?.[route]?.[cat]?.min ?? 0)} onChange={(e: any) => setBand(route, cat, 'min', Number(e.target.value))} placeholder="Min ₹" className="w-full rounded border border-brand-navy/10 bg-white px-2 py-1.5 text-sm text-brand-navy outline-none focus:border-brand-gold" />
                             <span className="text-brand-navy/30">–</span>
-                            <input type="number" min={0} value={((bands || bandsQuery?.bands)?.[route]?.[cat]?.max ?? 0)} onChange={(e: any) => setBand(route, cat, 'max', Number(e.target.value))} placeholder="Max ₹" className="w-full rounded border border-brand-navy/10 bg-white px-2 py-1.5 text-[11px] text-brand-navy outline-none focus:border-brand-gold" />
+                            <input type="number" min={0} value={((bands || bandsQuery?.bands)?.[route]?.[cat]?.max ?? 0)} onChange={(e: any) => setBand(route, cat, 'max', Number(e.target.value))} placeholder="Max ₹" className="w-full rounded border border-brand-navy/10 bg-white px-2 py-1.5 text-sm text-brand-navy outline-none focus:border-brand-gold" />
                           </div>
                         </div>
                       ))}
@@ -639,7 +639,7 @@ export default function AttestationPortal() {
                   <button
                     onClick={() => saveBandsMutation.mutate(bands || bandsQuery?.bands)}
                     disabled={!bandsDirty || saveBandsMutation.isPending}
-                    className={`text-[10px] font-bold px-4 py-2 rounded-lg transition-all cursor-pointer ${bandsDirty ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90' : 'bg-brand-navy/[0.04] text-brand-navy/30 cursor-not-allowed'}`}
+                    className={`text-[13px] font-bold px-4 py-2 rounded-lg transition-all cursor-pointer ${bandsDirty ? 'bg-brand-gold text-brand-navy hover:bg-brand-gold/90' : 'bg-brand-navy/[0.04] text-brand-navy/30 cursor-not-allowed'}`}
                   >
                     {saveBandsMutation.isPending ? 'Saving…' : bandsDirty ? 'Save Price Bands ✓' : 'Saved'}
                   </button>
@@ -655,28 +655,28 @@ export default function AttestationPortal() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="font-bold text-brand-navy text-sm">{rc.title || `${rc.country} — ${rc.category}`}</div>
-                    <div className="text-[9px] text-brand-navy/40 uppercase tracking-wider mt-0.5">{rc.country} · {rc.category} · {rc.route === 'apostille' ? 'Apostille' : 'Embassy'}{rc.featured ? ' · ★ Featured' : ''}</div>
+                    <div className="text-xs text-brand-navy/40 uppercase tracking-wider mt-0.5">{rc.country} · {rc.category} · {rc.route === 'apostille' ? 'Apostille' : 'Embassy'}{rc.featured ? ' · ★ Featured' : ''}</div>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <button onClick={() => openRateModal(rc)} title="Edit" className="text-[10px] text-brand-gold hover:underline font-bold cursor-pointer">✎</button>
-                    <button onClick={() => { if (confirm(`Delete ${rc.title || rc.country} product?`)) deleteRateMutation.mutate(rc.id); }} title="Delete" className="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">🗑</button>
+                    <button onClick={() => openRateModal(rc)} title="Edit" className="text-[13px] text-brand-gold hover:underline font-bold cursor-pointer">✎</button>
+                    <button onClick={() => { if (confirm(`Delete ${rc.title || rc.country} product?`)) deleteRateMutation.mutate(rc.id); }} title="Delete" className="text-[13px] text-rose-500 hover:underline font-bold cursor-pointer">🗑</button>
                   </div>
                 </div>
-                {rc.description && <p className="text-[10px] text-brand-navy/50">{rc.description}</p>}
+                {rc.description && <p className="text-[13px] text-brand-navy/50">{rc.description}</p>}
                 {(rc.documentTypes || []).length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {rc.documentTypes.map((d: string) => <span key={d} className="bg-brand-navy/[0.05] text-brand-navy/50 rounded px-1.5 py-0.5 text-[8px] font-bold border border-brand-navy/10">{d}</span>)}
+                    {rc.documentTypes.map((d: string) => <span key={d} className="bg-brand-navy/[0.05] text-brand-navy/50 rounded px-1.5 py-0.5 text-sm font-bold border border-brand-navy/10">{d}</span>)}
                   </div>
                 )}
-                <div className="text-[9px] text-brand-navy/40">{rc.steps.join(' → ')}</div>
+                <div className="text-xs text-brand-navy/40">{rc.steps.join(' → ')}</div>
                 <div className="flex items-center justify-between pt-1 border-t border-brand-navy/[0.08]">
                   <div>
                     <span className="text-brand-gold font-bold text-base">{INR(rc.pricePaise)}</span>
-                    <span className="text-[9px] text-brand-navy/40 ml-1">~{rc.timelineDays}d</span>
+                    <span className="text-xs text-brand-navy/40 ml-1">~{rc.timelineDays}d</span>
                   </div>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input type="checkbox" checked={!!rc.active} onChange={(e: any) => saveRateMutation.mutate({ active: e.target.checked })} className="h-3.5 w-3.5 accent-brand-gold" />
-                    <span className="text-[9px] font-bold text-brand-navy/50">{rc.active ? 'Live' : 'Hidden'}</span>
+                    <span className="text-xs font-bold text-brand-navy/50">{rc.active ? 'Live' : 'Hidden'}</span>
                   </label>
                 </div>
               </div>
@@ -695,31 +695,31 @@ export default function AttestationPortal() {
         <div className="space-y-4">
           {/* Dashboard strip */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-            <div className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">Total</div><div className="font-display font-extrabold text-brand-navy text-xl mt-1">{pipelineData?.total ?? 0}</div></div>
-            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-amber-700">🪨 Stuck (&gt;7d)</div><div className="font-display font-extrabold text-amber-700 text-xl mt-1">{pipelineData?.stuck ?? 0}</div></div>
-            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-blue-700">📄 Awaiting docs</div><div className="font-display font-extrabold text-blue-700 text-xl mt-1">{pipelineData?.awaitingDocs ?? 0}</div></div>
-            <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-rose-600">💰 Unpaid</div><div className="font-display font-extrabold text-rose-600 text-xl mt-1">{pipelineData?.unpaid ?? 0}</div></div>
-            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-amber-700">📨 Quote requests</div><div className="font-display font-extrabold text-amber-700 text-xl mt-1">{pipelineData?.counts?.quote_requested ?? 0}</div></div>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 shadow-sm"><div className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">📤 Export</div><button onClick={exportAppsCsv} className="mt-1 bg-emerald-600 text-white text-[9px] font-bold px-2.5 py-1.5 rounded hover:bg-emerald-700 transition-all cursor-pointer">CSV</button></div>
+            <div className="rounded-xl border border-brand-navy/10 bg-white p-3 shadow-sm"><div className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">Total</div><div className="font-display font-extrabold text-brand-navy text-xl mt-1">{pipelineData?.total ?? 0}</div></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 shadow-sm"><div className="text-xs font-bold uppercase tracking-widest text-amber-700">🪨 Stuck (&gt;7d)</div><div className="font-display font-extrabold text-amber-700 text-xl mt-1">{pipelineData?.stuck ?? 0}</div></div>
+            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 shadow-sm"><div className="text-xs font-bold uppercase tracking-widest text-blue-700">📄 Awaiting docs</div><div className="font-display font-extrabold text-blue-700 text-xl mt-1">{pipelineData?.awaitingDocs ?? 0}</div></div>
+            <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 shadow-sm"><div className="text-xs font-bold uppercase tracking-widest text-rose-600">💰 Unpaid</div><div className="font-display font-extrabold text-rose-600 text-xl mt-1">{pipelineData?.unpaid ?? 0}</div></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 shadow-sm"><div className="text-xs font-bold uppercase tracking-widest text-amber-700">📨 Quote requests</div><div className="font-display font-extrabold text-amber-700 text-xl mt-1">{pipelineData?.counts?.quote_requested ?? 0}</div></div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 shadow-sm"><div className="text-xs font-bold uppercase tracking-widest text-emerald-700">📤 Export</div><button onClick={exportAppsCsv} className="mt-1 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1.5 rounded hover:bg-emerald-700 transition-all cursor-pointer">CSV</button></div>
           </div>
 
           {/* Bulk actions */}
           {bulkSelected.size > 0 && (
             <div className="rounded-xl border border-brand-gold/40 bg-brand-gold/[0.06] p-2.5 flex items-center gap-3">
-              <span className="text-[10px] font-bold text-brand-navy">{bulkSelected.size} selected</span>
-              <button onClick={bulkConfirmQuotes} className="bg-brand-gold text-brand-navy text-[10px] font-bold px-3 py-1.5 rounded hover:bg-brand-gold/90 transition-all cursor-pointer">✓ Confirm Quotes</button>
-              <button onClick={() => setBulkSelected(new Set())} className="text-[10px] font-bold text-brand-navy/50 hover:text-brand-navy cursor-pointer">Clear</button>
+              <span className="text-[13px] font-bold text-brand-navy">{bulkSelected.size} selected</span>
+              <button onClick={bulkConfirmQuotes} className="bg-brand-gold text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded hover:bg-brand-gold/90 transition-all cursor-pointer">✓ Confirm Quotes</button>
+              <button onClick={() => setBulkSelected(new Set())} className="text-[13px] font-bold text-brand-navy/50 hover:text-brand-navy cursor-pointer">Clear</button>
             </div>
           )}
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
-            <select value={appFilter.stage} onChange={e => setAppFilter(f => ({ ...f, stage: e.target.value }))} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+            <select value={appFilter.stage} onChange={e => setAppFilter(f => ({ ...f, stage: e.target.value }))} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[13px] text-brand-navy outline-none cursor-pointer">
               <option value="">All stages</option>
               {Object.keys(STAGE_LABEL).map(s => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
             </select>
-            <input value={appFilter.country} onChange={e => setAppFilter(f => ({ ...f, country: e.target.value }))} placeholder="🌍 Country…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none focus:border-brand-gold w-32" />
-            <select value={appFilter.category} onChange={e => setAppFilter(f => ({ ...f, category: e.target.value }))} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[10px] text-brand-navy outline-none cursor-pointer">
+            <input value={appFilter.country} onChange={e => setAppFilter(f => ({ ...f, country: e.target.value }))} placeholder="🌍 Country…" className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[13px] text-brand-navy outline-none focus:border-brand-gold w-32" />
+            <select value={appFilter.category} onChange={e => setAppFilter(f => ({ ...f, category: e.target.value }))} className="rounded-lg border border-brand-navy/10 bg-white px-2.5 py-1.5 text-[13px] text-brand-navy outline-none cursor-pointer">
               <option value="">All categories</option>
               <option value="educational">Educational</option><option value="personal">Personal</option><option value="commercial">Commercial</option>
             </select>
@@ -729,13 +729,13 @@ export default function AttestationPortal() {
           <div className="lg:col-span-1 rounded-2xl border border-brand-navy/10 bg-white p-4 h-[500px] overflow-y-auto space-y-3 shadow-sm backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <h3 className="text-xs uppercase font-bold text-brand-gold tracking-wider">Clients</h3>
-              <button onClick={() => setShowNewApp(true)} className="bg-brand-gold text-brand-navy text-[10px] font-bold px-2.5 py-1 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ New App</button>
+              <button onClick={() => setShowNewApp(true)} className="bg-brand-gold text-brand-navy text-[13px] font-bold px-2.5 py-1 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ New App</button>
             </div>
             <div className="space-y-2">
               {attestationClients.map(c => (
                 <button key={c.id} onClick={() => setSelectedClientId(c.id)} className={`w-full text-left p-3 rounded-xl border text-xs transition-all cursor-pointer flex flex-col gap-1 ${selectedClient?.id === c.id ? 'border-brand-gold bg-brand-gold/10 font-semibold' : 'border-brand-navy/10 hover:border-brand-gold/50 bg-brand-navy/[0.04]'}`}>
                   <span className="font-bold text-brand-navy">{c.name}</span>
-                  <span className="text-[10px] text-brand-navy/40 font-mono">{c.id}</span>
+                  <span className="text-[13px] text-brand-navy/40 font-mono">{c.id}</span>
                 </button>
               ))}
               {attestationClients.length === 0 && <p className="text-xs text-brand-navy/50 italic">No attestation clients found.</p>}
@@ -749,7 +749,7 @@ export default function AttestationPortal() {
                   <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-navy/[0.05] text-lg border border-brand-navy/10">📜</span>
                   <div>
                     <h2 className="font-display text-lg font-bold text-brand-navy">{selectedClient.name}</h2>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-brand-navy/40 font-mono text-[10px] mt-1">
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-brand-navy/40 font-mono text-[13px] mt-1">
                       <span>{selectedClient.id}</span><span>•</span><span>{selectedClient.email}</span><span>•</span><span>{selectedClient.phone}</span>
                     </div>
                   </div>
@@ -774,51 +774,51 @@ export default function AttestationPortal() {
                             <input type="checkbox" checked={bulkSelected.has(app.id)} onChange={() => toggleBulk(app.id)} className="h-4 w-4 accent-brand-gold mt-0.5 cursor-pointer" title="Select for bulk action" />
                             <div>
                               <div className="font-bold text-brand-navy">{doc.documentName || app.documentType}</div>
-                              <div className="text-[10px] text-brand-navy/40 mt-0.5">{doc.holderName} · {doc.issuingState} → {app.destinationCountry} · {app.route === 'apostille' ? 'Apostille' : 'Embassy'}{app.translationNeeded ? ' · 🈶 Arabic translation' : ''}</div>
+                              <div className="text-[13px] text-brand-navy/40 mt-0.5">{doc.holderName} · {doc.issuingState} → {app.destinationCountry} · {app.route === 'apostille' ? 'Apostille' : 'Embassy'}{app.translationNeeded ? ' · 🈶 Arabic translation' : ''}</div>
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {dealHealth(app).map(h => <span key={h.label} className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${h.cls}`}>{h.label}</span>)}
+                                {dealHealth(app).map(h => <span key={h.label} className={`px-1.5 py-0.5 rounded text-sm font-bold uppercase ${h.cls}`}>{h.label}</span>)}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[10px] text-brand-navy/50 font-mono">#{app.id.slice(0, 8)}</span>
+                            <span className="text-[13px] text-brand-navy/50 font-mono">#{app.id.slice(0, 8)}</span>
                             {next.length > 0 ? (
                               <select
                                 value={app.stage}
                                 onChange={(e: any) => updateStageMutation.mutate({ id: app.id, stage: e.target.value })}
-                                className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[10px] font-bold text-brand-navy outline-none cursor-pointer [&>option]:bg-white"
+                                className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[13px] font-bold text-brand-navy outline-none cursor-pointer [&>option]:bg-white"
                               >
                                 <option value={app.stage}>{STAGE_LABEL[(app.stage || 'quote') as string] || app.stage}</option>
                                 {next.map((n: string) => <option key={n} value={n}>{STAGE_LABEL[n]}</option>)}
                               </select>
                             ) : (
-                              <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${app.stage === 'delivered' ? 'bg-emerald-500/15 text-emerald-700' : app.stage === 'rejected' ? 'bg-rose-500/15 text-rose-600' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{STAGE_LABEL[(app.stage || 'quote') as string]}</span>
+                              <span className={`text-[13px] font-bold uppercase px-2 py-1 rounded ${app.stage === 'delivered' ? 'bg-emerald-500/15 text-emerald-700' : app.stage === 'rejected' ? 'bg-rose-500/15 text-rose-600' : 'bg-brand-navy/[0.06] text-brand-navy/50'}`}>{STAGE_LABEL[(app.stage || 'quote') as string]}</span>
                             )}
                           </div>
                         </div>
 
                         {app.stage === 'quote_requested' && (
-                          <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-2.5 text-[10px] text-amber-800 space-y-1.5">
+                          <div className="rounded-lg bg-amber-500/10 border border-amber-200 p-2.5 text-[13px] text-amber-800 space-y-1.5">
                             <div className="flex flex-wrap items-center gap-2">
                               <b>📨 Quote request</b>
-                              {app.urgency === 'urgent' && <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 font-bold text-[9px]">⚡ URGENT</span>}
-                              {app.deadline && <span className="text-[9px]">Needed by <b>{new Date(app.deadline * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</b></span>}
-                              <span className={`text-[9px] ${app.documentStatus === 'received' ? 'text-emerald-700 font-bold' : 'text-brand-navy/50'}`}>{app.documentStatus === 'received' ? '✓ Scan uploaded' : 'No scan yet'}</span>
+                              {app.urgency === 'urgent' && <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 font-bold text-xs">⚡ URGENT</span>}
+                              {app.deadline && <span className="text-xs">Needed by <b>{new Date(app.deadline * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</b></span>}
+                              <span className={`text-xs ${app.documentStatus === 'received' ? 'text-emerald-700 font-bold' : 'text-brand-navy/50'}`}>{app.documentStatus === 'received' ? '✓ Scan uploaded' : 'No scan yet'}</span>
                             </div>
-                            <div className="text-[9px] text-amber-700/80">Check with the processing partner → set exact fees (✎ Edit) → move to <b>Quote Confirmed</b>.</div>
+                            <div className="text-xs text-amber-700/80">Check with the processing partner → set exact fees (✎ Edit) → move to <b>Quote Confirmed</b>.</div>
                             <button
                               onClick={() => {
                                 const msg = `Hi, quote please: ${app.document?.documentName || ''} (${app.document?.issuingState || ''}) → ${app.destinationCountry}, ${app.category}, ${app.urgency === 'urgent' ? 'URGENT' : 'normal'}${app.deadline ? `, needed by ${new Date(app.deadline * 1000).toLocaleDateString('en-IN')}` : ''}${app.documentStatus === 'received' ? ', scan attached' : ''}`;
                                 navigator.clipboard?.writeText(msg).then(() => alert('Supplier message copied — paste it on WhatsApp.')).catch(() => alert(msg));
                               }}
-                              className="text-[9px] font-bold text-brand-gold hover:underline cursor-pointer"
+                              className="text-xs font-bold text-brand-gold hover:underline cursor-pointer"
                             >
                               📋 Copy supplier message
                             </button>
                           </div>
                         )}
                         {app.stage === 'quote_confirmed' && (
-                          <div className="rounded-lg bg-emerald-500/10 border border-emerald-200 p-2.5 text-[10px] text-emerald-800">
+                          <div className="rounded-lg bg-emerald-500/10 border border-emerald-200 p-2.5 text-[13px] text-emerald-800">
                             ✓ Quote confirmed at <b>{INR(app.fees?.totalQuotePaise || 0)}</b> — client notified. Awaiting documents.
                           </div>
                         )}
@@ -830,45 +830,45 @@ export default function AttestationPortal() {
                               <button
                                 onClick={() => updateChainMutation.mutate({ id: app.id, stepKey: step.key, status: step.status === 'done' ? 'pending' : 'done' })}
                                 title="Click to toggle done"
-                                className={`w-4 h-4 rounded-full grid place-items-center text-[8px] font-bold shrink-0 cursor-pointer ${step.status === 'done' ? 'bg-emerald-500 text-white' : step.status === 'failed' ? 'bg-rose-500 text-white' : 'bg-brand-navy/[0.08] text-brand-navy/40 hover:bg-brand-gold/30'}`}
+                                className={`w-4 h-4 rounded-full grid place-items-center text-sm font-bold shrink-0 cursor-pointer ${step.status === 'done' ? 'bg-emerald-500 text-white' : step.status === 'failed' ? 'bg-rose-500 text-white' : 'bg-brand-navy/[0.08] text-brand-navy/40 hover:bg-brand-gold/30'}`}
                               >
                                 {step.status === 'done' ? '✓' : step.status === 'failed' ? '✕' : i + 1}
                               </button>
-                              <span className={`text-[10px] ${step.status === 'done' ? 'text-brand-navy font-semibold' : 'text-brand-navy/50'}`}>{step.label}</span>
-                              {step.date && <span className="text-[9px] text-brand-navy/30 ml-auto">{new Date(step.date * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>}
+                              <span className={`text-[13px] ${step.status === 'done' ? 'text-brand-navy font-semibold' : 'text-brand-navy/50'}`}>{step.label}</span>
+                              {step.date && <span className="text-xs text-brand-navy/30 ml-auto">{new Date(step.date * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>}
                             </div>
                           ))}
                         </div>
 
                         {/* Fees + pickup + actions */}
                         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-brand-navy/[0.08] pt-2.5">
-                          <div className="text-[10px] text-brand-navy/70">
+                          <div className="text-[13px] text-brand-navy/70">
                             Quote: <b>{INR(app.fees?.totalQuotePaise || 0)}</b>
-                            <span className={`ml-2 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${app.paymentStatus === 'paid' ? 'bg-emerald-500/15 text-emerald-700' : app.paymentStatus === 'partial' ? 'bg-amber-500/15 text-amber-700' : 'bg-rose-500/15 text-rose-600'}`}>{app.paymentStatus || 'unpaid'}</span>
+                            <span className={`ml-2 px-1.5 py-0.5 rounded text-sm font-bold uppercase ${app.paymentStatus === 'paid' ? 'bg-emerald-500/15 text-emerald-700' : app.paymentStatus === 'partial' ? 'bg-amber-500/15 text-amber-700' : 'bg-rose-500/15 text-rose-600'}`}>{app.paymentStatus || 'unpaid'}</span>
                             <span className="ml-2 text-brand-navy/40">Pickup: {PICKUP_LABEL[(app.pickup?.status || 'awaiting_docs') as string] || app.pickup?.status}</span>
                             {app.pickup?.courierInbound && <span className="ml-2 text-brand-navy/40 font-mono">In: {app.pickup.courierInbound}</span>}
                             {app.pickup?.courierOutbound && <span className="ml-2 text-brand-navy/40 font-mono">Out: {app.pickup.courierOutbound}</span>}
                             {app.pickup?.courierReturn && <span className="ml-2 text-brand-navy/40 font-mono">Ret: {app.pickup.courierReturn}</span>}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${app.documentStatus === 'verified' ? 'bg-emerald-500/15 text-emerald-700' : app.documentStatus === 'received' ? 'bg-blue-500/15 text-blue-700' : app.documentStatus === 'rejected' ? 'bg-rose-500/15 text-rose-600' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>📄 {app.documentStatus || 'missing'}</span>
+                            <span className={`text-sm font-bold uppercase px-1.5 py-0.5 rounded ${app.documentStatus === 'verified' ? 'bg-emerald-500/15 text-emerald-700' : app.documentStatus === 'received' ? 'bg-blue-500/15 text-blue-700' : app.documentStatus === 'rejected' ? 'bg-rose-500/15 text-rose-600' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>📄 {app.documentStatus || 'missing'}</span>
                             <label className="cursor-pointer" title="Upload original scan">
                               <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" className="hidden" onChange={(e: any) => { const f = e.target.files?.[0]; if (f) uploadAppDoc(app.id, f); }} />
-                              <span className="text-[9px] font-bold text-brand-gold hover:underline cursor-pointer">Upload</span>
+                              <span className="text-xs font-bold text-brand-gold hover:underline cursor-pointer">Upload</span>
                             </label>
-                            <button onClick={() => openAppEdit(app)} title="Edit" className="text-[10px] text-brand-gold hover:underline font-bold cursor-pointer">✎</button>
-                            <button onClick={() => duplicateAppMutation.mutate(app.id)} title="Duplicate (multi-doc)" className="text-[10px] text-brand-navy/50 hover:text-brand-navy font-bold cursor-pointer">⧉</button>
-                            <button onClick={() => { if (confirm('Delete this application?')) deleteAppMutation.mutate(app.id); }} title="Delete" className="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">🗑</button>
+                            <button onClick={() => openAppEdit(app)} title="Edit" className="text-[13px] text-brand-gold hover:underline font-bold cursor-pointer">✎</button>
+                            <button onClick={() => duplicateAppMutation.mutate(app.id)} title="Duplicate (multi-doc)" className="text-[13px] text-brand-navy/50 hover:text-brand-navy font-bold cursor-pointer">⧉</button>
+                            <button onClick={() => { if (confirm('Delete this application?')) deleteAppMutation.mutate(app.id); }} title="Delete" className="text-[13px] text-rose-500 hover:underline font-bold cursor-pointer">🗑</button>
                             <select
                               value={app.pickup?.status || 'awaiting_docs'}
                               onChange={(e: any) => updatePickupMutation.mutate({ id: app.id, payload: { pickupStatus: e.target.value } })}
-                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-[9px] font-bold text-brand-navy outline-none cursor-pointer [&>option]:bg-white"
+                              className="border border-brand-navy/10 bg-white rounded px-2 py-1 text-xs font-bold text-brand-navy outline-none cursor-pointer [&>option]:bg-white"
                             >
                               {Object.entries(PICKUP_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                             </select>
                           </div>
                         </div>
-                        {app.notes && <p className="text-[10px] text-brand-navy/40 italic">{app.notes}</p>}
+                        {app.notes && <p className="text-[13px] text-brand-navy/40 italic">{app.notes}</p>}
                       </div>
                       );
                     })}
@@ -886,11 +886,11 @@ export default function AttestationPortal() {
       {activeSubTab === 'indiapost' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
           <div className="lg:col-span-2 rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm space-y-4 backdrop-blur-sm">
-            <h4 className="font-bold text-brand-gold uppercase tracking-wider text-[10px]">Create Postal Consignment</h4>
+            <h4 className="font-bold text-brand-gold uppercase tracking-wider text-[13px]">Create Postal Consignment</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* SENDER (Opus office — pre-filled) */}
               <div className="md:col-span-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-[9px] mb-2">Sender (Opus Overseas office)</div>
+                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-xs mb-2">Sender (Opus Overseas office)</div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <input value={senderName} disabled className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy" />
                   <input value={senderCompany} disabled className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy" />
@@ -902,7 +902,7 @@ export default function AttestationPortal() {
 
               {/* RECEIVER (supplier) */}
               <div className="md:col-span-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-[9px] mb-2">Receiver (supplier / destination)</div>
+                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-xs mb-2">Receiver (supplier / destination)</div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <input value={receiverName} onChange={(e: any) => setReceiverName(e.target.value)} placeholder="Receiver name *" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
                   <input value={receiverCompany} onChange={(e: any) => setReceiverCompany(e.target.value)} placeholder="Receiver company" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
@@ -915,7 +915,7 @@ export default function AttestationPortal() {
                   <input value={receiverEmail} onChange={(e: any) => setReceiverEmail(e.target.value)} placeholder="Receiver email" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
                 </div>
                 {pincodeOffices.length > 0 && (
-                  <div className="mt-2 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
+                  <div className="mt-2 text-[13px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
                     ✓ {pincodeOffices[0].office_name} · {pincodeOffices[0].office_type_code} · {pincodeOffices[0].state_name} — auto-filled city/state
                   </div>
                 )}
@@ -923,7 +923,7 @@ export default function AttestationPortal() {
 
               {/* ARTICLE */}
               <div className="md:col-span-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-[9px] mb-2">Article</div>
+                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-xs mb-2">Article</div>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <select value={articleType} onChange={(e: any) => setArticleType(e.target.value)} className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy">
                     <option value="SP">Speed Post</option>
@@ -939,7 +939,7 @@ export default function AttestationPortal() {
 
               {/* ADD-ONS */}
               <div className="md:col-span-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3">
-                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-[9px] mb-2">Add-ons</div>
+                <div className="font-bold text-brand-navy/50 uppercase tracking-wider text-xs mb-2">Add-ons</div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <input value={insuranceValue} onChange={(e: any) => setInsuranceValue(e.target.value)} placeholder="Insurance value (₹)" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
                   <input value={codValue} onChange={(e: any) => setCodValue(e.target.value)} placeholder="COD amount (₹)" className="rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy placeholder:text-brand-navy/40 outline-none focus:border-brand-gold" />
@@ -964,20 +964,20 @@ export default function AttestationPortal() {
           </div>
 
           <div className="lg:col-span-1 rounded-2xl border border-brand-gold/25 bg-brand-gold/[0.06] p-5 space-y-4 shadow-sm h-fit">
-            <h4 className="font-bold text-brand-gold uppercase tracking-wider text-[10px]">Consignment Invoice / Slip</h4>
+            <h4 className="font-bold text-brand-gold uppercase tracking-wider text-[13px]">Consignment Invoice / Slip</h4>
             {bookingResult ? (
               <div className="space-y-3">
                 <div className="border-2 border-dashed border-brand-navy/20 p-4 bg-brand-navy/[0.04] text-center rounded-lg space-y-2">
-                  <div className="font-bold text-[10px] text-brand-navy/50 uppercase tracking-widest">Tracking Barcode</div>
+                  <div className="font-bold text-[13px] text-brand-navy/50 uppercase tracking-widest">Tracking Barcode</div>
                   <div className="font-mono font-bold text-lg text-brand-gold tracking-widest">{bookingResult.barcode}</div>
-                  <div className="h-6 bg-brand-navy/[0.06] flex items-center justify-center text-[10px] text-brand-navy/50 font-mono">|||||||||||||||||||||||</div>
+                  <div className="h-6 bg-brand-navy/[0.06] flex items-center justify-center text-[13px] text-brand-navy/50 font-mono">|||||||||||||||||||||||</div>
                 </div>
                 <div className="space-y-1 bg-brand-navy/[0.04] p-3 rounded-lg border border-brand-navy/10">
                   <div className="flex justify-between"><span>Destination:</span><span className="font-bold">{bookingResult.delivery_office}</span></div>
                   <div className="flex justify-between"><span>Weight:</span><span className="font-bold">{bookingResult.chargeable_weight}g</span></div>
                   <div className="flex justify-between"><span>Charge:</span><span className="font-bold text-brand-gold">₹{bookingResult.amount}</span></div>
                 </div>
-                <p className="text-[10px] text-emerald-700 font-semibold">✓ Consignment logged to courier tracking for {selectedClient?.name || 'client'}.</p>
+                <p className="text-[13px] text-emerald-700 font-semibold">✓ Consignment logged to courier tracking for {selectedClient?.name || 'client'}.</p>
               </div>
             ) : tariffResult ? (
               <div className="space-y-3">
@@ -986,7 +986,7 @@ export default function AttestationPortal() {
                   <div className="flex justify-between"><span>GST:</span><span className="font-bold">₹{tariffResult.total_tax}</span></div>
                   <div className="border-t border-brand-navy/10 pt-2 mt-2 flex justify-between font-bold text-brand-gold"><span>Total Amount:</span><span>₹{tariffResult.final_amount}</span></div>
                 </div>
-                <p className="text-[10px] text-brand-navy/40 italic">Review charges before booking — a courier shipment is created for the selected client.</p>
+                <p className="text-[13px] text-brand-navy/40 italic">Review charges before booking — a courier shipment is created for the selected client.</p>
               </div>
             ) : (
               <p className="text-brand-navy/50 italic py-6 text-center">Fill in receiver details and calculate tariff to generate label.</p>
@@ -1003,7 +1003,7 @@ export default function AttestationPortal() {
               {attestationClients.map(c => (
                 <button key={c.id} onClick={() => setSelectedClientId(c.id)} className={`w-full text-left p-3 rounded-xl border text-xs transition-all cursor-pointer flex flex-col gap-1 ${selectedClient?.id === c.id ? 'border-brand-gold bg-brand-gold/10 font-semibold' : 'border-brand-navy/10 hover:border-brand-gold/50 bg-brand-navy/[0.04]'}`}>
                   <span className="font-bold text-brand-navy">{c.name}</span>
-                  <span className="text-[10px] text-brand-navy/40 font-mono">{c.id}</span>
+                  <span className="text-[13px] text-brand-navy/40 font-mono">{c.id}</span>
                 </button>
               ))}
               {attestationClients.length === 0 && <p className="text-xs text-brand-navy/50 italic">No attestation clients found.</p>}
@@ -1017,7 +1017,7 @@ export default function AttestationPortal() {
                   <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-navy/[0.05] text-lg border border-brand-navy/10">🚚</span>
                   <div>
                     <h2 className="font-display text-lg font-bold text-brand-navy">{selectedClient.name}</h2>
-                    <div className="text-[10px] text-brand-navy/40 font-mono mt-1">{selectedClient.id} · {selectedClient.phone}</div>
+                    <div className="text-[13px] text-brand-navy/40 font-mono mt-1">{selectedClient.id} · {selectedClient.phone}</div>
                   </div>
                 </div>
 
@@ -1033,11 +1033,11 @@ export default function AttestationPortal() {
                             <span className="text-brand-navy/50 ml-2 font-mono">{s.trackingNumber}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${s.status === 'delivered' ? 'bg-emerald-500/15 text-emerald-700' : s.status === 'in_transit' ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/50 border border-brand-navy/10'}`}>{s.status.replace('_', ' ')}</span>
-                            <button onClick={() => syncCarrier(s)} className="bg-brand-gold text-brand-navy text-[10px] font-bold px-2.5 py-1 rounded hover:bg-brand-gold/90 transition-all cursor-pointer">Sync Carrier</button>
+                            <span className={`text-[13px] font-bold uppercase px-2 py-0.5 rounded ${s.status === 'delivered' ? 'bg-emerald-500/15 text-emerald-700' : s.status === 'in_transit' ? 'bg-amber-500/15 text-amber-700' : 'bg-brand-navy/[0.06] text-brand-navy/50 border border-brand-navy/10'}`}>{s.status.replace('_', ' ')}</span>
+                            <button onClick={() => syncCarrier(s)} className="bg-brand-gold text-brand-navy text-[13px] font-bold px-2.5 py-1 rounded hover:bg-brand-gold/90 transition-all cursor-pointer">Sync Carrier</button>
                           </div>
                         </div>
-                        <p className="text-[10px] text-brand-navy/40">{s.shippingAddress}</p>
+                        <p className="text-[13px] text-brand-navy/40">{s.shippingAddress}</p>
                       </div>
                     ))}
                   </div>
@@ -1054,7 +1054,7 @@ export default function AttestationPortal() {
         <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm space-y-4 text-xs backdrop-blur-sm">
           <div className="border-b border-brand-navy/10 pb-3">
             <h3 className="font-display font-bold text-brand-navy text-sm">AI Document OCR & Seal Verification</h3>
-            <p className="text-[10px] text-brand-navy/40">Upload passport copies, degree certificates, transcripts, or MEA seals to automatically parse details using Cloudflare Vision AI.</p>
+            <p className="text-[13px] text-brand-navy/40">Upload passport copies, degree certificates, transcripts, or MEA seals to automatically parse details using Cloudflare Vision AI.</p>
           </div>
           <AiOcrPanel clientId={selectedClientId || undefined} />
         </div>
@@ -1069,26 +1069,26 @@ export default function AttestationPortal() {
               <button onClick={() => setShowAppEdit(false)} className="text-brand-navy/40 hover:text-brand-navy text-lg cursor-pointer">✕</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Document name</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.documentName} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, documentName: e.target.value }))} /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Holder name</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.holderName} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, holderName: e.target.value }))} /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Issuing state</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.issuingState} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, issuingState: e.target.value }))} /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Issuing year</label><input type="number" className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.issuingYear} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, issuingYear: Number(e.target.value) }))} /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Govt fees (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.govtFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, govtFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Service fee (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.serviceFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, serviceFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Courier (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.courierFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, courierFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Translation (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.translationFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, translationFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Payment status</label>
-                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={appEditForm.paymentStatus} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, paymentStatus: e.target.value }))}>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Document name</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.documentName} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, documentName: e.target.value }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Holder name</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.holderName} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, holderName: e.target.value }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Issuing state</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.issuingState} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, issuingState: e.target.value }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Issuing year</label><input type="number" className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.issuingYear} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, issuingYear: Number(e.target.value) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Govt fees (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.govtFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, govtFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Service fee (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.serviceFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, serviceFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Courier (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.courierFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, courierFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Translation (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.translationFeePaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, translationFeePaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Payment status</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none cursor-pointer" value={appEditForm.paymentStatus} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, paymentStatus: e.target.value }))}>
                   <option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option>
                 </select>
               </div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Paid amount (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.paidAmountPaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, paidAmountPaise: Math.round(Number(e.target.value) * 100) }))} /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Document status</label>
-                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={appEditForm.documentStatus} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, documentStatus: e.target.value }))}>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Paid amount (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.paidAmountPaise / 100} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, paidAmountPaise: Math.round(Number(e.target.value) * 100) }))} /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Document status</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none cursor-pointer" value={appEditForm.documentStatus} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, documentStatus: e.target.value }))}>
                   <option value="missing">Missing</option><option value="received">Received</option><option value="verified">Verified</option><option value="rejected">Rejected</option>
                 </select>
               </div>
-              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Notes</label><textarea rows={2} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.notes} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, notes: e.target.value }))} /></div>
+              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Notes</label><textarea rows={2} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={appEditForm.notes} onChange={(e: any) => setAppEditForm((f: any) => ({ ...f, notes: e.target.value }))} /></div>
             </div>
             <div className="flex gap-3 pt-2 border-t border-brand-navy/10">
               <button onClick={() => setShowAppEdit(false)} className="flex-1 border border-brand-navy/15 bg-brand-navy/[0.04] hover:border-brand-gold/50 py-2 rounded-lg font-bold text-brand-navy cursor-pointer transition-all">Cancel</button>
@@ -1124,8 +1124,8 @@ export default function AttestationPortal() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="md:col-span-2">
-                <label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">⚡ Start from a template (or build custom)</label>
-                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value="" onChange={(e: any) => {
+                <label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">⚡ Start from a template (or build custom)</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none cursor-pointer" value="" onChange={(e: any) => {
                   const t = SERVICE_TEMPLATES[e.target.value];
                   if (t) setRateForm((f: any) => ({ ...f, category: t.category, route: t.route, title: t.title, documentTypes: t.docTypes.join(', '), steps: t.steps.join(' → '), purpose: t.purpose }));
                 }}>
@@ -1133,23 +1133,23 @@ export default function AttestationPortal() {
                   {Object.keys(SERVICE_TEMPLATES).map(k => <option key={k} value={k}>{k}</option>)}
                 </select>
               </div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Country *</label>
-                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={ATTESTATION_COUNTRIES.includes(rateForm.country) ? rateForm.country : 'Other'} onChange={(e: any) => setRateForm((f: any) => ({ ...f, country: e.target.value }))}>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Country *</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none cursor-pointer" value={ATTESTATION_COUNTRIES.includes(rateForm.country) ? rateForm.country : 'Other'} onChange={(e: any) => setRateForm((f: any) => ({ ...f, country: e.target.value }))}>
                   {ATTESTATION_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Category</label><select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={rateForm.category} onChange={(e: any) => setRateForm((f: any) => ({ ...f, category: e.target.value, documentTypes: '', steps: (CHAIN_TEMPLATES[`${e.target.value}-${f.route}`] || []).join(' → ') }))}>{['educational', 'personal', 'commercial'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Route</label><select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={rateForm.route} onChange={(e: any) => setRateForm((f: any) => ({ ...f, route: e.target.value, steps: (CHAIN_TEMPLATES[`${f.category}-${e.target.value}`] || []).join(' → ') }))}><option value="apostille">Apostille</option><option value="embassy">Embassy Attestation</option></select></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Service title</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.title} onChange={(e: any) => setRateForm((f: any) => ({ ...f, title: e.target.value }))} placeholder="Degree Attestation — UAE" /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Purpose / use case</label>
-                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none cursor-pointer" value={rateForm.purpose} onChange={(e: any) => setRateForm((f: any) => ({ ...f, purpose: e.target.value }))}>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Category</label><select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none cursor-pointer" value={rateForm.category} onChange={(e: any) => setRateForm((f: any) => ({ ...f, category: e.target.value, documentTypes: '', steps: (CHAIN_TEMPLATES[`${e.target.value}-${f.route}`] || []).join(' → ') }))}>{['educational', 'personal', 'commercial'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Route</label><select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none cursor-pointer" value={rateForm.route} onChange={(e: any) => setRateForm((f: any) => ({ ...f, route: e.target.value, steps: (CHAIN_TEMPLATES[`${f.category}-${e.target.value}`] || []).join(' → ') }))}><option value="apostille">Apostille</option><option value="embassy">Embassy Attestation</option></select></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Service title</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={rateForm.title} onChange={(e: any) => setRateForm((f: any) => ({ ...f, title: e.target.value }))} placeholder="Degree Attestation — UAE" /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Purpose / use case</label>
+                <select className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none cursor-pointer" value={rateForm.purpose} onChange={(e: any) => setRateForm((f: any) => ({ ...f, purpose: e.target.value }))}>
                   <option value="">-- Select purpose --</option>
                   {PURPOSE_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
-              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Description (what's included)</label><textarea rows={2} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.description} onChange={(e: any) => setRateForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="HRD + MEA + Embassy + MOFA coordination, tracked at every step…" /></div>
+              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Description (what's included)</label><textarea rows={2} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={rateForm.description} onChange={(e: any) => setRateForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="HRD + MEA + Embassy + MOFA coordination, tracked at every step…" /></div>
               <div className="md:col-span-2">
-                <label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Document types covered</label>
+                <label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Document types covered</label>
                 <div className="flex flex-wrap gap-1.5">
                   {(DOC_TYPE_OPTIONS[rateForm.category] || []).map((dt: string) => {
                     const selected = (rateForm.documentTypes || '').split(',').map((x: string) => x.trim()).filter(Boolean).includes(dt);
@@ -1158,17 +1158,17 @@ export default function AttestationPortal() {
                         const cur: string[] = (rateForm.documentTypes || '').split(',').map((x: string) => x.trim()).filter(Boolean);
                         const next = selected ? cur.filter((x: string) => x !== dt) : [...cur, dt];
                         setRateForm((f: any) => ({ ...f, documentTypes: next.join(', ') }));
-                      }} className={`px-2 py-1 rounded text-[9px] font-bold border cursor-pointer transition-all ${selected ? 'bg-brand-gold/20 border-brand-gold text-brand-navy' : 'bg-brand-navy/[0.04] border-brand-navy/10 text-brand-navy/50 hover:border-brand-gold/50'}`}>{dt}</button>
+                      }} className={`px-2 py-1 rounded text-xs font-bold border cursor-pointer transition-all ${selected ? 'bg-brand-gold/20 border-brand-gold text-brand-navy' : 'bg-brand-navy/[0.04] border-brand-navy/10 text-brand-navy/50 hover:border-brand-gold/50'}`}>{dt}</button>
                     );
                   })}
                 </div>
               </div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Indicative price (₹) *</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.pricePaise} onChange={e => setRateForm((f: any) => ({ ...f, pricePaise: e.target.value }))} placeholder="6000" /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Govt fees (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.govtFeePaise} onChange={e => setRateForm((f: any) => ({ ...f, govtFeePaise: e.target.value }))} placeholder="0" /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Courier (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.courierFeePaise} onChange={e => setRateForm((f: any) => ({ ...f, courierFeePaise: e.target.value }))} placeholder="0" /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Translation (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.translationFeePaise} onChange={e => setRateForm((f: any) => ({ ...f, translationFeePaise: e.target.value }))} placeholder="0" /></div>
-              <div><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Timeline (working days)</label><input type="number" min={1} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.timelineDays} onChange={e => setRateForm((f: any) => ({ ...f, timelineDays: e.target.value }))} /></div>
-              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[10px] block mb-1">Chain steps (separate with →)</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-[11px] text-brand-navy outline-none focus:border-brand-gold" value={rateForm.steps} onChange={e => setRateForm((f: any) => ({ ...f, steps: e.target.value }))} placeholder="State HRD / GAD → MEA → UAE Embassy → UAE MOFA" /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Indicative price (₹) *</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={rateForm.pricePaise} onChange={e => setRateForm((f: any) => ({ ...f, pricePaise: e.target.value }))} placeholder="6000" /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Govt fees (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={rateForm.govtFeePaise} onChange={e => setRateForm((f: any) => ({ ...f, govtFeePaise: e.target.value }))} placeholder="0" /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Courier (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={rateForm.courierFeePaise} onChange={e => setRateForm((f: any) => ({ ...f, courierFeePaise: e.target.value }))} placeholder="0" /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Translation (₹)</label><input type="number" min={0} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={rateForm.translationFeePaise} onChange={e => setRateForm((f: any) => ({ ...f, translationFeePaise: e.target.value }))} placeholder="0" /></div>
+              <div><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Timeline (working days)</label><input type="number" min={1} className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={rateForm.timelineDays} onChange={e => setRateForm((f: any) => ({ ...f, timelineDays: e.target.value }))} /></div>
+              <div className="md:col-span-2"><label className="font-semibold text-brand-navy/40 text-[13px] block mb-1">Chain steps (separate with →)</label><input className="w-full rounded-lg border border-brand-navy/10 bg-white px-2.5 py-2 text-sm text-brand-navy outline-none focus:border-brand-gold" value={rateForm.steps} onChange={e => setRateForm((f: any) => ({ ...f, steps: e.target.value }))} placeholder="State HRD / GAD → MEA → UAE Embassy → UAE MOFA" /></div>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-brand-navy/70 cursor-pointer"><input type="checkbox" checked={rateForm.featured} onChange={e => setRateForm((f: any) => ({ ...f, featured: e.target.checked }))} className="h-4 w-4 accent-brand-gold" /> ★ Featured</label>
                 <label className="flex items-center gap-2 text-brand-navy/70 cursor-pointer"><input type="checkbox" checked={rateForm.active} onChange={e => setRateForm((f: any) => ({ ...f, active: e.target.checked }))} className="h-4 w-4 accent-brand-gold" /> Live (visible to clients)</label>
