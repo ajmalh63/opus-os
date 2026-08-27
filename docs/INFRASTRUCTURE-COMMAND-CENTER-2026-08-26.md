@@ -44,7 +44,7 @@ Superadmins can now inspect, trigger, configure, and monitor every containerized
 * **Live Session Monitor:** Real-time query of session status (`main`), connected WhatsApp phone number, battery percentage, and push name.
 * **1-Click Session Control:** Direct `restart_session`, `disconnect`, and automatic reconnection loop recovery.
 * **Plugin Subsystem:**
-  * `chat-flow` (`v1.1.7`): 5-choice branded qualification menu (1. Study Abroad, 2. Visa Stamping, 3. Document Attestation, 4. Global Careers, 5. Counselor Desk).
+  * `chat-flow` (`v1.1.7`): 5-choice branded qualification menu (1. Study Abroad, 2. Visa Stamping, 3. Document Attestation, 4. Manpower Services, 5. Counselor Desk).
   * `chatwoot-adapter` (`v0.9.6`): Bidirectional bridge relaying WhatsApp chats & media to Chatwoot inboxes and forwarding counselor replies.
   * `voice-transcription` (`v1.2.8`): Audio-to-text transcription for voice note queries.
   * `after-hours` (`v0.2.6`): Automatic away responder outside IST business hours.

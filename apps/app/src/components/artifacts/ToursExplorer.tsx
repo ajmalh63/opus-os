@@ -10,7 +10,6 @@ interface TourCard {
   destination: string;
   duration: string;
   highlights: string;
-  priceFormatted: string;
   statusBadge: string;
   flightHub: string;
   inclusions: string[];
@@ -25,7 +24,6 @@ const FEATURED_TOURS: TourCard[] = [
     destination: 'Makkah & Madinah',
     duration: '14 Days Total',
     highlights: '50m to Haram · Clock Tower Stay · Senior Muallim Guidance · Indian Buffet',
-    priceFormatted: '₹1,15,000',
     statusBadge: 'Direct Flight Booked',
     flightHub: 'Hyderabad (HYD) ➔ Jeddah (JED)',
     inclusions: ['Saudi eVisa + Insurance', '5★ Haram Proximity', 'Guided Ziyarat', 'Zamzam 5L'],
@@ -38,7 +36,6 @@ const FEATURED_TOURS: TourCard[] = [
     destination: 'Makkah & Madinah',
     duration: '14 Days Group Departure',
     highlights: '150m walking distance · Quad Sharing · Full Indian Catering · Ziyarat Tours',
-    priceFormatted: '₹85,000',
     statusBadge: 'Seats Filling Fast',
     flightHub: 'Hyderabad (HYD) ➔ Jeddah (JED)',
     inclusions: ['Group Flight', 'Visa Stamping', 'Air-Conditioned Bus', 'Indian Meals'],
@@ -51,7 +48,6 @@ const FEATURED_TOURS: TourCard[] = [
     destination: 'United Arab Emirates',
     duration: '5 Days / 4 Nights',
     highlights: 'Burj Khalifa 124th Fl · Desert Safari with BBQ · Marina Dhow Dinner Cruise',
-    priceFormatted: '₹48,500',
     statusBadge: 'Instant eVisa',
     flightHub: 'Direct Flights Ex-Hyderabad',
     inclusions: ['4★ City Hotel', 'Daily Breakfast', 'Private Transfers', 'Sightseeing Tickets'],
@@ -64,7 +60,6 @@ const FEATURED_TOURS: TourCard[] = [
     destination: 'Switzerland & France',
     duration: '7 Days / 6 Nights',
     highlights: 'Mount Titlis Cable Car · Rhine Falls · Eiffel Tower Summit · Euro Rail',
-    priceFormatted: '₹1,45,000',
     statusBadge: 'Schengen Visa Fast-Track',
     flightHub: 'Hyderabad ➔ Zurich / Paris',
     inclusions: ['4★ Resort Stays', 'Swiss Travel Pass', 'Schengen Visa Support', 'Indian Dinners'],
@@ -77,7 +72,6 @@ const FEATURED_TOURS: TourCard[] = [
     destination: 'Srinagar · Gulmarg · Pahalgam',
     duration: '6 Days / 5 Nights',
     highlights: 'Dal Lake Luxury Houseboat · Gulmarg Gondola · Betaab Valley Shikara Ride',
-    priceFormatted: '₹24,500',
     statusBadge: 'Best Seller',
     flightHub: 'Srinagar Airport Pickup',
     inclusions: ['Houseboat + Hotel', 'Private AC Cab', 'Breakfast & Dinner', 'Shikara Ride Pass'],
@@ -90,7 +84,6 @@ const FEATURED_TOURS: TourCard[] = [
     destination: 'Munnar · Thekkady · Alleppey',
     duration: '5 Days / 4 Nights',
     highlights: 'Tea Plantation Walk · Spice Garden Tour · Private Houseboat Cruise',
-    priceFormatted: '₹19,800',
     statusBadge: 'All-Inclusive',
     flightHub: 'Cochin Hub Pickup',
     inclusions: ['Premium Resorts', 'Private Innova', 'All Meals in Houseboat', 'Sightseeing Entry'],
@@ -111,7 +104,7 @@ export default function ToursExplorer() {
   return (
     <ArtifactShell
       title="Tours & Holiday Itinerary Explorer"
-      caption="Live scheduled departures, verified star accommodations & transparent per-pax pricing"
+      caption="Live scheduled departures, verified star accommodations & member-exclusive rate cards"
       statusLabel="Seasonal Inventory Open"
     >
       <div className="space-y-3">
@@ -157,8 +150,14 @@ export default function ToursExplorer() {
                 </div>
 
                 <div className="text-right shrink-0">
-                  <div className="font-display text-sm font-extrabold text-brand-navy">{tour.priceFormatted}</div>
-                  <span className="text-xs text-brand-gold font-bold">/ person</span>
+                  <a
+                    href="/login"
+                    className="inline-flex items-center gap-1 rounded-lg bg-brand-gold/20 hover:bg-brand-gold border border-brand-gold/40 px-2 py-1 text-[11px] font-extrabold text-brand-navy transition shadow-2xs group"
+                  >
+                    <span>🔒</span>
+                    <span>Member Rates</span>
+                  </a>
+                  <span className="block text-[11px] text-brand-gold font-bold mt-0.5">Login to Unlock</span>
                 </div>
               </div>
 

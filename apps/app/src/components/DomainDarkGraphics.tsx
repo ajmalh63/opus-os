@@ -164,7 +164,7 @@ export default function DomainDarkGraphics({ variant, className = "" }: DomainDa
         </svg>
       )}
 
-      {/* 5. RECRUITMENT & GLOBAL CAREERS: Transcontinental Talent Supply Routes & MEA Node Matrix */}
+      {/* 5. RECRUITMENT & MANPOWER SERVICES: Transcontinental Talent Supply Routes & MEA Node Matrix */}
       {variant === "recruitment" && (
         <svg
           className="absolute right-[-6%] top-[-10%] h-[44rem] w-[44rem] text-sky-400/15 opacity-80"

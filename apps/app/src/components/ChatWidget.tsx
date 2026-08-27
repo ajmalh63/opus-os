@@ -64,6 +64,7 @@ export default function ChatWidget({ user }: { user?: ChatUserContext }) {
       position: 'right',
       type: 'standard',
       locale: 'en',
+      showPopoutButton: true,
     };
 
     const script = document.createElement('script');

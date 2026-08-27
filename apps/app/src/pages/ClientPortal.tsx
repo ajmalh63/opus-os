@@ -513,7 +513,7 @@ export default function ClientPortal() {
                 >
                   <span className="flex items-center gap-2.5">
                     <span>💼</span>
-                    <span>Global Careers</span>
+                    <span>Manpower Services</span>
                   </span>
                   <div className="flex items-center gap-1.5">
                     {!isEnabled('manpower') && <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Soon</span>}
@@ -606,7 +606,7 @@ export default function ClientPortal() {
                   portalTab === 'jobs' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
-                <span>💼 Careers</span>
+                <span>💼 Manpower</span>
                 {!isEnabled('manpower') && <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">Soon</span>}
               </button>
               <button
@@ -671,7 +671,7 @@ export default function ClientPortal() {
               </div>
             )}
 
-            {/* TAB 6: GLOBAL JOBS & CAREERS — P0 Manpower Marketplace (Indeed gold: match + 1-click) */}
+            {/* TAB 6: GLOBAL JOBS & MANPOWER — P0 Manpower Marketplace (Indeed gold: match + 1-click) */}
             {portalTab === 'jobs' && (
               <div className="space-y-4">
                 <ManpowerMarketplace token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
@@ -746,7 +746,7 @@ export default function ClientPortal() {
                 <span className="text-[13px] px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/60">British Council Certified Agent #115050</span>
               </div>
               <p className="text-xs leading-relaxed text-brand-cream/60">
-                Transparent guidance for study abroad, visas, attestation, Umrah, and careers. No inflated numbers — real updates appear here when you begin. Your data stays private.
+                Transparent guidance for study abroad, visas, attestation, Umrah, and manpower services. No inflated numbers — real updates appear here when you begin. Your data stays private.
               </p>
               <div className="text-sm leading-relaxed text-brand-cream/60">
                 <div className="font-bold text-white/80">Opus Overseas — Nizamabad, Telangana</div>

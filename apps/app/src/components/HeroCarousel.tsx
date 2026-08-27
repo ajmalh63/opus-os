@@ -18,7 +18,7 @@ const SLIDE_META = [
   { key: 'visa', icon: '🛂', label: 'Global Visas', goTo: '/visa-services', cta: 'Calculate Visa Fees', ghost: 'Track Active Case', ghostTo: '/visa-services#tracker' },
   { key: 'tours', icon: '🧳', label: 'Tours & Travels', goTo: '/tours-travels', cta: 'Explore Tour Packages', ghost: 'View All Itineraries', ghostTo: '/tours-travels#packages' },
   { key: 'attestation', icon: '📜', label: 'Attestation', goTo: '/attestation', cta: 'Calculate Stamping Quote', ghost: 'View Consular Matrix', ghostTo: '/attestation#matrix' },
-  { key: 'manpower', icon: '💼', label: 'Global Careers', goTo: '/recruitment', cta: 'Browse Verified Openings', ghost: 'View Employer Demands', ghostTo: '/recruitment#jobs' },
+  { key: 'manpower', icon: '💼', label: 'Manpower Services', goTo: '/manpower', cta: 'Browse Verified Openings', ghost: 'View Employer Demands', ghostTo: '/manpower#jobs' },
 ] as const;
 
 
@@ -292,7 +292,7 @@ function SlideCopy({ go, meta }: { go: (p: string) => void; meta: (typeof SLIDE_
       return (
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 sm:px-4 sm:py-1.5 text-[13px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-wider text-white/80 shimmer-badge mt-6 sm:mt-0">
-            Verified Overseas Careers
+            Verified Overseas Manpower
           </span>
           <h1 className="hero-headline mt-5 font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.18] tracking-tight text-white">
             Verified Global <span className="text-brand-gold">Career Openings</span>

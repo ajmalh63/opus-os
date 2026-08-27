@@ -55,7 +55,7 @@ const DIVISION_CONFIG: DivisionMeta[] = [
     icon: '💼',
     accent: 'from-amber-500/20 to-orange-600/20 text-brand-gold border-brand-gold/30',
     description: 'Controls overseas job demand board, candidate application triage, Turnstile anti-spam quotas, and career VAS orders.',
-    portalRoute: '/recruitment',
+    portalRoute: '/manpower',
   },
 ];
 

@@ -17,7 +17,7 @@ const PLANNED_PACKAGES: PackageTier[] = [
     name: 'Classic Economy Group',
     duration: '14 Days Total (Hyderabad Departure)',
     stayInfo: '7N Makkah + 7N Madinah · Quad Sharing · Indian Catering',
-    estPrice: '₹85,000',
+    estPrice: '🔒 Member Rate',
     statusBadge: 'Upcoming Planning',
   },
   {
@@ -25,7 +25,7 @@ const PLANNED_PACKAGES: PackageTier[] = [
     name: 'Executive 4-Star Package',
     duration: '14 Days Total (Direct Flights)',
     stayInfo: 'Walking distance to Haramain · Twin / Triple · Full Ziyarat',
-    estPrice: '₹1,15,000',
+    estPrice: '🔒 Member Rate',
     statusBadge: 'Inquiry Open',
   },
   {
@@ -33,7 +33,7 @@ const PLANNED_PACKAGES: PackageTier[] = [
     name: 'Custom Family VIP Package',
     duration: 'Flexible Dates & Duration',
     stayInfo: '5-Star Clock Tower Frontage · Private GMC Ground Transit',
-    estPrice: 'Custom Quote',
+    estPrice: '🔒 Member Rate',
     statusBadge: 'Bespoke Itinerary',
   }
 ];
@@ -59,7 +59,10 @@ export default function DepartureCountdown() {
               <p className="text-xs font-bold text-brand-navy truncate">{pkg.name}</p>
               <p className="text-[13px] text-brand-textLight truncate mt-0.5">{pkg.stayInfo}</p>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-sm font-semibold text-brand-gold">{pkg.estPrice}</span>
+                <a href="/login" className="text-xs font-bold text-brand-gold hover:underline flex items-center gap-1">
+                  <span>{pkg.estPrice}</span>
+                  <span className="text-[11px] text-brand-navy/60 font-semibold">(Login to View)</span>
+                </a>
                 <span className="text-xs text-brand-textLight">· {pkg.duration}</span>
               </div>
             </div>

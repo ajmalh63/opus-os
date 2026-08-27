@@ -316,7 +316,7 @@ export default function ContactPage() {
                           <option value="visa">Global Visa Services</option>
                           <option value="umrah">Tours &amp; Travels (Holidays &amp; Umrah)</option>
                           <option value="attestation">Document Attestation &amp; Apostille</option>
-                          <option value="manpower">Overseas Recruitment &amp; Careers</option>
+                          <option value="manpower">Overseas Recruitment &amp; Manpower</option>
                         </select>
                       </div>
                     </div>

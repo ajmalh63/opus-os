@@ -68,7 +68,7 @@
 | U-08 | WhatsApp Utility | `umrah_departure_reminder` | `departure in 3d` |
 | U-09 | Email | `umrahFeedback` | `return +7d` |
 
-## 5. Manpower / Overseas Careers (8)
+## 5. Manpower / Overseas Manpower (8)
 
 | # | Channel | Template ID | Trigger |
 |---|---|---|---|

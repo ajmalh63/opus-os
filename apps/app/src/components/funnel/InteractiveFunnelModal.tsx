@@ -220,7 +220,7 @@ export default function InteractiveFunnelModal({
               { id: 'visa', label: '🛂 Visas' },
               { id: 'umrah', label: '🕋 Umrah' },
               { id: 'attestation', label: '📜 Attestation' },
-              { id: 'manpower', label: '💼 Careers' },
+              { id: 'manpower', label: '💼 Manpower' },
             ].map((tab) => (
               <button
                 key={tab.id}

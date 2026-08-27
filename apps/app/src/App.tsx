@@ -30,6 +30,7 @@ import ToursTravelPage from './pages/public/ToursTravelPage';
 import UmrahTravelPage from './pages/public/UmrahTravelPage';
 import AttestationPage from './pages/public/AttestationPage';
 import RecruitmentPage from './pages/public/RecruitmentPage';
+import EmployerHirePage from './pages/public/EmployerHirePage';
 import ContactPage from './pages/public/ContactPage';
 import AboutUsPage from './pages/public/AboutUsPage';
 import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage';
@@ -85,7 +86,9 @@ export default function App() {
         <Route path="/tours-travels" component={ToursTravelPage} />
         <Route path="/umrah-travel" component={UmrahTravelPage} />
         <Route path="/attestation" component={AttestationPage} />
+        <Route path="/manpower/hire" component={EmployerHirePage} />
         <Route path="/recruitment" component={RecruitmentPage} />
+        <Route path="/manpower" component={RecruitmentPage} />
         <Route path="/contact" component={ContactPage} />
         <Route path="/about" component={AboutUsPage} />
         <Route path="/privacy" component={PrivacyPolicyPage} />

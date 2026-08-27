@@ -38,7 +38,7 @@ export default function ChecklistRelief({
         <p className="text-xs text-slate-500 mt-1">This checklist reflects only divisions you’ve opted for — no generic filler.</p>
         <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
           <p className="text-sm font-bold text-slate-700">No checklist yet</p>
-          <p className="text-xs text-slate-500 mt-1 max-w-[32ch] mx-auto">Apply to Study Abroad, Visa, Umrah, Attestation, or Careers to see your personalized, live checklist here. It updates as you upload and we verify.</p>
+          <p className="text-xs text-slate-500 mt-1 max-w-[32ch] mx-auto">Apply to Study Abroad, Visa, Umrah, Attestation, or Manpower to see your personalized, live checklist here. It updates as you upload and we verify.</p>
           <p className="text-sm text-slate-400 mt-2">Building in public — real tasks, no fake 2/5</p>
         </div>
       </div>

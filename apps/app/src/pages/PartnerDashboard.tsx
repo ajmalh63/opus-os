@@ -256,9 +256,9 @@ const DIVISIONS: DivisionConfig[] = [
   },
   {
     id: 'recruitment',
-    name: 'International Manpower & Careers',
+    name: 'International Manpower',
     badge: 'Recruitment',
-    path: '/recruitment',
+    path: '/manpower',
     tagline: 'Overseas manpower recruitment for Gulf, Europe, and Asia across verified employers.',
     avgCommission: '₹10,000 – ₹25,000 / placement',
     typicalFee: 120000,

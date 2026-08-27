@@ -252,7 +252,7 @@ Three workspaces share single D1 source, synchronized via `SyncHub Durable Objec
 * **Originals Transit Tracking**: Step-by-step custody chain, Blue Dart / DTDC courier AWB integration, and doorstep pickup scheduling.
 * **Gold Modules:** **Chain Builder AI** `GET /chain?docType=&destination=` fallback `HRD,MEA,Embassy` + **Pre-screen AI** `POST /:id/prescreen` (NNA name/date errors) + **e-APP Verifier** `POST /verify {eRegisterUrl hcch.net → verified}` → `attestationVerifications`.
 
-### 6.5 💼 Overseas Manpower & Careers Division
+### 6.5 💼 Overseas Manpower & Manpower Division
 * **Protected Job Catalog**: Proprietary Gulf & Europe vacancy boards with masked compensation details (`🔒 Login to View`) safeguarding corporate clients.
 * **Candidate Workflow**: Application → Trade Test → Medical GAMCA → Visa Stamping → Emigration Clearance → Deployment Flight.
 * **Manpower Marketplace:** `GET /api/blog/admin`? No — `GET /api/blog/posts` is blog, Manpower is `GET /api/blog`? Actually `GET /api/public/portal/manpower` + `manpowerMatch` 0-100 (`exp+skills+trade+passport`) + R2 resume vault.

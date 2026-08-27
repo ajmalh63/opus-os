@@ -77,7 +77,7 @@ const COLLAR_LABEL: Record<string, string> = { blue_collar: 'Blue Collar', white
 export default function ManpowerPortal() {
   const queryClient = useQueryClient();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [activeSubTab, setActiveSubTab] = useState<'jobs' | 'deployments' | 'community'>('jobs');
+  const [activeSubTab, setActiveSubTab] = useState<'jobs' | 'deployments' | 'community' | 'demands'>('jobs');
   const [jobTier, setJobTier] = useState<'public' | 'secret'>('public');
   const [jobCategory, setJobCategory] = useState<'blue_collar' | 'white_collar'>('blue_collar');
   const [showAddJob, setShowAddJob] = useState(false);
@@ -103,6 +103,17 @@ export default function ManpowerPortal() {
       if (!r.ok) throw new Error('Failed to fetch jobs');
       return r.json();
     }
+  });
+
+  const { data: demandsData, isLoading: demandsLoading, refetch: refetchDemands } = useQuery<{ success: boolean; demands: any[]; count: number }>({
+    queryKey: ['employerDemands'],
+    queryFn: async () => {
+      const r = await fetch('/api/employer-demands');
+      if (!r.ok) throw new Error('demands');
+      return r.json();
+    },
+    enabled: activeSubTab === 'demands',
+    refetchInterval: 15000,
   });
 
   const { data: candidatesData } = useQuery<{ candidates: Client[] }>({
@@ -353,6 +364,13 @@ export default function ManpowerPortal() {
           <span>🔒</span>
           <span>Exclusive Community</span>
         </button>
+        <button
+          onClick={() => setActiveSubTab('demands')}
+          className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'demands' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
+        >
+          <span>🏢</span>
+          <span>Employer Demands</span>
+        </button>
       </div>
 
       {activeSubTab === 'jobs' && (
@@ -396,7 +414,7 @@ export default function ManpowerPortal() {
                 </button>
               </div>
             </div>
-            <p className="text-[13px] text-brand-navy/40 italic">Secret roles are staff-visible only and never leak to the public careers page.</p>
+            <p className="text-[13px] text-brand-navy/40 italic">Secret roles are staff-visible only and never leak to the public manpower page.</p>
           </div>
 
           <div className="lg:col-span-3">
@@ -533,6 +551,54 @@ export default function ManpowerPortal() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {activeSubTab === 'demands' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display font-bold text-brand-navy">Employer Demands — Hire Talent Intake</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-brand-navy/60">{demandsData?.count ?? 0} demands</span>
+              <button onClick={() => refetchDemands()} className="text-xs font-bold text-brand-navy border border-brand-navy/10 rounded-lg px-2.5 py-1 hover:border-brand-gold">↻ Refresh</button>
+            </div>
+          </div>
+          {demandsLoading ? (
+            <div className="grid gap-3">{[1,2,3].map(i => <div key={i} className="h-24 rounded-2xl bg-brand-navy/5 animate-pulse" />)}</div>
+          ) : (demandsData?.demands?.length ?? 0) === 0 ? (
+            <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white p-10 text-center">
+              <div className="text-3xl mb-2">🏢</div>
+              <p className="font-bold text-brand-navy">No employer demands yet</p>
+              <p className="text-xs text-brand-navy/60 mt-1">Share <span className="font-mono font-bold">/manpower/hire</span> with GCC employers — submissions appear here in real time via <span className="font-mono">staff:global:manpower:employer</span>.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {demandsData!.demands.map((d: any) => (
+                <div key={d.id} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-brand-navy">{d.companyName} <span className="font-normal text-brand-navy/60">— {d.contactName}</span></div>
+                      <div className="text-xs text-brand-navy/60 mt-0.5">{d.workEmail} · {d.phone} · {d.industry} · {d.positionType} × {d.numberOfPositions}</div>
+                      <div className="text-xs text-brand-navy/50 mt-1">Urgency: <b className="text-brand-navy">{d.urgency}</b> · Engagement: {d.engagementType} · Pay: {d.payRange}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${d.status === 'new' ? 'bg-amber-500/15 text-amber-700' : d.status === 'qualified' ? 'bg-blue-500/15 text-blue-700' : d.status === 'active' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-brand-navy/10 text-brand-navy/60'}`}>{d.status}</span>
+                      <span className="text-xs text-brand-navy/40">{new Date(d.createdAt * 1000).toLocaleDateString('en-IN')}</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3 text-xs leading-relaxed text-brand-navy/70">{d.jobDescription}</div>
+                  {d.decisionMaker && <div className="mt-2 text-xs text-brand-navy/60">Decision maker: {d.decisionMaker}</div>}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {d.status === 'new' && <button onClick={async () => { await fetch(`/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'qualified' }) }); refetchDemands(); }} className="rounded-full bg-brand-navy px-4 py-2 text-xs font-bold text-white hover:bg-brand-gold hover:text-brand-navy">Mark Qualified →</button>}
+                    {d.status === 'qualified' && <button onClick={async () => { await fetch(`/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'active' }) }); refetchDemands(); }} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">Activate → Create Jobs</button>}
+                    {d.status === 'active' && <button onClick={async () => { await fetch(`/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'closed' }) }); refetchDemands(); }} className="rounded-full bg-white border border-brand-navy/15 px-4 py-2 text-xs font-bold text-brand-navy hover:border-brand-gold">Mark Closed</button>}
+                    <a href={`https://wa.me/${d.phone.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">WhatsApp →</a>
+                    <a href={`mailto:${d.workEmail}`} className="rounded-full border border-brand-navy/10 px-4 py-2 text-xs font-bold text-brand-navy/70 hover:text-brand-navy">Email →</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

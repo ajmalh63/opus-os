@@ -86,7 +86,7 @@ export default function ClientWorkspaceControlsTab() {
     onError: (e: any) => showToast('✕ ' + e.message),
   });
 
-  // Global Careers — job postings control (every field superadmin can edit)
+  // Manpower Services — job postings control (every field superadmin can edit)
   const { data: jobsData } = useQuery<{ jobs: any[]; success: boolean }>({
     queryKey: ['adminManpowerJobs'],
     queryFn: async () => { const r = await fetch('/api/manpower/jobs'); if (!r.ok) throw new Error('jobs'); return r.json(); },
@@ -134,7 +134,7 @@ export default function ClientWorkspaceControlsTab() {
         </div>
         <div className="flex gap-1.5 bg-brand-navy/[0.05] p-1 rounded-xl">
           {([
-            { k: 'manpower', l: '🌍 Global Careers', d: 'Marketplace + Match + Resume' },
+            { k: 'manpower', l: '🌍 Manpower Services', d: 'Marketplace + Match + Resume' },
             { k: 'studyAbroad', l: '🎓 Study Abroad', d: 'Wizard + Shortlist + Offers' },
             { k: 'visa', l: '🛂 Visa', d: 'Checklists + Slots' },
             { k: 'umrah', l: '🕋 Umrah', d: 'Packages + Manifest' },
@@ -152,18 +152,18 @@ export default function ClientWorkspaceControlsTab() {
         <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-12 text-center text-xs text-brand-navy/40">Select a client above to load their full workspace mirror — every control becomes editable. Mirrors the live ClientPortal at <code>/portal?token={"{clientId}"}</code>.</div>
       ) : (
         <>
-          {/* ——— GLOBAL CAREERS — every client control mirrored ——— */}
+          {/* ——— MANPOWER SERVICES — every client control mirrored ——— */}
           {division === 'manpower' && (
             <div className="space-y-6">
               <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display font-black text-brand-navy text-sm">🌍 Global Careers — Profile Wizard (every field)</h3>
+                  <h3 className="font-display font-black text-brand-navy text-sm">🌍 Manpower Services — Profile Wizard (every field)</h3>
                   <span className="text-[13px] px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold">Client Token: {selectedClientId}</span>
                 </div>
                 <p className="text-sm text-brand-navy/50">All 28 fields the client fills — you can edit, overwrite, or fill on behalf. Same 6-step wizard, same validation, same 60% gate that unlocks real Match%.</p>
                 <ManpowerProfileWizard
                   initial={manpowerProfile}
-                  title={`Edit ${selectedClient?.name || 'Candidate'} — Global Careers Profile`}
+                  title={`Edit ${selectedClient?.name || 'Candidate'} — Manpower Services Profile`}
                   onSave={p => {
                     const next = { ...intake, manpowerProfile: p };
                     saveClientMutation.mutate(next);

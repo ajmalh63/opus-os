@@ -931,7 +931,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
           <h3 className="font-display font-bold text-brand-navy text-lg">Umrah — Tailored Departures</h3>
-          <p className="text-sm text-slate-600 mt-1 max-w-[48ch] mx-auto">This division is not live yet. Calendar dates and packages will appear here when Umrah goes live. Meanwhile, explore Study Abroad, Visa, and Global Careers.</p>
+          <p className="text-sm text-slate-600 mt-1 max-w-[48ch] mx-auto">This division is not live yet. Calendar dates and packages will appear here when Umrah goes live. Meanwhile, explore Study Abroad, Visa, and Manpower Services.</p>
           <p className="text-xs text-slate-400 mt-2">Admin can enable it via <code className="bg-slate-100 px-1.5 py-0.5 rounded">/admin → Divisions</code> when ready.</p>
         </div>
       )}

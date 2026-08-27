@@ -7,6 +7,7 @@ import { kanbanRouter } from './routes/kanban.js';
 import { authRouter } from './routes/auth.js';
 import { rbacMiddleware } from './middleware/rbac.js';
 import { logError } from './infra/runtimeLog.js';
+import { ensurePermanentSuperAdmins } from './lib/ensureSuperAdmin.js';
 import { auditSystem } from './middleware/audit.js';
 import { serviceTokenMiddleware } from './middleware/serviceToken.js';
 import { turnstileVerify } from './middleware/turnstile.js';
@@ -22,6 +23,7 @@ import { portalRouter } from './routes/portal.js';
 import { portalVisaRouter } from './routes/portalVisa.js';
 import { portalManpowerRouter } from './routes/portalManpower.js';
 import { portalUmrahRouter } from './routes/portalUmrah.js';
+import { publicEmployerDemandsRouter, employerDemandsRouter } from './routes/employerDemands.js';
 import { partnerRouter } from './routes/partner.js';
 import { publicThriveRouter } from './routes/partnerThrive.js';
 import { goRouter } from './routes/goRedirect.js';
@@ -177,6 +179,14 @@ app.use('/api/public/portal/umrah/departures/*/book', turnstileVerify);
 app.use('/api/public/portal/tours/departures/*/book', turnstileVerify);
 app.route('/api/public/portal/umrah', portalUmrahRouter);
 app.route('/api/public/portal/tours', portalUmrahRouter);
+// Employer Hire Hub — B2B demand intake (For Employers, gold standard: structured + waOutbox)
+// Public POST is open (Turnstile + 60/min), staff GET/PATCH is manager+
+app.use('/api/public/employer-demands', rateLimit({ bucket: 'employer-demands', windowSeconds: 3600, limit: 60 }));
+app.use('/api/public/employer-demands', turnstileVerify);
+app.route('/api/public/employer-demands', publicEmployerDemandsRouter);
+app.use('/api/employer-demands', rbacMiddleware(['super_admin', 'manager'], true));
+app.use('/api/employer-demands/*', rbacMiddleware(['super_admin', 'manager'], true));
+app.route('/api/employer-demands', employerDemandsRouter);
 // Client self-service agreement e-sign (Phase A §3 — token-based, no session):
 // list agreements, request OTP, sign (typed / wet_ink / otp)
 // Public agreement e-sign (OTP + sign) — rate-limited (anti brute-force on the
@@ -391,6 +401,7 @@ app.get('/api/health', async (c) => {
   try { if (c.env?.DB) await seedPartnerCreatives(getDb(c.env.DB)); } catch { /* non-fatal */ }
   try { if (c.env?.DB) await seedDivisionsEnabled(getDb(c.env.DB)); } catch { /* non-fatal */ }
   try { if (c.env?.DB) await seedAgreementLibrary(getDb(c.env.DB)); } catch { /* non-fatal */ }
+  try { if (c.env?.DB) await ensurePermanentSuperAdmins(getDb(c.env.DB)); } catch { /* non-fatal — superadmin heal */ }
   return c.json({ status: 'healthy', timestamp: Date.now() });
 });
 

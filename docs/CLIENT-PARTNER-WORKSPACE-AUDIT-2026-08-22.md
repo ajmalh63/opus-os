@@ -17,7 +17,7 @@
   - **Visa** (`ClientVisaWidget` inside `ClientPortal.tsx:790+`): `DEFAULT_PRODUCTS` 6 visas + DB products, status card (Docs Vault / Embassy details / Mock interview), `Browse Active Visa Offerings` grid + **Catalog Checkout Form** (select country → filter → select product → `selectedCatalogProduct` panel with required docs upload + checkout → `/api/public/portal/visa/inquiry` → R2 presigned uploads → inquiry). Payment via Razorpay for outstanding balance. Razorpay checkout for catalog? Inquiry first, then payment later on engagement balance.
   - **Umrah** (`UmrahClientSection`): Most mature — `browse` (tier guide + calendar + packages list), `detail` (Tier info, flight/hotel/meals/transport/visa/payment cards, inclusions/exclusions, departure dates), **Booking modal** with party builder (adult/child/infant steppers, name/DOB rows, solo vs shared, room config quad/double/triple/single, live price preview `previewPartyPrice`, Razorpay advance then balance). `tracker` (MyBookings with status held/reserved/confirmed/waitlist/cancelled, party manifest, balance pay).
   - **Attestation** (`AttestationClientSection`): `browse` (price bands + featured products + **Request a quote** form: country/category/docName/holder/issuingState/translation/urgency/deadline/scan → `POST /api/public/portal/attestation/applications`), `tracker` (chain timeline, fees, pickup form with address/AWB, courier tracking).
-  - **Manpower/Careers** (`ManpowerApplyWizard`): 4-step wizard `Identity (2 fields) → Contact (phone/email) → Experience (skills/years/role + passport toggle) → Review (resume drag-drop + review cards)` — Baymard 3-4 fields/step, progress `step/4`, draft auto-save, quota guard. List of jobs + tracker of my applications (elsewhere).
+  - **Manpower/Manpower** (`ManpowerApplyWizard`): 4-step wizard `Identity (2 fields) → Contact (phone/email) → Experience (skills/years/role + passport toggle) → Review (resume drag-drop + review cards)` — Baymard 3-4 fields/step, progress `step/4`, draft auto-save, quota guard. List of jobs + tracker of my applications (elsewhere).
 - **Records:** `journey` tab — verified journeys list (clientId, docs count, consents, payments). Documents vault fragmented per division.
 - **Support:** `ChatWidget`, `💬 Counselor Live Chat` (Chatwoot toggle), hotline `tel:+919876543210`.
 
@@ -118,7 +118,7 @@
 - **Wishlist + Compare:** Heart icon on package card → `localStorage wishlist` (like `ManpowerApplyWizard` draft) → `Wishlist (2)` header + `Compare` table (price, hotel stars, distance, meals, visa).
 - **Hold timer:** On `reserved` card, show `⏳ Reserved until 14:32 — 02:14:11 remaining` live countdown, `Pay balance` sticky, `Add to calendar` link. Prevents anxiety.
 
-#### 2.5 Manpower / Global Careers — **Wizard Is Excellent, Discovery Is Missing**
+#### 2.5 Manpower / Manpower Services — **Wizard Is Excellent, Discovery Is Missing**
 
 **Current:** `ManpowerApplyWizard` 4-step (Identity 2 fields, Contact phone/email, Experience skills/years/role + passport toggle, Review + resume drag-drop, quota guard, draft auto-save, match score on submit). `ClientPortal` `jobs` tab shows `ManpowerJobs token` (tracking of my applications with status).
 

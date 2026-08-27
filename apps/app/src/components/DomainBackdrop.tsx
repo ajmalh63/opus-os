@@ -1,4 +1,4 @@
-export type DomainTheme = 'global' | 'study' | 'visa' | 'umrah' | 'attestation' | 'careers';
+export type DomainTheme = 'global' | 'study' | 'visa' | 'umrah' | 'attestation' | 'careers' | 'manpower';
 
 export default function DomainBackdrop({
   theme = 'global',
@@ -61,7 +61,7 @@ export default function DomainBackdrop({
         </svg>
       )}
 
-      {theme === 'careers' && (
+      {theme === 'careers' || theme === 'manpower' && (
         <svg className="absolute -right-16 top-1/3 h-[36rem] w-[36rem] opacity-[0.05] text-brand-gold" viewBox="0 0 500 500" fill="none" stroke="currentColor">
           <line x1="50" y1="100" x2="450" y2="100" strokeWidth="1" strokeDasharray="8 8" />
           <line x1="50" y1="200" x2="450" y2="200" strokeWidth="1" />

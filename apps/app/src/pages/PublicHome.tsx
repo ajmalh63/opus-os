@@ -79,10 +79,10 @@ const SERVICES = [
   },
   { 
     id: 'recruitment', 
-    title: 'Overseas Careers & Manpower', 
+    title: 'Overseas Manpower & Manpower', 
     telemetry: '● Verified Gulf & Europe Demands',
     desc: 'Employer-verified openings with structured triage, medical and visa milestone tracking.', 
-    path: '/recruitment' 
+    path: '/manpower' 
   },
 ];
 
@@ -172,8 +172,8 @@ export default function PublicHome() {
   return (
     <div className="min-h-screen bg-[#fcfbf9] font-sans text-brand-navy selection:bg-brand-gold selection:text-brand-navy">
       <SEOHead
-        title="Opus Overseas | Global Study Abroad, Visas, Attestation & Tours & Travels"
-        description="Opus Overseas is a premier global consultancy for university admissions in UK, USA, Germany, Canada, worldwide visa processing, MEA apostille attestation, world tour packages & Gulf careers."
+        title="Opus Overseas | Study Abroad, Overseas Jobs & Travel"
+        description="Opus Overseas is a premier global consultancy for university admissions in UK, USA, Germany, Canada, worldwide visa processing, MEA apostille attestation, world tour packages & Gulf manpower."
         canonicalPath="/"
         schemas={[
           BASE_ORGANIZATION_SCHEMA,

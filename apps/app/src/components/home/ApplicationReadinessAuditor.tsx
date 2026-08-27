@@ -164,7 +164,7 @@ export default function ApplicationReadinessAuditor() {
             { key: 'visa', label: '🛂 Visa Filing' },
             { key: 'umrah', label: '🕌 Umrah & Travel' },
             { key: 'attestation', label: '📜 Attestation' },
-            { key: 'recruitment', label: '💼 Overseas Careers' },
+            { key: 'recruitment', label: '💼 Overseas Manpower' },
           ].map(tab => (
             <button
               key={tab.key}

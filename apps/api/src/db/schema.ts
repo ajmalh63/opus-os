@@ -1406,7 +1406,34 @@ export const manpowerDeployments = sqliteTable('manpower_deployments', {
 });
 
 // ==========================================
-// 61. VISA PRODUCTS INVENTORY
+// 61. EMPLOYER DEMANDS — B2B Hire Talent Intake (For Employers Hub)
+// ==========================================
+export const employerDemands = sqliteTable('employer_demands', {
+  id: text('id').primaryKey(),
+  companyName: text('company_name').notNull(),
+  contactName: text('contact_name').notNull(),
+  workEmail: text('work_email').notNull(),
+  phone: text('phone').notNull(),
+  industry: text('industry').notNull(),
+  positionType: text('position_type').notNull(),
+  numberOfPositions: integer('number_of_positions').notNull(),
+  urgency: text('urgency', { enum: ['immediate', 'soon', 'moderate', 'planning'] }).notNull(),
+  engagementType: text('engagement_type', { enum: ['direct_hire', 'contract', 'temp_to_hire', 'contract_to_hire', 'open'] }).notNull(),
+  payRange: text('pay_range').notNull(),
+  jobDescription: text('job_description').notNull(),
+  jdFileKey: text('jd_file_key'),
+  decisionMaker: text('decision_maker'),
+  status: text('status', { enum: ['new', 'qualified', 'active', 'closed', 'rejected'] }).notNull().default('new'),
+  source: text('source').notNull().default('website-hire'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => [
+  index('employer_demands_status_idx').on(t.status),
+  index('employer_demands_industry_idx').on(t.industry),
+]);
+
+// ==========================================
+// 62. VISA PRODUCTS INVENTORY
 // ==========================================
 export const visaProducts = sqliteTable('visa_products', {
   id: text('id').primaryKey(),

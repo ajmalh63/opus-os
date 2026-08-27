@@ -49,58 +49,87 @@ interface Job {
   perks?: string[];
 }
 
-const SECTORS = ['All Sectors', 'Healthcare', 'Engineering & Construction', 'Oil & Gas / Energy', 'Manufacturing & Tech', 'Hospitality'];
+const SECTORS = ['All Sectors', 'IT & Software', 'Healthcare', 'Engineering & Construction', 'Oil & Gas / Energy', 'Manufacturing & Tech', 'Finance & Business', 'Hospitality & Aviation'];
 
+// White-collar majority first paint (gold standard: 60% white / 40% blue, online/LI sourced, brand-driven)
+// 6 white (IT x2, Finance, Healthcare, Engineering) + 2 skilled-trade — IT & Finance grads self-select in <3s
 const FALLBACK_JOBS: Job[] = [
   {
     id: 'j1',
-    title: 'Senior Structural & Site Engineer',
+    title: 'Full Stack Developer (React / Node.js)',
     country: 'United Arab Emirates',
-    sector: 'Engineering & Construction',
+    sector: 'IT & Software',
     salaryText: 'Available in Candidate Desk',
-    requirements: 'B.Tech / BE Civil with 5+ years high-rise or bridge experience',
-    perks: ['Free Family Accommodation', 'Annual Return Tickets', 'Private Health Insurance'],
+    requirements: 'B.Tech/BCA + 3+ years React, Node.js, REST APIs, Git — product teams',
+    perks: ['Family Visa + Insurance', 'Remote Flexibility (Hybrid)', 'Career Growth + Certifications'],
   },
   {
     id: 'j2',
+    title: 'Cloud DevOps Engineer (AWS)',
+    country: 'Germany (EU FastTrack)',
+    sector: 'IT & Software',
+    salaryText: 'Available in Candidate Desk',
+    requirements: 'B.Tech + AWS Certified + Docker/K8s, CI/CD — 3+ years infra',
+    perks: ['Direct EU Blue Card', 'Social Security & Pension', 'Permanent Residency Path'],
+  },
+  {
+    id: 'j3',
     title: 'Registered ICU / OT Staff Nurse',
     country: 'Kingdom of Saudi Arabia',
     sector: 'Healthcare',
     salaryText: 'Available in Candidate Desk',
-    requirements: 'B.Sc Nursing + 2 years clinical exp + Prometric / M规范 pass',
-    perks: ['Free Furnished Housing', '45 Days Annual Paid Leave', 'Overtime Allowance'],
+    requirements: 'B.Sc Nursing + 2 years clinical + Prometric / MOH pass',
+    perks: ['Free Furnished Housing', '45 Days Paid Leave', 'Overtime + Licensing Support'],
   },
   {
-    id: 'j3',
+    id: 'j4',
+    title: 'Senior Structural & Site Engineer',
+    country: 'United Arab Emirates',
+    sector: 'Engineering & Construction',
+    salaryText: 'Available in Candidate Desk',
+    requirements: 'B.Tech/BE Civil + 5+ years high-rise/bridge, AutoCAD/STAAD',
+    perks: ['Free Family Accommodation', 'Annual Return Tickets', 'Private Health Insurance'],
+  },
+  {
+    id: 'j5',
+    title: 'Finance & Accounts Manager (CA)',
+    country: 'Qatar',
+    sector: 'Finance & Business',
+    salaryText: 'Available in Candidate Desk',
+    requirements: 'CA / MBA Finance + 4+ years GCC VAT, Tally/SAP, audit',
+    perks: ['Family Status + School Allowance', 'Performance Bonus', 'End of Service Gratuity'],
+  },
+  {
+    id: 'j6',
+    title: 'Data Analyst — Power BI / SQL',
+    country: 'Kingdom of Saudi Arabia',
+    sector: 'Finance & Business',
+    salaryText: 'Available in Candidate Desk',
+    requirements: 'B.Com/BBA + SQL, Power BI, Excel — 2+ years reporting',
+    perks: ['Hybrid Work', 'Health Insurance (Family)', 'Professional Development Budget'],
+  },
+  {
+    id: 'j7',
     title: 'HVAC Plant Maintenance Supervisor',
     country: 'Qatar',
     sector: 'Oil & Gas / Energy',
     salaryText: 'Available in Candidate Desk',
-    requirements: 'Diploma / Degree in Mechanical with chilled water plant exp',
-    perks: ['Company Transport', 'Food Allowance', 'End of Service Gratuity'],
+    requirements: 'Diploma/Degree Mechanical + chilled water plant exp',
+    perks: ['Company Transport', 'Food Allowance', 'Overtime + Annual Bonus'],
   },
   {
-    id: 'j4',
+    id: 'j8',
     title: 'CNC Precision Machine Programmer',
     country: 'Germany (EU FastTrack)',
     sector: 'Manufacturing & Tech',
     salaryText: 'Available in Candidate Desk',
-    requirements: 'ITI / Diploma Machinist with Fanuc/Siemens G-code mastery',
+    requirements: 'ITI/Diploma Machinist — Fanuc/Siemens G-code mastery',
     perks: ['Direct EU Work Permit', 'Social Security & Pension', 'Permanent Residency Path'],
-  },
-  {
-    id: 'j5',
-    title: 'Executive Sous Chef & Head Baker',
-    country: 'Kuwait',
-    sector: 'Hospitality',
-    salaryText: 'Available in Candidate Desk',
-    requirements: 'Diploma in Culinary Arts with 4+ years 5-star hotel kitchen exp',
-    perks: ['Free Duty Meals & Stay', 'Yearly Bonus', 'Visa Sponsorship'],
   },
 ];
 
 export default function RecruitmentPage() {
-  useVisibilityTracking('/recruitment');
+  useVisibilityTracking('/manpower');
   const [, setLocation] = useLocation();
 
   // Search & Filter State
@@ -218,7 +247,7 @@ export default function RecruitmentPage() {
           email: candidateEmail,
           highestQualification: qualification === 'bachelor' ? 'undergrad' : 'postgrad',
           division: 'manpower',
-          leadSource: 'website-careers',
+          leadSource: 'website-manpower',
           dynamicContext: {
             appliedJobTitle: selectedJob?.title || 'General Manpower Intake',
             appliedJobCountry: selectedJob?.country || 'Any Destination',
@@ -247,20 +276,20 @@ export default function RecruitmentPage() {
   return (
     <div className="min-h-screen bg-brand-cream font-sans text-brand-navy selection:bg-brand-gold selection:text-brand-navy">
       <SEOHead
-        title="Overseas Careers & Gulf Manpower Recruitment | Opus Overseas"
+        title="Overseas Manpower & Recruitment | Opus Overseas"
         description="Licensed international recruitment agency for verified jobs in UAE, Saudi Arabia, Qatar, Kuwait & Germany across healthcare, engineering, construction & tech."
-        canonicalPath="/recruitment"
+        canonicalPath="/manpower"
         schemas={[
           BASE_ORGANIZATION_SCHEMA,
           getServiceSchema({
             name: 'International Manpower Recruitment & Overseas Career Placements',
             description: 'Ethical, zero-advance fee international manpower sourcing, candidate trade testing, employer interviews, and employment visa deployments.',
             serviceType: 'International Employment Agency',
-            path: '/recruitment',
+            path: '/manpower',
           }),
           getBreadcrumbSchema([
             { name: 'Home', path: '/' },
-            { name: 'Careers & Recruitment', path: '/recruitment' },
+            { name: 'Manpower & Recruitment', path: '/manpower' },
           ]),
           getFAQSchema(RECRUITMENT_FAQS),
         ]}
@@ -272,7 +301,7 @@ export default function RecruitmentPage() {
 
       {/* HERO SECTION — Global Ambition & Career Acceleration */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#061e38] via-[#0d2644] to-[#0a2d50] pb-24 pt-36 sm:pt-40 text-white border-b border-brand-gold/20">
-        <DomainBackdrop theme="careers" />
+        <DomainBackdrop theme="manpower" />
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           <div className="hero-orb -right-20 -top-20 h-96 w-96 rounded-full bg-rose-500/20 blur-3xl" />
           <div className="hero-orb -left-20 bottom-0 h-96 w-96 rounded-full bg-brand-gold/20 blur-3xl" />
@@ -312,13 +341,18 @@ export default function RecruitmentPage() {
                   Submit CV for Matching
                 </a>
               </div>
+              <div className="mt-4">
+                <a href="/manpower/hire" className="inline-flex items-center gap-1.5 text-xs font-bold text-white/70 hover:text-brand-gold transition-colors">
+                  For Employers — Hire Verified Talent in 21 Days <span>→</span>
+                </a>
+              </div>
             </div>
 
             <div className="lg:col-span-5 relative">
               <div className="relative rounded-3xl overflow-hidden border border-white/20 shadow-2xl group">
                 <img
                   src="/img/hero-recruitment.jpg"
-                  alt="Global Professional Careers and Engineering"
+                  alt="Global Professional Manpower and Engineering"
                   className="w-full h-80 sm:h-96 object-cover transform transition-transform duration-700 group-hover:scale-105"
                   onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
                 />
@@ -432,6 +466,16 @@ export default function RecruitmentPage() {
           </div>
         </div>
       </section>
+
+      {/* Audience Fork — sticky, gold-standard dual path */}
+      <div className="sticky top-16 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 py-3 bg-brand-cream/80 backdrop-blur-md border-y border-brand-navy/5">
+        <div className="mx-auto max-w-7xl flex items-center justify-center">
+          <div className="inline-flex p-1 rounded-full bg-brand-navy/[0.06] border border-brand-navy/10">
+            <a href="#job-board" className="px-5 py-2 rounded-full bg-brand-navy text-white text-xs font-bold shadow-sm">For Candidates — Find Jobs</a>
+            <a href="/manpower/hire" className="px-5 py-2 rounded-full text-brand-navy/70 hover:text-brand-navy text-xs font-bold transition-colors">For Employers — Hire Talent →</a>
+          </div>
+        </div>
+      </div>
 
       {/* LIVE GLOBAL JOB BOARD (Connected to /api/public/jobs) */}
       <section id="job-board" className="mx-auto max-w-7xl px-5 sm:px-6 py-20 sm:py-24">
@@ -681,8 +725,8 @@ export default function RecruitmentPage() {
 
       {/* GEO & AEO KNOWLEDGE HUB + FAQS */}
       <GeoFaqSection
-        badge="Careers & Global Workforce Intelligence"
-        title="Overseas Careers Frequently Asked Questions"
+        badge="Manpower & Global Workforce Solutions"
+        title="Overseas Manpower Frequently Asked Questions"
         subtitle="Transparent answers regarding Gulf job openings, European skilled migration, zero-advance fee guarantees, and visa deployments."
         summaryTitle="International Manpower Recruitment at Opus Overseas"
         summaryText="Opus Overseas connects Indian professionals with licensed overseas employers in Saudi Arabia, UAE, Qatar, Kuwait, and Germany across healthcare, engineering, construction, and technical trades with 100% compliant employer-paid visas and zero upfront candidate fees."

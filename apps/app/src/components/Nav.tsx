@@ -8,7 +8,7 @@ const LINKS = [
   { label: 'Visa', path: '/visa-services' },
   { label: 'Tours & Travels', path: '/tours-travels' },
   { label: 'Attestation', path: '/attestation' },
-  { label: 'Careers', path: '/recruitment' },
+  { label: 'Manpower', path: '/manpower' },
   { label: 'Contact', path: '/contact' },
 ];
 

@@ -186,7 +186,7 @@ const OPERATIONAL_MAUTIC_FALLBACK: Record<string, any> = {
         id: 5,
         name: '💼 Overseas Jobs — European Work Visa & Trade Accreditation',
         subject: 'European Work Permits: In-Demand Tech & Skilled Trades for 2026',
-        fromName: 'Opus Global Careers',
+        fromName: 'Opus Manpower Services',
         isPublished: true,
         customHtml: `<!DOCTYPE html><html><body style="font-family:sans-serif;color:#0a2d50;padding:24px;background:#FAF8F4;"><div style="max-width:600px;margin:auto;background:#fff;padding:32px;border-radius:16px;border:1px solid #e2e8f0;"><h1 style="color:#0a2d50;font-size:22px;margin-bottom:8px;">Verified European Job Placements 💼</h1><p style="color:#4a5568;font-size:14px;line-height:1.6;">Direct employer sponsorships across Poland, Germany, UAE, and Saudi Arabia with full visa documentation support.</p><a href="https://opusoverseas.com/jobs" style="display:inline-block;background:#d7a019;color:#0a2d50;padding:12px 24px;border-radius:8px;font-weight:bold;text-decoration:none;font-size:13px;">Explore Open Positions ➔</a></div></body></html>`,
       },

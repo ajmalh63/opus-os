@@ -104,7 +104,7 @@ export default function RealCaseVault() {
             { key: 'visa', label: 'Visa Stamping' },
             { key: 'umrah', label: 'Umrah Travel' },
             { key: 'attestation', label: 'Attestation' },
-            { key: 'recruitment', label: 'Careers' },
+            { key: 'recruitment', label: 'Manpower' },
           ].map(tab => (
             <button
               key={tab.key}

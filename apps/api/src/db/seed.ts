@@ -135,7 +135,7 @@ export async function seedDatabaseRest(db: DbClient): Promise<void> {
     }
   }
 
-  // 63. Job postings (Manpower board: public/secret + collar + careers ticker).
+  // 63. Job postings (Manpower board: public/secret + collar + manpower ticker).
   // Segmented so the OS board can show secret roles while the public page only
   // ever sees tier='public' rows (public.ts filters by tier).
   const jobRows = await db.select().from(jobPostings).all();

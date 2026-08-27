@@ -26,7 +26,7 @@ export default function Footer() {
               <Logo variant="footer" className="h-14 sm:h-16 w-auto" />
             </div>
             <p className="max-w-sm text-xs sm:text-sm leading-relaxed text-white/65">
-              Your trusted gateway to the world — empowering global education, express visas, curated world tours &amp; Umrah pilgrimages, government attestation, and international careers.
+              Your trusted gateway to the world — empowering global education, express visas, curated world tours &amp; Umrah pilgrimages, government attestation, and overseas manpower services.
             </p>
             <div className="pt-2 flex items-center gap-3">
               <button
@@ -48,7 +48,7 @@ export default function Footer() {
                 ['Global Visa Services', '/visa-services'],
                 ['Tours & Travels', '/tours-travels'],
                 ['Document Attestation', '/attestation'],
-                ['Overseas Careers', '/recruitment'],
+                ['Manpower Services', '/manpower'],
               ].map(([label, path]) => (
                 <li key={path}>
                   <button onClick={() => setLocation(path)} className="cursor-pointer transition-colors hover:text-brand-gold text-left">

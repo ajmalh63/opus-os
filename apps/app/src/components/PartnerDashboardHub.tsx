@@ -343,7 +343,7 @@ export default function PartnerDashboardHub({
                 <option value="visa_services">🛂 Visa Processing</option>
                 <option value="umrah_pilgrimage">🕋 Umrah Pilgrimage</option>
                 <option value="attestation">📑 Document Attestation</option>
-                <option value="global_jobs">💼 Overseas Jobs & Careers</option>
+                <option value="global_jobs">💼 Overseas Jobs & Manpower</option>
               </select>
             </div>
 

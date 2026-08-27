@@ -741,7 +741,7 @@ export default function ClientDashboardHub({
             </div>
           </button>
 
-          {/* Division 5: Global Careers */}
+          {/* Division 5: Manpower Services */}
           <button
             onClick={() => onNavigateTab('jobs')}
             type="button"

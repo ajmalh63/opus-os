@@ -168,7 +168,7 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
         <div className="space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2.5">
-              <h3 className="font-display font-bold text-brand-navy text-base sm:text-lg">🌍 Global Careers</h3>
+              <h3 className="font-display font-bold text-brand-navy text-base sm:text-lg">🌍 Manpower Services</h3>
               <span className="text-xs px-2.5 py-1 rounded-full bg-brand-navy/[0.06] text-brand-navy/70 font-semibold">Profile → Jobs → Applications</span>
             </div>
             <div className="flex gap-1.5 bg-brand-navy/[0.05] p-1.5 rounded-xl text-xs sm:text-sm font-bold text-brand-navy/70">
