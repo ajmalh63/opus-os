@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface Client {
   id: string;
@@ -60,7 +61,7 @@ export default function ClientsList() {
   const { data: clientsData, isLoading } = useQuery<{ clients: Client[] }>({
     queryKey: ['clientsList'],
     queryFn: async () => {
-      const r = await fetch('/api/clients');
+      const r = await fetch(`${API}/api/clients`);
       if (!r.ok) throw new Error('Failed to fetch clients');
       return r.json();
     }
@@ -75,7 +76,7 @@ export default function ClientsList() {
       primaryDivision: string;
       highestQualification: string;
     }) => {
-      const r = await fetch('/api/clients', {
+      const r = await fetch(`${API}/api/clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -111,7 +112,7 @@ export default function ClientsList() {
       phone: string;
       highestQualification: string;
     }) => {
-      const r = await fetch(`/api/clients/${payload.id}`, {
+      const r = await fetch(`${API}/api/clients/${payload.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -140,7 +141,7 @@ export default function ClientsList() {
 
   const toggleBlockMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'active' | 'blocked' }) => {
-      const r = await fetch(`/api/clients/${id}/status`, {
+      const r = await fetch(`${API}/api/clients/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -156,7 +157,7 @@ export default function ClientsList() {
 
   const anonymizeClientMutation = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/compliance/clients/${id}/anonymize`, {
+      const r = await fetch(`${API}/api/compliance/clients/${id}/anonymize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

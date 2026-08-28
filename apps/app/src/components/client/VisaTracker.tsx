@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export function VisaTracker({ bookingId, token }: { bookingId: string, token: string }) {
   const { data, isLoading } = useQuery<any>({
     queryKey: ['visaTracker', bookingId],
     queryFn: async () => {
-      const r = await fetch(`/api/visa/tracker/${bookingId}`, { headers: token ? { 'X-Portal-Token': token } : {} });
+      const r = await fetch(`${API}/api/visa/tracker/${bookingId}`, { headers: token ? { 'X-Portal-Token': token } : {} });
       if (!r.ok) return null;
       return r.json();
     },

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import TurnstileWidget from './TurnstileWidget';
 import { getBookingUrlForDivision } from '../config/booking';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 /**
  * BookingModal — Turnstile-Gated 1-on-1 Consultation Booking Funnel.
@@ -182,7 +183,7 @@ export default function BookingModal({
 
     try {
       // 1. Capture and record verified lead into Opus OS CRM
-      await fetch('/api/public/leads', {
+      await fetch(`${API}/api/public/leads`, {
         credentials: 'include',
         method: 'POST',
         headers: {

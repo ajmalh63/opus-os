@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface ModelInfo {
   id: string;
@@ -52,7 +53,7 @@ export default function AiGovernanceTab() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-ai-config'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/ai/config', { credentials: 'include' });
+      const res = await fetch(`${API}/api/admin/ai/config`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to load AI config');
       return res.json() as Promise<{
         success: boolean;
@@ -76,7 +77,7 @@ export default function AiGovernanceTab() {
 
   const saveMutation = useMutation({
     mutationFn: async (updatedSettings: AiSettings) => {
-      const res = await fetch('/api/admin/ai/config', { credentials: 'include', method: 'PUT',
+      const res = await fetch(`${API}/api/admin/ai/config`, { credentials: 'include', method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedSettings),
       });
@@ -93,7 +94,7 @@ export default function AiGovernanceTab() {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch('/api/admin/ai/test', { credentials: 'include', method: 'POST',
+      const res = await fetch(`${API}/api/admin/ai/test`, { credentials: 'include', method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: testModel, prompt: testPrompt }),
       });
@@ -121,7 +122,7 @@ export default function AiGovernanceTab() {
     }
 
     try {
-      const res = await fetch('/api/admin/ai/batch-test', { credentials: 'include', method: 'POST',
+      const res = await fetch(`${API}/api/admin/ai/batch-test`, { credentials: 'include', method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: batchModel, prompts }),
       });

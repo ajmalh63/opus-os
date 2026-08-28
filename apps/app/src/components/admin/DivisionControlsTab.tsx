@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface DivisionMeta {
   key: string;
@@ -76,7 +77,7 @@ export default function DivisionControlsTab() {
   }>({
     queryKey: ['adminDivisions'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/divisions');
+      const res = await fetch(`${API}/api/admin/divisions`);
       if (!res.ok) throw new Error(await res.text() || 'Failed to fetch division states');
       return res.json();
     },
@@ -85,7 +86,7 @@ export default function DivisionControlsTab() {
   // 2. Mutation to toggle division state
   const toggleMutation = useMutation({
     mutationFn: async ({ key, nextState }: { key: string; nextState: boolean }) => {
-      const res = await fetch('/api/admin/divisions', {
+      const res = await fetch(`${API}/api/admin/divisions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: { [key]: nextState } }),

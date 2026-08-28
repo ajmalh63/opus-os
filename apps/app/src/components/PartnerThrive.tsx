@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { track, EVENTS } from '../lib/umami';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Zoho Thrive-style partner workspace surfaces:
 //  - VIP tier card + points progress to next tier
@@ -35,13 +36,13 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
 
   const { data: catalog } = useQuery<{ items: CatalogItem[] }>({
     queryKey: ['partnerCatalog'],
-    queryFn: async () => { const r = await fetch('/api/public/catalog', { credentials: 'include' }); if (!r.ok) throw new Error('catalog'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/public/catalog`, { credentials: 'include' }); if (!r.ok) throw new Error('catalog'); return r.json(); },
   });
 
   // Visa inventory is a separate products table (phase-1 partner surfacing)
   const { data: visaProducts } = useQuery<{ products: VisaProductRow[] }>({
     queryKey: ['partnerVisaProducts'],
-    queryFn: async () => { const r = await fetch('/api/visa/products'); if (!r.ok) throw new Error('visa products'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/visa/products`); if (!r.ok) throw new Error('visa products'); return r.json(); },
     enabled: activeType === 'visa',
     staleTime: 60_000,
   });
@@ -58,22 +59,22 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
 
   const { data: thrive } = useQuery<ThriveSummary>({
     queryKey: ['partnerThrive', partnerId],
-    queryFn: async () => { const r = await fetch(`/api/public/partners/${partnerId}/thrive`, { headers: AUTH }); if (!r.ok) throw new Error('thrive'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/public/partners/${partnerId}/thrive`, { headers: AUTH }); if (!r.ok) throw new Error('thrive'); return r.json(); },
   });
 
   const { data: links } = useQuery<{ links: PartnerLink[] }>({
     queryKey: ['partnerLinks', partnerId],
-    queryFn: async () => { const r = await fetch(`/api/public/partners/${partnerId}/links`, { headers: AUTH }); if (!r.ok) throw new Error('links'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/public/partners/${partnerId}/links`, { headers: AUTH }); if (!r.ok) throw new Error('links'); return r.json(); },
   });
 
   const { data: payouts } = useQuery<{ payouts: PayoutRow[] }>({
     queryKey: ['partnerPayouts', partnerId],
-    queryFn: async () => { const r = await fetch(`/api/public/partners/${partnerId}/payouts`, { headers: AUTH }); if (!r.ok) throw new Error('payouts'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/public/partners/${partnerId}/payouts`, { headers: AUTH }); if (!r.ok) throw new Error('payouts'); return r.json(); },
   });
 
   const requestPayout = useMutation({
     mutationFn: async () => {
-      const r = await fetch(`/api/public/partners/${partnerId}/payouts`, { method: 'POST', headers: { ...AUTH, 'Content-Type': 'application/json' } });
+      const r = await fetch(`${API}/api/public/partners/${partnerId}/payouts`, { method: 'POST', headers: { ...AUTH, 'Content-Type': 'application/json' } });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Request failed'); }
       return r.json();
     },
@@ -83,7 +84,7 @@ export default function PartnerThrive({ partnerId, token, maturedPaise = 0, onNo
 
   const createLink = useMutation({
     mutationFn: async (item: CatalogItem) => {
-      const r = await fetch(`/api/public/partners/${partnerId}/links`, {
+      const r = await fetch(`${API}/api/public/partners/${partnerId}/links`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ catalogType: item.type, catalogItemId: item.id, title: item.title, pricePaise: item.pricePaise || 0 }),
       });

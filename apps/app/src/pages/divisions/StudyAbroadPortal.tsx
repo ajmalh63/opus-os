@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StudyAbroadApplicationModal, { ApplicationSnapshot, MatchResult, StudentProfile } from '../../components/StudyAbroadApplicationModal';
 import StudentProfileWizard, { profileCompleteness } from '../../components/StudentProfileWizard';
 import AiSopStudio from '../../components/ai/AiSopStudio';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface Student {
   id: string;
@@ -135,7 +136,7 @@ export default function StudyAbroadPortal() {
   const { data: clientsData } = useQuery<{ clients: Student[] }>({
     queryKey: ['clientsList'],
     queryFn: async () => {
-      const r = await fetch('/api/clients');
+      const r = await fetch(`${API}/api/clients`);
       if (!r.ok) throw new Error('Failed to fetch clients');
       return r.json();
     }
@@ -196,7 +197,7 @@ export default function StudyAbroadPortal() {
   // Mutations
   const createStudentMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch('/api/clients', {
+      const r = await fetch(`${API}/api/clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -221,7 +222,7 @@ export default function StudyAbroadPortal() {
 
   const updateStudentMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/clients/${id}`, {
+      const r = await fetch(`${API}/api/clients/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -238,7 +239,7 @@ export default function StudyAbroadPortal() {
 
   const logNoteMutation = useMutation({
     mutationFn: async ({ channel, body }: { channel: string; body: string }) => {
-      const r = await fetch(`/api/clients/${selectedStudent?.id}/communications`, {
+      const r = await fetch(`${API}/api/clients/${selectedStudent?.id}/communications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channel, direction: 'internal', body })
@@ -255,7 +256,7 @@ export default function StudyAbroadPortal() {
 
   const reviewDocMutation = useMutation({
     mutationFn: async ({ docId, status }: { docId: string; status: 'verified' | 'rejected' }) => {
-      const r = await fetch(`/api/clients/${selectedStudent?.id}/documents/${docId}/status`, {
+      const r = await fetch(`${API}/api/clients/${selectedStudent?.id}/documents/${docId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -276,7 +277,7 @@ export default function StudyAbroadPortal() {
     queryKey: ['clientDetails', selectedStudent?.id],
     queryFn: async () => {
       if (!selectedStudent) return null;
-      const r = await fetch(`/api/clients/${selectedStudent.id}`);
+      const r = await fetch(`${API}/api/clients/${selectedStudent.id}`);
       if (!r.ok) throw new Error('Failed to fetch client details');
       return r.json();
     },
@@ -287,7 +288,7 @@ export default function StudyAbroadPortal() {
   const { data: universitiesData } = useQuery<{ universities: University[] }>({
     queryKey: ['allUniversities'],
     queryFn: async () => {
-      const r = await fetch('/api/study-abroad/universities');
+      const r = await fetch(`${API}/api/study-abroad/universities`);
       if (!r.ok) throw new Error('Failed to fetch master universities');
       return r.json();
     }
@@ -296,7 +297,7 @@ export default function StudyAbroadPortal() {
   const shortlistMutation = useMutation({
     mutationFn: async (payload: { clientId?: string; universityId: string; status?: string; notes?: string }) => {
       const targetClientId = payload.clientId || selectedStudent?.id;
-      const r = await fetch('/api/study-abroad/shortlist', {
+      const r = await fetch(`${API}/api/study-abroad/shortlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -320,7 +321,7 @@ export default function StudyAbroadPortal() {
     queryKey: ['studyApps', selectedStudent?.id],
     queryFn: async () => {
       const q = selectedStudent ? `?clientId=${selectedStudent.id}` : '';
-      const r = await fetch(`/api/study-abroad/applications${q}`);
+      const r = await fetch(`${API}/api/study-abroad/applications${q}`);
       if (!r.ok) throw new Error('Applications fetch failed');
       return r.json();
     },
@@ -330,7 +331,7 @@ export default function StudyAbroadPortal() {
   const { data: globalAppsData } = useQuery<{ applications: Application[] }>({
     queryKey: ['globalStudyApps'],
     queryFn: async () => {
-      const r = await fetch('/api/study-abroad/applications');
+      const r = await fetch(`${API}/api/study-abroad/applications`);
       if (!r.ok) throw new Error('Applications fetch failed');
       return r.json();
     }
@@ -339,7 +340,7 @@ export default function StudyAbroadPortal() {
   const { data: pipelineData } = useQuery<PipelineAggregate>({
     queryKey: ['studyPipeline'],
     queryFn: async () => {
-      const r = await fetch('/api/study-abroad/applications/pipeline');
+      const r = await fetch(`${API}/api/study-abroad/applications/pipeline`);
       if (!r.ok) throw new Error('Pipeline fetch failed');
       return r.json();
     }
@@ -347,7 +348,7 @@ export default function StudyAbroadPortal() {
 
   const createAppMutation = useMutation({
     mutationFn: async (snapshot: ApplicationSnapshot) => {
-      const r = await fetch('/api/study-abroad/applications', {
+      const r = await fetch(`${API}/api/study-abroad/applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId: selectedStudent?.id, university: snapshot })
@@ -367,7 +368,7 @@ export default function StudyAbroadPortal() {
 
   const updateAppStatusMutation = useMutation({
     mutationFn: async ({ id, status, rejectionReason }: { id: string; status: string; rejectionReason?: string }) => {
-      const r = await fetch(`/api/study-abroad/applications/${id}/status`, {
+      const r = await fetch(`${API}/api/study-abroad/applications/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, rejectionReason })
@@ -386,7 +387,7 @@ export default function StudyAbroadPortal() {
 
   const updateAppOfferMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/study-abroad/applications/${id}/offer`, {
+      const r = await fetch(`${API}/api/study-abroad/applications/${id}/offer`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -405,7 +406,7 @@ export default function StudyAbroadPortal() {
 
   const updateAppDocsMutation = useMutation({
     mutationFn: async ({ id, docs }: { id: string; docs: Record<string, string> }) => {
-      const r = await fetch(`/api/study-abroad/applications/${id}/docs`, {
+      const r = await fetch(`${API}/api/study-abroad/applications/${id}/docs`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ docs })
@@ -499,7 +500,7 @@ export default function StudyAbroadPortal() {
     const customFileName = `${cleanName}-${key}-${file.name}`;
 
     try {
-      const presignedRes = await fetch(`/api/clients/${selectedStudent.id}/documents/presigned?filename=${encodeURIComponent(customFileName)}${label ? `&label=${encodeURIComponent(label)}` : ''}`);
+      const presignedRes = await fetch(`${API}/api/clients/${selectedStudent.id}/documents/presigned?filename=${encodeURIComponent(customFileName)}${label ? `&label=${encodeURIComponent(label)}` : ''}`);
       if (!presignedRes.ok) throw new Error('Failed to generate presigned upload URL');
       const { url } = await presignedRes.json();
 

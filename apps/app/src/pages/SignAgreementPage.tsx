@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRoute } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export default function SignAgreementPage() {
   const [, params] = useRoute('/sign/:id');
@@ -20,7 +21,7 @@ export default function SignAgreementPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['publicAgreement', agreementId],
     queryFn: async () => {
-      const res = await fetch(`/api/public/portal/agreements/${agreementId}/specimen`);
+      const res = await fetch(`${API}/api/public/portal/agreements/${agreementId}/specimen`);
       if (!res.ok) {
         throw new Error('Agreement not found or link has expired');
       }
@@ -106,7 +107,7 @@ export default function SignAgreementPage() {
         payloadSignature = otpCode;
       }
 
-      const res = await fetch(`/api/public/portal/agreements/${agreementId}/direct-sign`, {
+      const res = await fetch(`${API}/api/public/portal/agreements/${agreementId}/direct-sign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

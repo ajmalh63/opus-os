@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '../lib/session';
 import TwoFactorSetup from '../components/TwoFactorSetup';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // ============================================================
 // Profile Settings — /settings
@@ -48,7 +49,7 @@ function ChangePasswordCard() {
     try {
       if (next.length < 8) { setMsg({ kind: 'err', text: 'New password must be at least 8 characters.' }); return; }
       if (next !== confirm) { setMsg({ kind: 'err', text: 'New passwords do not match.' }); return; }
-      const r = await fetch('/api/auth/change-password', { credentials: 'include', method: 'POST',
+      const r = await fetch(`${API}/api/auth/change-password`, { credentials: 'include', method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword: current, newPassword: next }),
       });
@@ -86,7 +87,7 @@ function SessionsCard() {
 
   const load = async () => {
     try {
-      const r = await fetch('/api/auth/list-sessions', { credentials: 'include', });
+      const r = await fetch(`${API}/api/auth/list-sessions`, { credentials: 'include', });
       if (!r.ok) { setMsg({ kind: 'err', text: 'Could not load sessions.' }); return; }
       const data = await r.json();
       const list = Array.isArray(data) ? data : data.sessions ?? [];

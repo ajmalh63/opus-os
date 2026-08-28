@@ -6,6 +6,7 @@ import { useSession, type Me } from '../lib/session';
 import WorkspaceLogo from './WorkspaceLogo';
 import CommandPalette from './CommandPalette';
 import { createSyncClient } from '../lib/syncClient';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export interface NavItem {
   key: string;
@@ -177,7 +178,7 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   const { data: myTasks } = useQuery<{ openCount: number }>({
     queryKey: ['myOpenTasks'],
     queryFn: async () => {
-      const res = await fetch('/api/tasks/assigned-to-me');
+      const res = await fetch(`${API}/api/tasks/assigned-to-me`);
       if (!res.ok) throw new Error('tasks');
       return res.json();
     },
@@ -206,7 +207,7 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
   const { data: inboxData } = useQuery<{ unreadTotal?: number }>({
     queryKey: ['navInboxUnread'],
     queryFn: async () => {
-      const r = await fetch('/api/inbox');
+      const r = await fetch(`${API}/api/inbox`);
       if (!r.ok) return { unreadTotal: 0 };
       return r.json();
     },
@@ -220,7 +221,7 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
 
   const signOut = async () => {
     try {
-      await fetch('/api/auth/sign-out', {
+      await fetch(`${API}/api/auth/sign-out`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

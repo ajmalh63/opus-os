@@ -5,6 +5,7 @@ import { useLocation } from 'wouter';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import Logo from '../components/Logo';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Dedicated public account creation page. Better Auth handles the sign-up +
 // email verification. Staff accounts are NOT created here — the owner/admin
@@ -41,7 +42,7 @@ export default function Signup() {
     if (resendCooldown > 0 || resending || !email) return;
     setResending(true);
     try {
-      const r = await fetch('/api/auth/send-verification-email', {
+      const r = await fetch(`${API}/api/auth/send-verification-email`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -76,7 +77,7 @@ export default function Signup() {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch('/api/auth/sign-up/email', {
+      const res = await fetch(`${API}/api/auth/sign-up/email`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

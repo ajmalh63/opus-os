@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSyncClient } from '../lib/syncClient';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const DIVISIONS = ['general','study-abroad','visa-services','attestation','umrah-travel','manpower'] as const;
 
@@ -45,7 +46,7 @@ export default function BlogManager() {
       if (q) p.set('q', q);
       if (statusFilter) p.set('status', statusFilter);
       if (divisionFilter) p.set('division', divisionFilter);
-      const r = await fetch(`/api/blog/admin/posts?${p.toString()}`, { credentials: 'include' });
+      const r = await fetch(`${API}/api/blog/admin/posts?${p.toString()}`, { credentials: 'include' });
       if (!r.ok) throw new Error('load');
       return r.json();
     },
@@ -85,7 +86,7 @@ export default function BlogManager() {
 
   const publish = useMutation({
     mutationFn: async (id:string) => {
-      const r = await fetch(`/api/blog/admin/posts/${id}/publish`, { method: 'POST', credentials: 'include' });
+      const r = await fetch(`${API}/api/blog/admin/posts/${id}/publish`, { method: 'POST', credentials: 'include' });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'publish failed');
       return j;
@@ -94,11 +95,11 @@ export default function BlogManager() {
     onError: (e:any) => alert(e.message),
   });
   const del = useMutation({
-    mutationFn: async (id:string) => { const r = await fetch(`/api/blog/admin/posts/${id}`, { method: 'DELETE', credentials: 'include' }); if (!r.ok) throw new Error('delete failed'); return r.json(); },
+    mutationFn: async (id:string) => { const r = await fetch(`${API}/api/blog/admin/posts/${id}`, { method: 'DELETE', credentials: 'include' }); if (!r.ok) throw new Error('delete failed'); return r.json(); },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['adminBlogPosts'] }),
   });
   const auditOne = async (id:string) => {
-    const r = await fetch(`/api/blog/admin/audit/${id}`, { credentials: 'include' });
+    const r = await fetch(`${API}/api/blog/admin/audit/${id}`, { credentials: 'include' });
     const j = await r.json();
     setAudit(j.audit);
   };
@@ -114,7 +115,7 @@ export default function BlogManager() {
       ogImage: row.ogImage || '', authorName: row.authorName || '', status: row.status, featured: !!row.featured,
     });
     // fetch fresh audit
-    const r = await fetch(`/api/blog/admin/audit/${row.id}`, { credentials: 'include' });
+    const r = await fetch(`${API}/api/blog/admin/audit/${row.id}`, { credentials: 'include' });
     const j = await r.json();
     setAudit(j.audit);
   };

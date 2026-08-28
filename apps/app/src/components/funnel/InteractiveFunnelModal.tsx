@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { getBookingUrlForDivision, isConsultationDivision, LEAD_FORM_ROUTE } from '../../config/booking';
 import BookingModal from '../BookingModal';
 import { useLocation } from 'wouter';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export type FunnelDivision = 'study-abroad' | 'visa' | 'umrah' | 'attestation' | 'manpower';
 
@@ -86,7 +87,7 @@ export default function InteractiveFunnelModal({
   // Lead Submission Mutation
   const leadMutation = useMutation({
     mutationFn: async (payload: ExpressLeadPayload) => {
-      const res = await fetch('/api/public/leads/express', { credentials: 'include', 
+      const res = await fetch(`${API}/api/public/leads/express`, { credentials: 'include', 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

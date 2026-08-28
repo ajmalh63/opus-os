@@ -10,6 +10,7 @@ import ChecklistRelief from './client/ChecklistRelief';
 import SocialProofAtHesitation from './client/SocialProofAtHesitation';
 import OfflineBanner from './shared/OfflineBanner';
 import DocumentUploadModal from './client/DocumentUploadModal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export interface ClientDashboardProps {
   portalToken?: string;
@@ -48,7 +49,7 @@ export default function ClientDashboardHub({
   const { data: dashboardData } = useQuery<any>({
     queryKey: ['portalDashboard', portalToken],
     queryFn: async () => {
-      const r = await fetch('/api/public/portal/dashboard', { headers: portalToken ? { 'X-Portal-Token': portalToken } : {} });
+      const r = await fetch(`${API}/api/public/portal/dashboard`, { headers: portalToken ? { 'X-Portal-Token': portalToken } : {} });
       if (!r.ok) return null;
       return r.json();
     },

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export function BillingForecast({
   token,
@@ -14,7 +15,7 @@ export function BillingForecast({
     queryFn: async () => {
       const p = new URLSearchParams();
       if (clientId) p.set('clientId', clientId);
-      const r = await fetch(`/api/ledger/forecast?${p.toString()}`, {
+      const r = await fetch(`${API}/api/ledger/forecast?${p.toString()}`, {
         headers: token ? { 'X-Portal-Token': token } : {},
       });
       if (!r.ok) return { forecast: { totalDue: 0, items: [] } };

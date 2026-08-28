@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
 import BlogManager from './BlogManager';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 
 const rs = (n?: number) => `₹${((n || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -38,16 +39,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ============ V1: SEO HUB ============
 function SeoTab() {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery<any>({ queryKey: ['seoPages'], queryFn: async () => (await fetch('/api/visibility/seo/pages', { credentials: 'include' })).json() });
-  const { data: audit } = useQuery<any>({ queryKey: ['seoAudit'], queryFn: async () => (await fetch('/api/visibility/seo/audit', { credentials: 'include' })).json() });
-  const { data: kw } = useQuery<any>({ queryKey: ['seoKeywords'], queryFn: async () => (await fetch('/api/visibility/seo/keywords', { credentials: 'include' })).json() });
+  const { data, isLoading } = useQuery<any>({ queryKey: ['seoPages'], queryFn: async () => (await fetch(`${API}/api/visibility/seo/pages`, { credentials: 'include' })).json() });
+  const { data: audit } = useQuery<any>({ queryKey: ['seoAudit'], queryFn: async () => (await fetch(`${API}/api/visibility/seo/audit`, { credentials: 'include' })).json() });
+  const { data: kw } = useQuery<any>({ queryKey: ['seoKeywords'], queryFn: async () => (await fetch(`${API}/api/visibility/seo/keywords`, { credentials: 'include' })).json() });
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<any>({});
   const [kwForm, setKwForm] = useState({ keyword: '', targetUrl: '', volume: '', position: '' });
 
   const savePage = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/seo/pages', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ route: editing.route, ...form }) });
+      const r = await fetch(`${API}/api/visibility/seo/pages`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ route: editing.route, ...form }) });
       if (!r.ok) throw new Error('save');
       return r.json();
     },
@@ -56,7 +57,7 @@ function SeoTab() {
   });
   const addKeyword = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/seo/keywords', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ ...kwForm, volume: kwForm.volume ? Number(kwForm.volume) : undefined, position: kwForm.position ? Number(kwForm.position) : undefined }) });
+      const r = await fetch(`${API}/api/visibility/seo/keywords`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ ...kwForm, volume: kwForm.volume ? Number(kwForm.volume) : undefined, position: kwForm.position ? Number(kwForm.position) : undefined }) });
       if (!r.ok) throw new Error('kw');
       return r.json();
     },
@@ -144,8 +145,8 @@ function SeoTab() {
 // ============ V4: AEO MONITOR ============
 function AeoTab() {
   const qc = useQueryClient();
-  const { data: checks } = useQuery<any>({ queryKey: ['aeoChecks'], queryFn: async () => (await fetch('/api/visibility/aeo/checks', { credentials: 'include' })).json() });
-  const { data: passages } = useQuery<any>({ queryKey: ['aeoPassages'], queryFn: async () => (await fetch('/api/visibility/aeo/passages', { credentials: 'include' })).json() });
+  const { data: checks } = useQuery<any>({ queryKey: ['aeoChecks'], queryFn: async () => (await fetch(`${API}/api/visibility/aeo/checks`, { credentials: 'include' })).json() });
+  const { data: passages } = useQuery<any>({ queryKey: ['aeoPassages'], queryFn: async () => (await fetch(`${API}/api/visibility/aeo/passages`, { credentials: 'include' })).json() });
   const [query, setQuery] = useState('');
   const [engine, setEngine] = useState('ai_overviews');
   const [running, setRunning] = useState(false);
@@ -155,7 +156,7 @@ function AeoTab() {
     if (!query.trim()) return;
     setRunning(true);
     try {
-      const r = await fetch('/api/visibility/aeo/check', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ query, engine }) });
+      const r = await fetch(`${API}/api/visibility/aeo/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ query, engine }) });
       const d = await r.json();
       alert(d.result ? (d.result.mentioned ? `✅ Mentioned — ${d.result.snippet}` : `❌ Not mentioned — ${d.result.snippet}`) : (d.message || 'Check recorded'));
       qc.invalidateQueries({ queryKey: ['aeoChecks'] });
@@ -165,7 +166,7 @@ function AeoTab() {
 
   const addPassage = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/aeo/passages', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(pForm) });
+      const r = await fetch(`${API}/api/visibility/aeo/passages`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(pForm) });
       if (!r.ok) throw new Error('passage');
       return r.json();
     },
@@ -227,15 +228,15 @@ function AeoTab() {
 // ============ V2: ANALYTICS (GA4) ============
 function GaTab() {
   const qc = useQueryClient();
-  const { data: cfg } = useQuery<any>({ queryKey: ['ga4Config'], queryFn: async () => (await fetch('/api/visibility/ga4/config', { credentials: 'include' })).json() });
-  const { data: events } = useQuery<any>({ queryKey: ['ga4Events'], queryFn: async () => (await fetch('/api/visibility/ga4/events', { credentials: 'include' })).json() });
+  const { data: cfg } = useQuery<any>({ queryKey: ['ga4Config'], queryFn: async () => (await fetch(`${API}/api/visibility/ga4/config`, { credentials: 'include' })).json() });
+  const { data: events } = useQuery<any>({ queryKey: ['ga4Events'], queryFn: async () => (await fetch(`${API}/api/visibility/ga4/events`, { credentials: 'include' })).json() });
   const [mid, setMid] = useState('');
   const [cfToken, setCfToken] = useState('');
   const [gtmId, setGtmId] = useState('');
   const [metaPixelId, setMetaPixelId] = useState('');
   const saveCfg = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/ga4/config', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ measurementId: mid, cfWaToken: cfToken, gtmId, metaPixelId }) });
+      const r = await fetch(`${API}/api/visibility/ga4/config`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ measurementId: mid, cfWaToken: cfToken, gtmId, metaPixelId }) });
       if (!r.ok) throw new Error('cfg');
       return r.json();
     },
@@ -316,14 +317,14 @@ function GaTab() {
 // ============ V3: GOOGLE BUSINESS PROFILE ============
 function GbpTab() {
   const qc = useQueryClient();
-  const { data: prof } = useQuery<any>({ queryKey: ['gbpProfile'], queryFn: async () => (await fetch('/api/visibility/gbp/profile', { credentials: 'include' })).json() });
-  const { data: posts } = useQuery<any>({ queryKey: ['gbpPosts'], queryFn: async () => (await fetch('/api/visibility/gbp/posts', { credentials: 'include' })).json() });
+  const { data: prof } = useQuery<any>({ queryKey: ['gbpProfile'], queryFn: async () => (await fetch(`${API}/api/visibility/gbp/profile`, { credentials: 'include' })).json() });
+  const { data: posts } = useQuery<any>({ queryKey: ['gbpPosts'], queryFn: async () => (await fetch(`${API}/api/visibility/gbp/posts`, { credentials: 'include' })).json() });
   const [form, setForm] = useState<any>({});
   const [postForm, setPostForm] = useState({ title: '', body: '', status: 'draft' });
 
   const save = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/gbp/profile', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(form) });
+      const r = await fetch(`${API}/api/visibility/gbp/profile`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(form) });
       if (!r.ok) throw new Error('gbp');
       return r.json();
     },
@@ -331,7 +332,7 @@ function GbpTab() {
   });
   const addPost = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/gbp/posts', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(postForm) });
+      const r = await fetch(`${API}/api/visibility/gbp/posts`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(postForm) });
       if (!r.ok) throw new Error('post');
       return r.json();
     },
@@ -390,11 +391,11 @@ function GbpTab() {
 // ============ V5: SEARCH CONSOLE ============
 function GscTab() {
   const qc = useQueryClient();
-  const { data } = useQuery<any>({ queryKey: ['gscQueries'], queryFn: async () => (await fetch('/api/visibility/search-console/queries', { credentials: 'include' })).json() });
+  const { data } = useQuery<any>({ queryKey: ['gscQueries'], queryFn: async () => (await fetch(`${API}/api/visibility/search-console/queries`, { credentials: 'include' })).json() });
   const [form, setForm] = useState({ keyword: '', impressions: '', clicks: '', position: '' });
   const add = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/seo/keywords', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ keyword: form.keyword, impressions: Number(form.impressions) || 0, clicks: Number(form.clicks) || 0, position: form.position ? Number(form.position) : undefined }) });
+      const r = await fetch(`${API}/api/visibility/seo/keywords`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ keyword: form.keyword, impressions: Number(form.impressions) || 0, clicks: Number(form.clicks) || 0, position: form.position ? Number(form.position) : undefined }) });
       if (!r.ok) throw new Error('gsc');
       return r.json();
     },
@@ -433,13 +434,13 @@ function GscTab() {
 // ============ V6: REVIEWS ============
 function ReviewsTab() {
   const qc = useQueryClient();
-  const { data } = useQuery<any>({ queryKey: ['gbpReviews'], queryFn: async () => (await fetch('/api/visibility/gbp/reviews', { credentials: 'include' })).json() });
+  const { data } = useQuery<any>({ queryKey: ['gbpReviews'], queryFn: async () => (await fetch(`${API}/api/visibility/gbp/reviews`, { credentials: 'include' })).json() });
   const [form, setForm] = useState({ source: 'google', rating: 5, author: '', text: '' });
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   const add = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/gbp/reviews', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(form) });
+      const r = await fetch(`${API}/api/visibility/gbp/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(form) });
       if (!r.ok) throw new Error('review');
       return r.json();
     },
@@ -447,7 +448,7 @@ function ReviewsTab() {
   });
   const respond = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/visibility/gbp/reviews/${id}/respond`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ responseDraft: drafts[id] || '' }) });
+      const r = await fetch(`${API}/api/visibility/gbp/reviews/${id}/respond`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ responseDraft: drafts[id] || '' }) });
       if (!r.ok) throw new Error('resp');
       return r.json();
     },
@@ -496,7 +497,7 @@ function ReviewsTab() {
 
 // ============ V7: ATTRIBUTION ============
 function AttributionTab() {
-  const { data } = useQuery<any>({ queryKey: ['attribution'], queryFn: async () => (await fetch('/api/visibility/attribution', { credentials: 'include' })).json() });
+  const { data } = useQuery<any>({ queryKey: ['attribution'], queryFn: async () => (await fetch(`${API}/api/visibility/attribution`, { credentials: 'include' })).json() });
   const maxRev = Math.max(1, ...(data?.channels || []).map((c: any) => c.revenue));
   return (
     <div className="space-y-5">
@@ -528,11 +529,11 @@ function AttributionTab() {
 // ============ E7: SCHEDULED REPORTS ============
 function ReportsTab() {
   const qc = useQueryClient();
-  const { data } = useQuery<any>({ queryKey: ['reportSchedules'], queryFn: async () => (await fetch('/api/visibility/reports/schedules', { credentials: 'include' })).json() });
+  const { data } = useQuery<any>({ queryKey: ['reportSchedules'], queryFn: async () => (await fetch(`${API}/api/visibility/reports/schedules`, { credentials: 'include' })).json() });
   const [form, setForm] = useState({ name: '', reportType: 'revenue', period: 'monthly', recipients: '' });
   const add = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/visibility/reports/schedules', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(form) });
+      const r = await fetch(`${API}/api/visibility/reports/schedules`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(form) });
       if (!r.ok) throw new Error('sched');
       return r.json();
     },
@@ -540,7 +541,7 @@ function ReportsTab() {
   });
   const runNow = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/visibility/reports/schedules/${id}/run`, { method: 'POST', });
+      const r = await fetch(`${API}/api/visibility/reports/schedules/${id}/run`, { method: 'POST', });
       if (!r.ok) throw new Error('run');
       return r.json();
     },

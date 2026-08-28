@@ -20,6 +20,7 @@ import { createSyncClient } from '../lib/syncClient';
 import { useDivisions } from '../lib/divisions';
 import ClientCommandPalette from '../components/client/ClientCommandPalette';
 import ClientFeedbackModal from '../components/client/ClientFeedbackModal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface Engagement {
   id: string;
@@ -157,7 +158,7 @@ export default function ClientPortal() {
       queryKey: ['portalSession', authEmail],
       queryFn: async () => {
         if (!authEmail) return null;
-        const res = await fetch('/api/public/portal/session', { credentials: 'include' });
+        const res = await fetch(`${API}/api/public/portal/session`, { credentials: 'include' });
         if (res.status === 401) {
           setAuthEmail(null);
           throw new Error('Session expired. Please sign in again.');
@@ -182,7 +183,7 @@ export default function ClientPortal() {
 
   const handleSignOut = async () => {
     try {
-      await fetch('/api/auth/sign-out', {
+      await fetch(`${API}/api/auth/sign-out`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -228,7 +229,7 @@ export default function ClientPortal() {
     queryKey: ['portalStudyAppsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/study-abroad/applications`, { headers: { 'X-Portal-Token': activeToken } });
+      const res = await fetch(`${API}/api/public/portal/study-abroad/applications`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.applications || [];
@@ -240,7 +241,7 @@ export default function ClientPortal() {
     queryKey: ['portalVisaAppsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/visa/applications`, { headers: { 'X-Portal-Token': activeToken } });
+      const res = await fetch(`${API}/api/public/portal/visa/applications`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.applications || [];
@@ -252,7 +253,7 @@ export default function ClientPortal() {
     queryKey: ['portalUmrahBookingsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/umrah/my-bookings`, { headers: { 'X-Portal-Token': activeToken } });
+      const res = await fetch(`${API}/api/public/portal/umrah/my-bookings`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.bookings || [];
@@ -264,7 +265,7 @@ export default function ClientPortal() {
     queryKey: ['portalAttestAppsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/attestation/applications`, { headers: { 'X-Portal-Token': activeToken } });
+      const res = await fetch(`${API}/api/public/portal/attestation/applications`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.applications || [];
@@ -276,7 +277,7 @@ export default function ClientPortal() {
     queryKey: ['portalJobAppsHub', activeToken],
     queryFn: async () => {
       if (!activeToken) return [];
-      const res = await fetch(`/api/public/portal/manpower/applications`, { headers: { 'X-Portal-Token': activeToken } });
+      const res = await fetch(`${API}/api/public/portal/manpower/applications`, { headers: { 'X-Portal-Token': activeToken } });
       if (!res.ok) return [];
       const d = await res.json();
       return d.applications || [];
@@ -1132,7 +1133,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
   const submitInquiry = async () => {
     setInquiryBusy(true); setInquiryError('');
     try {
-      const r = await fetch('/api/public/portal/visa/inquiry', {
+      const r = await fetch(`${API}/api/public/portal/visa/inquiry`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId: token, country: inquiryCountry, visaType: inquiryType || 'Custom request', notes: inquiryNotes, agreedToTerms: true }),
       });
@@ -1151,7 +1152,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
   const productsQ = useQuery<VisaProduct[]>({
     queryKey: ['portalVisaProducts'],
     queryFn: async () => {
-      const r = await fetch('/api/public/portal/visa/products');
+      const r = await fetch(`${API}/api/public/portal/visa/products`);
       if (!r.ok) throw new Error(await r.text() || 'Failed to load visa products.');
       const d = await r.json();
       return d.products || [];
@@ -1163,7 +1164,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     queryKey: ['portalVisaApplications', token],
     queryFn: async () => {
       if (!token) return [];
-      const r = await fetch(`/api/public/portal/visa/applications`, { headers: { 'X-Portal-Token': token } });
+      const r = await fetch(`${API}/api/public/portal/visa/applications`, { headers: { 'X-Portal-Token': token } });
       if (r.status === 404) return [];
       if (!r.ok) throw new Error(await r.text() || 'Failed to load your applications.');
       const d = await r.json();
@@ -1218,7 +1219,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     setBusy(true);
     setWizardErr('');
     try {
-      const r = await fetch(`/api/public/portal/visa/applications/${activeApp.id}`, {
+      const r = await fetch(`${API}/api/public/portal/visa/applications/${activeApp.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, formJson: { [key]: normalized } }),
@@ -1239,7 +1240,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     setBusy(true);
     setWizardErr('');
     try {
-      const r = await fetch('/api/public/portal/visa/applications', {
+      const r = await fetch(`${API}/api/public/portal/visa/applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, country: product.country, visaProductId: product.id }),
@@ -1304,7 +1305,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
       const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : '';
       const fileName = `${docName}-${Date.now()}${ext}`;
       // 1. Presigned GET: bucket grants a signed, time-limited upload URL.
-      const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(fileName)}`, { headers: { 'X-Portal-Token': token } });
+      const pRes = await fetch(`${API}/api/public/portal/documents/presigned?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(fileName)}`, { headers: { 'X-Portal-Token': token } });
       const pData = await pRes.json() as any;
       if (!pRes.ok || !pData.success || !pData.url) throw new Error(pData.error || 'Failed to generate upload link.');
       // 2. PUT the raw file binary to the signed URL (query carries token/filename/expires/signature).
@@ -1328,7 +1329,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     setBusy(true);
     setWizardErr('');
     try {
-      const r = await fetch(`/api/public/portal/visa/applications/${activeApp.id}/submit`, {
+      const r = await fetch(`${API}/api/public/portal/visa/applications/${activeApp.id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, agreedToTerms: true }),
@@ -1553,7 +1554,7 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
                 onClick={async () => {
                   setInquiryBusy(true);
                   try {
-                    const r = await fetch('/api/public/portal/visa/inquiry', {
+                    const r = await fetch(`${API}/api/public/portal/visa/inquiry`, {
                       method: 'POST', headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ clientId: token, country: selected.country, visaType: selected.visaType, notes: 'Waitlist — applications paused, notify when live', agreedToTerms: true }),
                     });
@@ -2159,7 +2160,7 @@ function ManpowerJobs({ token }: { token: string }) {
   const { data: jobsData, refetch: refetchJobs } = useQuery<{ jobs: JobRow[] }>({
     queryKey: ['portalManpowerJobs', token],
     staleTime: 60_000,
-    queryFn: async () => { const r = await fetch(`/api/public/portal/manpower/jobs`, { headers: token ? { 'X-Portal-Token': token } : {} }); if (!r.ok) throw new Error('jobs'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/public/portal/manpower/jobs`, { headers: token ? { 'X-Portal-Token': token } : {} }); if (!r.ok) throw new Error('jobs'); return r.json(); },
   });
   const jobs = jobsData?.jobs || [];
   const [exclusiveFilter, setExclusiveFilter] = useState<'all' | 'exclusive'>('all');
@@ -2176,7 +2177,7 @@ function ManpowerJobs({ token }: { token: string }) {
   const { data: appsData, refetch: refetchApps } = useQuery<{ applications: JobApplication[]; activeCount?: number; maxQuota?: number }>({
     queryKey: ['portalManpowerApps', token],
     staleTime: 30_000,
-    queryFn: async () => { const r = await fetch(`/api/public/portal/manpower/applications?token=${encodeURIComponent(token)}`); if (!r.ok) throw new Error('apps'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/public/portal/manpower/applications?token=${encodeURIComponent(token)}`); if (!r.ok) throw new Error('apps'); return r.json(); },
     enabled: !!token,
   });
   const applications = appsData?.applications || [];
@@ -2186,7 +2187,7 @@ function ManpowerJobs({ token }: { token: string }) {
   const { data: vasData } = useQuery<{ plans: VasPlan[] }>({
     queryKey: ['portalManpowerVas'],
     staleTime: 300_000,
-    queryFn: async () => { const r = await fetch('/api/public/portal/manpower/vas-plans'); if (!r.ok) throw new Error('vas'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/public/portal/manpower/vas-plans`); if (!r.ok) throw new Error('vas'); return r.json(); },
   });
   const vasPlans = vasData?.plans || [];
 
@@ -2205,7 +2206,7 @@ function ManpowerJobs({ token }: { token: string }) {
     setUploading(true); setMsg(null);
     try {
       const fd = new FormData(); fd.append('resume', file); fd.append('token', token);
-      const r = await fetch('/api/public/manpower/resume', { method: 'POST', body: fd });
+      const r = await fetch(`${API}/api/public/manpower/resume`, { method: 'POST', body: fd });
       const j = await r.json();
       if (!r.ok || !j.resumeKey) throw new Error(j.error || 'Resume upload failed');
       setResumeKey(j.resumeKey); setResumeName(file.name);
@@ -2230,7 +2231,7 @@ function ManpowerJobs({ token }: { token: string }) {
     }
     setApplying(true); setMsg(null);
     try {
-      const r = await fetch('/api/public/portal/manpower/applications', {
+      const r = await fetch(`${API}/api/public/portal/manpower/applications`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token,
@@ -2254,7 +2255,7 @@ function ManpowerJobs({ token }: { token: string }) {
   const { data: membershipData, refetch: refetchMembership } = useQuery<{ enabled: boolean; comingSoon: boolean; membership: { isMember: boolean; expiresAt: number | null; plan: string | null }; plans: { key: string; name: string; description?: string; pricePaise: number; durationDays: number; tier: string; perks: string[] }[] }>({
     queryKey: ['portalManpowerMembership', token],
     staleTime: 60_000,
-    queryFn: async () => { const r = await fetch(`/api/public/portal/manpower/membership`, { headers: { 'X-Portal-Token': token } }); if (!r.ok) throw new Error('membership'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/public/portal/manpower/membership`, { headers: { 'X-Portal-Token': token } }); if (!r.ok) throw new Error('membership'); return r.json(); },
     enabled: !!token,
   });
   const membership = membershipData?.membership;
@@ -2276,7 +2277,7 @@ function ManpowerJobs({ token }: { token: string }) {
     try {
       const loaded = await loadRazorpay();
       if (!loaded) throw new Error('Razorpay checkout failed to load.');
-      const oRes = await fetch('/api/public/portal/manpower/membership/order', {
+      const oRes = await fetch(`${API}/api/public/portal/manpower/membership/order`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, planKey }),
       });
@@ -2293,7 +2294,7 @@ function ManpowerJobs({ token }: { token: string }) {
         rz.open();
       });
       if (!result) { setMsg({ ok: false, text: 'Payment window closed.' }); return; }
-      const vRes = await fetch('/api/public/portal/manpower/membership/verify', {
+      const vRes = await fetch(`${API}/api/public/portal/manpower/membership/verify`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, planKey, ...result }),
       });
@@ -2308,7 +2309,7 @@ function ManpowerJobs({ token }: { token: string }) {
     try {
       const loaded = await loadRazorpay();
       if (!loaded) throw new Error('Razorpay checkout failed to load.');
-      const oRes = await fetch('/api/public/portal/manpower/vas/order', {
+      const oRes = await fetch(`${API}/api/public/portal/manpower/vas/order`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, serviceKey }),
       });
@@ -2327,7 +2328,7 @@ function ManpowerJobs({ token }: { token: string }) {
       });
       if (!result) { setMsg({ ok: false, text: 'Payment window closed.' }); return; }
 
-      const vRes = await fetch('/api/public/portal/manpower/vas/verify', {
+      const vRes = await fetch(`${API}/api/public/portal/manpower/vas/verify`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, serviceKey, ...result }),
       });

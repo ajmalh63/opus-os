@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // AI Translator — multilingual translation via Workers AI m2m100
 // (governance-gated + neuron-budgeted server-side).
@@ -19,7 +20,7 @@ export default function AiTranslatePanel({ clientId }: { clientId?: string }) {
 
   const translateMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/staff/ai/translate', { credentials: 'include', 
+      const res = await fetch(`${API}/api/staff/ai/translate`, { credentials: 'include', 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, sourceLang, targetLang, clientId }),

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // ── Task Boards — the KANBAN SYSTEM (gold standard 2026) ───────────────────
 // WIP limits enforced (drop-blocked + 409 from API), classes of service with
@@ -149,7 +150,7 @@ export default function BoardsTab() {
   // Fetch Board Columns Data
   const { data, isLoading, isError, refetch } = useQuery<BoardData>({
     queryKey: ['boardSystem'],
-    queryFn: async () => { const r = await fetch('/api/tasks/board', { credentials: 'include' }); if (!r.ok) throw new Error('board'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/tasks/board`, { credentials: 'include' }); if (!r.ok) throw new Error('board'); return r.json(); },
   });
 
   // Derived selected task from query cache
@@ -169,14 +170,14 @@ export default function BoardsTab() {
   }, [selectedTask?.id, selectedTask?.title, selectedTask?.description, selectedTask?.dueDate]);
   const { data: directory } = useQuery<{ staff: { id: string; name: string; role: string }[]; total: number }>({
     queryKey: ['staffDirectory'],
-    queryFn: async () => { const r = await fetch('/api/tasks/staff-directory', { credentials: 'include' }); if (!r.ok) throw new Error('staff'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/tasks/staff-directory`, { credentials: 'include' }); if (!r.ok) throw new Error('staff'); return r.json(); },
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['boardSystem'] });
 
   const move = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Record<string, unknown> }) => {
-      const r = await fetch(`/api/tasks/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
+      const r = await fetch(`${API}/api/tasks/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'move failed');
       return d;
@@ -190,7 +191,7 @@ export default function BoardsTab() {
       const body: Record<string, unknown> = { title: form.title.trim(), priority: form.priority, cos: form.cos };
       if (form.assigneeId) body.assigneeId = form.assigneeId;
       if (form.due) body.dueDate = Math.floor(new Date(form.due).getTime() / 1000);
-      const r = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const r = await fetch(`${API}/api/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'create failed');
       return d;
@@ -201,7 +202,7 @@ export default function BoardsTab() {
 
   const savePrefs = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/tasks/board/prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
+      const r = await fetch(`${API}/api/tasks/board/prefs`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'prefs failed');
       return d;
@@ -213,7 +214,7 @@ export default function BoardsTab() {
   // Task Delete Mutation
   const deleteTaskMutation = useMutation({
     mutationFn: async (payload: { taskId: string }) => {
-      const res = await fetch(`/api/tasks/${payload.taskId}`, {
+      const res = await fetch(`${API}/api/tasks/${payload.taskId}`, {
         method: 'DELETE',
         });
       if (!res.ok) {

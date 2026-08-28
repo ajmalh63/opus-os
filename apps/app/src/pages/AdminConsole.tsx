@@ -8,6 +8,7 @@ import DeveloperApiSettingsTab from '../components/admin/DeveloperApiSettingsTab
 import DivisionControlsTab from '../components/admin/DivisionControlsTab';
 import ClientWorkspaceControlsTab from '../components/admin/ClientWorkspaceControlsTab';
 import FeedbackModerationTab from '../components/admin/FeedbackModerationTab';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Real session-driven auth — the live cookie, never a forged token.
 
@@ -92,7 +93,7 @@ export default function AdminConsole() {
   const { data: staffData, isLoading: loadingStaff, isError: staffError } = useQuery<{ staff: StaffUser[] }>({
     queryKey: ['adminStaff'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/staff');
+      const res = await fetch(`${API}/api/admin/staff`);
       if (!res.ok) {
         throw new Error(await res.text() || 'Failed to fetch staff directory');
       }
@@ -103,7 +104,7 @@ export default function AdminConsole() {
   const { data: divisionsData } = useQuery<{ enabled: Record<string, boolean> }>({
     queryKey: ['adminDivisions'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/divisions');
+      const res = await fetch(`${API}/api/admin/divisions`);
       if (!res.ok) return { enabled: {} };
       return res.json();
     },
@@ -115,7 +116,7 @@ export default function AdminConsole() {
   // Mutations
   const registerMutation = useMutation({
     mutationFn: async (payload: { name: string; email: string; role: string; userDivisions: string[] }) => {
-      const res = await fetch('/api/admin/register-staff', {
+      const res = await fetch(`${API}/api/admin/register-staff`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +148,7 @@ export default function AdminConsole() {
 
   const updateScopeMutation = useMutation({
     mutationFn: async ({ id, userDivisions }: { id: string; userDivisions: string[] }) => {
-      const res = await fetch(`/api/admin/staff/${id}/scope`, {
+      const res = await fetch(`${API}/api/admin/staff/${id}/scope`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

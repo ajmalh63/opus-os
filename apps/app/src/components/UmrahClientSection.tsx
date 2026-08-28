@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import UmrahCalendar, { UmrahCalendarDay, TIER_INFO } from './UmrahCalendar';
 import { useDivisions } from '../lib/divisions';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface UmrahPackage {
   id: string;
@@ -200,7 +201,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
   const { data: pkgData, isLoading } = useQuery<{ success: boolean; comingSoon: boolean; enabled: boolean; packages: UmrahPackage[] }>({
     queryKey: ['portalUmrahPackages', token],
     queryFn: async () => {
-      const r = await fetch('/api/public/portal/umrah/packages');
+      const r = await fetch(`${API}/api/public/portal/umrah/packages`);
       if (!r.ok) throw new Error('Failed to fetch packages');
       return r.json();
     }
@@ -209,7 +210,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
   const { data: calData } = useQuery<{ success: boolean; comingSoon: boolean; enabled: boolean; days: UmrahCalendarDay[] }>({
     queryKey: ['portalUmrahCalendar', token, calMonth.getFullYear(), calMonth.getMonth()],
     queryFn: async () => {
-      const r = await fetch('/api/public/portal/umrah/calendar');
+      const r = await fetch(`${API}/api/public/portal/umrah/calendar`);
       if (!r.ok) throw new Error('Calendar failed');
       return r.json();
     }
@@ -219,7 +220,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
   const { data: detailData } = useQuery<{ success: boolean; package: UmrahPackage; departures: Departure[] }>({
     queryKey: ['portalUmrahPkgDetail', selectedPkg?.id],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/umrah/packages/${selectedPkg!.id}`);
+      const r = await fetch(`${API}/api/public/portal/umrah/packages/${selectedPkg!.id}`);
       if (!r.ok) throw new Error('Package detail failed');
       return r.json();
     },
@@ -229,7 +230,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
   const { data: myBookings } = useQuery<{ success: boolean; bookings: MyBooking[] }>({
     queryKey: ['portalUmrahMyBookings', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/umrah/my-bookings`, { headers: { 'X-Portal-Token': token } });
+      const r = await fetch(`${API}/api/public/portal/umrah/my-bookings`, { headers: { 'X-Portal-Token': token } });
       if (!r.ok) throw new Error('Bookings failed');
       return r.json();
     },
@@ -245,7 +246,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
   // ── Mutations ──
   const bookMutation = useMutation({
     mutationFn: async (departureId: string) => {
-      const r = await fetch(`/api/public/portal/umrah/departures/${departureId}/book`, {
+      const r = await fetch(`${API}/api/public/portal/umrah/departures/${departureId}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Portal-Token': token },
         body: JSON.stringify({ departureId })
@@ -259,7 +260,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
 
   const verifyAdvanceMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch(`/api/public/portal/umrah/bookings/${payload.bookingId}/verify-advance`, {
+      const r = await fetch(`${API}/api/public/portal/umrah/bookings/${payload.bookingId}/verify-advance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -279,7 +280,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
 
   const payBalanceMutation = useMutation({
     mutationFn: async (bookingId: string) => {
-      const r = await fetch(`/api/public/portal/umrah/bookings/${bookingId}/pay-balance`, {
+      const r = await fetch(`${API}/api/public/portal/umrah/bookings/${bookingId}/pay-balance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
@@ -292,7 +293,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
 
   const verifyBalanceMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch(`/api/public/portal/umrah/bookings/${payload.bookingId}/verify-balance`, {
+      const r = await fetch(`${API}/api/public/portal/umrah/bookings/${payload.bookingId}/verify-balance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -321,7 +322,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
         alert('Please enter a name for every traveller.');
         return;
       }
-      const res = await fetch(`/api/public/portal/umrah/departures/${dep.id}/book`, {
+      const res = await fetch(`${API}/api/public/portal/umrah/departures/${dep.id}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Portal-Token': token },
         body: JSON.stringify({ departureId: dep.id, occupancy, roomConfig: room || undefined, passengers })
@@ -397,7 +398,7 @@ export default function UmrahClientSection({ token }: { token: string }) {
   // Gap fix: Umrah client had no <input type=file> (StudyAbroad has 2, Visa has 2, Manpower has 1, Umrah had 0)
   const uploadUmrahDoc = async (file: File) => {
     try {
-      const pRes = await fetch(`/api/public/portal/documents/presigned?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(file.name)}`, { headers: { 'X-Portal-Token': token } });
+      const pRes = await fetch(`${API}/api/public/portal/documents/presigned?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(file.name)}`, { headers: { 'X-Portal-Token': token } });
       const pData = await pRes.json();
       if (!pRes.ok || !pData.success || !pData.url) throw new Error(pData.error || 'Failed to generate upload link');
       const uRes = await fetch(pData.url, { method: 'PUT', body: await file.arrayBuffer() });

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import FunnelTab from './FunnelTab.js';
 import PerformanceTab from './PerformanceTab.js';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // §16.4.5 Flow Analytics — CFD (cumulative flow) + throughput + Monte Carlo
 // forecast of days-to-clear current WIP. Manager+ surface.
@@ -28,7 +29,7 @@ export default function FlowAnalytics() {
   const { data: funnelsData } = useQuery<any>({
     queryKey: ['divisionFunnels'],
     queryFn: async () => {
-      const r = await fetch('/api/analytics/funnels', { credentials: 'include' });
+      const r = await fetch(`${API}/api/analytics/funnels`, { credentials: 'include' });
       if (!r.ok) throw new Error('funnels');
       return r.json();
     },
@@ -37,7 +38,7 @@ export default function FlowAnalytics() {
   const { data, isLoading, isError } = useQuery<{ analytics: FlowAnalytics }>({
     queryKey: ['flowAnalytics', days],
     queryFn: async () => {
-      const r = await fetch(`/api/kanban/analytics?days=${days}`, { credentials: 'include' });
+      const r = await fetch(`${API}/api/kanban/analytics?days=${days}`, { credentials: 'include' });
       if (!r.ok) throw new Error('load failed');
       return r.json();
     },

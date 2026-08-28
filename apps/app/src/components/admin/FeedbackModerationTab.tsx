@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface FeedbackSubmission {
   id: string;
@@ -54,7 +55,7 @@ export default function FeedbackModerationTab() {
   const { data, isLoading, isError } = useQuery<FeedbackApiResponse>({
     queryKey: ['adminFeedback'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/feedback');
+      const res = await fetch(`${API}/api/admin/feedback`);
       if (!res.ok) throw new Error('Failed to fetch feedback');
       return res.json();
     },
@@ -63,7 +64,7 @@ export default function FeedbackModerationTab() {
 
   const syncMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/admin/reviews/sync', {
+      const res = await fetch(`${API}/api/admin/reviews/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ minRating: 4, limit: 30 }),
@@ -85,7 +86,7 @@ export default function FeedbackModerationTab() {
 
   const moderateMutation = useMutation({
     mutationFn: async ({ id, isPublicApproved }: { id: string; isPublicApproved: boolean }) => {
-      const res = await fetch(`/api/admin/feedback/${id}/moderate`, {
+      const res = await fetch(`${API}/api/admin/feedback/${id}/moderate`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isPublicApproved }),
@@ -101,7 +102,7 @@ export default function FeedbackModerationTab() {
 
   const featureMutation = useMutation({
     mutationFn: async ({ id, isFeatured }: { id: string; isFeatured: boolean }) => {
-      const res = await fetch(`/api/admin/feedback/${id}/feature`, {
+      const res = await fetch(`${API}/api/admin/feedback/${id}/feature`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isFeatured }),
@@ -117,7 +118,7 @@ export default function FeedbackModerationTab() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/feedback/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API}/api/admin/feedback/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete feedback');
       return res.json();
     },

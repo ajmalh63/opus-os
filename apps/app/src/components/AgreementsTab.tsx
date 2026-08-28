@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const DIV_LABELS: Record<string, string> = {
   'study-abroad': 'Study Abroad',
@@ -54,22 +55,22 @@ export default function AgreementsTab() {
 
   const { data: agreementsData, isLoading: loadingAgreements } = useQuery<any>({
     queryKey: ['agreements'],
-    queryFn: async () => (await fetch('/api/agreements', { credentials: 'include' })).json(),
+    queryFn: async () => (await fetch(`${API}/api/agreements`, { credentials: 'include' })).json(),
   });
 
   const { data: templatesData } = useQuery<any>({
     queryKey: ['agreementTemplates'],
-    queryFn: async () => (await fetch('/api/agreements/templates', { credentials: 'include' })).json(),
+    queryFn: async () => (await fetch(`${API}/api/agreements/templates`, { credentials: 'include' })).json(),
   });
 
   const { data: clausesData } = useQuery<any>({
     queryKey: ['clauseLibrary'],
-    queryFn: async () => (await fetch('/api/agreements/clauses', { credentials: 'include' })).json(),
+    queryFn: async () => (await fetch(`${API}/api/agreements/clauses`, { credentials: 'include' })).json(),
   });
 
   const { data: clientsData } = useQuery<any>({
     queryKey: ['clientsList'],
-    queryFn: async () => (await fetch('/api/clients', { credentials: 'include' })).json(),
+    queryFn: async () => (await fetch(`${API}/api/clients`, { credentials: 'include' })).json(),
   });
 
   const agreements = agreementsData?.agreements || [];
@@ -80,7 +81,7 @@ export default function AgreementsTab() {
   const dispatchAgr = useMutation({
     mutationFn: async () => {
       if (!dispatchingAgreement) return;
-      const r = await fetch(`/api/agreements/${dispatchingAgreement.id}/dispatch`, {
+      const r = await fetch(`${API}/api/agreements/${dispatchingAgreement.id}/dispatch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -105,7 +106,7 @@ export default function AgreementsTab() {
 
   const createAgr = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/agreements', {
+      const r = await fetch(`${API}/api/agreements`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(agrForm),
@@ -126,7 +127,7 @@ export default function AgreementsTab() {
 
   const signAgr = useMutation({
     mutationFn: async ({ id, method }: { id: string; method: string }) => {
-      const r = await fetch(`/api/agreements/${id}/sign`, {
+      const r = await fetch(`${API}/api/agreements/${id}/sign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ esignMethod: method }),
@@ -145,7 +146,7 @@ export default function AgreementsTab() {
 
   const createTpl = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/agreements/templates', {
+      const r = await fetch(`${API}/api/agreements/templates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

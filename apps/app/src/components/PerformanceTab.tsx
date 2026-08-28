@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 
 interface RosterRow {
@@ -36,7 +37,7 @@ export default function PerformanceTab() {
   const { data, isLoading, isError } = useQuery<PerformanceData>({
     queryKey: ['performance', range],
     queryFn: async () => {
-      const r = await fetch(`/api/performance?days=${range}`, { credentials: 'include' });
+      const r = await fetch(`${API}/api/performance?days=${range}`, { credentials: 'include' });
       if (!r.ok) throw new Error('performance');
       return r.json();
     },

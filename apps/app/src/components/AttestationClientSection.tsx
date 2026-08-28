@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Client portal — Attestation section (token-auth).
 // Browse indicative price ranges → create application (one doc) → send docs to
@@ -55,7 +56,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
   const { data: bandsData } = useQuery<{ success: boolean; bands: any; disclaimer: string }>({
     queryKey: ['attestationBands', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/attestation/price-bands?token=${token}`);
+      const r = await fetch(`${API}/api/public/portal/attestation/price-bands?token=${token}`);
       if (!r.ok) throw new Error('Price bands failed');
       return r.json();
     }
@@ -64,7 +65,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
   const { data: rateData } = useQuery<{ success: boolean; countries: string[]; rateCards: RateCard[]; disclaimer: string }>({
     queryKey: ['attestationRates', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/attestation/rate-cards?token=${token}`);
+      const r = await fetch(`${API}/api/public/portal/attestation/rate-cards?token=${token}`);
       if (!r.ok) throw new Error('Rate cards failed');
       return r.json();
     }
@@ -73,7 +74,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
   const { data: appsData } = useQuery<{ success: boolean; applications: AttestationApp[] }>({
     queryKey: ['attestationApps', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/attestation/applications?token=${token}`);
+      const r = await fetch(`${API}/api/public/portal/attestation/applications?token=${token}`);
       if (!r.ok) throw new Error('Applications failed');
       return r.json();
     },
@@ -83,7 +84,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const r = await fetch(`/api/public/portal/attestation/applications?token=${token}`, {
+      const r = await fetch(`${API}/api/public/portal/attestation/applications?token=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -101,7 +102,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
       queryClient.invalidateQueries({ queryKey: ['attestationApps', token] });
       if (scanFile && data.id) {
         try {
-          const presignedRes = await fetch(`/api/public/portal/attestation/applications/${data.id}/document/presigned?token=${token}&filename=${encodeURIComponent(scanFile.name)}`, { method: 'POST' });
+          const presignedRes = await fetch(`${API}/api/public/portal/attestation/applications/${data.id}/document/presigned?token=${token}&filename=${encodeURIComponent(scanFile.name)}`, { method: 'POST' });
           const presigned = await presignedRes.json();
           if (presignedRes.ok && presigned.url) {
             await fetch(presigned.url, { method: 'PUT', body: await scanFile.arrayBuffer() });
@@ -116,7 +117,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
 
   const pickupMutation = useMutation({
     mutationFn: async ({ id, address, awb }: { id: string; address: string; awb: string }) => {
-      const r = await fetch(`/api/public/portal/attestation/applications/${id}/pickup?token=${token}`, {
+      const r = await fetch(`${API}/api/public/portal/attestation/applications/${id}/pickup?token=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pickupAddress: address, courierInbound: awb })
@@ -251,7 +252,7 @@ export default function AttestationClientSection({ token }: { token: string }) {
                     let added = 0;
                     for (const item of all) {
                       try {
-                        const r = await fetch(`/api/public/portal/attestation/applications?token=${token}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientId: token, document: { holderName: item.holderName, documentName: item.docName, issuingState: item.issuingState }, category: item.category, route:'embassy', destinationCountry: item.country, translationNeeded: item.translation, urgency, deadline: deadline ? Math.floor(new Date(deadline).getTime()/1000) : undefined }) });
+                        const r = await fetch(`${API}/api/public/portal/attestation/applications?token=${token}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientId: token, document: { holderName: item.holderName, documentName: item.docName, issuingState: item.issuingState }, category: item.category, route:'embassy', destinationCountry: item.country, translationNeeded: item.translation, urgency, deadline: deadline ? Math.floor(new Date(deadline).getTime()/1000) : undefined }) });
                         if (r.ok) added++;
                       } catch {}
                     }

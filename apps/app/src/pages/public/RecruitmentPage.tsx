@@ -15,6 +15,7 @@ import { useVisibilityTracking } from '../../lib/visibilityTracking';
 import { track, EVENTS } from '../../lib/umami';
 import { getBookingUrlForDivision } from '../../config/booking';
 import BookingModal from '../../components/BookingModal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const RECRUITMENT_FAQS = [
   {
@@ -156,7 +157,7 @@ export default function RecruitmentPage() {
   const { data: jobsData, isLoading: loadingJobs } = useQuery({
     queryKey: ['publicJobs'],
     queryFn: async () => {
-      const res = await fetch('/api/public/jobs', { credentials: 'include', });
+      const res = await fetch(`${API}/api/public/jobs`, { credentials: 'include', });
       if (!res.ok) return { jobs: [] };
       return res.json();
     },
@@ -235,7 +236,7 @@ export default function RecruitmentPage() {
     const normalizedPhone = digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : candidatePhone;
 
     try {
-      const res = await fetch('/api/public/leads', { credentials: 'include', 
+      const res = await fetch(`${API}/api/public/leads`, { credentials: 'include', 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -277,7 +278,7 @@ export default function RecruitmentPage() {
     <div className="min-h-screen bg-brand-cream font-sans text-brand-navy selection:bg-brand-gold selection:text-brand-navy">
       <SEOHead
         title="Overseas Manpower & Recruitment | Opus Overseas"
-        description="Licensed international recruitment agency for verified jobs in UAE, Saudi Arabia, Qatar, Kuwait & Germany across healthcare, engineering, construction & tech."
+        description="Structured screening for verified jobs in UAE, Saudi Arabia, Qatar, Kuwait & Germany — healthcare, engineering, construction & tech. Employer-verified, transparent."
         canonicalPath="/manpower"
         schemas={[
           BASE_ORGANIZATION_SCHEMA,
@@ -311,7 +312,7 @@ export default function RecruitmentPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-7">
               <span className="inline-flex items-center gap-2 rounded-full border border-rose-400/40 bg-rose-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-rose-300 shimmer-badge">
-                💼 Government Licensed Recruitment · MEA Approved
+                💼 Structured Screening · Employer-Verified Roles
               </span>
               <h1 className="mt-5 font-display fluid-h1 font-black leading-tight tracking-tight text-white">
                 Launch Your Global Career with <span className="text-brand-gold">Verified Overseas Contracts</span>
@@ -414,7 +415,7 @@ export default function RecruitmentPage() {
               <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-white/40">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">MEA Licensed Agency Network</p>
+                    <p className="text-sm font-bold uppercase tracking-wider text-brand-gold">Document-Verified Professional Network</p>
                     <p className="text-xs sm:text-sm font-extrabold text-brand-navy">Building Verified Network</p>
                   </div>
                   <span className="rounded-full bg-rose-500/15 text-rose-800 px-2.5 py-1 text-[13px] font-bold font-mono">

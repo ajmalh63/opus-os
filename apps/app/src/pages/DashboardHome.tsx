@@ -7,6 +7,7 @@ import { useRevealRoot, useCountUp } from '../lib/reveal';
 import { useStaffAlerts } from '../lib/useStaffAlerts';
 import { useTaskNotifications } from '../lib/useTaskNotifications';
 import { Panel, PanelHead, KpiTile, EmptyState } from '../components/WorkChrome';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 
 interface Funnel {
@@ -91,14 +92,14 @@ export default function DashboardHome() {
 
   const { data: funnel } = useQuery<Funnel>({
     queryKey: ['dashFunnel'],
-    queryFn: async () => { const r = await fetch('/api/marketing/funnel', { credentials: 'include' }); if (!r.ok) throw new Error('funnel'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/marketing/funnel`, { credentials: 'include' }); if (!r.ok) throw new Error('funnel'); return r.json(); },
     enabled: canFunnel,
   });
 
   const { data: inbox } = useQuery<InboxSummary>({
     queryKey: ['dashInbox'],
     queryFn: async () => {
-      const r = await fetch('/api/inbox', { credentials: 'include' });
+      const r = await fetch(`${API}/api/inbox`, { credentials: 'include' });
       if (!r.ok) throw new Error('inbox');
       const j = await r.json();
       const convs = j.conversations || [];
@@ -109,7 +110,7 @@ export default function DashboardHome() {
   // Query for staff tasks checklist
   const { data: myTasksData } = useQuery<{ tasks?: Task[] }>({
     queryKey: ['dashTasksFeed'],
-    queryFn: async () => { const r = await fetch('/api/tasks'); if (!r.ok) throw new Error('tasks'); return r.json(); }
+    queryFn: async () => { const r = await fetch(`${API}/api/tasks`); if (!r.ok) throw new Error('tasks'); return r.json(); }
   });
 
   const { toast: taskToast, dismissToast: dismissTaskToast } = useTaskNotifications(20000);
@@ -118,7 +119,7 @@ export default function DashboardHome() {
   const { data: staleData } = useQuery<any>({
     queryKey: ['staleClients'],
     queryFn: async () => {
-      const r = await fetch('/api/analytics/stale-clients');
+      const r = await fetch(`${API}/api/analytics/stale-clients`);
       if (!r.ok) return null;
       return r.json();
     },
@@ -128,7 +129,7 @@ export default function DashboardHome() {
   const { data: revenueData } = useQuery<any>({
     queryKey: ['revenueSummary'],
     queryFn: async () => {
-      const r = await fetch('/api/analytics/revenue');
+      const r = await fetch(`${API}/api/analytics/revenue`);
       if (!r.ok) return null;
       return r.json();
     },
@@ -421,7 +422,7 @@ export default function DashboardHome() {
                           className="h-4.5 w-4.5 cursor-pointer rounded-md accent-brand-gold"
                           onClick={(e) => e.stopPropagation()}
                           onChange={async () => {
-                            await fetch(`/api/kanban/board/tasks/${t.id}`, {
+                            await fetch(`${API}/api/kanban/board/tasks/${t.id}`, {
                               method: 'PATCH',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ status: 'done' })

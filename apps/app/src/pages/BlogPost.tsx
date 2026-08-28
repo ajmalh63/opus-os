@@ -2,6 +2,7 @@ import { Link, useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { useVisibilityTracking } from '../lib/visibilityTracking';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Minimal markdown → HTML (headings, tables, faq, bold, links, lists) — keeps bundle light vs full MDX
 function mdToHtml(md: string): string {
@@ -49,7 +50,7 @@ export default function BlogPost() {
   const { data, isLoading, error } = useQuery<any>({
     queryKey: ['publicBlogPost', slug],
     queryFn: async () => {
-      const r = await fetch(`/api/blog/posts/${slug}`);
+      const r = await fetch(`${API}/api/blog/posts/${slug}`);
       if (!r.ok) throw new Error('not found');
       return r.json();
     },

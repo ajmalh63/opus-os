@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 
 const DIV_LABELS: Record<string, string> = {
@@ -59,17 +60,17 @@ export default function BookingsTab() {
   const { data, isLoading } = useQuery<any>({
     queryKey: ['calBookings'],
     queryFn: async () => {
-      const r = await fetch('/api/cal/bookings', { credentials: 'include' });
+      const r = await fetch(`${API}/api/cal/bookings`, { credentials: 'include' });
       if (!r.ok) throw new Error('bookings');
       return r.json();
     },
     refetchInterval: 60000,
   });
-  const { data: cfg } = useQuery<any>({ queryKey: ['calConfig'], queryFn: async () => (await fetch('/api/cal/config', { credentials: 'include' })).json() });
+  const { data: cfg } = useQuery<any>({ queryKey: ['calConfig'], queryFn: async () => (await fetch(`${API}/api/cal/config`, { credentials: 'include' })).json() });
   const [riskFilter, setRiskFilter] = useState('all');
   const verifyBooking = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/cal/bookings/${id}/verify`, { method: 'POST', });
+      const r = await fetch(`${API}/api/cal/bookings/${id}/verify`, { method: 'POST', });
       if (!r.ok) throw new Error('verify');
       return r.json();
     },
@@ -80,7 +81,7 @@ export default function BookingsTab() {
 
   const saveCfg = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/cal/config', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(cfgForm) });
+      const r = await fetch(`${API}/api/cal/config`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(cfgForm) });
       if (!r.ok) throw new Error('cfg');
       return r.json();
     },

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AiOcrPanel from '../../components/ai/AiOcrPanel';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface Client {
   id: string;
@@ -150,7 +151,7 @@ export default function AttestationPortal() {
   const { data: clientsData } = useQuery<{ clients: Client[] }>({
     queryKey: ['clientsList'],
     queryFn: async () => {
-      const r = await fetch('/api/clients');
+      const r = await fetch(`${API}/api/clients`);
       if (!r.ok) throw new Error('Failed to fetch clients');
       return r.json();
     }
@@ -163,7 +164,7 @@ export default function AttestationPortal() {
     queryKey: ['attestationShipments', selectedClient?.id],
     queryFn: async () => {
       if (!selectedClient?.id) return { success: true, shipments: [] as Shipment[] };
-      const r = await fetch(`/api/transit/shipments?clientId=${selectedClient.id}`);
+      const r = await fetch(`${API}/api/transit/shipments?clientId=${selectedClient.id}`);
       if (!r.ok) return { success: true, shipments: [] as Shipment[] };
       return r.json();
     },
@@ -174,7 +175,7 @@ export default function AttestationPortal() {
     queryKey: ['attestationApps', selectedClient?.id],
     queryFn: async () => {
       if (!selectedClient?.id) return { success: true, applications: [] as AttestationApplication[] };
-      const r = await fetch(`/api/attestation/applications?clientId=${selectedClient.id}`);
+      const r = await fetch(`${API}/api/attestation/applications?clientId=${selectedClient.id}`);
       if (!r.ok) return { success: true, applications: [] as AttestationApplication[] };
       return r.json();
     },
@@ -183,7 +184,7 @@ export default function AttestationPortal() {
 
   const updateStageMutation = useMutation({
     mutationFn: async ({ id, stage }: { id: string; stage: string }) => {
-      const r = await fetch(`/api/attestation/applications/${id}/stage`, {
+      const r = await fetch(`${API}/api/attestation/applications/${id}/stage`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage })
       });
@@ -197,7 +198,7 @@ export default function AttestationPortal() {
 
   const updateChainMutation = useMutation({
     mutationFn: async ({ id, stepKey, status }: { id: string; stepKey: string; status: string }) => {
-      const r = await fetch(`/api/attestation/applications/${id}/chain`, {
+      const r = await fetch(`${API}/api/attestation/applications/${id}/chain`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stepKey, status })
       });
@@ -211,7 +212,7 @@ export default function AttestationPortal() {
 
   const updatePickupMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/attestation/applications/${id}/pickup`, {
+      const r = await fetch(`${API}/api/attestation/applications/${id}/pickup`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -231,7 +232,7 @@ export default function AttestationPortal() {
   const { data: rateCardsData } = useQuery<{ success: boolean; rateCards: any[] }>({
     queryKey: ['attestationRateCards'],
     queryFn: async () => {
-      const r = await fetch('/api/attestation/rate-cards');
+      const r = await fetch(`${API}/api/attestation/rate-cards`);
       if (!r.ok) throw new Error('Rate cards failed');
       return r.json();
     }
@@ -259,7 +260,7 @@ export default function AttestationPortal() {
 
   const deleteRateMutation = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/attestation/rate-cards/${id}`, { method: 'DELETE' });
+      const r = await fetch(`${API}/api/attestation/rate-cards/${id}`, { method: 'DELETE' });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'Delete failed');
       return data;
@@ -328,7 +329,7 @@ export default function AttestationPortal() {
   const { data: pipelineData } = useQuery<any>({
     queryKey: ['attestationPipeline'],
     queryFn: async () => {
-      const r = await fetch('/api/attestation/applications/pipeline');
+      const r = await fetch(`${API}/api/attestation/applications/pipeline`);
       if (!r.ok) throw new Error('Pipeline failed');
       return r.json();
     }
@@ -336,7 +337,7 @@ export default function AttestationPortal() {
 
   const editAppMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/attestation/applications/${id}`, {
+      const r = await fetch(`${API}/api/attestation/applications/${id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -354,7 +355,7 @@ export default function AttestationPortal() {
 
   const deleteAppMutation = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/attestation/applications/${id}`, { method: 'DELETE' });
+      const r = await fetch(`${API}/api/attestation/applications/${id}`, { method: 'DELETE' });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'Delete failed');
       return data;
@@ -368,7 +369,7 @@ export default function AttestationPortal() {
 
   const duplicateAppMutation = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/attestation/applications/${id}/duplicate`, { method: 'POST' });
+      const r = await fetch(`${API}/api/attestation/applications/${id}/duplicate`, { method: 'POST' });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'Duplicate failed');
       return data;
@@ -382,7 +383,7 @@ export default function AttestationPortal() {
 
   const uploadAppDoc = async (appId: string, file: File) => {
     try {
-      const presignedRes = await fetch(`/api/attestation/applications/${appId}/document/presigned?filename=${encodeURIComponent(file.name)}`, { method: 'POST' });
+      const presignedRes = await fetch(`${API}/api/attestation/applications/${appId}/document/presigned?filename=${encodeURIComponent(file.name)}`, { method: 'POST' });
       const presigned = await presignedRes.json();
       if (!presignedRes.ok || !presigned.url) throw new Error(presigned.error || 'Presign failed');
       const uploadRes = await fetch(presigned.url, { method: 'PUT', body: await file.arrayBuffer() });
@@ -431,7 +432,7 @@ export default function AttestationPortal() {
   const { data: bandsQuery } = useQuery<{ success: boolean; bands: any }>({
     queryKey: ['attestationPriceBands'],
     queryFn: async () => {
-      const r = await fetch('/api/attestation/price-bands');
+      const r = await fetch(`${API}/api/attestation/price-bands`);
       if (!r.ok) throw new Error('Price bands failed');
       return r.json();
     }
@@ -439,7 +440,7 @@ export default function AttestationPortal() {
 
   const saveBandsMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch('/api/attestation/price-bands', {
+      const r = await fetch(`${API}/api/attestation/price-bands`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bands: payload })
       });
@@ -480,7 +481,7 @@ export default function AttestationPortal() {
     setLoadingTariff(true);
     setTariffResult(null);
     try {
-      const r = await fetch(`/api/india-post/tariff?source=${senderPincode}&destination=${receiverPincode}&weight=${weight}&articleType=${articleType === 'SP' ? 'speed-post' : 'parcel'}`);
+      const r = await fetch(`${API}/api/india-post/tariff?source=${senderPincode}&destination=${receiverPincode}&weight=${weight}&articleType=${articleType === 'SP' ? 'speed-post' : 'parcel'}`);
       const d = await r.json();
       if (!r.ok) { alert(d?.error || 'Tariff failed'); setTariffResult(null); }
       else setTariffResult(d.tariff);
@@ -492,7 +493,7 @@ export default function AttestationPortal() {
   const lookupPincode = async (pin: string, isSender: boolean) => {
     if (!/^\d{6}$/.test(pin)) { setPincodeOffices([]); return; }
     try {
-      const r = await fetch(`/api/india-post/pincode?pincode=${pin}`);
+      const r = await fetch(`${API}/api/india-post/pincode?pincode=${pin}`);
       const d = await r.json();
       if (d?.offices?.length) {
         const o = d.offices[0];
@@ -507,7 +508,7 @@ export default function AttestationPortal() {
     setLoadingBooking(true);
     try {
       if (!selectedClient) { alert('Select a client first (Applications tab)'); return; }
-      const r = await fetch('/api/india-post/book', {
+      const r = await fetch(`${API}/api/india-post/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -543,7 +544,7 @@ export default function AttestationPortal() {
 
   const createAppMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch('/api/attestation/applications', {
+      const r = await fetch(`${API}/api/attestation/applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -559,7 +560,7 @@ export default function AttestationPortal() {
   });
 
   const syncCarrier = async (shipment: Shipment) => {
-    const r = await fetch(`/api/transit/shipments/${shipment.id}/sync-carrier`, { method: 'POST' });
+    const r = await fetch(`${API}/api/transit/shipments/${shipment.id}/sync-carrier`, { method: 'POST' });
     if (r.ok) queryClient.invalidateQueries({ queryKey: ['attestationShipments', selectedClient?.id] });
   };
 

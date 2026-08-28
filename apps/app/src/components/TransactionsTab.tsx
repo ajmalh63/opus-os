@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
 import InvoiceErpLedgerWidget from './dashboard/InvoiceErpLedgerWidget';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Transactions module — the unified billing surface for EVERY internal account.
 // Draft entry by all staff; confirm/void only for super_admin/manager.
@@ -51,7 +52,7 @@ export default function TransactionsTab() {
   const { data: revenueData } = useQuery<any>({
     queryKey: ['revenueSummary'],
     queryFn: async () => {
-      const r = await fetch('/api/analytics/revenue');
+      const r = await fetch(`${API}/api/analytics/revenue`);
       if (!r.ok) return null;
       return r.json();
     },
@@ -75,7 +76,7 @@ export default function TransactionsTab() {
 
   const { data: clientsData } = useQuery<{ clients: any[]; engagements: EngBrief[] }>({
     queryKey: ['txClients'],
-    queryFn: async () => { const r = await fetch('/api/transactions/clients-brief', { credentials: 'include' }).catch(() => null); return r ? r.json() : { clients: [], engagements: [] }; },
+    queryFn: async () => { const r = await fetch(`${API}/api/transactions/clients-brief`, { credentials: 'include' }).catch(() => null); return r ? r.json() : { clients: [], engagements: [] }; },
   });
 
   const { data: txData } = useQuery<{ transactions: Tx[] }>({
@@ -85,7 +86,7 @@ export default function TransactionsTab() {
       if (statusFilter) q.set('status', statusFilter);
       if (mineOnly) q.set('mine', '1');
       if (linkFilter) q.set('linkStatus', linkFilter);
-      const r = await fetch(`/api/transactions?${q}`, { credentials: 'include' });
+      const r = await fetch(`${API}/api/transactions?${q}`, { credentials: 'include' });
       if (!r.ok) throw new Error('tx');
       return r.json();
     },
@@ -93,7 +94,7 @@ export default function TransactionsTab() {
 
   const createDraft = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/transactions/entries', {
+      const r = await fetch(`${API}/api/transactions/entries`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({
           clientId, engagementId, type, amount: amountPaise, milestoneName, method, referenceNumber, isInterstate,
@@ -116,7 +117,7 @@ export default function TransactionsTab() {
 
   const confirmTx = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/transactions/${id}/confirm`, { method: 'POST', });
+      const r = await fetch(`${API}/api/transactions/${id}/confirm`, { method: 'POST', });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'confirm failed'); }
       return r.json();
     },
@@ -125,7 +126,7 @@ export default function TransactionsTab() {
 
   const voidTx = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/transactions/${id}/void`, { method: 'POST', });
+      const r = await fetch(`${API}/api/transactions/${id}/void`, { method: 'POST', });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'void failed'); }
       return r.json();
     },
@@ -135,7 +136,7 @@ export default function TransactionsTab() {
   // Razorpay Payment Link — any staff can charge any amount from a draft/confirmed entry
   const chargeLink = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/transactions/${id}/payment-link`, { method: 'POST', });
+      const r = await fetch(`${API}/api/transactions/${id}/payment-link`, { method: 'POST', });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'link failed'); }
       return r.json();
     },
@@ -164,7 +165,7 @@ export default function TransactionsTab() {
   const chargeEngLabel = (clientsData?.engagements || []).filter((e) => e.clientId === chargeClientId)[0]?.title || '';
   const chargeAny = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/transactions/charge', {
+      const r = await fetch(`${API}/api/transactions/charge`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ clientId: chargeClientId || undefined, amount: parseFloat(chargeAmount || '0'), description: chargeDesc.trim() }),
       });
@@ -182,7 +183,7 @@ export default function TransactionsTab() {
   // Link lifecycle (dunning): cancel live links, renew expired/cancelled.
   const cancelLinkTx = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/transactions/${id}/payment-link/cancel`, { method: 'POST', });
+      const r = await fetch(`${API}/api/transactions/${id}/payment-link/cancel`, { method: 'POST', });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'cancel failed'); }
       return r.json();
     },
@@ -194,7 +195,7 @@ export default function TransactionsTab() {
   });
   const renewLink = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/transactions/${id}/payment-link/renew`, { method: 'POST', });
+      const r = await fetch(`${API}/api/transactions/${id}/payment-link/renew`, { method: 'POST', });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'renew failed'); }
       return r.json();
     },
@@ -208,7 +209,7 @@ export default function TransactionsTab() {
   // Dunning chip: outstanding links + aging buckets (3d remind / 5d stale)
   const { data: linkSum } = useQuery<{ outstanding: number; remindDue: number; stale: number }>({
     queryKey: ['linkSummary'],
-    queryFn: async () => { const r = await fetch('/api/transactions/links-summary', { credentials: 'include' }).catch(() => null); return r ? r.json() : { outstanding: 0, remindDue: 0, stale: 0 }; },
+    queryFn: async () => { const r = await fetch(`${API}/api/transactions/links-summary`, { credentials: 'include' }).catch(() => null); return r ? r.json() : { outstanding: 0, remindDue: 0, stale: 0 }; },
   });
   const ageDays = (t: { createdAt: number }) => Math.max(0, Math.floor((Date.now() / 1000 - t.createdAt) / 86400));
   const ageClass = (d: number) => d >= 5 ? 'bg-rose-500/15 text-rose-700' : d >= 3 ? 'bg-amber-500/15 text-amber-700' : 'bg-slate-500/15 text-brand-navy/50';
@@ -219,7 +220,7 @@ export default function TransactionsTab() {
   // Owner/manager: counselor auto-confirm settings (business_profile)
   const { data: profileData } = useQuery<{ profile?: { autoConfirmEnabled?: boolean | number; autoConfirmThresholdPaise?: number } }>({
     queryKey: ['billingProfile'],
-    queryFn: async () => { const r = await fetch('/api/compliance/business-profile', { credentials: 'include' }); if (!r.ok) throw new Error('profile'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/compliance/business-profile`, { credentials: 'include' }); if (!r.ok) throw new Error('profile'); return r.json(); },
     enabled: isMoneyManager,
   });
   const [autoConfirm, setAutoConfirm] = useState(false);
@@ -232,7 +233,7 @@ export default function TransactionsTab() {
   }
   const saveProfile = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/compliance/business-profile', {
+      const r = await fetch(`${API}/api/compliance/business-profile`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ autoConfirmEnabled: autoConfirm, autoConfirmThresholdPaise: Math.round(thresholdRs * 100) }),
       });

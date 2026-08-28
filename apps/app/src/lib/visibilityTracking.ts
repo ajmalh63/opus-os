@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Visibility Hub — public-site tracking (GA4 + GTM + Meta Pixel + CF WA + D1)
 // Elite wiring: one fetch to /api/visibility/ga4/config drives all pixels.
@@ -105,7 +106,7 @@ function fireFbq(track: 'track' | 'trackCustom', eventName: string, params: Reco
 let configPromise: Promise<any> | null = null;
 function getConfig(): Promise<{ measurementId?: string; gtmId?: string; metaPixelId?: string; cfWaToken?: string }> {
   if (configPromise) return configPromise;
-  configPromise = fetch('/api/visibility/ga4/config')
+  configPromise = fetch(`${API}/api/visibility/ga4/config`)
     .then(r => r.json())
     .then(d => ({ measurementId: d?.measurementId, gtmId: d?.gtmId, metaPixelId: d?.metaPixelId, cfWaToken: d?.cfWaToken }))
     .catch(() => ({}));
@@ -150,7 +151,7 @@ export function useVisibilityTracking(route: string) {
     });
 
     // 4. Meta injection from SEO Hub (V1) — SPA title/OG/schema
-    fetch(`/api/visibility/public/meta?route=${encodeURIComponent(route)}`)
+    fetch(`${API}/api/visibility/public/meta?route=${encodeURIComponent(route)}`)
       .then(r => r.json())
       .then((d: any) => {
         if (!d?.meta) return;

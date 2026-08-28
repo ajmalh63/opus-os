@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const ROLES = ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'];
 const TYPES = ['visa_inquiry', 'visa_application', 'visa_sale', 'manpower_application', 'membership_sale', 'document_upload', 'resume_upload'];
@@ -18,7 +19,7 @@ export default function AlertsVisibility() {
   const queryClient = useQueryClient();
   const { data } = useQuery<{ success: boolean; visibility: Record<string, string[]> | null; types: string[] }>({
     queryKey: ['alertVisibility'],
-    queryFn: async () => { const r = await fetch('/api/staff/alerts/visibility'); if (!r.ok) throw new Error('visibility'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/staff/alerts/visibility`); if (!r.ok) throw new Error('visibility'); return r.json(); },
   });
   const [vis, setVis] = useState<Record<string, string[]>>({});
 
@@ -29,7 +30,7 @@ export default function AlertsVisibility() {
 
   const save = useMutation({
     mutationFn: async (v: Record<string, string[]>) => {
-      const r = await fetch('/api/staff/alerts/visibility', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ visibility: v }) });
+      const r = await fetch(`${API}/api/staff/alerts/visibility`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ visibility: v }) });
       if (!r.ok) throw new Error('Failed to save');
       return r.json();
     },

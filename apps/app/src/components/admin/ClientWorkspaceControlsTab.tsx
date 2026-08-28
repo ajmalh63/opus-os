@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ManpowerProfileWizard, { ManpowerProfile } from '../ManpowerProfileWizard';
 import StudentProfileWizard, { StudentProfile } from '../StudentProfileWizard';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const ATTESTATION_COUNTRIES = ['UAE','Saudi Arabia','Qatar','Kuwait','Oman','Bahrain','Malaysia','China','Thailand','Vietnam','Taiwan','Sri Lanka','Bangladesh','Japan','South Korea','Singapore','Hong Kong','USA','UK','Canada','Australia','New Zealand','Ireland','Germany','France','Netherlands','Sweden','Switzerland','Spain','Italy','Poland','Russia','Turkey','Egypt','Jordan','Libya','South Africa','Brazil','Mexico','Other'];
 
@@ -19,7 +20,7 @@ function AttestationSuperadminForm({ selectedClientId, onDone }: { selectedClien
     if (!selectedClientId || !docName.trim() || !holderName.trim() || !issuingState.trim()) { alert('Fill destination, doc name, holder, issuing state'); return; }
     setBusy(true);
     try {
-      const r = await fetch('/api/attestation/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: selectedClientId, document: { holderName: holderName.trim(), documentName: docName.trim(), issuingState: issuingState.trim() }, category, route: 'embassy', destinationCountry: country, translationNeeded: translation, urgency, deadline: deadline ? Math.floor(new Date(deadline).getTime()/1000) : undefined }) });
+      const r = await fetch(`${API}/api/attestation/applications`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: selectedClientId, document: { holderName: holderName.trim(), documentName: docName.trim(), issuingState: issuingState.trim() }, category, route: 'embassy', destinationCountry: country, translationNeeded: translation, urgency, deadline: deadline ? Math.floor(new Date(deadline).getTime()/1000) : undefined }) });
       const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Create failed'); onDone();
     } catch (e: any) { alert(e.message); } finally { setBusy(false); }
   };
@@ -54,7 +55,7 @@ export default function ClientWorkspaceControlsTab() {
 
   const { data: clientsData } = useQuery<{ clients: any[] }>({
     queryKey: ['adminClientsList'],
-    queryFn: async () => { const r = await fetch('/api/clients'); if (!r.ok) throw new Error('clients'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/clients`); if (!r.ok) throw new Error('clients'); return r.json(); },
   });
   const clients = clientsData?.clients || [];
   const selectedClient = clients.find((c: any) => c.id === selectedClientId);
@@ -62,7 +63,7 @@ export default function ClientWorkspaceControlsTab() {
   const { data: clientDetail, refetch: refetchDetail } = useQuery<any>({
     queryKey: ['adminClientDetail', selectedClientId],
     queryFn: async () => {
-      const r = await fetch(`/api/clients/${selectedClientId}`);
+      const r = await fetch(`${API}/api/clients/${selectedClientId}`);
       if (!r.ok) throw new Error('detail');
       return r.json();
     },
@@ -75,7 +76,7 @@ export default function ClientWorkspaceControlsTab() {
 
   const saveClientMutation = useMutation({
     mutationFn: async (nextIntake: any) => {
-      const r = await fetch(`/api/clients/${selectedClientId}`, {
+      const r = await fetch(`${API}/api/clients/${selectedClientId}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ intakeContext: JSON.stringify(nextIntake) }),
       });
@@ -89,14 +90,14 @@ export default function ClientWorkspaceControlsTab() {
   // Manpower Services — job postings control (every field superadmin can edit)
   const { data: jobsData } = useQuery<{ jobs: any[]; success: boolean }>({
     queryKey: ['adminManpowerJobs'],
-    queryFn: async () => { const r = await fetch('/api/manpower/jobs'); if (!r.ok) throw new Error('jobs'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/manpower/jobs`); if (!r.ok) throw new Error('jobs'); return r.json(); },
     enabled: division === 'manpower',
   });
   const [jobDraft, setJobDraft] = useState<any>({ title: '', country: 'Qatar', sector: 'Construction', salaryText: 'QR 2,500', collar: 'blue_collar', tier: 'public', currency: 'QAR', vacancies: 1, experienceYearsMin: 2, tradeCategory: '', description: '', employer: '', requirements: '', benefits: '' });
   const createJob = useMutation({
     mutationFn: async (p: any) => {
       const payload = { ...p, benefits: p.benefits.split(',').map((s: string) => s.trim()).filter(Boolean), requirements: p.requirements.split(',').map((s: string) => s.trim()).filter(Boolean) };
-      const r = await fetch('/api/manpower/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const r = await fetch(`${API}/api/manpower/jobs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!r.ok) throw new Error(await r.text()); return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['adminManpowerJobs'] }); showToast('✓ Job posted — appears instantly in client marketplace'); },
@@ -204,7 +205,7 @@ export default function ClientWorkspaceControlsTab() {
                     {(jobsData?.jobs || []).slice(0, 8).map((j: any) => (
                       <div key={j.id} className="rounded-xl border border-brand-navy/10 bg-brand-navy/[0.03] p-3 flex items-center justify-between">
                         <div><div className="font-bold text-xs text-brand-navy">{j.title}</div><div className="text-[13px] text-brand-navy/50">{j.country} · {j.sector} · {j.collar} · {j.tier} · {j.salaryText}</div></div>
-                        <button onClick={async () => { if (confirm('Archive job?')) { await fetch(`/api/manpower/jobs/${j.id}`, { method: 'DELETE' }); qc.invalidateQueries({ queryKey: ['adminManpowerJobs'] }); showToast('Archived'); }}} className="text-[13px] font-bold text-rose-600 border border-rose-200 bg-rose-50 px-2 py-1 rounded">Archive</button>
+                        <button onClick={async () => { if (confirm('Archive job?')) { await fetch(`${API}/api/manpower/jobs/${j.id}`, { method: 'DELETE' }); qc.invalidateQueries({ queryKey: ['adminManpowerJobs'] }); showToast('Archived'); }}} className="text-[13px] font-bold text-rose-600 border border-rose-200 bg-rose-50 px-2 py-1 rounded">Archive</button>
                       </div>
                     ))}
                   </div>

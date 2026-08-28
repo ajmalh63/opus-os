@@ -15,6 +15,7 @@ import { useVisibilityTracking } from '../lib/visibilityTracking';
 import { createSyncClient } from '../lib/syncClient';
 import { BookingTower } from '../components/partner/BookingTower';
 import { CommissionPerformance } from '../components/partner/CommissionPerformance';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // ============================================================================
 // OPUS OVERSEAS — PARTNER & AFFILIATE COMMAND CENTER (GOLD STANDARD ARCHITECTURE)
@@ -455,7 +456,7 @@ export default function PartnerDashboard() {
     queryKey: ['partnerSession'],
     queryFn: async () => {
       try {
-        const res = await fetch('/api/public/partners/session', { credentials: 'include' });
+        const res = await fetch(`${API}/api/public/partners/session`, { credentials: 'include' });
         if (res.status === 401 || res.status === 404) return { success: true, authenticated: false, email: null };
         if (!res.ok) return { success: true, authenticated: false, email: null };
         return res.json();
@@ -486,7 +487,7 @@ export default function PartnerDashboard() {
     queryKey: ['partnerSummary', partnerId],
     queryFn: async () => {
       if (!partnerId) return null as unknown as PartnerSummary;
-      const res = await fetch(`/api/public/partners/${partnerId}/summary`, { headers: authHeaders() });
+      const res = await fetch(`${API}/api/public/partners/${partnerId}/summary`, { headers: authHeaders() });
       if (!res.ok) {
         setAuthError('Access failed — check your Partner ID and Access Key.');
         throw new Error(await res.text() || 'summary failed');
@@ -500,7 +501,7 @@ export default function PartnerDashboard() {
   const { data: thrive } = useQuery<ThriveSummary>({
     queryKey: ['partnerThrive', activePartnerId],
     queryFn: async () => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/thrive`, { headers: authHeaders() });
+      const r = await fetch(`${API}/api/public/partners/${activePartnerId}/thrive`, { headers: authHeaders() });
       if (!r.ok) throw new Error('thrive');
       return r.json();
     },
@@ -511,7 +512,7 @@ export default function PartnerDashboard() {
   const { data: referralDetail } = useQuery<ReferralDetailPayload>({
     queryKey: ['partnerReferralDetail', activePartnerId],
     queryFn: async () => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/referrals/detail`, { headers: authHeaders() });
+      const r = await fetch(`${API}/api/public/partners/${activePartnerId}/referrals/detail`, { headers: authHeaders() });
       if (r.status === 404) return { referrals: [] };
       if (!r.ok) throw new Error(await r.text() || 'referral detail failed');
       return r.json();
@@ -524,7 +525,7 @@ export default function PartnerDashboard() {
   const { data: creativesData } = useQuery<CreativesPayload>({
     queryKey: ['partnerCreatives', activePartnerId],
     queryFn: async () => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/creatives`, { headers: authHeaders() });
+      const r = await fetch(`${API}/api/public/partners/${activePartnerId}/creatives`, { headers: authHeaders() });
       if (r.status === 404) return { creatives: [] };
       if (!r.ok) throw new Error(await r.text() || 'creatives failed');
       return r.json();
@@ -536,7 +537,7 @@ export default function PartnerDashboard() {
   const { data: linksData } = useQuery<{ links: PartnerLink[] }>({
     queryKey: ['partnerLinks', activePartnerId],
     queryFn: async () => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/links`, { headers: authHeaders() });
+      const r = await fetch(`${API}/api/public/partners/${activePartnerId}/links`, { headers: authHeaders() });
       if (!r.ok) throw new Error('links');
       return r.json();
     },
@@ -546,7 +547,7 @@ export default function PartnerDashboard() {
   const { data: payoutsData } = useQuery<{ payouts: PayoutRow[] }>({
     queryKey: ['partnerPayouts', activePartnerId],
     queryFn: async () => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/payouts`, { headers: authHeaders() });
+      const r = await fetch(`${API}/api/public/partners/${activePartnerId}/payouts`, { headers: authHeaders() });
       if (!r.ok) throw new Error('payouts');
       return r.json();
     },
@@ -556,7 +557,7 @@ export default function PartnerDashboard() {
   const { data: catalog } = useQuery<{ items: CatalogItem[] }>({
     queryKey: ['partnerCatalog'],
     queryFn: async () => {
-      const r = await fetch('/api/public/partners/catalog', { headers: authHeaders() });
+      const r = await fetch(`${API}/api/public/partners/catalog`, { headers: authHeaders() });
       if (!r.ok) throw new Error('catalog');
       return r.json();
     },
@@ -657,7 +658,7 @@ export default function PartnerDashboard() {
   // --------------------------------------------------------------------------
   const registerMutation = useMutation({
     mutationFn: async (payload: { name: string; email: string; password: string; panNumber: string; bankAccount: string; ifscCode: string }) => {
-      const res = await fetch('/api/public/partners', {
+      const res = await fetch(`${API}/api/public/partners`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -696,7 +697,7 @@ export default function PartnerDashboard() {
     mutationFn: async (payload: { partnerId: string; clientId: string; commissionRate: number }) => {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (!sessionActive) headers['Authorization'] = `Bearer ${partnerToken}`;
-      const res = await fetch('/api/public/partners/referrals', { method: 'POST', headers, body: JSON.stringify(payload) });
+      const res = await fetch(`${API}/api/public/partners/referrals`, { method: 'POST', headers, body: JSON.stringify(payload) });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
         throw new Error(err?.error || await res.text());
@@ -716,7 +717,7 @@ export default function PartnerDashboard() {
 
   const requestPayout = useMutation({
     mutationFn: async () => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/payouts`, { method: 'POST', headers: authHeaders(true) });
+      const r = await fetch(`${API}/api/public/partners/${activePartnerId}/payouts`, { method: 'POST', headers: authHeaders(true) });
       if (!r.ok) {
         const e = await r.json().catch(() => null);
         throw new Error(e?.error || 'Payout request failed');
@@ -732,7 +733,7 @@ export default function PartnerDashboard() {
 
   const savePayoutConfig = useMutation({
     mutationFn: async (payload: { payoutMethod: string; payoutDetail: string; payoutThresholdPaise: number }) => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/payout-config`, {
+      const r = await fetch(`${API}/api/public/partners/${activePartnerId}/payout-config`, {
         method: 'POST',
         headers: authHeaders(true),
         body: JSON.stringify(payload),
@@ -755,7 +756,7 @@ export default function PartnerDashboard() {
 
   const createLinkMutation = useMutation({
     mutationFn: async (item: CatalogItem) => {
-      const r = await fetch(`/api/public/partners/${activePartnerId}/links`, {
+      const r = await fetch(`${API}/api/public/partners/${activePartnerId}/links`, {
         method: 'POST',
         headers: authHeaders(true),
         body: JSON.stringify({
@@ -830,7 +831,7 @@ export default function PartnerDashboard() {
     }
     setAuthError('');
     try {
-      const res = await fetch('/api/auth/sign-in/email', {
+      const res = await fetch(`${API}/api/auth/sign-in/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -865,7 +866,7 @@ export default function PartnerDashboard() {
   };
 
   const handleLogout = () => {
-    fetch('/api/auth/sign-out', {
+    fetch(`${API}/api/auth/sign-out`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

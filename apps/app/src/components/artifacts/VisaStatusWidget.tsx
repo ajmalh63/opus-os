@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ArtifactShell from './ArtifactShell';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const PIPELINE_STAGES = [
   { key: 'lead', label: 'File Initiated', done: true },
@@ -21,7 +22,7 @@ export default function VisaStatusWidget() {
     setLoading(true);
     setStatus(null);
     try {
-      const res = await fetch(`/api/public/portal/lookup?token=${encodeURIComponent(token)}`);
+      const res = await fetch(`${API}/api/public/portal/lookup?token=${encodeURIComponent(token)}`);
       const data = await res.json();
       if (!res.ok) {
         setStatus({ error: data.error || 'Token not found. Verify with your counselor.' });

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface ReviewsSummaryResponse {
   summary: {
@@ -27,7 +28,7 @@ export default function ReviewAggregatorPill({
   const { data } = useQuery<ReviewsSummaryResponse>({
     queryKey: ['approvedFeedback'],
     queryFn: async () => {
-      const res = await fetch('/api/public/feedback/approved');
+      const res = await fetch(`${API}/api/public/feedback/approved`);
       if (!res.ok) throw new Error('Failed to load reviews summary');
       return res.json();
     },

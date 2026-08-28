@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface Props {
   clientId?: string;
@@ -28,7 +29,7 @@ export default function AiVisaRiskCopilot({
 
   const riskMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/staff/ai/visa-risk', { credentials: 'include', method: 'POST',
+      const res = await fetch(`${API}/api/staff/ai/visa-risk`, { credentials: 'include', method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientId,

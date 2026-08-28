@@ -12,6 +12,7 @@ import DomainDarkGraphics from '../../components/DomainDarkGraphics';
 import { BASE_ORGANIZATION_SCHEMA, getBreadcrumbSchema, getFAQSchema, getServiceSchema } from '../../lib/schemas';
 import { useVisibilityTracking } from '../../lib/visibilityTracking';
 import { track, EVENTS } from '../../lib/umami';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const TOURS_FAQS = [
   {
@@ -225,7 +226,7 @@ export default function ToursTravelPage() {
     const normalizedPhone = digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : travelerPhone;
 
     try {
-      const res = await fetch('/api/public/leads', {
+      const res = await fetch(`${API}/api/public/leads`, {
         credentials: 'include',
         method: 'POST',
         headers: {

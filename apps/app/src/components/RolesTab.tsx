@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface Permission { code: string; family: string; label: string; ownerOnly: boolean; }
 interface Role { id: string; name: string; code: string; description: string | null; permissionsJson: string; system: boolean; editable: boolean; color: string; }
@@ -23,7 +24,7 @@ export default function RolesTab() {
   const { data: permData } = useQuery<{ permissions: Permission[] }>({
     queryKey: ['rbacPermissions'],
     queryFn: async () => {
-      const r = await fetch('/api/admin/rbac/permissions', { credentials: 'include' });
+      const r = await fetch(`${API}/api/admin/rbac/permissions`, { credentials: 'include' });
       if (!r.ok) throw new Error('Failed to load permissions');
       return r.json();
     }
@@ -34,7 +35,7 @@ export default function RolesTab() {
   const { data: roleData, refetch: refetchRoles } = useQuery<{ roles: Role[] }>({
     queryKey: ['rbacRoles'],
     queryFn: async () => {
-      const r = await fetch('/api/admin/rbac/roles', { credentials: 'include' });
+      const r = await fetch(`${API}/api/admin/rbac/roles`, { credentials: 'include' });
       if (!r.ok) throw new Error('Failed to load roles');
       return r.json();
     }
@@ -43,7 +44,7 @@ export default function RolesTab() {
 
   const createRole = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/admin/rbac/roles', {
+      const r = await fetch(`${API}/api/admin/rbac/roles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ name, code: code.toLowerCase().replace(/\s+/g, '_'), description: desc, permissions: selectedPerms })

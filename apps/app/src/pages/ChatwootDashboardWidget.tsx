@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface ClientContext {
   found: boolean;
@@ -103,7 +104,7 @@ export default function ChatwootDashboardWidget() {
     e.preventDefault();
     setCreatingLead(true);
     try {
-      const res = await fetch('/api/public/chatwoot/quick-lead', {
+      const res = await fetch(`${API}/api/public/chatwoot/quick-lead`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

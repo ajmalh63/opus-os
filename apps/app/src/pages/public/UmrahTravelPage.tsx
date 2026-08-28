@@ -15,6 +15,7 @@ import DomainDarkGraphics from '../../components/DomainDarkGraphics';
 import { BASE_ORGANIZATION_SCHEMA, getBreadcrumbSchema, getFAQSchema, getServiceSchema } from '../../lib/schemas';
 import { useVisibilityTracking } from '../../lib/visibilityTracking';
 import { track, EVENTS } from '../../lib/umami';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const UMRAH_FAQS = [
   {
@@ -86,7 +87,7 @@ export default function UmrahTravelPage() {
   const { data: departuresData, isLoading: loadingDepartures } = useQuery({
     queryKey: ['publicUmrahDepartures'],
     queryFn: async () => {
-      const res = await fetch('/api/public/umrah/departures', { credentials: 'include', });
+      const res = await fetch(`${API}/api/public/umrah/departures`, { credentials: 'include', });
       if (!res.ok) return { departures: [] };
       return res.json();
     },
@@ -109,7 +110,7 @@ export default function UmrahTravelPage() {
     const normalizedPhone = digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : pilgrimPhone;
 
     try {
-      const res = await fetch('/api/public/leads', { credentials: 'include', 
+      const res = await fetch(`${API}/api/public/leads`, { credentials: 'include', 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

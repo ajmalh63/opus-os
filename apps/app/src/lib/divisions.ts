@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Division availability (business-operations gating).
 // Single source of truth: GET /api/public/divisions (server enforces too —
@@ -17,7 +18,7 @@ export function useDivisions() {
   const q = useQuery<DivisionsPayload>({
     queryKey: ['divisions-enabled'],
     queryFn: async () => {
-      const res = await fetch('/api/public/divisions', { credentials: 'include', });
+      const res = await fetch(`${API}/api/public/divisions`, { credentials: 'include', });
       if (!res.ok) throw new Error('Failed to load division availability');
       return res.json();
     },

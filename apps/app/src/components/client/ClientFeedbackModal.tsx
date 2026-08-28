@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export interface ClientFeedbackModalProps {
   open: boolean;
@@ -31,7 +32,7 @@ export default function ClientFeedbackModal({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/public/feedback', {
+      const res = await fetch(`${API}/api/public/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

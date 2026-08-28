@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export interface ReviewItem {
   id: string;
@@ -64,7 +65,7 @@ export default function ReviewShowcaseCarousel({
       if (featuredOnly) params.set('featured', 'true');
       params.set('limit', limit.toString());
 
-      const res = await fetch(`/api/public/feedback/approved?${params.toString()}`);
+      const res = await fetch(`${API}/api/public/feedback/approved?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch reviews');
       return res.json();
     },

@@ -14,6 +14,7 @@ import DomainDarkGraphics from '../../components/DomainDarkGraphics';
 import { BASE_ORGANIZATION_SCHEMA, getBreadcrumbSchema, getFAQSchema, getServiceSchema } from '../../lib/schemas';
 import { useVisibilityTracking } from '../../lib/visibilityTracking';
 import { track, EVENTS } from '../../lib/umami';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const ATTESTATION_FAQS = [
   {
@@ -98,7 +99,7 @@ export default function AttestationPage() {
   const { data: chainsData } = useQuery({
     queryKey: ['publicAttestationChains'],
     queryFn: async () => {
-      const res = await fetch('/api/public/attestation/chains', { credentials: 'include', });
+      const res = await fetch(`${API}/api/public/attestation/chains`, { credentials: 'include', });
       if (!res.ok) return { chains: [] };
       return res.json();
     },
@@ -133,7 +134,7 @@ export default function AttestationPage() {
     const normalizedPhone = digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : clientPhone;
 
     try {
-      const res = await fetch('/api/public/leads', { credentials: 'include', 
+      const res = await fetch(`${API}/api/public/leads`, { credentials: 'include', 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

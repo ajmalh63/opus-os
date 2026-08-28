@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface Client {
   id: string;
@@ -99,7 +100,7 @@ export default function ManpowerPortal() {
   const { data: jobsData, isLoading: jobsLoading } = useQuery<{ success: boolean; jobs: JobPosting[] }>({
     queryKey: ['manpowerJobs'],
     queryFn: async () => {
-      const r = await fetch('/api/manpower/jobs');
+      const r = await fetch(`${API}/api/manpower/jobs`);
       if (!r.ok) throw new Error('Failed to fetch jobs');
       return r.json();
     }
@@ -108,7 +109,7 @@ export default function ManpowerPortal() {
   const { data: demandsData, isLoading: demandsLoading, refetch: refetchDemands } = useQuery<{ success: boolean; demands: any[]; count: number }>({
     queryKey: ['employerDemands'],
     queryFn: async () => {
-      const r = await fetch('/api/employer-demands');
+      const r = await fetch(`${API}/api/employer-demands`);
       if (!r.ok) throw new Error('demands');
       return r.json();
     },
@@ -119,7 +120,7 @@ export default function ManpowerPortal() {
   const { data: candidatesData } = useQuery<{ candidates: Client[] }>({
     queryKey: ['manpowerCandidates'],
     queryFn: async () => {
-      const r = await fetch('/api/manpower/candidates');
+      const r = await fetch(`${API}/api/manpower/candidates`);
       if (!r.ok) return { candidates: [] as Client[] };
       return r.json();
     }
@@ -128,7 +129,7 @@ export default function ManpowerPortal() {
   const { data: clientsData } = useQuery<{ clients: Client[] }>({
     queryKey: ['clientsList'],
     queryFn: async () => {
-      const r = await fetch('/api/clients');
+      const r = await fetch(`${API}/api/clients`);
       if (!r.ok) throw new Error('Failed to fetch clients');
       return r.json();
     }
@@ -143,7 +144,7 @@ export default function ManpowerPortal() {
     queryKey: ['manpowerDeployments', selectedCandidate?.id],
     queryFn: async () => {
       if (!selectedCandidate?.id) return { success: true, deployments: [] };
-      const r = await fetch(`/api/manpower/deployments?clientId=${selectedCandidate.id}`);
+      const r = await fetch(`${API}/api/manpower/deployments?clientId=${selectedCandidate.id}`);
       if (!r.ok) return { success: true, deployments: [] as Deployment[] };
       return r.json();
     },
@@ -154,7 +155,7 @@ export default function ManpowerPortal() {
 
   const addJobMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch('/api/manpower/jobs', {
+      const r = await fetch(`${API}/api/manpower/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -172,7 +173,7 @@ export default function ManpowerPortal() {
 
   const updateJobMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/manpower/jobs/${id}`, {
+      const r = await fetch(`${API}/api/manpower/jobs/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -192,7 +193,7 @@ export default function ManpowerPortal() {
 
   const archiveJobMutation = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/manpower/jobs/${id}`, { method: 'DELETE' });
+      const r = await fetch(`${API}/api/manpower/jobs/${id}`, { method: 'DELETE' });
       if (!r.ok) throw new Error('Failed to archive job');
       return r.json();
     },
@@ -241,7 +242,7 @@ export default function ManpowerPortal() {
 
   const createDeploymentMutation = useMutation({
     mutationFn: async ({ clientId, jobId }: { clientId: string; jobId: string }) => {
-      const r = await fetch('/api/manpower/deployments', {
+      const r = await fetch(`${API}/api/manpower/deployments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId, jobId })
@@ -259,7 +260,7 @@ export default function ManpowerPortal() {
 
   const updateDeploymentMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/manpower/deployments/${id}`, {
+      const r = await fetch(`${API}/api/manpower/deployments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -280,7 +281,7 @@ export default function ManpowerPortal() {
 
   const { data: plansData, refetch: refetchPlans } = useQuery<{ success: boolean; plans: any[] }>({
     queryKey: ['membershipPlans'],
-    queryFn: async () => { const r = await fetch('/api/manpower/membership-plans'); if (!r.ok) throw new Error('plans'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/manpower/membership-plans`); if (!r.ok) throw new Error('plans'); return r.json(); },
   });
   const plans = plansData?.plans || [];
 
@@ -296,14 +297,14 @@ export default function ManpowerPortal() {
   });
 
   const deactivatePlanMutation = useMutation({
-    mutationFn: async (id: string) => { const r = await fetch(`/api/manpower/membership-plans/${id}`, { method: 'DELETE' }); if (!r.ok) throw new Error('Failed'); return r.json(); },
+    mutationFn: async (id: string) => { const r = await fetch(`${API}/api/manpower/membership-plans/${id}`, { method: 'DELETE' }); if (!r.ok) throw new Error('Failed'); return r.json(); },
     onSuccess: () => refetchPlans(),
     onError: (e: any) => alert(e.message),
   });
 
   const grantMembershipMutation = useMutation({
     mutationFn: async ({ clientId, exclusiveMember, planKey, durationDays }: any) => {
-      const r = await fetch(`/api/manpower/clients/${clientId}/membership`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exclusiveMember, planKey, durationDays }) });
+      const r = await fetch(`${API}/api/manpower/clients/${clientId}/membership`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exclusiveMember, planKey, durationDays }) });
       if (!r.ok) throw new Error('Failed');
       return r.json();
     },
@@ -315,13 +316,13 @@ export default function ManpowerPortal() {
 
   const { data: settingsData } = useQuery<{ success: boolean; exclusiveCommunityEnabled: boolean }>({
     queryKey: ['manpowerSettings'],
-    queryFn: async () => { const r = await fetch('/api/manpower/settings'); if (!r.ok) throw new Error('settings'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/manpower/settings`); if (!r.ok) throw new Error('settings'); return r.json(); },
   });
   useEffect(() => { if (settingsData?.exclusiveCommunityEnabled !== undefined) setExclusiveEnabled(settingsData.exclusiveCommunityEnabled); }, [settingsData?.exclusiveCommunityEnabled]);
 
   const toggleCommunityMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
-      const r = await fetch('/api/manpower/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exclusiveCommunityEnabled: enabled }) });
+      const r = await fetch(`${API}/api/manpower/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exclusiveCommunityEnabled: enabled }) });
       if (!r.ok) throw new Error('Failed to update settings');
       return r.json();
     },
@@ -589,9 +590,9 @@ export default function ManpowerPortal() {
                   <div className="mt-3 rounded-xl bg-brand-navy/[0.03] border border-brand-navy/10 p-3 text-xs leading-relaxed text-brand-navy/70">{d.jobDescription}</div>
                   {d.decisionMaker && <div className="mt-2 text-xs text-brand-navy/60">Decision maker: {d.decisionMaker}</div>}
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {d.status === 'new' && <button onClick={async () => { await fetch(`/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'qualified' }) }); refetchDemands(); }} className="rounded-full bg-brand-navy px-4 py-2 text-xs font-bold text-white hover:bg-brand-gold hover:text-brand-navy">Mark Qualified →</button>}
-                    {d.status === 'qualified' && <button onClick={async () => { await fetch(`/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'active' }) }); refetchDemands(); }} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">Activate → Create Jobs</button>}
-                    {d.status === 'active' && <button onClick={async () => { await fetch(`/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'closed' }) }); refetchDemands(); }} className="rounded-full bg-white border border-brand-navy/15 px-4 py-2 text-xs font-bold text-brand-navy hover:border-brand-gold">Mark Closed</button>}
+                    {d.status === 'new' && <button onClick={async () => { await fetch(`${API}/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'qualified' }) }); refetchDemands(); }} className="rounded-full bg-brand-navy px-4 py-2 text-xs font-bold text-white hover:bg-brand-gold hover:text-brand-navy">Mark Qualified →</button>}
+                    {d.status === 'qualified' && <button onClick={async () => { await fetch(`${API}/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'active' }) }); refetchDemands(); }} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">Activate → Create Jobs</button>}
+                    {d.status === 'active' && <button onClick={async () => { await fetch(`${API}/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'closed' }) }); refetchDemands(); }} className="rounded-full bg-white border border-brand-navy/15 px-4 py-2 text-xs font-bold text-brand-navy hover:border-brand-gold">Mark Closed</button>}
                     <a href={`https://wa.me/${d.phone.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">WhatsApp →</a>
                     <a href={`mailto:${d.workEmail}`} className="rounded-full border border-brand-navy/10 px-4 py-2 text-xs font-bold text-brand-navy/70 hover:text-brand-navy">Email →</a>
                   </div>

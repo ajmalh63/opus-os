@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../lib/session';
 import UmrahCalendar, { UmrahCalendarDay, TIER_INFO } from '../../components/UmrahCalendar';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface Pilgrim {
   id: string;
@@ -199,7 +200,7 @@ export default function UmrahPortal() {
   const { data: pkgData, isLoading: pkgsLoading } = useQuery<{ success: boolean; packages: UmrahPackage[] }>({
     queryKey: ['umrahPackages'],
     queryFn: async () => {
-      const r = await fetch('/api/umrah/packages');
+      const r = await fetch(`${API}/api/umrah/packages`);
       if (!r.ok) throw new Error('Failed to fetch packages');
       return r.json();
     }
@@ -208,7 +209,7 @@ export default function UmrahPortal() {
   const { data: settingsData } = useQuery<{ success: boolean; enabled: boolean }>({
     queryKey: ['umrahSettings'],
     queryFn: async () => {
-      const r = await fetch('/api/umrah/settings');
+      const r = await fetch(`${API}/api/umrah/settings`);
       if (!r.ok) throw new Error('Failed to fetch settings');
       return r.json();
     }
@@ -218,7 +219,7 @@ export default function UmrahPortal() {
   const { data: depData, isLoading: depsLoading } = useQuery<{ departures: Departure[] }>({
     queryKey: ['umrahDepartures'],
     queryFn: async () => {
-      const r = await fetch('/api/umrah/departures');
+      const r = await fetch(`${API}/api/umrah/departures`);
       if (!r.ok) throw new Error('Failed to fetch departures');
       return r.json();
     }
@@ -228,7 +229,7 @@ export default function UmrahPortal() {
     queryKey: ['umrahCalendar', calMonth.getFullYear(), calMonth.getMonth()],
     queryFn: async () => {
       const ym = `${calMonth.getFullYear()}-${String(calMonth.getMonth() + 1).padStart(2, '0')}`;
-      const r = await fetch(`/api/umrah/departures/calendar?month=${ym}`);
+      const r = await fetch(`${API}/api/umrah/departures/calendar?month=${ym}`);
       if (!r.ok) throw new Error('Calendar failed');
       return r.json();
     }
@@ -237,7 +238,7 @@ export default function UmrahPortal() {
   const { data: clientsData } = useQuery<{ clients: Pilgrim[] }>({
     queryKey: ['clientsList'],
     queryFn: async () => {
-      const r = await fetch('/api/clients');
+      const r = await fetch(`${API}/api/clients`);
       if (!r.ok) throw new Error('Failed to fetch clients');
       return r.json();
     }
@@ -251,7 +252,7 @@ export default function UmrahPortal() {
     queryKey: ['umrahManifest', selectedDep?.id],
     queryFn: async () => {
       if (!selectedDep) return { success: true, manifest: [] };
-      const r = await fetch(`/api/umrah/departures/${selectedDep.id}/manifest`);
+      const r = await fetch(`${API}/api/umrah/departures/${selectedDep.id}/manifest`);
       if (!r.ok) throw new Error('Manifest failed');
       return r.json();
     },
@@ -264,7 +265,7 @@ export default function UmrahPortal() {
   // ── Mutations ──
   const toggleSettingsMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
-      const r = await fetch('/api/umrah/settings', {
+      const r = await fetch(`${API}/api/umrah/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled })
@@ -298,7 +299,7 @@ export default function UmrahPortal() {
 
   const pkgStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const r = await fetch(`/api/umrah/packages/${id}/status`, {
+      const r = await fetch(`${API}/api/umrah/packages/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -312,7 +313,7 @@ export default function UmrahPortal() {
 
   const announceMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch(`/api/umrah/packages/${payload.packageId}/departures`, {
+      const r = await fetch(`${API}/api/umrah/packages/${payload.packageId}/departures`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload.body)
@@ -331,7 +332,7 @@ export default function UmrahPortal() {
 
   const bookSeatMutation = useMutation({
     mutationFn: async (payload: { departureId: string; clientId: string }) => {
-      const r = await fetch(`/api/umrah/departures/${payload.departureId}/book`, {
+      const r = await fetch(`${API}/api/umrah/departures/${payload.departureId}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId: payload.clientId })
@@ -352,7 +353,7 @@ export default function UmrahPortal() {
   // Super-admin calendar control: cancel a departure (cancels linked bookings)
   const cancelDepartureMutation = useMutation({
     mutationFn: async (departureId: string) => {
-      const r = await fetch(`/api/umrah/departures/${departureId}/status`, {
+      const r = await fetch(`${API}/api/umrah/departures/${departureId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'cancelled' })
@@ -372,7 +373,7 @@ export default function UmrahPortal() {
   // Super-admin control: release a single booking (returns seat to inventory)
   const releaseBookingMutation = useMutation({
     mutationFn: async (bookingId: string) => {
-      const r = await fetch(`/api/umrah/bookings/${bookingId}/release`, {
+      const r = await fetch(`${API}/api/umrah/bookings/${bookingId}/release`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
@@ -392,11 +393,11 @@ export default function UmrahPortal() {
     mutationFn: async ({ row, key, value }: { row: ManifestRow; key: 'passportScanned' | 'visaIssued' | 'vaccineCertificate' | 'ticketIssued'; value: boolean }) => {
       let checklistId = row.checklistId;
       if (!checklistId) {
-        const boot = await fetch(`/api/umrah/checklists?bookingId=${row.bookingId}`).then(r => r.json());
+        const boot = await fetch(`${API}/api/umrah/checklists?bookingId=${row.bookingId}`).then(r => r.json());
         checklistId = boot?.checklist?.id || null;
       }
       if (!checklistId) throw new Error('Checklist bootstrap failed');
-      const r = await fetch(`/api/umrah/checklists/${checklistId}`, {
+      const r = await fetch(`${API}/api/umrah/checklists/${checklistId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [key]: value })

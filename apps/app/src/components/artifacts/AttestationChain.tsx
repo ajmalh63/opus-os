@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ArtifactShell from './ArtifactShell';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface ChainStep { 
   step: string; 
@@ -56,7 +57,7 @@ export default function AttestationChain() {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch('/api/public/attestation/chains');
+        const res = await fetch(`${API}/api/public/attestation/chains`);
         const data = await res.json();
         if (alive && data.chains?.length) {
           // Normalize to preserve status/authority fields

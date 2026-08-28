@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface ApiKeyItem {
   id: string;
@@ -73,12 +74,12 @@ export default function DeveloperApiSettingsTab() {
   const { data: keysData } = useQuery<{ data: ApiKeyItem[] }>({
     queryKey: ['adminApiKeys'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/keys', {
+      const res = await fetch(`${API}/api/v1/keys`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('opus_master_key') || ''}` },
       });
       if (!res.ok) {
         // Fallback for cookie session
-        const fallbackRes = await fetch('/api/admin/api-keys').catch(() => null);
+        const fallbackRes = await fetch(`${API}/api/admin/api-keys`).catch(() => null);
         if (fallbackRes && fallbackRes.ok) return fallbackRes.json();
       }
       return res.json();
@@ -89,7 +90,7 @@ export default function DeveloperApiSettingsTab() {
   const { data: webhooksData } = useQuery<{ data: WebhookItem[] }>({
     queryKey: ['adminWebhooks'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/webhooks', {
+      const res = await fetch(`${API}/api/v1/webhooks`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('opus_master_key') || ''}` },
       });
       return res.ok ? res.json() : { data: [] };
@@ -257,7 +258,7 @@ export default function DeveloperApiSettingsTab() {
                         type="button"
                         onClick={async () => {
                           if (confirm(`Revoke API key "${k.name}"? This cannot be undone.`)) {
-                            await fetch(`/api/v1/keys/${k.id}`, { method: 'DELETE' });
+                            await fetch(`${API}/api/v1/keys/${k.id}`, { method: 'DELETE' });
                             queryClient.invalidateQueries({ queryKey: ['adminApiKeys'] });
                           }
                         }}
@@ -346,7 +347,7 @@ export default function DeveloperApiSettingsTab() {
                       type="button"
                       onClick={async () => {
                         if (confirm(`Delete webhook "${w.name}"?`)) {
-                          await fetch(`/api/v1/webhooks/${w.id}`, { method: 'DELETE' });
+                          await fetch(`${API}/api/v1/webhooks/${w.id}`, { method: 'DELETE' });
                           queryClient.invalidateQueries({ queryKey: ['adminWebhooks'] });
                         }
                       }}
@@ -381,7 +382,7 @@ export default function DeveloperApiSettingsTab() {
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                const res = await fetch('/api/v1/keys', {
+                const res = await fetch(`${API}/api/v1/keys`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -504,7 +505,7 @@ export default function DeveloperApiSettingsTab() {
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                const res = await fetch('/api/v1/webhooks', {
+                const res = await fetch(`${API}/api/v1/webhooks`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({

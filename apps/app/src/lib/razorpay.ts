@@ -11,6 +11,8 @@ declare global {
   }
 }
 
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+
 export interface RazorpayCheckoutOptions {
   amountPaise: number; // Minimum 100 paise (₹1)
   currency?: string; // Default: "INR"
@@ -69,7 +71,7 @@ export async function openRazorpayCheckout(opts: RazorpayCheckoutOptions): Promi
   }
 
   // 2. Create Order on Backend (STEP 1)
-  const orderRes = await fetch("/api/create-order", {
+  const orderRes = await fetch(`${API}/api/create-order`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -114,7 +116,7 @@ export async function openRazorpayCheckout(opts: RazorpayCheckoutOptions): Promi
     }) {
       // 4. Verify Signature on Backend (STEP 3)
       try {
-        const verifyRes = await fetch("/api/verify-payment", {
+        const verifyRes = await fetch(`${API}/api/verify-payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

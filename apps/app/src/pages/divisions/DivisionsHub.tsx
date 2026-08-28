@@ -2,6 +2,7 @@ import { useLocation } from 'wouter';
 import { useSession } from '../../lib/session';
 import { useRevealRoot } from '../../lib/reveal';
 import { useQuery } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const AUTH = {
   get Authorization() {
@@ -75,7 +76,7 @@ export default function DivisionsHub() {
   const { data: statsData } = useQuery<any>({
     queryKey: ['divisionsStats'],
     queryFn: async () => {
-      const r = await fetch('/api/tasks/divisions-stats', { headers: { ...AUTH } });
+      const r = await fetch(`${API}/api/tasks/divisions-stats`, { headers: { ...AUTH } });
       if (!r.ok) throw new Error('stats');
       return r.json();
     },
@@ -87,7 +88,7 @@ export default function DivisionsHub() {
   const { data: divData } = useQuery<{ enabled: Record<string, boolean> }>({
     queryKey: ['publicDivisions'],
     queryFn: async () => {
-      const r = await fetch('/api/public/divisions');
+      const r = await fetch(`${API}/api/public/divisions`);
       if (!r.ok) return { enabled: { 'study-abroad': true } };
       return r.json();
     },

@@ -10,6 +10,7 @@ import SEOHead from '../../components/SEOHead';
 import { BASE_ORGANIZATION_SCHEMA, getBreadcrumbSchema, getFAQSchema } from '../../lib/schemas';
 import { useVisibilityTracking } from '../../lib/visibilityTracking';
 import { track, EVENTS } from '../../lib/umami';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const CONTACT_FAQS = [
   {
@@ -61,7 +62,7 @@ export default function ContactPage() {
     const normalizedPhone = digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : phone;
 
     try {
-      const res = await fetch('/api/public/leads', { credentials: 'include', 
+      const res = await fetch(`${API}/api/public/leads`, { credentials: 'include', 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

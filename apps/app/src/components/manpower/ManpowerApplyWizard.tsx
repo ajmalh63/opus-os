@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 /**
  * ManpowerApplyWizard — Enterprise 2026 Gold Standard
@@ -128,7 +129,7 @@ export default function ManpowerApplyWizard({ job, token, turnstileToken, active
       const fd = new FormData();
       fd.append('resume', file);
       fd.append('token', token);
-      const r = await fetch('/api/public/manpower/resume', { method: 'POST', body: fd });
+      const r = await fetch(`${API}/api/public/manpower/resume`, { method: 'POST', body: fd });
       const j = await r.json();
       if (!r.ok || !j.resumeKey) throw new Error(j.error || 'Upload failed');
       setResumeKey(j.resumeKey);
@@ -158,7 +159,7 @@ export default function ManpowerApplyWizard({ job, token, turnstileToken, active
     setSubmitting(true);
     setGlobalErr(null);
     try {
-      const r = await fetch('/api/public/portal/manpower/applications', {
+      const r = await fetch(`${API}/api/public/portal/manpower/applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, jobId: job.id, formJson: buildFormJson(), resumeKey, turnstileToken }),

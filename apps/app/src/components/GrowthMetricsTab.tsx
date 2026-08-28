@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 
 const rs = (n?: number) => `₹${((n || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -51,7 +52,7 @@ export default function GrowthMetricsTab() {
   const { data, isLoading, isError, refetch } = useQuery<any>({
     queryKey: ['growthMetrics'],
     queryFn: async () => {
-      const r = await fetch('/api/analytics/growth', { credentials: 'include' });
+      const r = await fetch(`${API}/api/analytics/growth`, { credentials: 'include' });
       if (!r.ok) throw new Error('growth');
       return r.json();
     },

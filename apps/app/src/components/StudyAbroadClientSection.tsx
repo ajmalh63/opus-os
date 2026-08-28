@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StudentProfileWizard, { StudentProfile } from './StudentProfileWizard';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Client portal — Study Abroad section (token-auth).
 // Profile wizard (student-owned data) + Mandatory Strategy Call Gate (Option B) + applications tracker + document uploads.
@@ -80,7 +81,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
   const { data: profileData } = useQuery<{ success: boolean; profile: StudentProfile; completeness: { pct: number; missing: string[] }; universitySharingConsent: boolean; highestQualification: string | null }>({
     queryKey: ['studyProfile', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/study-abroad/profile`, { headers: { 'X-Portal-Token': token } });
+      const r = await fetch(`${API}/api/public/portal/study-abroad/profile`, { headers: { 'X-Portal-Token': token } });
       if (r.status === 404) return { success: true, profile: {}, completeness: { pct: 0, missing: [] }, universitySharingConsent: false, highestQualification: null };
       if (!r.ok) throw new Error('Profile fetch failed');
       return r.json();
@@ -90,7 +91,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
   const { data: strategyData } = useQuery<StrategySessionStatus>({
     queryKey: ['studyStrategySession', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/study-abroad/strategy-session`, { headers: { 'X-Portal-Token': token } });
+      const r = await fetch(`${API}/api/public/portal/study-abroad/strategy-session`, { headers: { 'X-Portal-Token': token } });
       if (!r.ok) throw new Error('Strategy session fetch failed');
       return r.json();
     },
@@ -100,7 +101,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
   const { data: appsData } = useQuery<{ success: boolean; applications: AppRow[] }>({
     queryKey: ['studyAppsClient', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/study-abroad/applications`, { headers: { 'X-Portal-Token': token } });
+      const r = await fetch(`${API}/api/public/portal/study-abroad/applications`, { headers: { 'X-Portal-Token': token } });
       if (r.status === 404) return { success: true, applications: [] };
       if (!r.ok) throw new Error('Applications fetch failed');
       return r.json();
@@ -111,7 +112,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
   const { data: docsData } = useQuery<{ success: boolean; documents: any[]; applications: { id: string; university: string; docsChecklist: Record<string, string> }[] }>({
     queryKey: ['studyDocsClient', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/study-abroad/documents`, { headers: { 'X-Portal-Token': token } });
+      const r = await fetch(`${API}/api/public/portal/study-abroad/documents`, { headers: { 'X-Portal-Token': token } });
       if (r.status === 404) return { success: true, documents: [], applications: [] };
       if (!r.ok) throw new Error('Documents fetch failed');
       return r.json();
@@ -121,7 +122,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
 
   const saveProfileMutation = useMutation({
     mutationFn: async (profile: StudentProfile) => {
-      const r = await fetch(`/api/public/portal/study-abroad/profile`, {
+      const r = await fetch(`${API}/api/public/portal/study-abroad/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-Portal-Token': token },
         body: JSON.stringify(profile)
@@ -140,7 +141,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
 
   const acceptOfferMutation = useMutation({
     mutationFn: async ({ id, decision }: { id: string; decision: 'accepted' | 'declined' }) => {
-      const r = await fetch(`/api/public/portal/study-abroad/applications/${id}/accept-offer`, {
+      const r = await fetch(`${API}/api/public/portal/study-abroad/applications/${id}/accept-offer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Portal-Token': token },
         body: JSON.stringify({ decision })
@@ -158,7 +159,7 @@ export default function StudyAbroadClientSection({ token }: { token: string }) {
 
   const uploadDoc = async (appId: string, key: string, file: File, label?: string) => {
     try {
-      const presignedRes = await fetch(`/api/public/portal/study-abroad/applications/${appId}/docs/${key}/presigned?token=${token}&filename=${encodeURIComponent(file.name)}${label ? `&label=${encodeURIComponent(label)}` : ''}`, { method: 'POST', headers: { 'X-Portal-Token': token } });
+      const presignedRes = await fetch(`${API}/api/public/portal/study-abroad/applications/${appId}/docs/${key}/presigned?token=${token}&filename=${encodeURIComponent(file.name)}${label ? `&label=${encodeURIComponent(label)}` : ''}`, { method: 'POST', headers: { 'X-Portal-Token': token } });
       const presigned = await presignedRes.json();
       if (!presignedRes.ok || !presigned.url) throw new Error(presigned.error || 'Presign failed');
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface AuditResult {
   score: number;
@@ -47,7 +48,7 @@ export default function ApplicationReadinessAuditor() {
     setSendingReport(true);
     setReportError('');
     try {
-      const res = await fetch('/api/public/leads/express', { credentials: 'include', 
+      const res = await fetch(`${API}/api/public/leads/express`, { credentials: 'include', 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

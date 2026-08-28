@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ManpowerProfileWizard, { ManpowerProfile, manpowerCompleteness } from './ManpowerProfileWizard';
 import { computeManpowerMatchFrontend } from '../lib/manpowerMatch';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export default function ManpowerMarketplace({ token }: { token: string }) {
   const qc = useQueryClient();
@@ -14,7 +15,7 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
   const { data, isLoading } = useQuery<{ jobs: any[] }>({
     queryKey: ['manpowerMarketplace', q, country],
     queryFn: async () => {
-      const r = await fetch('/api/public/jobs');
+      const r = await fetch(`${API}/api/public/jobs`);
       if (!r.ok) return { jobs: [] };
       return r.json();
     },
@@ -33,7 +34,7 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
         medical: { selfDeclaredFit: profile.selfDeclaredFit, hasChronicCondition: !!profile.hasChronicCondition },
         additional: { tradeCertifications: profile.tradeCertifications, drivingLicense: profile.drivingLicense },
       };
-      const res = await fetch('/api/public/portal/manpower/applications', {
+      const res = await fetch(`${API}/api/public/portal/manpower/applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: token || 'client-self', jobId, formJson, resumeKey: profile.resumeKey || null }),
@@ -74,7 +75,7 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
     queryFn: async () => {
       // Try backend first (if portalManpower profile route exists), fallback to localStorage
       try {
-        const r = await fetch(`/api/public/portal/manpower/profile`, { headers: { 'X-Portal-Token': token } });
+        const r = await fetch(`${API}/api/public/portal/manpower/profile`, { headers: { 'X-Portal-Token': token } });
         if (r.ok) {
           const j = await r.json();
           if (j.profile) return j;
@@ -94,7 +95,7 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
       localStorage.setItem(storageKey, JSON.stringify(p));
       // Attempt backend sync (non-blocking) — stores in clients.intakeContext.manpowerProfile
       try {
-        const r = await fetch(`/api/public/portal/manpower/profile`, {
+        const r = await fetch(`${API}/api/public/portal/manpower/profile`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'X-Portal-Token': token },
           body: JSON.stringify(p),
@@ -118,7 +119,7 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
   // Resume upload — presigned R2 flow (same as StudyAbroad docs/upload, reused for manpower resume)
   const uploadResume = async (file: File) => {
     try {
-      const presignedRes = await fetch(`/api/public/portal/manpower/resume/presigned?token=${token}&filename=${encodeURIComponent(file.name)}`, { method: 'POST', headers: { 'X-Portal-Token': token } });
+      const presignedRes = await fetch(`${API}/api/public/portal/manpower/resume/presigned?token=${token}&filename=${encodeURIComponent(file.name)}`, { method: 'POST', headers: { 'X-Portal-Token': token } });
       if (presignedRes.ok) {
         const { url } = await presignedRes.json();
         const put = await fetch(url, { method: 'PUT', body: await file.arrayBuffer() });
@@ -145,7 +146,7 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
   const { data: appsData } = useQuery<{ success: boolean; applications: any[]; activeCount?: number }>({
     queryKey: ['portalManpowerApps', token],
     queryFn: async () => {
-      const r = await fetch(`/api/public/portal/manpower/applications?token=${token}`, { headers: { 'X-Portal-Token': token } });
+      const r = await fetch(`${API}/api/public/portal/manpower/applications?token=${token}`, { headers: { 'X-Portal-Token': token } });
       if (!r.ok) return { success: true, applications: [] };
       return r.json();
     },

@@ -19,6 +19,7 @@ import MarketingTab from './MarketingTab';
 import BoardsTab from './BoardsTab';
 import AiGovernanceTab from './admin/AiGovernanceTab';
 import GrowthMetricsTab from './GrowthMetricsTab';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 
 // Client-side mirror of the server Rbac gate. The server enforces the real
@@ -47,7 +48,7 @@ function AuditView() {
   const { data } = useQuery<{ logs?: any[] }>({
     queryKey: ['auditTrail'],
     queryFn: async () => {
-      const r = await fetch('/api/admin/audit-logs?limit=500', { credentials: 'include' });
+      const r = await fetch(`${API}/api/admin/audit-logs?limit=500`, { credentials: 'include' });
       if (!r.ok) throw new Error('audit');
       return r.json();
     },
@@ -76,7 +77,7 @@ function AuditView() {
   const { data: rt } = useQuery<{ logs?: any[]; sources?: string[] }>({
     queryKey: ['runtimeLogs', rtLevel, rtSource],
     queryFn: async () => {
-      const r = await fetch(`/api/admin/runtime-logs?limit=300&level=${rtLevel}&source=${encodeURIComponent(rtSource)}`, { credentials: 'include' });
+      const r = await fetch(`${API}/api/admin/runtime-logs?limit=300&level=${rtLevel}&source=${encodeURIComponent(rtSource)}`, { credentials: 'include' });
       if (!r.ok) throw new Error('runtime');
       return r.json();
     },

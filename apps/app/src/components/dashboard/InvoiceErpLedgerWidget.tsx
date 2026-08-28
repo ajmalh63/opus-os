@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Panel, PanelHead, EmptyState } from "../WorkChrome";
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface InvoiceRecord {
   id: string;
@@ -105,7 +106,7 @@ export default function InvoiceErpLedgerWidget() {
   const { data: erpHealth } = useQuery<{ success?: boolean; message?: string }>({
     queryKey: ["erpnextHealth"],
     queryFn: async () => {
-      const res = await fetch("/api/erpnext/health");
+      const res = await fetch(`${API}/api/erpnext/health`);
       if (!res.ok) return { success: false, message: "ERPNext offline or configuring" };
       return res.json();
     },
@@ -122,7 +123,7 @@ export default function InvoiceErpLedgerWidget() {
   }>({
     queryKey: ["erpnextInvoices"],
     queryFn: async () => {
-      const res = await fetch("/api/erpnext/invoices");
+      const res = await fetch(`${API}/api/erpnext/invoices`);
       if (!res.ok) throw new Error("Failed to fetch invoices");
       return res.json();
     },
@@ -133,7 +134,7 @@ export default function InvoiceErpLedgerWidget() {
   const { data: settingsData } = useQuery<{ success: boolean; settings: InvoiceBrandingSettings }>({
     queryKey: ["invoiceSettings"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/invoice-settings");
+      const res = await fetch(`${API}/api/admin/invoice-settings`);
       if (!res.ok) return { success: true, settings: DEFAULT_SETTINGS };
       return res.json();
     },
@@ -146,7 +147,7 @@ export default function InvoiceErpLedgerWidget() {
   // 4. Save Branding Settings Mutation
   const saveSettingsMutation = useMutation({
     mutationFn: async (payload: InvoiceBrandingSettings) => {
-      const res = await fetch("/api/admin/invoice-settings", {
+      const res = await fetch(`${API}/api/admin/invoice-settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -168,7 +169,7 @@ export default function InvoiceErpLedgerWidget() {
   // 3. Batch Sync Mutation
   const syncAllMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/erpnext/invoices/sync-all", { method: "POST" });
+      const res = await fetch(`${API}/api/erpnext/invoices/sync-all`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Batch sync failed");
       return data;
@@ -182,7 +183,7 @@ export default function InvoiceErpLedgerWidget() {
   // 4. Single Invoice Sync Mutation
   const syncSingleMutation = useMutation({
     mutationFn: async (paymentId: string) => {
-      const res = await fetch(`/api/erpnext/payments/${paymentId}/sync`, { credentials: 'include',  method: "POST" });
+      const res = await fetch(`${API}/api/erpnext/payments/${paymentId}/sync`, { credentials: 'include',  method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.error || "Single sync failed");
       return data;
@@ -207,7 +208,7 @@ export default function InvoiceErpLedgerWidget() {
       const amountPaise = Math.round(rupees * 100);
 
       // Create lead/client
-      const leadRes = await fetch("/api/public/leads", {
+      const leadRes = await fetch(`${API}/api/public/leads`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -223,7 +224,7 @@ export default function InvoiceErpLedgerWidget() {
       const engagementId = leadData.engagementId || `eng-${Date.now().toString().slice(-6)}`;
 
       // Create payment ledger entry
-      const paymentRes = await fetch("/api/payments", {
+      const paymentRes = await fetch(`${API}/api/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

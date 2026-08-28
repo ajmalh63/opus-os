@@ -1,4 +1,5 @@
 import { useState } from 'react';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const STEPS = [
   { key: 'welcome', label: 'Welcome', hint: 'Account created' },
@@ -15,7 +16,7 @@ export function OnboardingChecklist({ onboarding, token, onUpdate }: { onboardin
   const toggle = async (key: string, done: boolean) => {
     setSaving(key);
     try {
-      await fetch('/api/public/portal/onboarding/progress', {
+      await fetch(`${API}/api/public/portal/onboarding/progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Portal-Token': token },
         body: JSON.stringify({ step: key, done }),

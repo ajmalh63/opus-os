@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // A-5: session-driven auth €â‚¬- read the live better-auth cookie; no forged admin token.
 
@@ -16,25 +17,25 @@ export default function GrowthTab() {
   // ---- Marketing: lead scores / bands (Section 26.2) ----
   const { data: leadsData, isLoading: leadsLoading } = useQuery<{ leads: LeadScore[] }>({
     queryKey: ['marketingLeads'],
-    queryFn: async () => { const r = await fetch('/api/marketing/leads', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch(`${API}/api/marketing/leads`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   // ---- Marketing: segments (Section 26.3) ----
   const { data: segData } = useQuery<{ segments: any[]; derived?: boolean }>({
     queryKey: ['marketingSegments'],
-    queryFn: async () => { const r = await fetch('/api/marketing/segments', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch(`${API}/api/marketing/segments`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   // ---- Incentives: rules (Section 29/31) ----
   const { data: rulesData, refetch: refetchRules } = useQuery<{ rules: RuleRow[] }>({
     queryKey: ['incentiveRules'],
-    queryFn: async () => { const r = await fetch('/api/incentives/rules', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch(`${API}/api/incentives/rules`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   // ---- Incentives: statements ----
   const { data: stmtData, refetch: refetchStmts } = useQuery<{ statements: any[] }>({
     queryKey: ['incentiveStatements'],
-    queryFn: async () => { const r = await fetch('/api/incentives/statements', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch(`${API}/api/incentives/statements`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   // New rule form
@@ -49,7 +50,7 @@ export default function GrowthTab() {
     mutationFn: async () => {
       const amountPaise = Math.round(parseFloat(amountRs || '0') * 100);
       if (!amountPaise) throw new Error('Enter an amount');
-      const r = await fetch('/api/incentives/rules', {
+      const r = await fetch(`${API}/api/incentives/rules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ division, trigger, amount: amountPaise, isPercent: false })
@@ -63,7 +64,7 @@ export default function GrowthTab() {
 
   const closePeriod = useMutation({
     mutationFn: async () => {
-      const r = await fetch('/api/incentives/close', {
+      const r = await fetch(`${API}/api/incentives/close`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ period })
       });

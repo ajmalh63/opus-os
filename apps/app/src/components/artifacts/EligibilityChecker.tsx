@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ArtifactShell from './ArtifactShell';
 import { track, EVENTS } from '../../lib/umami';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const QUICK_COUNTRIES = [
   { code: 'US', label: 'USA', flag: '🇺🇸' },
@@ -22,7 +23,7 @@ export default function EligibilityChecker() {
     setLoading(true);
     try {
       track(EVENTS.eligibility, { country: country || undefined });
-      const res = await fetch('/api/public/match/eligibility', {
+      const res = await fetch(`${API}/api/public/match/eligibility`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gpa, ielts, budget, country: country || undefined }),

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Team Hub (§5.5) — staff chat rooms (Durable Object per room) + R2 team drive.
 // Polling-safe free-tier design: DO history is capped at 500 msgs; the panel
@@ -26,7 +27,7 @@ export default function TeamHub() {
   const rootRef = useRevealRoot<HTMLDivElement>();
 
   useEffect(() => {
-    fetch('/api/auth/me', { credentials: 'include' })
+    fetch(`${API}/api/auth/me`, { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => { if (d?.user?.name) setMeName(d.user.name); })
       .catch(() => {});
@@ -35,7 +36,7 @@ export default function TeamHub() {
   const { data: msgs } = useQuery<{ messages: Msg[] }>({
     queryKey: ['teamMessages', roomId, after],
     queryFn: async () => {
-      const r = await fetch(`/api/teamhub/rooms/${roomId}/messages?after=${after}`, { credentials: 'include' });
+      const r = await fetch(`${API}/api/teamhub/rooms/${roomId}/messages?after=${after}`, { credentials: 'include' });
       if (!r.ok) throw new Error('hub');
       return r.json();
     },
@@ -44,12 +45,12 @@ export default function TeamHub() {
 
   const { data: files } = useQuery<{ files: any[] }>({
     queryKey: ['teamFiles'],
-    queryFn: async () => { const r = await fetch('/api/teamhub/files', { credentials: 'include' }); if (!r.ok) throw new Error('files'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/teamhub/files`, { credentials: 'include' }); if (!r.ok) throw new Error('files'); return r.json(); },
   });
 
   const send = useMutation({
     mutationFn: async () => {
-      const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, {
+      const r = await fetch(`${API}/api/teamhub/rooms/${roomId}/messages`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ body: draft }),
       });

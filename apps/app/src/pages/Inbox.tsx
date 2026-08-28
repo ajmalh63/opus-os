@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
 import AiTranslatePanel from '../components/ai/AiTranslatePanel';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Staff unified inbox  OpenWA + Chatwoot inbound conversations become visible
 // here; replies dispatch via the WhatsApp gateway (sendWhatsApp).
@@ -38,13 +39,13 @@ export default function Inbox() {
   ];
   const { data: teamThread } = useQuery<{ messages: any[] }>({
     queryKey: ['teamRoom', roomId],
-    queryFn: async () => { const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, { credentials: 'include' }); if (!r.ok) throw new Error('team'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/teamhub/rooms/${roomId}/messages`, { credentials: 'include' }); if (!r.ok) throw new Error('team'); return r.json(); },
     enabled: teamMode,
     refetchInterval: 5000,
   });
   const { data: teamMembers } = useQuery<{ members: any[] }>({
     queryKey: ['teamMembers'],
-    queryFn: async () => { const r = await fetch('/api/teamhub/members', { credentials: 'include' }); if (!r.ok) throw new Error('members'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/teamhub/members`, { credentials: 'include' }); if (!r.ok) throw new Error('members'); return r.json(); },
     enabled: teamMode,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +55,7 @@ export default function Inbox() {
     mutationFn: async (file: File) => {
       const fd = new FormData();
       fd.append('file', file);
-      const r = await fetch(`/api/teamhub/rooms/${roomId}/files`, { method: 'POST', credentials: 'include', body: fd });
+      const r = await fetch(`${API}/api/teamhub/rooms/${roomId}/files`, { method: 'POST', credentials: 'include', body: fd });
       if (!r.ok) throw new Error('upload');
       return r.json();
     },
@@ -63,7 +64,7 @@ export default function Inbox() {
   });
   const sendTeam = useMutation({
     mutationFn: async () => {
-      const r = await fetch(`/api/teamhub/rooms/${roomId}/messages`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: teamMsg }) });
+      const r = await fetch(`${API}/api/teamhub/rooms/${roomId}/messages`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: teamMsg }) });
       if (!r.ok) throw new Error('team send');
       return r.json();
     },
@@ -72,19 +73,19 @@ export default function Inbox() {
 
   const { data, isLoading } = useQuery<{ conversations: Conversation[]; unreadTotal: number }>({
     queryKey: ['inbox'],
-    queryFn: async () => { const r = await fetch('/api/inbox', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/inbox`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); },
     refetchInterval: 15000, // near-real-time while open
   });
 
   const { data: thread } = useQuery<{ conversation: Conversation; messages: Msg[] }>({
     queryKey: ['inboxThread', selected],
-    queryFn: async () => { const r = await fetch(`/api/inbox/${selected}/thread`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); },
+    queryFn: async () => { const r = await fetch(`${API}/api/inbox/${selected}/thread`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); },
     enabled: !!selected,
   });
 
   const sendReply = useMutation({
     mutationFn: async () => {
-      const r = await fetch(`/api/inbox/${selected}/reply`, {
+      const r = await fetch(`${API}/api/inbox/${selected}/reply`, {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ body: reply }),
       });

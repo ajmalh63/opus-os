@@ -15,6 +15,7 @@ import { getBookingUrlForDivision } from '../../config/booking';
 import BookingModal from '../../components/BookingModal';
 import DomainBackdrop from '../../components/DomainBackdrop';
 import DomainDarkGraphics from '../../components/DomainDarkGraphics';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const VISA_FAQS = [
   {
@@ -78,7 +79,7 @@ export default function VisaServicesPage() {
     setTrackingLoading(true);
     setTrackingStatus(null);
     try {
-      const res = await fetch(`/api/public/portal/lookup?token=${encodeURIComponent(token)}`, { credentials: 'include', });
+      const res = await fetch(`${API}/api/public/portal/lookup?token=${encodeURIComponent(token)}`, { credentials: 'include', });
       const data = await res.json();
       if (res.ok) {
         setTrackingStatus(data);
@@ -115,7 +116,7 @@ export default function VisaServicesPage() {
     const normalizedPhone = digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : applicantPhone;
 
     try {
-      const res = await fetch('/api/public/leads', { credentials: 'include', 
+      const res = await fetch(`${API}/api/public/leads`, { credentials: 'include', 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

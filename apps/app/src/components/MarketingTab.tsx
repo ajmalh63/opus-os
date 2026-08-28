@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // ── Marketing & Communications Studio ─────────────────────────────────────────
 // Simplified, human-friendly workspace for sending WhatsApp messages, emails,
@@ -110,7 +111,7 @@ export default function MarketingTab() {
     setIsSendingWa(true);
     setWaSendResult(null);
     try {
-      const res = await fetch('/api/marketing/whatsapp/test-send', {
+      const res = await fetch(`${API}/api/marketing/whatsapp/test-send`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -148,7 +149,7 @@ export default function MarketingTab() {
     setIsSendingEmail(true);
     setEmailSendStatus(null);
     try {
-      const res = await fetch('/api/marketing/send-email', {
+      const res = await fetch(`${API}/api/marketing/send-email`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

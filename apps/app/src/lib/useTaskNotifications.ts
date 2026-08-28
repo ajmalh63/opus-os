@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // Sound + toast notification for new staff alerts (Live Activity feed).
 // Polls /api/staff/alerts, plays a Web Audio beep when a NEW alert appears
@@ -57,7 +58,7 @@ export function useTaskNotifications(intervalMs = 20000) {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch('/api/staff/alerts');
+      const r = await fetch(`${API}/api/staff/alerts`);
       if (!r.ok) return;
       const j = await r.json();
       const alerts: any[] = j.alerts || [];

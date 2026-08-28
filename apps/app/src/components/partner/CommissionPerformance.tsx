@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export function CommissionPerformance({ partnerId, token }: { partnerId: string, token: string }) {
   const { data: ledger } = useQuery<any>({
     queryKey: ['partnerLedger', partnerId],
     queryFn: async () => {
-      const r = await fetch(`/api/partner/${partnerId}/ledger`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const r = await fetch(`${API}/api/partner/${partnerId}/ledger`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       if (!r.ok) return { ledger: [] };
       return r.json();
     },
@@ -14,7 +15,7 @@ export function CommissionPerformance({ partnerId, token }: { partnerId: string,
   const { data: perf } = useQuery<any>({
     queryKey: ['partnerPerformance', partnerId],
     queryFn: async () => {
-      const r = await fetch(`/api/partner/${partnerId}/performance`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const r = await fetch(`${API}/api/partner/${partnerId}/performance`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       if (!r.ok) return { performance: {} };
       return r.json();
     },

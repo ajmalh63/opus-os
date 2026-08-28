@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export function PortalMessages({ token }: { token: string }) {
   const qc = useQueryClient();
@@ -7,7 +8,7 @@ export function PortalMessages({ token }: { token: string }) {
   const { data, isLoading } = useQuery<any>({
     queryKey: ['portalMessages', token],
     queryFn: async () => {
-      const r = await fetch('/api/public/portal/messages', { headers: token ? { 'X-Portal-Token': token } : {} });
+      const r = await fetch(`${API}/api/public/portal/messages`, { headers: token ? { 'X-Portal-Token': token } : {} });
       if (!r.ok) return { messages: [] };
       return r.json();
     },
@@ -16,7 +17,7 @@ export function PortalMessages({ token }: { token: string }) {
   });
   const send = async () => {
     if (!body.trim()) return;
-    await fetch('/api/public/portal/messages', {
+    await fetch(`${API}/api/public/portal/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Portal-Token': token },
       body: JSON.stringify({ body: body.trim() }),

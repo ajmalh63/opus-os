@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 interface ToolStatus { state: 'ok' | 'unconfigured' | 'error'; label: string; summary: string }
 interface ToolSnapshot {
@@ -82,7 +83,7 @@ export default function CampaignsTab() {
   const { data: live } = useQuery<LiveData>({
     queryKey: ['integrationsLive'],
     queryFn: async () => {
-      const r = await fetch('/api/integrations/live');
+      const r = await fetch(`${API}/api/integrations/live`);
       if (!r.ok) throw new Error('integrations');
       return r.json();
     },
@@ -92,7 +93,7 @@ export default function CampaignsTab() {
   const { data: matrix } = useQuery<MatrixData>({
     queryKey: ['campaignsScoreMatrix'],
     queryFn: async () => {
-      const r = await fetch('/api/admin/campaigns/matrix');
+      const r = await fetch(`${API}/api/admin/campaigns/matrix`);
       if (!r.ok) throw new Error('matrix');
       return r.json();
     },

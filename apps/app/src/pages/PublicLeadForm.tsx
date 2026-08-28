@@ -7,6 +7,7 @@ import StickyCallBar from '../components/StickyCallBar';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { track, EVENTS } from '../lib/umami';
 import { prefersReducedMotion, animateHeadlineWords } from '../lib/motion';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const siteKeyConfigured = !!((import.meta.env.VITE_TURNSTILE_SITE_KEY as string) || '');
 
@@ -80,7 +81,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
     queryKey: ['leadStatus', searchParams],
     queryFn: async () => {
       if (!searchParams) return null;
-      const res = await fetch(`/api/public/leads/status?phone=${encodeURIComponent(searchParams.phone)}&token=${encodeURIComponent(searchParams.token)}`);
+      const res = await fetch(`${API}/api/public/leads/status?phone=${encodeURIComponent(searchParams.phone)}&token=${encodeURIComponent(searchParams.token)}`);
       if (!res.ok) {
         throw new Error(await res.text() || 'Application status check failed');
       }
@@ -104,7 +105,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
       if (division === 'manpower' && payload.resumeFile) {
         const fd = new FormData();
         fd.append('resume', payload.resumeFile);
-        const up = await fetch('/api/public/manpower/resume', {
+        const up = await fetch(`${API}/api/public/manpower/resume`, {
           method: 'POST',
           headers: turnstileToken ? { 'cf-turnstile-response': turnstileToken } : {},
           body: fd,
@@ -117,7 +118,7 @@ const [consentMarketing, setConsentMarketing] = useState(true);
         resumeKey = upJson.resumeKey as string;
       }
 
-      const res = await fetch('/api/public/leads', {
+      const res = await fetch(`${API}/api/public/leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

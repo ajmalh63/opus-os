@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import BoardsTab from '../components/BoardsTab.js';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 const divisionIcons: Record<string, string> = {
   'study-abroad': '🎓 Study Abroad',
@@ -67,7 +68,7 @@ export default function KanbanBoard() {
   const { data: boardData, isLoading, isError } = useQuery<{ columns: Column[] }>({
     queryKey: ['kanbanBoard'],
     queryFn: async () => {
-      const res = await fetch('/api/kanban/board');
+      const res = await fetch(`${API}/api/kanban/board`, { credentials: 'include' });
       if (!res.ok) {
         throw new Error('Failed to fetch board data');
       }
@@ -95,7 +96,7 @@ export default function KanbanBoard() {
   const { data: staffData } = useQuery<{ staff: { id: string; name: string; role: string }[] }>({
     queryKey: ['staffDirectory'],
     queryFn: async () => {
-      const res = await fetch('/api/tasks/staff-directory');
+      const res = await fetch(`${API}/api/tasks/staff-directory`, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch staff');
       return res.json();
     }
@@ -105,7 +106,7 @@ export default function KanbanBoard() {
   // Counselor Assignment Mutation
   const assignCounselorMutation = useMutation({
     mutationFn: async (payload: { cardId: string; counselorId: string | null }) => {
-      const res = await fetch(`/api/kanban/board/${payload.cardId}/counselor`, {
+      const res = await fetch(`${API}/api/kanban/board/${payload.cardId}/counselor`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ counselorId: payload.counselorId }),
@@ -132,7 +133,7 @@ export default function KanbanBoard() {
       outstandingBalance?: number; 
       status?: 'active' | 'archived' | 'cancelled' 
     }) => {
-      const res = await fetch(`/api/kanban/board/${payload.cardId}/metadata`, {
+      const res = await fetch(`${API}/api/kanban/board/${payload.cardId}/metadata`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -157,7 +158,7 @@ export default function KanbanBoard() {
   // Card Delete Mutation
   const deleteCardMutation = useMutation({
     mutationFn: async (payload: { cardId: string }) => {
-      const res = await fetch(`/api/kanban/board/${payload.cardId}`, {
+      const res = await fetch(`${API}/api/kanban/board/${payload.cardId}`, {
         method: 'DELETE',
       });
       if (!res.ok) {
@@ -178,7 +179,7 @@ export default function KanbanBoard() {
   // Card Move Mutation
   const moveMutation = useMutation({
     mutationFn: async (payload: { cardId: string; sourceStage: string; targetStage: string }) => {
-      const res = await fetch('/api/kanban/board/move', {
+      const res = await fetch(`${API}/api/kanban/board/move`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -207,7 +208,7 @@ onSuccess: (data) => {
   const addCardTask = useMutation({
     mutationFn: async () => {
       if (!selectedCard) throw new Error('no card');
-      const res = await fetch(`/api/kanban/board/${selectedCard.id}/tasks`, {
+      const res = await fetch(`${API}/api/kanban/board/${selectedCard.id}/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: cardTaskTitle.trim(), priority: 'medium' }),
@@ -224,7 +225,7 @@ onSuccess: (data) => {
   });
   const toggleCardTask = useMutation({
     mutationFn: async ({ taskId, status }: { taskId: string; status: string }) => {
-      const res = await fetch(`/api/kanban/board/tasks/${taskId}`, {
+      const res = await fetch(`${API}/api/kanban/board/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -237,7 +238,7 @@ onSuccess: (data) => {
 
   const deleteCardTask = useMutation({
     mutationFn: async (payload: { taskId: string }) => {
-      const res = await fetch(`/api/kanban/board/tasks/${payload.taskId}`, {
+      const res = await fetch(`${API}/api/kanban/board/tasks/${payload.taskId}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error(await res.text() || 'task delete failed');

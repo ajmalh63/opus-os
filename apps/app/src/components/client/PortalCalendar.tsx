@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export function PortalCalendar({ token }: { token: string }) {
   const { data } = useQuery<any>({
     queryKey: ['portalCalendar', token],
     queryFn: async () => {
-      const r = await fetch('/api/public/portal/calendar', { headers: token ? { 'X-Portal-Token': token } : {} });
+      const r = await fetch(`${API}/api/public/portal/calendar`, { headers: token ? { 'X-Portal-Token': token } : {} });
       if (!r.ok) return { deadlines: [], schedules: [], tasks: [] };
       return r.json();
     },

@@ -14,6 +14,7 @@ import { CAL_BOOKING_URL, leadFormHref } from '../../config/booking';
 import BookingModal from '../../components/BookingModal';
 import DomainBackdrop from '../../components/DomainBackdrop';
 import DomainDarkGraphics from '../../components/DomainDarkGraphics';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -122,7 +123,7 @@ export default function StudyAbroadPage() {
     setMatching(true);
     try {
       track(EVENTS.eligibility, { country: selectedCountry });
-      const res = await fetch('/api/public/match/eligibility', { credentials: 'include', 
+      const res = await fetch(`${API}/api/public/match/eligibility`, { credentials: 'include', 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

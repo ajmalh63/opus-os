@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import gsap from 'gsap';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // A-5: session-driven auth — read the live better-auth cookie; no forged admin token.
 
@@ -33,17 +34,17 @@ export default function FunnelTab() {
 
   const { data, isLoading, isError } = useQuery<FunnelData>({
     queryKey: ['funnelOverview'],
-    queryFn: async () => { const r = await fetch('/api/marketing/funnel', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch(`${API}/api/marketing/funnel`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   const { data: partnerData } = useQuery<{ partners: PartnerRow[] }>({
     queryKey: ['affiliateLeaderboard'],
-    queryFn: async () => { const r = await fetch('/api/marketing/partners', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch(`${API}/api/marketing/partners`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   const reactivate = useMutation({
     mutationFn: async (clientId: string) => {
-      const r = await fetch(`/api/marketing/stale/${clientId}/reactivate`, { method: 'POST', });
+      const r = await fetch(`${API}/api/marketing/stale/${clientId}/reactivate`, { method: 'POST', });
       if (!r.ok) { const e = await r.json().catch(() => null); throw new Error(e?.error || 'Reactivation failed'); }
       return r.json();
     },
@@ -53,7 +54,7 @@ export default function FunnelTab() {
 
   const { data: expData } = useQuery<{ experiments?: ExperimentRow[] }>({
     queryKey: ['experiments'],
-    queryFn: async () => { const r = await fetch('/api/marketing/experiments', { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
+    queryFn: async () => { const r = await fetch(`${API}/api/marketing/experiments`, { credentials: 'include' }); if (!r.ok) throw new Error('load failed'); return r.json(); }
   });
 
   useEffect(() => {

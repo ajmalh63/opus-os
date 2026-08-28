@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../lib/session';
 import AiVisaRiskCopilot from '../../components/ai/AiVisaRiskCopilot';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 
 type VisaStatus = 'draft' | 'submitted' | 'document_prep' | 'slot_booked' | 'granted' | 'rejected' | 'delivered' | 'cancelled';
@@ -427,7 +428,7 @@ export default function VisaPrepPortal() {
   const { data: dbProductsData } = useQuery<{ products: VisaProduct[] }>({
     queryKey: ['visaProductsList'],
     queryFn: async () => {
-      const r = await fetch('/api/visa/products');
+      const r = await fetch(`${API}/api/visa/products`);
       if (!r.ok) throw new Error('Failed to fetch visa products');
       return r.json();
     }
@@ -445,7 +446,7 @@ export default function VisaPrepPortal() {
   const { data: clientsData } = useQuery<{ clients: Client[] }>({
     queryKey: ['clientsList'],
     queryFn: async () => {
-      const r = await fetch('/api/clients');
+      const r = await fetch(`${API}/api/clients`);
       if (!r.ok) throw new Error('Failed to fetch clients');
       return r.json();
     }
@@ -459,7 +460,7 @@ export default function VisaPrepPortal() {
     queryKey: ['clientDetail', selectedClient?.id],
     queryFn: async () => {
       if (!selectedClient?.id) return null;
-      const r = await fetch(`/api/clients/${selectedClient.id}`);
+      const r = await fetch(`${API}/api/clients/${selectedClient.id}`);
       if (!r.ok) throw new Error('Failed to fetch client details');
       return r.json();
     },
@@ -473,7 +474,7 @@ export default function VisaPrepPortal() {
     queryKey: ['visaApplications', selectedClient?.id],
     queryFn: async () => {
       if (!selectedClient?.id) return { success: true, applications: [] };
-      const r = await fetch(`/api/visa/applications?clientId=${selectedClient.id}`);
+      const r = await fetch(`${API}/api/visa/applications?clientId=${selectedClient.id}`);
       if (!r.ok) throw new Error('Failed to fetch visa applications');
       return r.json();
     },
@@ -492,7 +493,7 @@ export default function VisaPrepPortal() {
       if (countryFilter) params.set('country', countryFilter);
       if (searchQuery.trim()) params.set('q', searchQuery.trim());
       const qs = params.toString();
-      const r = await fetch(`/api/visa/applications${qs ? `?${qs}` : ''}`, { credentials: 'include' });
+      const r = await fetch(`${API}/api/visa/applications${qs ? `?${qs}` : ''}`, { credentials: 'include' });
       if (!r.ok) throw new Error('Failed to fetch visa applications');
       return r.json();
     },
@@ -503,7 +504,7 @@ export default function VisaPrepPortal() {
     queryKey: ['visaApplicationsAllFallback'],
     queryFn: async () => {
       const lists = await Promise.all(visaClients.map(async (c) => {
-        const r = await fetch(`/api/visa/applications?clientId=${c.id}`, { credentials: 'include' });
+        const r = await fetch(`${API}/api/visa/applications?clientId=${c.id}`, { credentials: 'include' });
         if (!r.ok) return [];
         const j = await r.json().catch(() => null);
         return (j?.applications || []).map((a: VisaApplication) => ({ ...a, clientName: c.name, clientToken: c.id }));
@@ -553,7 +554,7 @@ export default function VisaPrepPortal() {
     queryKey: ['visaMocks', selectedClient?.id],
     queryFn: async () => {
       if (!selectedClient?.id) return { success: true, interviews: [] };
-      const r = await fetch(`/api/visa/mock-interviews?clientId=${selectedClient.id}`);
+      const r = await fetch(`${API}/api/visa/mock-interviews?clientId=${selectedClient.id}`);
       if (!r.ok) throw new Error('Failed to fetch mock interviews');
       return r.json();
     },
@@ -584,7 +585,7 @@ export default function VisaPrepPortal() {
   // Mutations
   const createApplicantMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch('/api/clients', {
+      const r = await fetch(`${API}/api/clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -604,7 +605,7 @@ export default function VisaPrepPortal() {
 
   const startApplicationMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch('/api/visa/applications', {
+      const r = await fetch(`${API}/api/visa/applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -621,7 +622,7 @@ export default function VisaPrepPortal() {
 
   const updateApplicationMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/visa/applications/${id}/status`, {
+      const r = await fetch(`${API}/api/visa/applications/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify(payload)
@@ -642,7 +643,7 @@ export default function VisaPrepPortal() {
   // Status transition (uses the extended /:id/status endpoint; server enforces the interlock)
   const transitionMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: { status: VisaStatus; rejectionReason?: string } }) => {
-      const r = await fetch(`/api/visa/applications/${id}/status`, {
+      const r = await fetch(`${API}/api/visa/applications/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify(payload)
@@ -665,7 +666,7 @@ export default function VisaPrepPortal() {
   // Staff form correction — PATCH /applications/:id { formJson } (full replace, zod-validated)
   const updateFormMutation = useMutation({
     mutationFn: async ({ id, formJson }: { id: string; formJson: Record<string, any> }) => {
-      const r = await fetch(`/api/visa/applications/${id}`, {
+      const r = await fetch(`${API}/api/visa/applications/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ formJson })
@@ -686,7 +687,7 @@ export default function VisaPrepPortal() {
 
   const createProductMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch('/api/visa/products', {
+      const r = await fetch(`${API}/api/visa/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -702,7 +703,7 @@ export default function VisaPrepPortal() {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/visa/products/${id}`, {
+      const r = await fetch(`${API}/api/visa/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -719,7 +720,7 @@ export default function VisaPrepPortal() {
 
   const deleteProductMutation = useMutation({
     mutationFn: async (id: string) => {
-      const r = await fetch(`/api/visa/products/${id}`, {
+      const r = await fetch(`${API}/api/visa/products/${id}`, {
         method: 'DELETE'
       });
       if (!r.ok) throw new Error('Failed to delete visa product');
@@ -732,7 +733,7 @@ export default function VisaPrepPortal() {
 
   const toggleProductStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'active' | 'inactive' }) => {
-      const r = await fetch(`/api/visa/products/${id}`, {
+      const r = await fetch(`${API}/api/visa/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -747,7 +748,7 @@ export default function VisaPrepPortal() {
 
   const scheduleMockMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const r = await fetch('/api/visa/mock-interviews', {
+      const r = await fetch(`${API}/api/visa/mock-interviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -763,7 +764,7 @@ export default function VisaPrepPortal() {
 
   const completeMockMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const r = await fetch(`/api/visa/mock-interviews/${id}/complete`, {
+      const r = await fetch(`${API}/api/visa/mock-interviews/${id}/complete`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -779,7 +780,7 @@ export default function VisaPrepPortal() {
 
   const verifyDocMutation = useMutation({
     mutationFn: async (docId: string) => {
-      const r = await fetch(`/api/visa/documents/${docId}/status`, {
+      const r = await fetch(`${API}/api/visa/documents/${docId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'verified' })
@@ -795,7 +796,7 @@ export default function VisaPrepPortal() {
 
   const rejectDocMutation = useMutation({
     mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
-      const r = await fetch(`/api/visa/documents/${id}/status`, {
+      const r = await fetch(`${API}/api/visa/documents/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ status: 'rejected', notes })

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useVisibilityTracking } from '../lib/visibilityTracking';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 export default function BlogIndex() {
   useVisibilityTracking('/blog');
@@ -13,7 +14,7 @@ export default function BlogIndex() {
       const p = new URLSearchParams();
       if (q) p.set('q', q);
       if (division) p.set('division', division);
-      const r = await fetch(`/api/blog/posts?${p.toString()}`);
+      const r = await fetch(`${API}/api/blog/posts?${p.toString()}`);
       if (!r.ok) throw new Error('load');
       return r.json();
     },

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRoute } from 'wouter';
 import { useSession } from '../lib/session';
+const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
 
 // ==========================================
 // 1. TYPE DEFINITIONS
@@ -324,7 +325,7 @@ export default function Client360() {
   const { data: client, isLoading, isError } = useQuery<ClientData>({
     queryKey: ['client360', clientId, sessionToken],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}`, {
+      const res = await fetch(`${API}/api/clients/${clientId}`, {
         headers: {
           'Cookie': `better-auth.session_token=${sessionToken}`
         }
@@ -341,7 +342,7 @@ export default function Client360() {
   const { data: templatesData } = useQuery<{ templates: Template[] }>({
     queryKey: ['agreementTemplates', sessionToken],
     queryFn: async () => {
-      const res = await fetch('/api/agreements/templates', {
+      const res = await fetch(`${API}/api/agreements/templates`, {
         headers: {
           'Cookie': `better-auth.session_token=${sessionToken}`
         }
@@ -355,7 +356,7 @@ export default function Client360() {
   const { data: agreementsData, refetch: refetchAgreements } = useQuery<{ agreements: Agreement[] }>({
     queryKey: ['agreements', sessionToken],
     queryFn: async () => {
-      const res = await fetch('/api/agreements', {
+      const res = await fetch(`${API}/api/agreements`, {
         headers: {
           'Cookie': `better-auth.session_token=${sessionToken}`
         }
@@ -370,7 +371,7 @@ export default function Client360() {
   const { data: tasksData, refetch: refetchTasks } = useQuery<{ tasks: TaskRecord[] }>({
     queryKey: ['clientTasks', clientId, sessionToken],
     queryFn: async () => {
-      const res = await fetch(`/api/tasks/client/${clientId}`, {
+      const res = await fetch(`${API}/api/tasks/client/${clientId}`, {
         headers: { 'Cookie': `better-auth.session_token=${sessionToken}` }
       });
       if (!res.ok) throw new Error('Failed to fetch tasks');
@@ -386,7 +387,7 @@ export default function Client360() {
 
   const createTaskMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/tasks', {
+      const res = await fetch(`${API}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
         body: JSON.stringify({
@@ -408,7 +409,7 @@ export default function Client360() {
 
   const toggleTaskStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: TaskRecord['status'] }) => {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const res = await fetch(`${API}/api/tasks/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
         body: JSON.stringify({ status }),
@@ -423,7 +424,7 @@ export default function Client360() {
   const { data: milestonesData, refetch: refetchMilestones } = useQuery<{ milestones: Milestone[] }>({
     queryKey: ['milestones', sessionToken],
     queryFn: async () => {
-      const res = await fetch('/api/payments/milestones', {
+      const res = await fetch(`${API}/api/payments/milestones`, {
         headers: {
           'Cookie': `better-auth.session_token=${sessionToken}`
         }
@@ -439,7 +440,7 @@ export default function Client360() {
   const { data: paymentsData, refetch: refetchPayments } = useQuery<{ payments: Payment[] }>({
     queryKey: ['payments', clientId, sessionToken],
     queryFn: async () => {
-      const res = await fetch(`/api/payments/client/${clientId}`, {
+      const res = await fetch(`${API}/api/payments/client/${clientId}`, {
         headers: {
           'Cookie': `better-auth.session_token=${sessionToken}`
         }
@@ -454,7 +455,7 @@ export default function Client360() {
   const { data: departuresData, refetch: refetchDepartures } = useQuery<{ departures: Departure[] }>({
     queryKey: ['departures', sessionToken],
     queryFn: async () => {
-      const res = await fetch('/api/umrah/departures', {
+      const res = await fetch(`${API}/api/umrah/departures`, {
         headers: {
           'Cookie': `better-auth.session_token=${sessionToken}`
         }
@@ -468,7 +469,7 @@ export default function Client360() {
   const { data: bookingsData, refetch: refetchBookings } = useQuery<{ bookings: any[] }>({
     queryKey: ['umrah-bookings', clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/umrah/bookings?clientId=${clientId}`);
+      const res = await fetch(`${API}/api/umrah/bookings?clientId=${clientId}`);
       if (!res.ok) throw new Error('Failed to fetch bookings');
       return res.json();
     },
@@ -479,7 +480,7 @@ export default function Client360() {
   const { data: checklistData, refetch: refetchChecklist } = useQuery<any>({
     queryKey: ['umrah-checklist', selectedBookingId],
     queryFn: async () => {
-      const res = await fetch(`/api/umrah/checklists?bookingId=${selectedBookingId}`);
+      const res = await fetch(`${API}/api/umrah/checklists?bookingId=${selectedBookingId}`);
       if (!res.ok) throw new Error('Failed to fetch checklist');
       return res.json();
     },
@@ -493,7 +494,7 @@ export default function Client360() {
       const list = [];
       for (const id of shipmentIds) {
         try {
-          const res = await fetch(`/api/transit/shipments/${id}`, {
+          const res = await fetch(`${API}/api/transit/shipments/${id}`, {
             headers: {
               'Cookie': `better-auth.session_token=${sessionToken}`
             }
@@ -516,7 +517,7 @@ export default function Client360() {
     queryKey: ['shipmentTrack', selectedShipmentId, sessionToken],
     queryFn: async () => {
       if (!selectedShipmentId) return null as any;
-      const res = await fetch(`/api/transit/shipments/${selectedShipmentId}/track`, {
+      const res = await fetch(`${API}/api/transit/shipments/${selectedShipmentId}/track`, {
         headers: {
           'Cookie': `better-auth.session_token=${sessionToken}`
         }
@@ -534,7 +535,7 @@ export default function Client360() {
   // Stage Advance
   const advanceMutation = useMutation({
     mutationFn: async (payload: { cardId: string; sourceStage: string; targetStage: string }) => {
-      const res = await fetch('/api/kanban/board/move', {
+      const res = await fetch(`${API}/api/kanban/board/move`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -563,7 +564,7 @@ export default function Client360() {
   // Initialize Engagement Pipeline
   const initializeEngagementMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/engagements`, {
+      const res = await fetch(`${API}/api/clients/${clientId}/engagements`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -588,7 +589,7 @@ export default function Client360() {
   // Send communication log (persists to the client timeline via API)
   const sendMessageMutation = useMutation({
     mutationFn: async (payload: { sender: string; channel: string; subject?: string; message: string }) => {
-      const res = await fetch(`/api/clients/${clientId}/communications`, {
+      const res = await fetch(`${API}/api/clients/${clientId}/communications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -618,7 +619,7 @@ export default function Client360() {
   // Generate Agreement Draft
   const generateAgreementMutation = useMutation({
     mutationFn: async (templateId: string) => {
-      const res = await fetch('/api/agreements', {
+      const res = await fetch(`${API}/api/agreements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -647,7 +648,7 @@ export default function Client360() {
   // eSign Execute Signature
   const signAgreementMutation = useMutation({
     mutationFn: async ({ id, esignMethod }: { id: string; esignMethod: 'aadhaar' | 'otp' }) => {
-      const res = await fetch(`/api/agreements/${id}/sign`, {
+      const res = await fetch(`${API}/api/agreements/${id}/sign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -685,7 +686,7 @@ export default function Client360() {
       referenceNumber?: string;
       isInterstate?: boolean;
     }) => {
-      const res = await fetch('/api/payments', {
+      const res = await fetch(`${API}/api/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -719,7 +720,7 @@ export default function Client360() {
   // Re-evaluate Overdue Milestones Escalation warnings
   const evaluateEscalationsMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/payments/milestones/evaluate-escalations', {
+      const res = await fetch(`${API}/api/payments/milestones/evaluate-escalations`, {
         method: 'POST',
         headers: {
           'Cookie': `better-auth.session_token=${sessionToken}`
@@ -742,7 +743,7 @@ export default function Client360() {
   // Book seat in scheduled Umrah Departure Group
   const bookUmrahSeatMutation = useMutation({
     mutationFn: async (departureId: string) => {
-      const res = await fetch(`/api/umrah/departures/${departureId}/book`, {
+      const res = await fetch(`${API}/api/umrah/departures/${departureId}/book`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -774,7 +775,7 @@ export default function Client360() {
   // F.3 Update Checklist document markings mutation
   const updateChecklistMutation = useMutation({
     mutationFn: async ({ id, passportScanned, visaIssued, vaccineCertificate, ticketIssued, notes }: any) => {
-      const res = await fetch(`/api/umrah/checklists/${id}`, {
+      const res = await fetch(`${API}/api/umrah/checklists/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passportScanned, visaIssued, vaccineCertificate, ticketIssued, notes })
@@ -795,7 +796,7 @@ export default function Client360() {
   // F.4 Update Departure Status mutation (Manager only)
   const updateDepartureStatusMutation = useMutation({
     mutationFn: async ({ departureId, status }: { departureId: string; status: 'open' | 'confirmed' | 'cancelled' }) => {
-      const res = await fetch(`/api/umrah/departures/${departureId}/status`, {
+      const res = await fetch(`${API}/api/umrah/departures/${departureId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -816,7 +817,7 @@ export default function Client360() {
   // Register Attestation Courier shipment
   const registerShipmentMutation = useMutation({
     mutationFn: async (payload: { courierPartner: 'blue-dart' | 'dtdc'; trackingNumber: string; shippingAddress: string }) => {
-      const res = await fetch('/api/transit/shipments', {
+      const res = await fetch(`${API}/api/transit/shipments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -900,7 +901,7 @@ export default function Client360() {
 
     showToast(`Uploading document ${file.name} to R2 bucket...`);
     try {
-      const presignedRes = await fetch(`/api/clients/${clientId}/documents/presigned?filename=${encodeURIComponent(file.name)}`, {
+      const presignedRes = await fetch(`${API}/api/clients/${clientId}/documents/presigned?filename=${encodeURIComponent(file.name)}`, {
         headers: {
           'Cookie': `better-auth.session_token=${sessionToken}`
         }
@@ -936,7 +937,7 @@ export default function Client360() {
     showToast(`Downloading ${selectedDocs.size} document(s)...`);
     for (const docId of Array.from(selectedDocs)) {
       try {
-        const res = await fetch(`/api/clients/${clientId}/documents/${docId}/download`, {
+        const res = await fetch(`${API}/api/clients/${clientId}/documents/${docId}/download`, {
           headers: { 'Cookie': `better-auth.session_token=${sessionToken}` },
         });
         if (!res.ok) throw new Error(await res.text() || 'Download failed');
@@ -967,7 +968,7 @@ export default function Client360() {
     let successCount = 0;
     for (const docId of Array.from(selectedDocs)) {
       try {
-        const res = await fetch(`/api/clients/${clientId}/documents/${docId}/status`, {
+        const res = await fetch(`${API}/api/clients/${clientId}/documents/${docId}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
           body: JSON.stringify({ status, note: `Bulk ${status} via vault` }),
@@ -1036,7 +1037,7 @@ export default function Client360() {
 
     try {
       // 1. Create order server-side (amount computed & verified vs ledger)
-      const orderRes = await fetch('/api/payments/razorpay/order', {
+      const orderRes = await fetch(`${API}/api/payments/razorpay/order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
         body: JSON.stringify({ clientId, engagementId: client?.engagements?.[0]?.id || clientId, amount: amountPaise, milestoneName: razorpayMilestone }),
@@ -1078,7 +1079,7 @@ export default function Client360() {
       }
 
       // 4. Verify signature server-side + record receipt
-      const verifyRes = await fetch('/api/payments/razorpay/verify', {
+      const verifyRes = await fetch(`${API}/api/payments/razorpay/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Cookie': `better-auth.session_token=${sessionToken}` },
         body: JSON.stringify({ clientId, engagementId: client?.engagements?.[0]?.id || clientId, ...result, milestoneName: razorpayMilestone }),
@@ -2878,13 +2879,13 @@ function StudyAbroadTabPanel({ clientId, sessionToken, showToast }: { clientId: 
   const fetchShortlistAndMatches = async () => {
     setLoading(true);
     try {
-      const sRes = await fetch(`/api/study-abroad/shortlist?clientId=${encodeURIComponent(clientId)}`, {
+      const sRes = await fetch(`${API}/api/study-abroad/shortlist?clientId=${encodeURIComponent(clientId)}`, {
         headers: { 'Cookie': `better-auth.session_token=${sessionToken}` }
       });
       const sData = await sRes.json() as any;
       if (sData.success) setShortlist(sData.shortlist);
 
-      const mRes = await fetch(`/api/study-abroad/universities/match?clientId=${encodeURIComponent(clientId)}`, {
+      const mRes = await fetch(`${API}/api/study-abroad/universities/match?clientId=${encodeURIComponent(clientId)}`, {
         headers: { 'Cookie': `better-auth.session_token=${sessionToken}` }
       });
       const mData = await mRes.json() as any;
@@ -2902,7 +2903,7 @@ function StudyAbroadTabPanel({ clientId, sessionToken, showToast }: { clientId: 
 
   const handleShortlist = async (universityId: string) => {
     try {
-      const res = await fetch('/api/study-abroad/shortlist', {
+      const res = await fetch(`${API}/api/study-abroad/shortlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2920,7 +2921,7 @@ function StudyAbroadTabPanel({ clientId, sessionToken, showToast }: { clientId: 
 
   const handleStatusChange = async (entryId: string, status: string) => {
     try {
-      const res = await fetch(`/api/study-abroad/shortlist/${entryId}/status`, {
+      const res = await fetch(`${API}/api/study-abroad/shortlist/${entryId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -3072,13 +3073,13 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
   const fetchData = async () => {
     setLoading(true);
     try {
-      const aRes = await fetch(`/api/visa/applications?clientId=${encodeURIComponent(clientId)}`, {
+      const aRes = await fetch(`${API}/api/visa/applications?clientId=${encodeURIComponent(clientId)}`, {
         headers: { 'Cookie': `better-auth.session_token=${sessionToken}` }
       });
       const aData = await aRes.json() as any;
       if (aData.success) setApplications(aData.applications);
 
-      const mRes = await fetch(`/api/visa/mock-interviews?clientId=${encodeURIComponent(clientId)}`, {
+      const mRes = await fetch(`${API}/api/visa/mock-interviews?clientId=${encodeURIComponent(clientId)}`, {
         headers: { 'Cookie': `better-auth.session_token=${sessionToken}` }
       });
       const mData = await mRes.json() as any;
@@ -3098,7 +3099,7 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
     e.preventDefault();
     try {
       const epochDate = appointmentDate ? Math.floor(new Date(appointmentDate).getTime() / 1000) : null;
-      const res = await fetch('/api/visa/applications', {
+      const res = await fetch(`${API}/api/visa/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3128,7 +3129,7 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
 
   const handleStatusChange = async (entryId: string, status: string) => {
     try {
-      const res = await fetch(`/api/visa/applications/${entryId}/status`, {
+      const res = await fetch(`${API}/api/visa/applications/${entryId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -3149,7 +3150,7 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
     if (!mockTime) return alert('Select date/time.');
     try {
       const scheduledEpoch = Math.floor(new Date(mockTime).getTime() / 1000);
-      const res = await fetch('/api/visa/mock-interviews', {
+      const res = await fetch(`${API}/api/visa/mock-interviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3170,7 +3171,7 @@ function VisaTabPanel({ clientId, sessionToken, showToast }: { clientId: string;
     e.preventDefault();
     if (!feedbackId) return;
     try {
-      const res = await fetch(`/api/visa/mock-interviews/${feedbackId}/complete`, {
+      const res = await fetch(`${API}/api/visa/mock-interviews/${feedbackId}/complete`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -3369,7 +3370,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/attestation/applications?clientId=${encodeURIComponent(clientId)}`, {
+      const res = await fetch(`${API}/api/attestation/applications?clientId=${encodeURIComponent(clientId)}`, {
         headers: { 'Cookie': `better-auth.session_token=${sessionToken}` }
       });
       const data = await res.json() as any;
@@ -3388,7 +3389,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
   const handleInitiate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/attestation/applications', {
+      const res = await fetch(`${API}/api/attestation/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3408,7 +3409,7 @@ function AttestationTabPanel({ clientId, sessionToken, showToast }: { clientId: 
 
   const handleUpdate = async (id: string, updates: { currentStep?: string; status?: string }) => {
     try {
-      const res = await fetch(`/api/attestation/applications/${id}`, {
+      const res = await fetch(`${API}/api/attestation/applications/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -3588,13 +3589,13 @@ function ManpowerTabPanel({ clientId, sessionToken, showToast }: { clientId: str
   const fetchData = async () => {
     setLoading(true);
     try {
-      const dRes = await fetch(`/api/manpower/deployments?clientId=${encodeURIComponent(clientId)}`, {
+      const dRes = await fetch(`${API}/api/manpower/deployments?clientId=${encodeURIComponent(clientId)}`, {
         headers: { 'Cookie': `better-auth.session_token=${sessionToken}` }
       });
       const dData = await dRes.json() as any;
       if (dData.success) setDeployments(dData.deployments);
 
-      const jRes = await fetch('/api/manpower/jobs', {
+      const jRes = await fetch(`${API}/api/manpower/jobs`, {
         headers: { 'Cookie': `better-auth.session_token=${sessionToken}` }
       });
       const jData = await jRes.json() as any;
@@ -3614,7 +3615,7 @@ function ManpowerTabPanel({ clientId, sessionToken, showToast }: { clientId: str
     e.preventDefault();
     if (!selectedJobId) return;
     try {
-      const res = await fetch('/api/manpower/deployments', {
+      const res = await fetch(`${API}/api/manpower/deployments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3639,7 +3640,7 @@ function ManpowerTabPanel({ clientId, sessionToken, showToast }: { clientId: str
       if (field === 'visa') body.visaStatus = value;
       if (field === 'flight') body.flightStatus = value;
 
-      const res = await fetch(`/api/manpower/deployments/${id}`, {
+      const res = await fetch(`${API}/api/manpower/deployments/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

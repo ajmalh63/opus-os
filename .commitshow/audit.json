@@ -1,0 +1,1 @@
+{"error":"bad_target","message":"No git remote found in /media/cordial/New Volume/Opus OS.\n  Either run this inside a git repo with a GitHub remote, or pass the URL directly:\n    commitshow audit github.com/owner/repo","target":"."}
