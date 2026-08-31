@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { loadRazorpayScript } from '../../lib/razorpay';
+import { apiFetch, ApiError } from '../../lib/apiClient';
 
 export interface ManpowerAccessGateProps {
   clientToken: string;
@@ -34,22 +35,25 @@ export const ManpowerAccessGate: React.FC<ManpowerAccessGateProps> = ({
         throw new Error('Could not load secure payment gateway. Please check your internet connection.');
       }
 
-      // 2. Create Razorpay order for candidate-pass (₹100 = 10,000 paise)
-      const orderRes = await fetch('/api/public/portal/manpower/membership/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: clientToken, planKey: 'candidate-pass' }),
-      });
-
-      const orderData = await orderRes.json();
-      if (orderRes.status === 409 && orderData.code === 'ALREADY_VERIFIED') {
-        // Trust: already lifetime verified — no further payment, just unlock
-        if (onSuccess) onSuccess();
-        setLoading(false);
-        return;
+      // 2. Create Razorpay order for candidate-pass (₹100 = 10,000 paise).
+      // P2-6: routed through apiFetch — 429/Retry-After aware, normalized errors.
+      let orderData: any;
+      try {
+        orderData = await apiFetch('/api/public/portal/manpower/membership/order', {
+          method: 'POST',
+          body: JSON.stringify({ token: clientToken, planKey: 'candidate-pass' }),
+        });
+      } catch (err: any) {
+        if (err instanceof ApiError && err.status === 409 && err.payload?.code === 'ALREADY_VERIFIED') {
+          // Trust: already lifetime verified — no further payment, just unlock
+          if (onSuccess) onSuccess();
+          setLoading(false);
+          return;
+        }
+        throw err; // outer catch surfaces the server's message
       }
-      if (!orderRes.ok || !orderData.order_id) {
-        throw new Error(orderData.error || 'Failed to initialize verification order.');
+      if (!orderData?.order_id) {
+        throw new Error(orderData?.error || 'Failed to initialize verification order.');
       }
 
       // 3. Launch Razorpay Standard Checkout Modal
@@ -80,10 +84,9 @@ export const ManpowerAccessGate: React.FC<ManpowerAccessGateProps> = ({
           razorpay_signature: string;
         }) => {
           try {
-            // 4. Verify payment signature on backend
-            const verifyRes = await fetch('/api/public/portal/manpower/membership/verify', {
+            // 4. Verify payment signature on backend (P2-6: apiFetch)
+            const verifyData = await apiFetch('/api/public/portal/manpower/membership/verify', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 token: clientToken,
                 planKey: 'candidate-pass',
@@ -93,9 +96,8 @@ export const ManpowerAccessGate: React.FC<ManpowerAccessGateProps> = ({
               }),
             });
 
-            const verifyData = await verifyRes.json();
-            if (!verifyRes.ok || !verifyData.success) {
-              throw new Error(verifyData.error || 'Payment verification failed.');
+            if (!verifyData?.success) {
+              throw new Error('Payment verification failed.');
             }
 
             // Success! Trigger callback
