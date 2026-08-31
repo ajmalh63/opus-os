@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // Team Hub (§5.5) — staff chat rooms (Durable Object per room) + R2 team drive.
 // Polling-safe free-tier design: DO history is capped at 500 msgs; the panel

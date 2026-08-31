@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import UmrahCalendar, { UmrahCalendarDay, TIER_INFO } from './UmrahCalendar';
 import { useDivisions } from '../lib/divisions';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 interface UmrahPackage {
   id: string;
@@ -856,7 +856,10 @@ export default function UmrahClientSection({ token }: { token: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-display font-bold text-brand-navy text-base sm:text-lg">Umrah Packages</h3>
+        <div>
+          <h3 className="font-display font-bold text-brand-navy text-base sm:text-lg">Tours &amp; Travels — Holiday &amp; Pilgrimage Packages</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Curated international holidays, corporate retreats, and sacred Umrah pilgrimage departures.</p>
+        </div>
         <button onClick={() => setView('tracker')} className="text-xs sm:text-sm font-bold text-brand-gold hover:underline cursor-pointer">My bookings →</button>
       </div>
 
@@ -931,8 +934,8 @@ export default function UmrahClientSection({ token }: { token: string }) {
         </>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
-          <h3 className="font-display font-bold text-brand-navy text-lg">Umrah — Tailored Departures</h3>
-          <p className="text-sm text-slate-600 mt-1 max-w-[48ch] mx-auto">This division is not live yet. Calendar dates and packages will appear here when Umrah goes live. Meanwhile, explore Study Abroad, Visa, and Manpower Services.</p>
+          <h3 className="font-display font-bold text-brand-navy text-lg">Tours &amp; Travels — Tailored Packages</h3>
+          <p className="text-sm text-slate-600 mt-1 max-w-[48ch] mx-auto">This division is not live yet. Calendar dates and holiday &amp; pilgrimage packages will appear here when Tours &amp; Travels goes live. Meanwhile, explore Study Abroad, Visa, and Manpower Services.</p>
           <p className="text-xs text-slate-400 mt-2">Admin can enable it via <code className="bg-slate-100 px-1.5 py-0.5 rounded">/admin → Divisions</code> when ready.</p>
         </div>
       )}

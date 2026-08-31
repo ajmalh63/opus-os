@@ -62,6 +62,10 @@ razorpayRouter.post('/order', zValidator('json', orderSchema), async (c) => {
     if (!c.env.RAZORPAY_KEY_ID || !c.env.RAZORPAY_KEY_SECRET) {
       return c.json({ error: "Razorpay not configured — set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET" }, 503);
     }
+    // P1-4 fail-closed: never create live-money orders with TEST keys in production
+    if ((c.env as any).ENVIRONMENT === "production" && String(c.env.RAZORPAY_KEY_ID).startsWith("rzp_test")) {
+      return c.json({ error: "Payments are misconfigured for production (test key detected). Contact support." }, 503);
+    }
     // 1. Verify engagement exists and amount matches known ledger balance owed
     const eng = await db.select().from(engagements).where(eq(engagements.id, data.engagementId)).get();
     if (!eng) return c.json({ error: "Engagement not found" }, 404);

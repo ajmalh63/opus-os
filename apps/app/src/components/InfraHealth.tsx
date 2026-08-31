@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -297,34 +297,50 @@ export default function InfraHealth() {
                     <p className="text-[13px] font-mono text-brand-navy/40">https://wa.opusoverseas.com • Port 2785</p>
                   </div>
                 </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${overview?.openwa?.state === 'live' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-700'}`}>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${overview?.openwa?.state === 'live' ? 'bg-emerald-500/15 text-emerald-700' : overview?.openwa?.state === 'stub' ? 'bg-brand-navy/[0.06] text-brand-navy/50' : 'bg-rose-500/15 text-rose-700'}`}>
                   {overview?.openwa?.state || 'Checking'}
                 </span>
               </div>
 
-              {/* Operational Fields */}
+              {/* Operational Fields — gold: never show fake "main (connected)" when stub; Worker has no OPENWA_API_KEY → probe not run */}
               <div className="mt-4 space-y-2.5 rounded-xl bg-brand-navy/[0.03] p-3.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-brand-navy/60">Session Name / State:</span>
-                  <span className="font-mono text-sm font-bold text-brand-navy">{overview?.openwa?.session?.name || 'main'} ({overview?.openwa?.session?.status || 'connected'})</span>
+                  <span className="font-mono text-sm font-bold text-brand-navy">
+                    {overview?.openwa?.state === 'live' && overview?.openwa?.session
+                      ? `${overview.openwa.session.name} (${overview.openwa.session.status})`
+                      : overview?.openwa?.state === 'down'
+                        ? `— probe failed (${overview.openwa.details?.slice(0, 40) || 'HTTP error'})`
+                        : '— not configured (set OPENWA_API_KEY secret)'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-brand-navy/60">Connected Number:</span>
-                  <span className="font-mono text-sm font-bold text-emerald-800">{overview?.openwa?.session?.phone || 'Ready for pairing'}</span>
+                  <span className="font-mono text-sm font-bold text-emerald-800">
+                    {overview?.openwa?.state === 'live' ? (overview.openwa.session?.phone || 'Ready for pairing') : '—'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-brand-navy/60">Anti-Ban Protection:</span>
-                  <span className="font-mono text-[13px] font-bold text-emerald-700">~25ms/char typing + jitter</span>
+                  <span className="font-mono text-[13px] font-bold text-emerald-700">~25ms/char typing + jitter {overview?.openwa?.state !== 'live' && <span className="text-[11px] text-amber-700">(active when live)</span>}</span>
                 </div>
                 <div className="pt-2 border-t border-brand-navy/10">
-                  <div className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/50 mb-1.5">Active Plugins ({overview?.openwa?.plugins?.length || 0}):</div>
+                  <div className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/50 mb-1.5">Active Plugins ({overview?.openwa?.state === 'live' ? (overview?.openwa?.plugins?.length || 0) : '—'}):</div>
                   <div className="flex flex-wrap gap-1.5">
-                    {overview?.openwa?.plugins?.map((p) => (
-                      <span key={p.id} className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-bold text-emerald-800 flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        {p.name}
-                      </span>
-                    ))}
+                    {overview?.openwa?.state === 'live' ? (
+                      overview?.openwa?.plugins?.length ? (
+                        overview.openwa.plugins.map((p) => (
+                          <span key={p.id} className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-bold text-emerald-800 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            {p.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[11px] text-brand-navy/40">No plugins loaded — check wa.opusoverseas.com/api/plugins</span>
+                      )
+                    ) : (
+                      <span className="text-[11px] text-brand-navy/40">{overview?.openwa?.details || 'Probe not run — set secrets via wrangler secret put'}</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -358,7 +374,7 @@ export default function InfraHealth() {
                     <p className="text-[13px] font-mono text-brand-navy/40">https://erpnext.opusoverseas.com • Port 8080</p>
                   </div>
                 </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${overview?.erpnext?.state === 'live' ? 'bg-blue-500/15 text-blue-700' : 'bg-rose-500/15 text-rose-700'}`}>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${overview?.erpnext?.state === 'live' ? 'bg-blue-500/15 text-blue-700' : overview?.erpnext?.state === 'stub' ? 'bg-brand-navy/[0.06] text-brand-navy/50' : 'bg-rose-500/15 text-rose-700'}`}>
                   {overview?.erpnext?.state || 'Checking'}
                 </span>
               </div>
@@ -418,7 +434,7 @@ export default function InfraHealth() {
                     <p className="text-[13px] font-mono text-brand-navy/40">https://listmonk.opusoverseas.com • Port 9000</p>
                   </div>
                 </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${overview?.listmonk?.state === 'live' ? 'bg-amber-500/15 text-amber-700' : 'bg-rose-500/15 text-rose-700'}`}>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${overview?.listmonk?.state === 'live' ? 'bg-amber-500/15 text-amber-700' : overview?.listmonk?.state === 'stub' ? 'bg-brand-navy/[0.06] text-brand-navy/50' : 'bg-rose-500/15 text-rose-700'}`}>
                   {overview?.listmonk?.state || 'Live'}
                 </span>
               </div>

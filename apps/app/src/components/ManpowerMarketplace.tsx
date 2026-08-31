@@ -1,16 +1,29 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ManpowerProfileWizard, { ManpowerProfile, manpowerCompleteness } from './ManpowerProfileWizard';
+import { ManpowerAccessGate } from './manpower/ManpowerAccessGate';
 import { computeManpowerMatchFrontend } from '../lib/manpowerMatch';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
+
+// VAS (career add-on services) — single optional paid offering alongside the ₹100 Candidate Pass
+type VasPlan = { key: string; title: string; description: string; pricePaise: number; durationDays: number; deliverable: string };
+
+// Application tracker status labels (ported from the legacy ManpowerJobs tracker)
+const SEL: Record<string, string> = { applied: 'Applied', shortlisted: 'Shortlisted', selected: 'Selected', rejected: 'Rejected' };
+const MED: Record<string, string> = { pending: 'Medical Pending', fit: 'Medically Fit', unfit: 'Unfit', restricted: 'Restricted' };
+const VISA: Record<string, string> = { pending: 'Visa Pending', submitted: 'Visa Submitted', stamped: 'Visa Stamped', rejected: 'Visa Rejected' };
+const FLT: Record<string, string> = { pending: 'Awaiting Flight', booked: 'Flight Booked', deployed: 'Deployed' };
 
 export default function ManpowerMarketplace({ token }: { token: string }) {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<'profile' | 'jobs' | 'applications'>('jobs');
+  const [tab, setTab] = useState<'profile' | 'jobs' | 'applications' | 'vas'>('jobs');
   const [q, setQ] = useState('');
   const [country, setCountry] = useState('');
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [showGate, setShowGate] = useState(false);
+  const [payBusy, setPayBusy] = useState(false);
+  const [acceptedVasTerms, setAcceptedVasTerms] = useState(false);
 
   const { data, isLoading } = useQuery<{ jobs: any[] }>({
     queryKey: ['manpowerMarketplace', q, country],
@@ -21,9 +34,32 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
     },
   });
 
+  // ——— Defense-in-depth membership gate: ₹100 candidate-pass required before applying ———
+  const { data: membershipData, refetch: refetchMembership } = useQuery<{ enabled: boolean; comingSoon: boolean; membership: { isMember: boolean; expiresAt: number | null; plan: string | null } }>({
+    queryKey: ['portalManpowerMembershipGate', token],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const r = await fetch(`${API}/api/public/portal/manpower/membership`, { headers: { 'X-Portal-Token': token } });
+      if (!r.ok) throw new Error('membership status unavailable');
+      return r.json();
+    },
+    enabled: !!token,
+  });
+  const isMember = membershipData?.membership?.isMember === true;
+
   const applyMutation = useMutation({
     mutationFn: async ({ jobId }: { jobId: string }) => {
       if (!isProfileReady) throw new Error('Complete your career profile (60%+) before applying — so Match% is real and recruiters can shortlist you.');
+      if (activeCount >= maxQuota) throw new Error(`Active application limit reached (${activeCount}/${maxQuota}) — wait for a decision on a current application before applying to more roles.`);
+      // Membership check: trust the cached status, else re-verify live before the POST fires
+      let member = isMember;
+      if (!member) {
+        try {
+          const r = await fetch(`${API}/api/public/portal/manpower/membership`, { headers: { 'X-Portal-Token': token } });
+          if (r.ok) member = !!(await r.json())?.membership?.isMember;
+        } catch {}
+      }
+      if (!member) throw new Error('Candidate Pass required — purchase the ₹100 verification pass first.');
       const formJson = {
         personal: { fullName: profile.fullName, dob: profile.dob, gender: profile.gender, nationality: profile.nationality, currentCity: profile.currentCity, languages: profile.languages },
         contact: { phone: profile.phone, email: profile.email, emergencyContact: profile.emergencyContact, emergencyPhone: profile.emergencyPhone },
@@ -40,7 +76,14 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
         body: JSON.stringify({ token: token || 'client-self', jobId, formJson, resumeKey: profile.resumeKey || null }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || json.details || 'Failed to submit application');
+      if (!res.ok) {
+        const friendly = json.code === 'MEMBERSHIP_REQUIRED'
+          ? 'Candidate Pass required — purchase the ₹100 verification pass first.'
+          : (json.error || json.details || 'Failed to submit application');
+        const err: any = new Error(friendly);
+        err.code = json.code;
+        throw err;
+      }
       return json;
     },
     onSuccess: (_d, vars) => {
@@ -55,8 +98,13 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
       setTimeout(() => setStatusMsg(null), 5000);
     },
     onError: (err: any) => {
-      setStatusMsg({ text: err.message || 'Application failed. Please try again.', type: 'error' });
-      setTimeout(() => setStatusMsg(null), 6000);
+      if (err?.code === 'MEMBERSHIP_REQUIRED') {
+        setShowGate(true);
+        setStatusMsg({ text: '🔒 Candidate Pass required — a one-time ₹100 verification keeps applications spam-free. Unlock below to apply.', type: 'error' });
+      } else {
+        setStatusMsg({ text: err.message || 'Application failed. Please try again.', type: 'error' });
+      }
+      setTimeout(() => setStatusMsg(null), 8000);
     },
   });
 
@@ -143,16 +191,79 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
     }
   };
 
-  const { data: appsData } = useQuery<{ success: boolean; applications: any[]; activeCount?: number }>({
+  const { data: appsData } = useQuery<{ success: boolean; applications: any[]; activeCount?: number; maxQuota?: number }>({
     queryKey: ['portalManpowerApps', token],
     queryFn: async () => {
       const r = await fetch(`${API}/api/public/portal/manpower/applications?token=${token}`, { headers: { 'X-Portal-Token': token } });
       if (!r.ok) return { success: true, applications: [] };
       return r.json();
     },
-    enabled: tab === 'applications',
+    enabled: !!token,
     refetchInterval: 30000,
   });
+  const applications = appsData?.applications || [];
+  const activeCount = appsData?.activeCount ?? applications.filter((d: any) => !['rejected'].includes(d.selectionStatus) && d.flightStatus !== 'deployed').length;
+  const maxQuota = appsData?.maxQuota ?? 3;
+
+  // ——— VAS career add-ons (ATS resume revamp, mock interviews, express screening) — optional, never required ———
+  const { data: vasData } = useQuery<{ plans: VasPlan[] }>({
+    queryKey: ['portalManpowerVas'],
+    staleTime: 300_000,
+    queryFn: async () => { const r = await fetch(`${API}/api/public/portal/manpower/vas-plans`); if (!r.ok) throw new Error('vas'); return r.json(); },
+    enabled: tab === 'vas',
+  });
+  const vasPlans = vasData?.plans || [];
+
+  const loadRazorpay = () => new Promise<boolean>((resolve) => {
+    if ((window as any).Razorpay) return resolve(true);
+    const sc = document.createElement('script');
+    sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    sc.onload = () => resolve(true);
+    sc.onerror = () => resolve(false);
+    document.body.appendChild(sc);
+  });
+
+  const purchaseVas = async (serviceKey: string) => {
+    setPayBusy(true);
+    try {
+      const loaded = await loadRazorpay();
+      if (!loaded) throw new Error('Razorpay checkout failed to load.');
+      const oRes = await fetch(`${API}/api/public/portal/manpower/vas/order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, serviceKey }),
+      });
+      const o = await oRes.json();
+      if (!oRes.ok || !o.order_id) throw new Error(o.error || 'Failed to initialize service order');
+
+      const result = await new Promise<{ razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string } | null>((resolve) => {
+        const rz = new (window as any).Razorpay({
+          key: o.key, amount: o.amount_paise, currency: o.currency || 'INR',
+          name: 'Opus Overseas Career Advisory', description: o.title || 'Career Service',
+          order_id: o.order_id,
+          handler: (res: any) => resolve({ razorpay_payment_id: res.razorpay_payment_id, razorpay_order_id: res.razorpay_order_id, razorpay_signature: res.razorpay_signature }),
+          modal: { ondismiss: () => resolve(null) },
+        });
+        rz.open();
+      });
+      if (!result) { setStatusMsg({ text: 'Payment window closed.', type: 'error' }); return; }
+
+      const vRes = await fetch(`${API}/api/public/portal/manpower/vas/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, serviceKey, ...result }),
+      });
+      const v = await vRes.json();
+      if (!vRes.ok) throw new Error(v.error || 'Payment verification failed');
+      setStatusMsg({ text: v.message || '✓ Career service confirmed! Our team will reach out.', type: 'success' });
+      setTimeout(() => setStatusMsg(null), 6000);
+    } catch (e: any) {
+      setStatusMsg({ text: e.message || 'Payment failed. Please try again.', type: 'error' });
+      setTimeout(() => setStatusMsg(null), 8000);
+    } finally {
+      setPayBusy(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -165,17 +276,35 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
         </div>
       )}
 
+      {showGate && (
+        <ManpowerAccessGate
+          isModal={false}
+          clientToken={token}
+          onSuccess={() => {
+            setShowGate(false);
+            refetchMembership();
+            qc.invalidateQueries({ queryKey: ['portalManpowerApps'] });
+            qc.invalidateQueries({ queryKey: ['manpowerMarketplace'] });
+          }}
+        />
+      )}
+
       <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
         <div className="space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <h3 className="font-display font-bold text-brand-navy text-base sm:text-lg">🌍 Manpower Services</h3>
               <span className="text-xs px-2.5 py-1 rounded-full bg-brand-navy/[0.06] text-brand-navy/70 font-semibold">Profile → Jobs → Applications</span>
+              {isMember && (
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700" title="₹100 lifetime candidate-pass verified">
+                  ✓ Your pass: Candidate Pass — active
+                </span>
+              )}
             </div>
             <div className="flex gap-1.5 bg-brand-navy/[0.05] p-1.5 rounded-xl text-xs sm:text-sm font-bold text-brand-navy/70">
-              {(['profile','jobs','applications'] as const).map(t => (
+              {(['profile','jobs','applications','vas'] as const).map(t => (
                 <button key={t} onClick={() => setTab(t)} className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${tab===t ? 'bg-brand-gold text-brand-navy shadow-sm font-black' : 'hover:text-brand-navy'}`}>
-                  {t==='profile' ? `My Profile ${completeness.pct<100 ? `(${completeness.pct}%)` : '✓'}` : t==='jobs' ? 'Open Jobs' : `My Applications ${appsData?.applications?.length ? `(${appsData.applications.length})` : ''}`}
+                  {t==='profile' ? `My Profile ${completeness.pct<100 ? `(${completeness.pct}%)` : '✓'}` : t==='jobs' ? 'Open Jobs' : t==='vas' ? '✨ Career Add-Ons' : `My Applications ${applications.length ? `(${applications.length})` : ''}`}
                 </button>
               ))}
             </div>
@@ -201,24 +330,172 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
               </div>
             </div>
           ) : tab === 'applications' ? (
-            <div className="space-y-3.5">
-              {(appsData?.applications || []).length===0 ? (
-                <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-10 text-center text-sm text-brand-navy/50">No applications yet — complete your profile and apply to an opening. Staff dispatch & kanban sync in realtime (30s poll + invalidations).</div>
-              ) : (appsData!.applications.map((a:any) => (
-                <div key={a.id} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-2.5 text-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div><div className="font-bold text-brand-navy text-base">{a.jobTitle}</div><div className="text-xs text-brand-navy/50 mt-0.5">{a.jobCountry} · {a.selectionStatus} · Match {a.matchScore}% ({a.matchTier})</div></div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${a.matchTier==='top_match'?'bg-emerald-500/15 text-emerald-700':a.matchTier==='standard'?'bg-amber-500/15 text-amber-700':'bg-slate-100 text-slate-600'}`}>{a.matchTier.replace('_',' ')}</span>
-                  </div>
-                  {(a.matchStrengths?.length || a.matchGaps?.length) ? <div className="text-xs text-brand-navy/70 bg-brand-navy/[0.03] rounded-xl px-3 py-2">{a.matchStrengths?.length ? <span className="text-emerald-700 font-semibold">✓ {a.matchStrengths.join(' · ')}</span> : null}{a.matchGaps?.length ? <span className="text-amber-700 font-semibold ml-3">○ {a.matchGaps.join(' · ')}</span> : null}</div> : null}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <p className="text-xs sm:text-sm text-slate-600">Live tracking — selection, medical, visa, and flight stages sync every 30s.</p>
+                <span className={`text-xs px-3 py-1 rounded-full border font-bold ${activeCount >= maxQuota ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>Active quota {activeCount}/{maxQuota}</span>
+              </div>
+              {applications.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-10 text-center space-y-3">
+                  <p className="text-sm text-brand-navy/50">You haven't applied to any vacancies yet — browse open jobs and quick-apply with your profile.</p>
+                  <button onClick={() => setTab('jobs')} className="inline-block bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-xs font-extrabold uppercase tracking-wider px-5 py-2.5 rounded-xl cursor-pointer transition shadow-sm">Browse Open Jobs</button>
                 </div>
-              )))}
+              ) : applications.map((a:any) => (
+                <div key={a.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-display font-bold text-sm text-brand-navy">{a.jobTitle}</h3>
+                        {a.matchScore !== undefined && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase border ${a.matchTier === 'top_match' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-200' : a.matchTier === 'standard' ? 'bg-amber-500/10 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                            {a.matchTier === 'top_match' ? '🔥 ' : ''}{a.matchScore}% Match
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">{a.jobCountry} · applied {a.appliedAt ? new Date(a.appliedAt * 1000).toLocaleDateString() : ''}</p>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase shrink-0 ${a.selectionStatus === 'rejected' ? 'bg-rose-500/10 text-rose-700' : a.selectionStatus === 'selected' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-brand-gold/15 text-amber-800'}`}>{SEL[a.selectionStatus] || a.selectionStatus}</span>
+                  </div>
+
+                  {(a.matchStrengths?.length || 0) > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {a.matchStrengths.map((st: string, i: number) => (
+                        <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2 py-0.5 rounded-md">✓ {st}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Enterprise decision timeline — operational dashboard hierarchy (NN/g) */}
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5">
+                    <div className="flex items-center justify-between gap-2">
+                      {[
+                        { label: 'Applied', done: true, active: a.selectionStatus !== 'applied', ok: a.selectionStatus !== 'rejected' },
+                        { label: 'Shortlisted', done: ['shortlisted','selected'].includes(a.selectionStatus), active: a.selectionStatus === 'shortlisted', ok: a.selectionStatus !== 'rejected' },
+                        { label: 'Selected', done: a.selectionStatus === 'selected', active: a.selectionStatus === 'selected', ok: a.selectionStatus !== 'rejected' },
+                        { label: 'Medical', done: a.medicalStatus === 'fit', active: a.medicalStatus === 'pending', ok: a.medicalStatus !== 'unfit' },
+                        { label: 'Visa', done: a.visaStatus === 'stamped', active: a.visaStatus === 'submitted', ok: a.visaStatus !== 'rejected' },
+                        { label: 'Deployed', done: a.flightStatus === 'deployed', active: a.flightStatus === 'booked', ok: true },
+                      ].map((s, i, arr) => (
+                        <div key={s.label} className="flex flex-1 items-center gap-2">
+                          <div className="flex flex-col items-center gap-1">
+                            <div className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-extrabold ${s.done ? (s.ok ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-rose-500 text-white border-rose-500') : s.active ? 'bg-brand-gold text-brand-navy border-brand-gold animate-pulse' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>{s.done ? '✓' : i+1}</div>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${s.done ? 'text-slate-800' : s.active ? 'text-brand-gold' : 'text-slate-400'}`}>{s.label}</span>
+                          </div>
+                          {i < arr.length - 1 && <div className={`h-px flex-1 ${s.done ? 'bg-emerald-500/50' : 'bg-slate-200'}`} aria-hidden />}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                      <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2"><span className="text-slate-500 uppercase text-[11px] font-bold">Medical</span><p className={`font-bold ${a.medicalStatus === 'fit' ? 'text-emerald-700' : a.medicalStatus === 'unfit' ? 'text-rose-700' : 'text-slate-700'}`}>{MED[a.medicalStatus] || a.medicalStatus}</p></div>
+                      <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2"><span className="text-slate-500 uppercase text-[11px] font-bold">Visa</span><p className={`font-bold ${a.visaStatus === 'stamped' ? 'text-emerald-700' : a.visaStatus === 'rejected' ? 'text-rose-700' : 'text-slate-700'}`}>{VISA[a.visaStatus] || a.visaStatus}</p></div>
+                      <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2"><span className="text-slate-500 uppercase text-[11px] font-bold">Flight</span><p className={`font-bold ${a.flightStatus === 'deployed' ? 'text-emerald-700' : 'text-slate-700'}`}>{FLT[a.flightStatus] || a.flightStatus}</p></div>
+                    </div>
+                  </div>
+
+                  {a.rejectionReason && <p className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">Reason: {a.rejectionReason}</p>}
+                  {a.notes && <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">Note: {a.notes}</p>}
+                </div>
+              ))}
+            </div>
+          ) : tab === 'vas' ? (
+            <div className="space-y-5">
+              <p className="text-xs sm:text-sm text-slate-600">Optional professional services — <b>standard recruitment stays free</b>. The only required payment is the one-time ₹100 Candidate Pass.</p>
+
+              {/* Legal safety, selection & no-refund transparency notice */}
+              <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 space-y-3">
+                <div className="flex items-center gap-2 text-amber-700 font-bold text-xs uppercase tracking-wider">
+                  <span>⚠️</span>
+                  <span>Important: First-Come, First-Served & No-Refund Policy</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-amber-900/80 leading-relaxed">
+                  <div className="space-y-1">
+                    <p className="font-bold text-amber-900 flex items-center gap-1.5">
+                      <span className="text-amber-600">1.</span> First-Come, First-Served Employer Review
+                    </p>
+                    <p className="text-amber-900/60">
+                      International hiring authorities evaluate candidates sequentially. If a candidate ahead of you is selected for a specific opening, your professional deliverable (ATS resume, interview coaching) remains permanently valid and active for all present and future overseas openings in your trade.
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-bold text-amber-900 flex items-center gap-1.5">
+                      <span className="text-amber-600">2.</span> No Job Guarantee & Non-Refundable Fee Policy
+                    </p>
+                    <p className="text-amber-900/60">
+                      Under the <strong>Indian Emigration Act 1983</strong> and <strong>ILO C181</strong>, standard job recruitment is strictly free. These optional fees cover expert resume writing, mock interview coaching, and express screening labor. They <strong>do not guarantee employment or visa issuance</strong>. Fees are non-refundable once deliverable work commences.
+                    </p>
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-2.5 cursor-pointer bg-white/70 border border-amber-200 rounded-xl p-3 mt-1 hover:border-amber-400 transition">
+                  <input
+                    type="checkbox"
+                    checked={acceptedVasTerms}
+                    onChange={(e) => setAcceptedVasTerms(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 text-brand-gold focus:ring-brand-gold cursor-pointer"
+                  />
+                  <span className="text-sm text-amber-900/90">
+                    I understand this is an optional professional career coaching & document enhancement service. It does not guarantee job selection or visa outcome, and fees are non-refundable once work begins.
+                  </span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {vasPlans.map((plan) => (
+                  <div key={plan.key} className="group rounded-2xl border border-slate-200 bg-white p-5 flex flex-col justify-between gap-4 shadow-sm hover:border-brand-gold/30 hover:shadow-md transition-all duration-300">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-widest text-brand-gold">{plan.durationDays} Days SLA</span>
+                        <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Optional VAS</span>
+                      </div>
+                      <h4 className="font-display font-bold text-sm text-brand-navy">{plan.title}</h4>
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{plan.description}</p>
+                      <div className="rounded-lg bg-slate-50 border border-slate-200 p-2.5 text-xs text-slate-700">
+                        <span className="text-amber-700 font-bold">Deliverable: </span>{plan.deliverable}
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+                      <span className="text-brand-gold font-bold text-base">₹{(plan.pricePaise / 100).toLocaleString('en-IN')}</span>
+                      <button
+                        disabled={payBusy || !acceptedVasTerms}
+                        onClick={() => purchaseVas(plan.key)}
+                        className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-xs font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30"
+                      >
+                        {payBusy ? 'Processing…' : !acceptedVasTerms ? 'Accept Terms' : 'Purchase'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {vasPlans.length === 0 && (
+                  <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+                    No career add-ons published right now — check back soon.
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <p className="text-xs sm:text-sm text-slate-600">Direct hiring · Zero sub-agents · Real Match% computed live from your profile</p>
               <span className="text-xs px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold">Live</span>
+            </div>
+
+            {/* KPI strip — honest stats only (no exclusive/secret metrics) */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Open Vacancies</p>
+                <p className="mt-1 font-display text-xl font-extrabold tracking-tight text-slate-800">{jobs.length}</p>
+                <p className="text-[11px] text-slate-500">{countries.length} countries</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">My Applications</p>
+                <p className="mt-1 font-display text-xl font-extrabold tracking-tight text-slate-800">{applications.length}</p>
+                <p className="text-[11px] text-slate-500">{applications.filter((a: any) => a.selectionStatus === 'shortlisted' || a.selectionStatus === 'selected').length} in review</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Active Quota</p>
+                <p className={`mt-1 font-display text-xl font-extrabold tracking-tight ${activeCount >= maxQuota ? 'text-amber-600' : 'text-slate-800'}`}>{activeCount}/{maxQuota}</p>
+                <p className="text-[11px] text-slate-500">{activeCount >= maxQuota ? 'Await decisions' : `${maxQuota - activeCount} slots remaining`}</p>
+              </div>
             </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -301,10 +578,10 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
                         </button>
                         <button
                           onClick={() => applyMutation.mutate({ jobId: j.id })}
-                          disabled={applyMutation.isPending}
+                          disabled={applyMutation.isPending || activeCount >= maxQuota}
                           className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-xs font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30 cursor-pointer shadow-sm"
                         >
-                          {applyMutation.isPending ? 'Submitting…' : '⚡ Quick Apply'}
+                          {activeCount >= maxQuota ? `Quota Full (${activeCount}/${maxQuota})` : applyMutation.isPending ? 'Submitting…' : '⚡ Quick Apply'}
                         </button>
                       </div>
                     </div>
@@ -364,10 +641,10 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
               </button>
               <button
                 onClick={() => applyMutation.mutate({ jobId: selectedJob.id })}
-                disabled={applyMutation.isPending}
+                disabled={applyMutation.isPending || activeCount >= maxQuota}
                 className="px-5 py-2.5 rounded-xl bg-brand-navy hover:bg-brand-gold hover:text-brand-navy text-white text-xs sm:text-sm font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
               >
-                {applyMutation.isPending ? 'Submitting Application…' : 'Submit Application →'}
+                {activeCount >= maxQuota ? 'Quota Full' : applyMutation.isPending ? 'Submitting Application…' : 'Submit Application →'}
               </button>
             </div>
           </div>

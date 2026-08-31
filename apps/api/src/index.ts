@@ -52,6 +52,7 @@ import { publicRouter } from './routes/public.js';
 import { publicResumeRouter } from './routes/publicResume.js';
 import { OpusEnv } from './types.js';
 import { adminRouter } from './routes/admin.js';
+import { cspNonce } from './middleware/cspNonce.js';
 import { mauticWebhookRouter } from './routes/mauticWebhook.js';
 import { waWebhookRouter, chatwootWebhookRouter } from './routes/messagingWebhooks.js';
 import { listmonkWebhookRouter } from './routes/listmonkWebhooks.js';
@@ -76,31 +77,23 @@ import { partnerGoldRouter } from './routes/partnerGold.js';
 import { v1ApiRouter } from './routes/v1/index.js';
 import { feedbackRouter } from './routes/feedback.js';
 import { standardOrderRouter, standardVerifyRouter } from './routes/razorpayStandard.js';
+import { helpdeskRouter, portalTicketsRouter, partnerTicketsRouter } from './routes/helpdesk.js';
+import { staffOcrRouter } from './routes/staffOcr.js';
 
 const app = new Hono<{ Bindings: OpusEnv }>();
 
-// Security headers (Hono secure-header middleware) — CSP, nosniff, referrer
-// policy, HSTS. Damage-control layer, never a substitute for auth/RBAC.
-// CSP: default-src 'self' + the external origins the app legitimately needs
-// (Turnstile, Razorpay checkout, Google Fonts, GA4 beacon). No inline script
-// is needed by the SPA (Vite bundles) — blocks injected script execution.
-// LAYER 6 HARDENING (Aug 2026 pentest): + HSTS 1yr + includeSubDomains +
-// preload, X-Frame-Options DENY, tightened frame-ancestors, and explicit
-// referrer. styleSrc unsafe-inline retained only for Tailwind runtime
-// (no script inline) — future nonce upgrade tracked.
+// Security headers — GOLD-STANDARD Strict CSP (OWASP Cheat Sheet + MDN + web.dev).
+// Layer 6 hardening Aug 2026 now upgraded to nonce-based Strict CSP:
+// - No unsafe-inline (styleSrc uses per-request nonce + strict-dynamic for scripts)
+// - object-src 'none', base-uri 'none', frame-ancestors 'none'
+// - HSTS 1yr preload, X-Frame DENY, nosniff, strict-origin-when-cross-origin
+// cspNonce generates a 128-bit WebCrypto nonce per response and stamps it onto
+// CSP header + HTML tags. secureHeaders still applies HSTS/X-Frame etc.
+app.use('*', cspNonce);
 app.use('*', secureHeaders({
-  contentSecurityPolicy: {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://checkout.razorpay.com'],
-    styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-    fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-    imgSrc: ["'self'", 'data:', 'https:'],
-    connectSrc: ["'self'", 'https://api.cal.com', 'https://api.razorpay.com', 'https://challenges.cloudflare.com'],
-    frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://checkout.razorpay.com'],
-    objectSrc: ["'none'"],
-    baseUri: ["'self'"],
-    frameAncestors: ["'none'"],
-  },
+  // CSP is now owned by cspNonce (single source of truth). secureHeaders CSP
+  // is intentionally omitted here to avoid duplicate headers — cspNonce sets
+  // CSP with nonce + strict-dynamic.
   strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload',
   xFrameOptions: 'DENY',
   xContentTypeOptions: 'nosniff',
@@ -121,6 +114,9 @@ app.use('/api/*', cors({
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
+// Idempotency middleware — reads request bodies from a CLONE of the raw
+// request (fixed: previously consumed the body stream, causing 500s when
+// route handlers called c.req.json(), e.g. POST /api/auth/otp/send).
 app.use('/api/*', idempotency());
 
 // Global Error Handler — gold-standard shape:
@@ -141,6 +137,14 @@ app.onError((err, c) => {
     },
     status as any
   );
+});
+
+// P2-4: X-Request-ID correlation (http.dev standard) — echo client-supplied UUID or generate one;
+// every response carries it so users can reference the exact server-side log entry.
+app.use('/api/*', async (c, next) => {
+  const rid = c.req.header('X-Request-ID') || crypto.randomUUID();
+  await next();
+  c.header('X-Request-ID', rid);
 });
 
 // JSON 404 handler — default Hono is plain text; gold standard is JSON.
@@ -286,6 +290,8 @@ app.use('/api/transit/*', rbacMiddleware(['super_admin', 'manager', 'counselor',
 
 app.use('/api/manpower', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/manpower/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.use('/api/staff/manpower', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.use('/api/staff/manpower/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 
 app.use('/api/tasks', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
 app.use('/api/tasks/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
@@ -340,6 +346,7 @@ app.route('/api/umrah', umrahRouter);
 app.route('/api/tours', umrahRouter);
 app.route('/api/transit', transitRouter);
 app.route('/api/manpower', manpowerRouter);
+app.route('/api/staff/manpower', manpowerRouter);
 
 app.use('/api/study-abroad', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/study-abroad/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
@@ -369,6 +376,13 @@ app.use('/api/staff/ai', rbacMiddleware(['super_admin', 'manager', 'counselor', 
 app.use('/api/staff/ai/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
 app.use('/api/staff/ai/*', rateLimit({ bucket: 'staff-ai', windowSeconds: 60, limit: 30 }));
 app.route('/api/staff/ai', staffAiRouter);
+
+// PRD-001 Staff OCR Workbench (MRZ ICAO 9303 + Rejection Guard) — staff-only, HITL, 30/min
+// Enforces owner constraint: OCR at staff level only, never client portal.
+app.use('/api/staff/ocr', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.use('/api/staff/ocr/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'coordinator'], true));
+app.use('/api/staff/ocr/*', rateLimit({ bucket: 'staff-ocr', windowSeconds: 60, limit: 30 }));
+app.route('/api/staff/ocr', staffOcrRouter);
 
 app.route('/api/compliance', complianceRouter);
 app.route('/api/compliance', complianceExtrasRouter);
@@ -486,6 +500,13 @@ app.route('/api/visa', visaGoldRouter);
 app.route('/api/attestation', attestationGoldRouter);
 app.route('/api/partner', partnerGoldRouter);
 app.route('', feedbackRouter);
+
+// Helpdesk & Support Tickets (ITIL v4 Gold Standard)
+app.use('/api/helpdesk', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.use('/api/helpdesk/*', rbacMiddleware(['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'], true));
+app.route('/api/helpdesk', helpdeskRouter);
+app.route('/api/public/portal/tickets', portalTicketsRouter);
+app.route('/api/partner', partnerTicketsRouter);
 
 // Cal.com public booking API (no auth) — MUST precede the RBAC mount.
 // Anti-spam gates: slots are rate-limited; booking creation requires Turnstile

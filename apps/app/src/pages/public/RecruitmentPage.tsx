@@ -15,7 +15,7 @@ import { useVisibilityTracking } from '../../lib/visibilityTracking';
 import { track, EVENTS } from '../../lib/umami';
 import { getBookingUrlForDivision } from '../../config/booking';
 import BookingModal from '../../components/BookingModal';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 const RECRUITMENT_FAQS = [
   {

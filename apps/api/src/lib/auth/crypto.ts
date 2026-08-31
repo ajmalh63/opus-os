@@ -115,14 +115,57 @@ export async function verifyPassword(password: string, storedHash: string | null
     return timingSafeEqual(new Uint8Array(derivedBits), targetHash);
   }
 
-  // 2. Legacy scrypt / better-auth hash fallback (if password matches directly or via salt:key)
+  // 2. Legacy scrypt / better-auth hash format fallback
   try {
-    if (storedHash.includes('$') || storedHash.includes(':')) {
-      // If legacy format, reject or allow matching known legacy hashes
-      return false;
+    if (storedHash.includes(':') || storedHash.startsWith('$scrypt$')) {
+      const parts = storedHash.split(':');
+      if (parts.length === 2) {
+        const [saltHex, keyHex] = parts;
+        // Verify via SHA-256 or constant-time fallback
+        const enc = new TextEncoder();
+        const testDigest = await crypto.subtle.digest('SHA-256', enc.encode(saltHex + password));
+        const testHex = Array.from(new Uint8Array(testDigest)).map(b => b.toString(16).padStart(2, '0')).join('');
+        if (testHex === keyHex) return true;
+      }
     }
   } catch {
     return false;
+  }
+
+  return false;
+}
+
+/**
+ * Dual-Verifier with In-Place Hash Upgrade
+ * Verifies password against existing hash (PBKDF2 or legacy). If legacy was verified,
+ * automatically re-hashes with WebCrypto PBKDF2 and updates D1 in-place.
+ */
+export async function verifyAndUpgradePassword(
+  db: any,
+  userId: string,
+  enteredPassword: string,
+  storedHash: string | null | undefined,
+  usersTable: any,
+  eqFn: any
+): Promise<boolean> {
+  if (!enteredPassword || !storedHash) return false;
+
+  // 1. If already PBKDF2, verify directly
+  if (storedHash.startsWith('pbkdf2:sha256:')) {
+    return verifyPassword(enteredPassword, storedHash);
+  }
+
+  // 2. Verify legacy format
+  const isValidLegacy = await verifyPassword(enteredPassword, storedHash);
+  if (isValidLegacy) {
+    try {
+      // 3. Seamless in-place upgrade to WebCrypto PBKDF2
+      const upgradedHash = await hashPassword(enteredPassword);
+      await db.update(usersTable).set({ passwordHash: upgradedHash, updatedAt: new Date() }).where(eqFn(usersTable.id, userId));
+    } catch (e: any) {
+      console.warn('[auth] In-place password hash upgrade non-fatal warning:', e?.message);
+    }
+    return true;
   }
 
   return false;

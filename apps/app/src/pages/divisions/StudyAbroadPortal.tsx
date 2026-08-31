@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StudyAbroadApplicationModal, { ApplicationSnapshot, MatchResult, StudentProfile } from '../../components/StudyAbroadApplicationModal';
 import StudentProfileWizard, { profileCompleteness } from '../../components/StudentProfileWizard';
 import AiSopStudio from '../../components/ai/AiSopStudio';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 interface Student {
   id: string;

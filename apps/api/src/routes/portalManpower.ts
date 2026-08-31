@@ -1,7 +1,7 @@
 import { resolveClientByToken } from '../lib/clientToken.js';
 import { Hono } from 'hono';
 import { getDb } from '../db/client.js';
-import { clients, jobPostings, manpowerDeployments, membershipPlans, appSettings, tasks } from '../db/schema.js';
+import { clients, jobPostings, manpowerDeployments, membershipPlans, tasks } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
@@ -15,6 +15,8 @@ export { MANPOWER_VAS_CATALOG };
 
 // Client self-service Manpower surface (token = client.id).
 // Mounted at /api/public/portal/manpower.
+import { publishSyncEvent } from './sync.js';
+
 export const portalManpowerRouter = new Hono<{
   Bindings: {
     DB: D1Database;
@@ -50,20 +52,38 @@ async function verifySignature(orderId: string, paymentId: string, signature: st
   return timingSafeEqualHex(hex, signature);
 }
 
-// Membership is active when the flag is set and (if an expiry exists) not past.
+// Candidate Pass is active when the flag is set and (if an expiry exists) not past.
+// NOTE: the legacy column name exclusive_member now semantically means
+// 'active Candidate Pass holder' (₹100 lifetime Razorpay anti-spam pass).
 function isMember(client: any, now: number): boolean {
   return !!client?.exclusiveMember && (!client.exclusiveExpiresAt || client.exclusiveExpiresAt > now);
 }
 
-// Seed default plans once (idempotent) so the paywall is never empty.
+// Seed the default plan once (idempotent) so the paywall is never empty.
+// SINGLE-PLAN PAYWALL: only the ₹100 lifetime candidate-pass exists. The legacy
+// exclusive-30/90/365 plans are discontinued and are no longer seeded.
 export async function seedMembershipPlans(db: any) {
   const existing = await db.select().from(membershipPlans).all();
   const existingKeys = new Set(existing.map((p: any) => p.key));
   const now = Math.floor(Date.now() / 1000);
   const defaults = [
-    { key: 'exclusive-30', name: 'Exclusive 30 Days', description: '30 days of secret job offers', pricePaise: 49900, durationDays: 30, tier: 'basic', perksJson: '["Secret job offers", "Direct apply"]', sortOrder: 1 },
-    { key: 'exclusive-90', name: 'Exclusive 90 Days', description: '90 days of secret job offers', pricePaise: 129900, durationDays: 90, tier: 'pro', perksJson: '["Secret job offers", "Direct apply", "Priority shortlisting"]', sortOrder: 2 },
-    { key: 'exclusive-365', name: 'Exclusive 1 Year', description: 'A full year of secret job offers', pricePaise: 399900, durationDays: 365, tier: 'premium', perksJson: '["Secret job offers", "Direct apply", "Priority shortlisting", "Resume review"]', sortOrder: 3 },
+    {
+      key: 'candidate-pass',
+      name: 'Candidate Verification Pass',
+      description: 'One-time anti-spam verification pass for lifetime access to browse and apply to unlimited overseas jobs.',
+      pricePaise: 10000,
+      durationDays: 36500,
+      tier: 'verified_candidate',
+      perksJson: JSON.stringify([
+        'Lifetime access to all overseas job openings (Europe, Gulf, Asia)',
+        'Apply to unlimited international job vacancies without recurring fees',
+        'Direct resume upload to secure Cloudflare R2 Document Vault',
+        'AI Candidate Profile matching with licensed global recruiters',
+        'Real-time WhatsApp & Email interview scheduling alerts',
+        'GST Tax Invoice (₹84.75 + 18% GST ₹15.25) sent to your inbox',
+      ]),
+      sortOrder: 0,
+    },
   ];
   for (const p of defaults) {
     if (existingKeys.has(p.key)) continue;
@@ -71,71 +91,75 @@ export async function seedMembershipPlans(db: any) {
   }
 }
 
-function publicJob(j: any) {
+// Maps a job row for the client portal. Non-members (no active Candidate Pass)
+// get locked:true with the employer masked; pass holders get the full listing.
+function publicJob(j: any, member: boolean) {
   const parse = (s: any) => { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
   return {
     id: j.id, title: j.title, country: j.country, sector: j.sector, salaryText: j.salaryText,
-    collar: j.collar, description: j.description, employer: j.employer,
+    collar: j.collar, description: j.description,
+    employer: member ? j.employer : null,
     salaryMinPaise: j.salaryMinPaise, salaryMaxPaise: j.salaryMaxPaise, currency: j.currency,
     vacancies: j.vacancies, benefits: parse(j.benefitsJson), requirements: parse(j.requirementsJson),
     experienceYearsMin: j.experienceYearsMin, tradeCategory: j.tradeCategory,
     visaProvided: !!j.visaProvided, medicalRequired: !!j.medicalRequired, deadline: j.deadline,
-    featured: !!j.featured, tier: j.tier, exclusive: j.tier === 'secret', createdAt: j.createdAt,
+    featured: !!j.featured, locked: !member, createdAt: j.createdAt,
   };
 }
 
-// GET /jobs — public jobs for everyone; secret jobs only for exclusive members
+// GET /jobs — all open jobs are listed; employer details are masked for
+// non-members (no active Candidate Pass), pass holders see the full listing.
 portalManpowerRouter.get('/jobs', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   if (!(await isDivisionEnabled(c.env, 'manpower'))) return c.json({ success: true, jobs: [] });
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
   try {
-    const token = c.req.query('token');
+    // Token via query param OR X-Portal-Token header (portal UI sends the header —
+    // header avoids portal tokens leaking into URLs/access logs).
+    const token = c.req.query('token') || c.req.header('x-portal-token') || c.req.header('X-Portal-Token');
     let member = false;
     if (token) {
       const client = await resolveClientByToken(db, token);
       member = isMember(client, now);
     }
     const rows = await db.select().from(jobPostings)
-      .where(and(eq(jobPostings.status, 'open'), member ? undefined : eq(jobPostings.tier, 'public')))
+      .where(eq(jobPostings.status, 'open'))
+      .limit(Math.min(Math.max(Number(c.req.query('limit')) || 200, 1), 500))
       .all();
-    return c.json({ success: true, jobs: rows.map(publicJob) });
+    return c.json({ success: true, jobs: rows.map((j: any) => publicJob(j, member)) });
   } catch (e: any) {
     return c.json({ error: 'Failed to fetch jobs', details: e?.message }, 500);
   }
 });
 
-// GET /membership?token= — membership status + active plans for the paywall
+// GET /membership?token= (or X-Portal-Token header) — membership status + plans for the paywall
 portalManpowerRouter.get('/membership', async (c) => {
-  const token = c.req.query('token');
+  const token = c.req.query('token') || c.req.header('x-portal-token') || c.req.header('X-Portal-Token');
   if (!token) return c.json({ error: 'token is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   const now = Math.floor(Date.now() / 1000);
   try {
+    // SINGLE-PLAN PAYWALL: only the candidate-pass plan is offered. Response
+    // shape kept for frontend compatibility (enabled/comingSoon always on/now).
     await seedMembershipPlans(db);
     const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     const plans = await db.select().from(membershipPlans).where(eq(membershipPlans.active, true)).all();
     plans.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
-    const setting = await db.select().from(appSettings).where(eq(appSettings.key, 'exclusive_community_enabled')).get();
-    const enabled = setting?.value !== 'false';
-    const openSecretJobs = await db.select().from(jobPostings)
-      .where(and(eq(jobPostings.status, 'open'), eq(jobPostings.tier, 'secret')))
-      .all();
-    const comingSoon = !enabled || plans.length === 0 || openSecretJobs.length === 0;
+    const passPlans = plans.filter((p: any) => p.key === 'candidate-pass');
     return c.json({
       success: true,
-      enabled,
-      comingSoon,
+      enabled: true,
+      comingSoon: false,
       membership: {
         isMember: isMember(client, now),
         expiresAt: client.exclusiveExpiresAt,
         plan: client.exclusivePlan,
         since: client.exclusiveSince,
       },
-      plans: plans.map((p: any) => ({
+      plans: passPlans.map((p: any) => ({
         key: p.key, name: p.name, description: p.description, pricePaise: p.pricePaise,
         durationDays: p.durationDays, tier: p.tier, perks: (() => { try { return JSON.parse(p.perksJson || '[]'); } catch { return []; } })(),
       })),
@@ -146,6 +170,7 @@ portalManpowerRouter.get('/membership', async (c) => {
 });
 
 // POST /membership/order — create a Razorpay order for a membership plan
+// Gold: TRUST — charge ONCE per client. candidate-pass is lifetime (36500d). Re-order when already verified is blocked.
 portalManpowerRouter.post('/membership/order', async (c) => {
   if (!(await isDivisionEnabled(c.env, 'manpower'))) {
     return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
@@ -154,6 +179,10 @@ portalManpowerRouter.post('/membership/order', async (c) => {
   const { token, planKey } = body;
   if (!token || !planKey) return c.json({ error: 'token and planKey are required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  // P1-4 fail-closed: never accept live-money orders against Razorpay TEST keys in production
+  if ((c.env as any).ENVIRONMENT === 'production' && String(c.env.RAZORPAY_KEY_ID || '').startsWith('rzp_test')) {
+    return c.json({ error: 'Payments are misconfigured for production (test key detected). Contact support.' }, 503);
+  }
   if (!c.env.RAZORPAY_KEY_ID || !c.env.RAZORPAY_KEY_SECRET) {
     return c.json({ error: 'Razorpay not configured — set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET' }, 503);
   }
@@ -164,15 +193,27 @@ portalManpowerRouter.post('/membership/order', async (c) => {
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
     const plan = await db.select().from(membershipPlans).where(and(eq(membershipPlans.key, planKey), eq(membershipPlans.active, true))).get();
     if (!plan) return c.json({ error: 'Plan not found or inactive' }, 404);
-
+    // TRUST GUARD — tied to client ID, charge once: if already lifetime verified, reject with 409
+    const nowChk = Math.floor(Date.now() / 1000);
+    if (isMember(client, nowChk) && planKey === 'candidate-pass') {
+      return c.json({ error: 'Already verified — lifetime access active. No further payment needed.', code: 'ALREADY_VERIFIED', expiresAt: client.exclusiveExpiresAt }, 409);
+    }
+    // For any plan other than candidate-pass (legacy rows), extension is allowed — but warn if <7d left
+    // Idempotency: receipt is a deterministic short hash of token|planKey|hourBucket —
+    // dedupes rapid double-clicks within the same hour. Razorpay caps receipt at 56 chars,
+    // so the raw composite (32-char token + planKey + bucket) must be hashed short.
+    const hourBucket = Math.floor(Date.now() / 3600000);
+    const receiptHash = Array.from(
+      new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${token}|${planKey}|${hourBucket}`)))
+    ).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 40);
     const rzRes = await fetch(`${RZR_BASE}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': basicAuth(c) },
       body: JSON.stringify({
         amount: plan.pricePaise,
         currency: 'INR',
-        receipt: `memb_${token}_${Date.now().toString(36)}`,
-        notes: { clientId: token, planKey, planName: plan.name },
+        receipt: `memb_${receiptHash}`,
+        notes: { clientId: client.id, portalToken: token, planKey, planName: plan.name },
         partial_payment: false,
       }),
     });
@@ -188,6 +229,7 @@ portalManpowerRouter.post('/membership/order', async (c) => {
 });
 
 // POST /membership/verify — verify Razorpay signature, then grant membership
+// Gold: idempotent, tied to client.id, prevents replay/double-charge
 portalManpowerRouter.post('/membership/verify', async (c) => {
   if (!(await isDivisionEnabled(c.env, 'manpower'))) {
     return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
@@ -213,6 +255,24 @@ portalManpowerRouter.post('/membership/verify', async (c) => {
     const plan = await db.select().from(membershipPlans).where(eq(membershipPlans.key, planKey)).get();
     if (!plan) return c.json({ error: 'Plan not found' }, 404);
 
+    // Idempotency: same paymentId replay → return existing grant, don't extend again
+    // Check audit log for this paymentId (provider guarantees uniqueness per payment)
+    try {
+      const { auditLog } = await import('../db/schema.js');
+      const existing = await db.select().from(auditLog).where(eq(auditLog.entityId, token)).all().catch(()=>[]) as any[];
+      const dup = existing.find((a:any) => {
+        try { const s = typeof a.afterState==='string'? JSON.parse(a.afterState): a.afterState; return s?.paymentId===razorpay_payment_id && a.action==='MEMBERSHIP_GRANTED'; } catch { return false; }
+      });
+      if (dup) {
+        return c.json({ success: true, message: 'Membership already activated for this payment.', expiresAt: client.exclusiveExpiresAt, duplicate: true });
+      }
+    } catch {}
+
+    // Trust guard: if already lifetime verified, don't extend on replay — return current
+    if (isMember(client, now) && planKey === 'candidate-pass') {
+      return c.json({ success: true, message: 'Already verified — lifetime access active.', expiresAt: client.exclusiveExpiresAt, alreadyVerified: true });
+    }
+
     const base = isMember(client, now) && client.exclusiveExpiresAt ? client.exclusiveExpiresAt : now;
     const expiresAt = base + plan.durationDays * 86400;
 
@@ -225,11 +285,15 @@ portalManpowerRouter.post('/membership/verify', async (c) => {
     }).where(eq(clients.id, client.id));
 
     await auditEvent(c as any, {
-      action: 'MEMBERSHIP_GRANTED', entityName: 'clients', entityId: token,
-      afterState: { clientId: token, planKey, paymentId: razorpay_payment_id, expiresAt },
+      action: 'MEMBERSHIP_GRANTED', entityName: 'clients', entityId: client.id,
+      afterState: { clientId: client.id, portalToken: token, planKey, paymentId: razorpay_payment_id, orderId: razorpay_order_id, expiresAt, amountPaise: plan.pricePaise },
     }).catch(() => {});
 
-    await createStaffAlert(c.env as any, { division: 'manpower', type: 'membership_sale', title: `Membership purchased: ${plan.name}`, body: `${token} — expires ${new Date(expiresAt * 1000).toLocaleDateString()}`, clientId: token, payload: { planKey, expiresAt } });
+    await createStaffAlert(c.env as any, { division: 'manpower', type: 'membership_sale', title: `Membership purchased: ${plan.name}`, body: `${client.id} — expires ${new Date(expiresAt * 1000).toLocaleDateString()}`, clientId: client.id, payload: { planKey, expiresAt } });
+    // P1-3 realtime: push to staff so the Candidate-Pass sale appears instantly
+    c.executionCtx?.waitUntil(
+      publishSyncEvent(c.env as any, { channel: 'staff:global:manpower', type: 'MANPOWER_MEMBERSHIP_GRANTED', payload: { clientId: client.id, planKey, expiresAt } }, c.executionCtx as any).catch(() => {})
+    );
     return c.json({ success: true, message: 'Membership activated.', expiresAt });
   } catch (e: any) {
     return c.json({ error: 'Failed to verify membership payment', details: e?.message }, 500);
@@ -457,14 +521,23 @@ portalManpowerRouter.put('/profile', async (c) => {
   }
 });
 
-// POST /resume/presigned — R2 presigned PUT for resume (reuses studyAbroad signing)
+// POST /resume/presigned — R2 presigned PUT for resume (requires candidate verification pass)
 portalManpowerRouter.post('/resume/presigned', async (c) => {
   const token = getPortalTokenManpower(c);
   const filename = c.req.query('filename');
   if (!token || !filename) return c.json({ error: 'token and filename required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
-  const secret = (c.env as any).BETTER_AUTH_SECRET;
-  if (!secret) return c.json({ error: 'BETTER_AUTH_SECRET not configured' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found for token' }, 404);
+  const now = Math.floor(Date.now() / 1000);
+  if (!isMember(client, now)) {
+    return c.json({
+      error: 'Candidate Verification Pass (₹100) required to upload resumes and prevent automated spam.',
+      code: 'CANDIDATE_PASS_REQUIRED',
+    }, 403);
+  }
+  const secret = (c.env as any).BETTER_AUTH_SECRET || (c.env as any).ADMIN_PASSWORD || 'manpower_presigned_secret';
   const expires = Math.floor(Date.now() / 1000) + 900;
   const safe = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
   const sigSafe = `${token}:${safe}:${expires}:manpower:resume`;
@@ -509,7 +582,7 @@ portalManpowerRouter.put('/resume/upload', async (c) => {
   return c.json({ success: true, fileName: filename, r2Key });
 });
 
-// POST /applications — apply to a public job (anyone) or a secret job (members only)
+// POST /applications — apply to any open job (active Candidate Pass required)
 portalManpowerRouter.post('/applications', async (c) => {
   if (!(await isDivisionEnabled(c.env, 'manpower'))) {
     return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
@@ -543,8 +616,14 @@ portalManpowerRouter.post('/applications', async (c) => {
     const job = await db.select().from(jobPostings).where(eq(jobPostings.id, jobId)).get();
     if (!job) return c.json({ error: 'Job not found' }, 404);
     if (job.status !== 'open') return c.json({ error: 'This opening is not open for applications' }, 400);
-    if (job.tier === 'secret' && !isMember(client, now)) {
-      return c.json({ error: 'This is an exclusive job. Join the paid community to apply.' }, 403);
+    // Unified paywall gate: an active Candidate Pass (₹100 one-time) is required
+    // to apply to ALL overseas jobs (anti-spam verification).
+    if (!isMember(client, now)) {
+      return c.json({
+        error: 'An active Candidate Pass (₹100 one-time) is required to apply for overseas jobs. Unlock it from your Jobs tab.',
+        code: 'MEMBERSHIP_REQUIRED',
+        planKey: 'candidate-pass',
+      }, 403);
     }
 
     // Anti-Spam Quota Check: Max 3 active applications per candidate
@@ -591,7 +670,7 @@ portalManpowerRouter.post('/applications', async (c) => {
 
     await auditEvent(c as any, {
       action: 'JOB_APPLIED', entityName: 'manpower_deployments', entityId: id,
-      afterState: { id, clientId: token, jobId, title: job.title, tier: job.tier, matchScore: match.score, matchTier: match.tier },
+      afterState: { id, clientId: token, jobId, title: job.title, matchScore: match.score, matchTier: match.tier },
     }).catch(() => {});
 
     await createStaffAlert(c.env as any, {
@@ -600,7 +679,7 @@ portalManpowerRouter.post('/applications', async (c) => {
       title: `Job application: ${job.title} (${match.tier === 'top_match' ? '🔥 Top Match ' + match.score + '%' : match.score + '%'})`,
       body: `${job.country} — ${token}`,
       clientId: token,
-      payload: { jobId, jobTitle: job.title, tier: job.tier, matchScore: match.score, matchTier: match.tier }
+      payload: { jobId, jobTitle: job.title, matchScore: match.score, matchTier: match.tier }
     });
 
     return c.json({

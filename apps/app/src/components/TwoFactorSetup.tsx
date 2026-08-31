@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useSession } from '../lib/session';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // 2FA onboarding (gold-standard TOTP): enable → QR/secret + backup codes →
 // verify one code → enabled. Runs entirely against Better Auth endpoints.

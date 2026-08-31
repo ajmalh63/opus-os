@@ -133,8 +133,9 @@ portalVisaRouter.post('/applications', async (c) => {
   if (!(await isDivisionEnabled(c.env, 'visa'))) {
     return c.json({ error: 'This service is not accepting applications yet', code: 'DIVISION_DISABLED' }, 409);
   }
-  const body = await c.req.json().catch(() => ({})) as { token?: string; country?: string; visaProductId?: string };
-  const { token, visaProductId } = body;
+  const body = await c.req.json().catch(() => ({})) as { token?: string; country?: string; visaProductId?: string; productId?: string };
+  const token = body?.token || getPortalToken(c) || '';
+  const visaProductId = body?.visaProductId || body?.productId;
   if (!token) return c.json({ error: 'Token is required' }, 400);
   if (!visaProductId) return c.json({ error: 'visaProductId is required' }, 400);
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
 import AiTranslatePanel from '../components/ai/AiTranslatePanel';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // Staff unified inbox  OpenWA + Chatwoot inbound conversations become visible
 // here; replies dispatch via the WhatsApp gateway (sendWhatsApp).

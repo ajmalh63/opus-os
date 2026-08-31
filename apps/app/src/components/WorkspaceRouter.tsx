@@ -19,7 +19,7 @@ import MarketingTab from './MarketingTab';
 import BoardsTab from './BoardsTab';
 import AiGovernanceTab from './admin/AiGovernanceTab';
 import GrowthMetricsTab from './GrowthMetricsTab';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 
 // Client-side mirror of the server Rbac gate. The server enforces the real

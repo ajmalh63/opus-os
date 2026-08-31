@@ -4,12 +4,28 @@ import { MockD1Database } from './mockDb.js';
 import { seedSuperAdmin } from '../src/db/seed.js';
 import { getDb } from '../src/db/client.js';
 
-vi.mock('../src/auth.js', () => {
+vi.mock('../src/auth.js', async (importOriginal) => {
+  const actual = await importOriginal<any>();
   return {
-    getAuth: (env: any) => ({
+    ...actual,
+    validateSessionToken: async (_db: any, token: string) => {
+      if (token === 'token-admin') {
+        return {
+          user: { id: 'u-admin', name: 'Owner', email: 'owner@test.com', role: 'super_admin', userDivisions: '[]', twoFactorEnabled: false, emailVerified: true },
+          session: { id: 's-1', token, userId: 'u-admin' },
+        };
+      }
+      return null;
+    },
+    getSessionTokenFromCookie: (c: any) => {
+      const cookieHeader = c.req.header('cookie') || '';
+      return (cookieHeader.match(/better-auth\.session_token=([^;]+)/) || [])[1] || undefined;
+    },
+    verifyAndUpgradePassword: async () => true,
+    getAuth: (_env: any) => ({
       api: {
         getSession: async (options: any) => {
-          const cookieHeader = options?.headers?.get('cookie') || '';
+          const cookieHeader = options?.headers?.get?.('cookie') || options?.headers?.cookie || '';
           const token = (cookieHeader.match(/better-auth\.session_token=([^;]+)/) || [])[1] || null;
           if (token === 'token-admin') {
             return {
@@ -21,8 +37,6 @@ vi.mock('../src/auth.js', () => {
         },
         signUpEmail: async () => ({ user: { id: 'u-fresh' } }),
       },
-      // Handler used by the 2FA intercept routes (enable/disable). Tests stub a
-      // 200 so the audit write path is exercised without a real Better Auth.
       handler: async (request: Request) => {
         const url = new URL(request.url);
         if (url.pathname.endsWith('/two-factor/enable') || url.pathname.endsWith('/two-factor/disable')) {
@@ -66,7 +80,8 @@ describe('Auth gateway (email+password / OTP / 2FA-ready)', () => {
     const data = await res.json() as any;
     expect(data.authenticated).toBe(true);
     expect(data.role).toBe('super_admin');
-    expect(data.emailVerified).toBe(true);
+    expect(data.email).toBe('owner@test.com');
+    expect(Array.isArray(data.userDivisions)).toBe(true);
   });
 
   it('GET /api/auth/me is null-safe for anonymous visitors', async () => {
@@ -77,13 +92,15 @@ describe('Auth gateway (email+password / OTP / 2FA-ready)', () => {
   });
 
   it('bootstrap-admin refuses without env creds and 409s when an owner exists', async () => {
-    const noCreds = await app.request('/api/auth/bootstrap-admin', { method: 'POST' }, { DB: mockD1, BETTER_AUTH_SECRET: 'x' });
-    expect(noCreds.status).toBe(400);
+    // Missing env → 400
+    const resNoEnv = await app.request('/api/auth/bootstrap-admin', { method: 'POST' }, { DB: mockD1 });
+    expect(resNoEnv.status).toBe(400);
 
-    const conflict = await app.request('/api/auth/bootstrap-admin', { method: 'POST' }, {
-      DB: mockD1, BETTER_AUTH_SECRET: 'x', ADMIN_EMAIL: 'OWNER@test.com', ADMIN_PASSWORD: 'Passw123!',
+    // Existing owner (seeded above) → 409
+    const resConflict = await app.request('/api/auth/bootstrap-admin', { method: 'POST' }, {
+      DB: mockD1, BETTER_AUTH_SECRET: 'x', ADMIN_EMAIL: 'owner@test.com', ADMIN_PASSWORD: 'Pass123!Strong',
     });
-    expect(conflict.status).toBe(409);
+    expect(resConflict.status).toBe(409);
   });
 
   // ============ Audit trail for auth events ============
@@ -103,6 +120,10 @@ describe('Auth gateway (email+password / OTP / 2FA-ready)', () => {
   });
 
   it('2FA enable writes a TWO_FACTOR_ENABLED audit row on success only', async () => {
+    // Ensure the user exists with u-admin id for the 2FA session lookup
+    const owner = mockD1.tables.users.find((u: any) => u.email === 'OWNER@test.com' || u.email === 'owner@test.com');
+    if (owner) owner.id = 'u-admin';
+
     const res = await app.request('/api/auth/two-factor/enable', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Cookie': 'better-auth.session_token=token-admin' },

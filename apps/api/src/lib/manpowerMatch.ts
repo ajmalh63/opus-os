@@ -94,26 +94,26 @@ export function computeManpowerMatch(form: CandidateFormState | null | undefined
   const strengths: string[] = [];
   const gaps: string[] = [];
 
-  // 1. Experience Match (35 Points)
+  // 1. Experience Match (30 Points — PRD-003 5-factor: reduced from 35 to make room for language)
   const candidateExp = Number(form.experience?.totalYears || 0);
   const requiredExp = Number(job.experienceYearsMin || 0);
 
   if (requiredExp === 0) {
-    totalScore += 35;
+    totalScore += 30;
     strengths.push('Entry-level position — experience threshold met');
   } else if (candidateExp >= requiredExp) {
-    totalScore += 35;
+    totalScore += 30;
     strengths.push(`Experience verified: ${candidateExp} yrs (requires ${requiredExp} yrs)`);
   } else if (candidateExp > 0) {
     const ratio = Math.min(1, candidateExp / requiredExp);
-    const expScore = Math.round(ratio * 35);
+    const expScore = Math.round(ratio * 30);
     totalScore += expScore;
     gaps.push(`Experience gap: ${candidateExp} yrs vs ${requiredExp} yrs required`);
   } else {
     gaps.push(`No previous relevant experience recorded (requires ${requiredExp} yrs)`);
   }
 
-  // 2. Skills & Keyword Overlap (35 Points)
+  // 2. Skills & Keyword Overlap (30 Points — PRD-003 5-factor)
   const rawSkills = form.experience?.skills;
   const candidateSkills: string[] = Array.isArray(rawSkills)
     ? rawSkills
@@ -136,7 +136,7 @@ export function computeManpowerMatch(form: CandidateFormState | null | undefined
   const allTargetKeywords = [...new Set([...jobRequirements, ...jobKeywords])];
 
   if (allTargetKeywords.length === 0) {
-    totalScore += 35;
+    totalScore += 30;
     strengths.push('Standard trade requirements met');
   } else {
     let matchedSkills = 0;
@@ -149,7 +149,7 @@ export function computeManpowerMatch(form: CandidateFormState | null | undefined
     }
 
     const skillRatio = allTargetKeywords.length > 0 ? matchedSkills / allTargetKeywords.length : 1;
-    const skillScore = Math.round(Math.min(35, skillRatio * 35 + (candidateSkills.length > 0 ? 10 : 0)));
+    const skillScore = Math.round(Math.min(30, skillRatio * 30 + (candidateSkills.length > 0 ? 8 : 0)));
     totalScore += skillScore;
 
     if (matchedSkills > 0) {
@@ -165,7 +165,7 @@ export function computeManpowerMatch(form: CandidateFormState | null | undefined
   const hasEducation = !!form.education?.highestQualification;
 
   if (job.collar === 'white_collar') {
-    if (['undergrad', 'postgrad', 'bachelors', 'masters', 'degree', 'diploma'].some(e => (form.education?.highestQualification || '').toLowerCase().includes(e))) {
+    if (['undergrad', 'postgrad', 'bachelor', 'masters', 'degree', 'diploma'].some(e => (form.education?.highestQualification || '').toLowerCase().includes(e))) {
       totalScore += 15;
       strengths.push('Academic credentials align with white-collar specifications');
     } else if (hasEducation) {
@@ -185,7 +185,25 @@ export function computeManpowerMatch(form: CandidateFormState | null | undefined
     }
   }
 
-  // 4. Passport & Medical Deployment Readiness (15 Points)
+  // 4. Language Proficiency (10 Points — PRD-003 5-factor NEW: HireStream/Mahad gold)
+  const rawLangs = form.personal?.languages;
+  const langs: string[] = Array.isArray(rawLangs) ? rawLangs : typeof rawLangs === 'string' ? rawLangs.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean) : [];
+  const jobLang = (job as any).language || (job as any).languageRequirement || 'english';
+  const hasLanguage = langs.length > 0;
+  if (hasLanguage) {
+    const langMatch = langs.some(l => String(l).toLowerCase().includes(String(jobLang).toLowerCase()) || String(jobLang).toLowerCase().includes(String(l).toLowerCase()));
+    if (langMatch) {
+      totalScore += 10;
+      strengths.push(`Language match: ${langs.join(', ')} (job prefers ${jobLang})`);
+    } else {
+      totalScore += 5;
+      reasons.push(`Languages: ${langs.join(', ')} — partial match for ${jobLang} preference`);
+    }
+  } else {
+    gaps.push('Language proficiency not declared');
+  }
+
+  // 5. Passport & Medical Deployment Readiness (15 Points)
   const hasPassport = !!form.passport?.hasPassport && !!form.passport?.passportNumber;
   const isMedicallyFit = form.medical?.selfDeclaredFit !== false;
 
@@ -286,9 +304,12 @@ export async function verifyTurnstileToken(
   secretKey: string | undefined | null,
   remoteIp?: string
 ): Promise<{ success: boolean; reason?: string }> {
-  // If secret key is not configured in env (unit tests, mock, local dev), or simulated token, allow
-  if (!secretKey || secretKey === 'mock' || secretKey.startsWith('0x4AAAAAA') || (token && token.startsWith('cf_ts_simulated_token_'))) {
+  // Mock/test keys — Cloudflare docs: 1x...AA always passes, 2x...AB always fails
+  if (!secretKey || secretKey === 'mock' || secretKey === '1x0000000000000000000000000000000AA' || (token && token.startsWith('cf_ts_simulated_token_'))) {
     return { success: true };
+  }
+  if (secretKey === '2x0000000000000000000000000000000AA') {
+    return { success: false, reason: 'Turnstile test failure path' };
   }
 
   if (!token) {

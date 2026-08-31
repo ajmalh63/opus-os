@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRoute } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 export default function SignAgreementPage() {
   const [, params] = useRoute('/sign/:id');

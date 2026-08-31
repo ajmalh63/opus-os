@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../lib/session';
 import UmrahCalendar, { UmrahCalendarDay, TIER_INFO } from '../../components/UmrahCalendar';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 interface Pilgrim {
   id: string;

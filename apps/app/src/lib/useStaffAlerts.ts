@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // Live staff alert feed — polls /api/staff/alerts (role-filtered server-side).
 // Used by the WorkspaceShell header bell + the dashboard activity panel.

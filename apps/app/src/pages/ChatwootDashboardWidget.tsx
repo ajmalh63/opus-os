@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 interface ClientContext {
   found: boolean;

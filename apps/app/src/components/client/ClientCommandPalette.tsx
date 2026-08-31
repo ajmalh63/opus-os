@@ -13,7 +13,7 @@ export interface CommandItem {
 export interface ClientCommandPaletteProps {
   open: boolean;
   onClose: () => void;
-  onNavigateTab: (tab: 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs' | 'vault' | 'payments') => void;
+  onNavigateTab: (tab: 'dashboard' | 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs' | 'vault' | 'journey') => void;
   onOpenUpload: (label?: string) => void;
   onOpenFeedback: () => void;
   counselorName?: string;
@@ -55,7 +55,7 @@ export default function ClientCommandPalette({
         id: 'upload-doc',
         category: 'Actions',
         title: 'Upload Document',
-        subtitle: 'Passport, Bank Certificate, Academic Transcripts',
+        subtitle: 'Passport, Academic Transcripts, Bank Certificate, Experience Letters',
         icon: '📄',
         shortcut: 'U',
         onSelect: () => {
@@ -66,20 +66,20 @@ export default function ClientCommandPalette({
       {
         id: 'pay-balance',
         category: 'Financials',
-        title: 'Pay Balance & View Invoices',
-        subtitle: 'Milestone settlements with GST tax receipts',
+        title: 'Billing & Invoice Receipts',
+        subtitle: 'Milestone settlements with GST statutory tax invoices',
         icon: '💳',
         shortcut: 'P',
         onSelect: () => {
           onClose();
-          onNavigateTab('payments');
+          onNavigateTab('dashboard');
         },
       },
       {
         id: 'rate-counselor',
         category: 'Support',
-        title: 'Leave Feedback & 5-Star Review',
-        subtitle: `Rate your experience ${counselorName ? `with ${counselorName}` : ''}`,
+        title: 'Share Experience & Review',
+        subtitle: `Rate your experience ${counselorName ? `with ${counselorName}` : 'with our desk'}`,
         icon: '⭐',
         shortcut: 'R',
         onSelect: () => {
@@ -90,8 +90,8 @@ export default function ClientCommandPalette({
       {
         id: 'nav-study',
         category: 'Divisions',
-        title: 'Study Abroad Applications',
-        subtitle: 'University applications, offer letters, & IELTS scores',
+        title: 'Study Abroad Admissions',
+        subtitle: 'University applications, offer letters, & language scores',
         icon: '🎓',
         onSelect: () => {
           onClose();
@@ -101,8 +101,8 @@ export default function ClientCommandPalette({
       {
         id: 'nav-visa',
         category: 'Divisions',
-        title: 'Visa Stamping & Consular Prep',
-        subtitle: 'VFS biometrics, checklist verification, & deadlines',
+        title: 'Visa Processing Desk',
+        subtitle: 'VFS biometrics, checklist verification, & live tracker',
         icon: '🛂',
         onSelect: () => {
           onClose();
@@ -112,9 +112,9 @@ export default function ClientCommandPalette({
       {
         id: 'nav-umrah',
         category: 'Divisions',
-        title: 'Umrah Packages & Departures',
-        subtitle: 'Group departure manifests, visas, & flight itinerary',
-        icon: '🕋',
+        title: 'Tours & Travels (Holidays & Pilgrimage)',
+        subtitle: 'Curated holidays, corporate MICE, & sacred Umrah departures',
+        icon: '🧳',
         onSelect: () => {
           onClose();
           onNavigateTab('umrah');
@@ -123,24 +123,47 @@ export default function ClientCommandPalette({
       {
         id: 'nav-attest',
         category: 'Divisions',
-        title: 'Certificate Attestation',
+        title: 'Document Attestation',
         subtitle: 'HRD, MEA, Apostille & Embassy authentication tracking',
-        icon: '📜',
+        icon: '📑',
         onSelect: () => {
           onClose();
           onNavigateTab('attestation');
         },
       },
       {
+        id: 'nav-jobs',
+        category: 'Divisions',
+        title: 'International Job Placement',
+        subtitle: 'Verified overseas job openings in Gulf & European markets',
+        icon: '💼',
+        onSelect: () => {
+          onClose();
+          onNavigateTab('jobs');
+        },
+      },
+      {
         id: 'nav-vault',
         category: 'Actions',
         title: 'Open Document Vault',
-        subtitle: 'All uploaded & verified identity documents',
-        icon: '🗄️',
+        subtitle: 'Encrypted Cloudflare R2 repository & 30-day lifecycle retention',
+        icon: '🔒',
         shortcut: 'V',
         onSelect: () => {
           onClose();
           onNavigateTab('vault');
+        },
+      },
+      {
+        id: 'nav-journey',
+        category: 'Actions',
+        title: 'Verified Journey Overview',
+        subtitle: 'Live milestones, verified DPDP consents, and chat thread',
+        icon: '🗺️',
+        shortcut: 'J',
+        onSelect: () => {
+          onClose();
+          onNavigateTab('journey');
         },
       },
     ],
@@ -224,7 +247,7 @@ export default function ClientCommandPalette({
           {filtered.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-500 space-y-1">
               <p className="font-bold text-brand-navy">No matching commands found.</p>
-              <p className="text-sm text-slate-400">Try searching for "upload", "visa", "pay", or "counselor".</p>
+              <p className="text-sm text-slate-400">Try searching for "upload", "visa", "jobs", "vault", or "counselor".</p>
             </div>
           ) : (
             filtered.map((item, idx) => {

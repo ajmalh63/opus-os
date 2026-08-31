@@ -49,18 +49,59 @@ export default function Login() {
     setCapsLockActive(e.getModifierState('CapsLock'));
   };
 
-  const API = (import.meta as any).env?.VITE_API_URL || 'https://api.opusoverseas.com';
+  const API = (import.meta as any).env?.VITE_API_URL || '';
 
-  async function post(path: string, body: unknown): Promise<any> {
-    const res = await fetch(`${API}/api/auth${path}`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json().catch(() => ({}));
-    return { status: res.status, data };
+  // Precise, honest message for API/proxy outages (Vite dev proxy returns 500
+  // text/plain when the API on 127.0.0.1:8787 is down — not a login failure).
+  const API_DOWN_MSG =
+    'Cannot reach the Opus OS API server. If you are running locally, start the API with: pnpm --filter api dev (port 8787). Otherwise try again shortly.';
+
+  // Richer result so the page can distinguish:
+  //  - network failure (fetch threw, ok === false)
+  //  - non-JSON 5xx (proxy/API down, status >= 500 && !isJson)
+  //  - normal API responses with error payloads (isJson, any status)
+  type PostResult = {
+    ok: boolean;             // fetch itself succeeded (no transport error)
+    status: number | null;   // HTTP status (null when there was no response)
+    isJson: boolean;         // response body parsed as JSON successfully
+    data: any;               // parsed JSON payload, or null
+    networkMessage?: string; // fetch error message when ok === false
+  };
+
+  async function post(path: string, body: unknown): Promise<PostResult> {
+    let res: Response;
+    try {
+      res = await fetch(`${API}/api/auth${path}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (err: any) {
+      return {
+        ok: false,
+        status: null,
+        isJson: false,
+        data: null,
+        networkMessage: err?.message || 'Network request failed',
+      };
+    }
+    const text = await res.text().catch(() => '');
+    let data: any = null;
+    let isJson = false;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+        isJson = true;
+      } catch { /* non-JSON body — e.g. Vite proxy 500 text/plain when API is down */ }
+    }
+    return { ok: true, status: res.status, isJson, data };
   }
+
+  // API outage: fetch threw, or a 5xx whose body is not JSON (a real API error
+  // payload would come back as JSON, so only blame the server when it isn't).
+  const isApiDown = (r: PostResult) =>
+    !r.ok || (r.status !== null && r.status >= 500 && !r.isJson);
 
   const finish = async () => {
     // Role-aware hub: partners → partner portal; staff → workspace dashboard; clients → client workspace portal.
@@ -82,6 +123,10 @@ export default function Login() {
     setBusy(true); setMsg(null);
     try {
       const r = await post('/sign-in/email', { email, password });
+      if (isApiDown(r)) {
+        fail(API_DOWN_MSG);
+        return;
+      }
       if (r.status === 200 && (r.data?.user || r.data?.token || r.data?.session)) {
         if (r.data?.twoFactorSetupRequired) {
           ok('2FA setup required — redirecting to security vault.');
@@ -150,7 +195,7 @@ export default function Login() {
     }
   };
 
-  // Step 1: Send Email OTP
+  // Step 1: Send Email OTP — enumeration-safe (OWASP): always show generic success on 200
   const handleSendOTP = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!email || !email.includes('@')) {
@@ -160,11 +205,17 @@ export default function Login() {
     setBusy(true); setMsg(null);
     try {
       const r = await post('/otp/send', { email });
+      if (isApiDown(r)) {
+        fail(API_DOWN_MSG);
+        return;
+      }
       if (r.status === 200) {
         setOtpSent(true);
-        ok(`6-digit code sent to ${email}. Check your inbox.`);
+        // Generic message — does not reveal if email exists (OWASP ASVS 2.2.1)
+        ok(r.data?.message || `If an account exists with ${email}, a 6-digit code has been sent. Please check your inbox (and spam folder). It expires in 10 minutes.`);
       } else {
-        fail(r.data?.error || 'Failed to send OTP code.');
+        // Non-200 only for validation (400) or suspended (403) — show real error
+        fail(r.data?.error || 'Unable to send code. Please try again.');
       }
     } catch (err: any) {
       fail(`Connection error: ${err.message}`);

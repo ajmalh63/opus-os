@@ -175,7 +175,7 @@ v1RecruitmentRouter.get('/deployments', apiKeyAuth(['recruitment:read']), async 
         matchGaps: match.gaps,
         profileCompletenessPct: completeness.pct,
         hasPaidVas,
-        vasServiceTitle: clientVasTask?.title || (cl?.exclusiveMember ? 'Exclusive Community' : null),
+        vasServiceTitle: clientVasTask?.title || (cl?.exclusiveMember ? 'Candidate Pass' : null),
         appliedAt: d.appliedAt,
       };
     });

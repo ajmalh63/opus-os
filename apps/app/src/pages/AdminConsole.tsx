@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import PartnerAdminPanel from '../components/PartnerAdminPanel';
@@ -8,7 +8,8 @@ import DeveloperApiSettingsTab from '../components/admin/DeveloperApiSettingsTab
 import DivisionControlsTab from '../components/admin/DivisionControlsTab';
 import ClientWorkspaceControlsTab from '../components/admin/ClientWorkspaceControlsTab';
 import FeedbackModerationTab from '../components/admin/FeedbackModerationTab';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+import { createSyncClient } from '../lib/syncClient';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // Real session-driven auth — the live cookie, never a forged token.
 
@@ -21,6 +22,9 @@ interface StaffUser {
   emailVerified: boolean;
   role: 'super_admin' | 'manager' | 'counselor' | 'receptionist' | 'coordinator';
   userDivisions: string; // JSON array of division keys
+  status?: 'active' | 'suspended' | 'archived';
+  statusChangedAt?: number | null;
+  archivedAt?: number | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -66,6 +70,10 @@ export default function AdminConsole() {
   // Modal / Editing State for Staff Division Scope
   const [editingStaff, setEditingStaff] = useState<StaffUser | null>(null);
   const [editScopes, setEditScopes] = useState<string[]>([]);
+  const [actionStaff, setActionStaff] = useState<StaffUser | null>(null);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [reassignTo, setReassignTo] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all'|'active'|'suspended'|'archived'>('all');
 
   // Onboarding Form State
   const [newName, setNewName] = useState('');
@@ -89,7 +97,7 @@ export default function AdminConsole() {
     }
   };
 
-  // Queries
+  // Queries — refetchInterval 15s is WS fallback for flaky networks (gold: bounded staleness)
   const { data: staffData, isLoading: loadingStaff, isError: staffError } = useQuery<{ staff: StaffUser[] }>({
     queryKey: ['adminStaff'],
     queryFn: async () => {
@@ -98,7 +106,8 @@ export default function AdminConsole() {
         throw new Error(await res.text() || 'Failed to fetch staff directory');
       }
       return res.json();
-    }
+    },
+    refetchInterval: 15000,
   });
 
   const { data: divisionsData } = useQuery<{ enabled: Record<string, boolean> }>({
@@ -112,6 +121,28 @@ export default function AdminConsole() {
   });
 
   const activeDivisionsCount = Object.values(divisionsData?.enabled || {}).filter(Boolean).length;
+
+  // Realtime — staff:global:roles (role/scope/status changes) — gold standard: immediate revocation + UI toast
+  useEffect(() => {
+    const enabled = (import.meta as any).env?.VITE_SYNC_ENABLED !== 'false';
+    if (!enabled || typeof window === 'undefined') return;
+    const c = createSyncClient({
+      plane: 'staff',
+      channels: ['staff:global:roles'],
+      enabled,
+      onEvent: (e) => {
+        if (['ROLE_SUSPENDED','ROLE_UNSUSPENDED','ROLE_ARCHIVED','ROLE_RESTORED','ROLE_DELETED','STAFF_SCOPE_UPDATE'].includes(e.type)) {
+          queryClient.invalidateQueries({ queryKey: ['adminStaff'] });
+          const actor = (e.payload as any)?.userId || 'staff';
+          if (e.type === 'ROLE_SUSPENDED') showToast(`Access revoked for ${actor} — suspended`, 'warning');
+          if (e.type === 'ROLE_ARCHIVED') showToast(`Staff archived — ${e.payload?.reassigned || 0} clients reassigned`, 'warning');
+          if (e.type === 'ROLE_RESTORED') showToast('Staff restored to active', 'success');
+        }
+      },
+    });
+    c.connect();
+    return () => { try { (c as any).disconnect?.(); } catch {} };
+  }, [queryClient]);
 
   // Mutations
   const registerMutation = useMutation({
@@ -316,22 +347,32 @@ export default function AdminConsole() {
                 </div>
               ) : (
                 <div className="bg-white border border-brand-navy/10 rounded-xl overflow-hidden shadow-xl">
+                  <div className="px-4 py-3 border-b border-brand-navy/10 bg-brand-navy/[0.02] flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-brand-navy/60">Filter:</span>
+                    {(['all','active','suspended','archived'] as const).map(k => (
+                      <button key={k} onClick={() => setStatusFilter(k)} className={`px-3 py-1 rounded-full text-xs font-bold capitalize border ${statusFilter===k ? 'bg-brand-navy text-white border-brand-navy' : 'bg-white text-brand-navy/70 border-brand-navy/15 hover:border-brand-gold/40'}`}>{k} {k!=='all' && `(${(staffData?.staff||[]).filter((u:any)=> (u.status||'active')===k).length})`}</button>
+                    ))}
+                    <span className="ml-auto text-xs text-brand-navy/40">Suspend = pause • Archive = soft-delete + reassign + clear scopes • Remove = hard-delete (archived only)</span>
+                  </div>
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-[#0b132b] border-b border-brand-navy/10 text-[13px] text-brand-gold uppercase tracking-wider font-semibold">
                         <th className="p-4">Staff Member</th>
                         <th className="p-4">Role</th>
-                        <th className="p-4">Division Scopes</th>
+                        <th className="p-4">Scopes</th>
+                        <th className="p-4">Status</th>
                         <th className="p-4 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-brand-navy/[0.08]">
-                      {staffData?.staff?.map((user) => {
+                      {(staffData?.staff||[]).filter((u:any)=> statusFilter==='all' || (u.status||'active')===statusFilter).map((user: any) => {
                         const userScopes = parseDivisions(user.userDivisions);
+                        const st = user.status || 'active';
+                        const isPermanent = ['owner@opusoverseas.com','ajmalsn63@gmail.com'].includes(user.email.toLowerCase());
                         return (
-                          <tr key={user.id} className="hover:bg-brand-navy/[0.04] transition duration-150">
+                          <tr key={user.id} className={`hover:bg-brand-navy/[0.04] transition duration-150 ${st!=='active' ? 'opacity-60' : ''}`}>
                             <td className="p-4">
-                              <div className="font-semibold text-brand-navy">{user.name}</div>
+                              <div className="font-semibold text-brand-navy flex items-center gap-2">{user.name} {isPermanent && <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-200">PERMANENT</span>}</div>
                               <div className="text-[13px] text-slate-400">{user.email}</div>
                               <div className="text-xs text-slate-500 mt-0.5">UID: {user.id}</div>
                             </td>
@@ -342,7 +383,7 @@ export default function AdminConsole() {
                             </td>
                             <td className="p-4">
                               {userScopes.length === 0 ? (
-                                <span className="text-slate-500 italic text-[13px]">No active scopes</span>
+                                <span className="text-slate-500 italic text-[13px]">{st==='archived' ? 'Cleared on archive' : 'No active scopes'}</span>
                               ) : (
                                 <div className="flex flex-wrap gap-1">
                                   {userScopes.map(scopeKey => {
@@ -356,19 +397,85 @@ export default function AdminConsole() {
                                 </div>
                               )}
                             </td>
+                            <td className="p-4">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase border ${st==='active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : st==='suspended' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>{st}</span>
+                            </td>
                             <td className="p-4 text-right">
-                              <button
-                                onClick={() => handleOpenEditScope(user)}
-                                className="px-3 py-1.5 bg-brand-navy/[0.05] hover:bg-brand-navy/[0.06] border border-brand-navy/15 text-brand-gold text-[13px] uppercase font-semibold tracking-wider rounded transition duration-150 cursor-pointer"
-                              >
-                                Edit Scope
-                              </button>
+                              <div className="flex flex-wrap justify-end gap-1">
+                                <button
+                                  onClick={() => handleOpenEditScope(user)}
+                                  disabled={st==='archived'}
+                                  className="px-2.5 py-1 bg-white hover:bg-brand-navy/[0.06] border border-brand-navy/15 text-brand-navy text-xs font-semibold rounded disabled:opacity-40"
+                                  title={st==='archived' ? 'Archived — restore to edit scope' : 'Edit division scopes'}
+                                >
+                                  Edit Scope
+                                </button>
+                                {st==='active' && !isPermanent && (
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm(`Suspend ${user.name}? Access cut instantly (even with valid session).`)) return;
+                                      const r = await fetch(`${API}/api/admin/staff/${user.id}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status:'suspended', reason:'manual suspend' }) });
+                                      const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Suspend failed','error'); else { showToast('Suspended — access revoked','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
+                                    }}
+                                    className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold rounded"
+                                  >
+                                    Suspend
+                                  </button>
+                                )}
+                                {st==='suspended' && (
+                                  <button
+                                    onClick={async () => {
+                                      const r = await fetch(`${API}/api/admin/staff/${user.id}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status:'active' }) });
+                                      const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Unsuspend failed','error'); else { showToast('Restored to active','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
+                                    }}
+                                    className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold rounded"
+                                  >
+                                    Unsuspend
+                                  </button>
+                                )}
+                                {st!=='archived' && !isPermanent && (
+                                  <button
+                                    onClick={() => { setActionStaff(user); setReassignTo(''); setShowArchiveModal(true); }}
+                                    className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded"
+                                  >
+                                    Archive
+                                  </button>
+                                )}
+                                {st==='archived' && (
+                                  <>
+                                    <button
+                                      onClick={async () => {
+                                        const r = await fetch(`${API}/api/admin/staff/${user.id}/restore`, { method:'POST' });
+                                        const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Restore failed','error'); else { showToast('Restored to active','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
+                                      }}
+                                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold rounded"
+                                    >
+                                      Restore
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        if (!confirm(`Hard DELETE ${user.name} (${user.email})? Type DELETE to confirm. This destroys audit history and is irreversible.`)) return;
+                                        const typed = prompt('Type DELETE to confirm hard delete:');
+                                        if (typed !== 'DELETE') { showToast('Cancelled — type DELETE exactly','warning'); return; }
+                                        const r = await fetch(`${API}/api/admin/staff/${user.id}?confirm=DELETE`, { method:'DELETE' });
+                                        const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Delete failed','error'); else { showToast('Hard-deleted','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
+                                      }}
+                                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold rounded"
+                                    >
+                                      Delete
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
+                  {(staffData?.staff||[]).filter((u:any)=> statusFilter==='all' || (u.status||'active')===statusFilter).length===0 && (
+                    <div className="p-8 text-center text-xs text-slate-400">No staff in this status filter.</div>
+                  )}
                 </div>
               )}
             </div>
@@ -553,6 +660,37 @@ export default function AdminConsole() {
               >
                 {updateScopeMutation.isPending ? 'Updating...' : 'Save Changes'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ARCHIVE WITH REASSIGN — gold standard: soft-delete + reassign + clear scopes + retain audit 1-2y */}
+      {showArchiveModal && actionStaff && (
+        <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-brand-navy/10 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-5">
+            <div>
+              <h3 className="font-display font-bold text-brand-navy text-base">Archive Staff — Soft Delete</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                <span className="font-semibold text-brand-navy">{actionStaff.name}</span> ({actionStaff.email}) will be archived: access revoked instantly (sessions killed), scopes cleared to <code className="px-1 bg-slate-100 rounded">[]</code>, audit retained 1–2y. Hard-delete only after archived. Restore is reversible.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Reassign open clients/cases to (optional but recommended)</label>
+              <select value={reassignTo} onChange={e => setReassignTo(e.target.value)} className="w-full bg-white border border-brand-navy/15 rounded px-3 py-2 text-xs text-brand-navy focus:border-brand-gold focus:outline-none">
+                <option value="">— No reassignment (ownership becomes unassigned) —</option>
+                {(staffData?.staff || []).filter((u:any)=> u.id!==actionStaff.id && (u.status||'active')==='active' && ['super_admin','manager','counselor'].includes(u.role)).map((u:any)=> (
+                  <option key={u.id} value={u.id}>{u.name} — {u.email} ({u.role})</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400 mt-1">Clients + engagements + tasks reassigned; audit log keeps <code>reassigned: N</code>.</p>
+            </div>
+            <div className="flex justify-end gap-3 text-xs pt-4 border-t border-brand-navy/10">
+              <button onClick={() => { setShowArchiveModal(false); setActionStaff(null); }} className="px-4 py-2 border border-brand-navy/15 text-brand-navy/70 rounded hover:bg-brand-navy/[0.06]">Cancel</button>
+              <button onClick={async () => {
+                const r = await fetch(`${API}/api/admin/staff/${actionStaff.id}/archive`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ reassignTo: reassignTo || undefined }) });
+                const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Archive failed','error'); else { showToast(`Archived — ${j.reassigned||0} clients reassigned`,'success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); setShowArchiveModal(false); setActionStaff(null); }
+              }} className="px-4 py-2 bg-slate-800 hover:bg-black text-white rounded font-bold">Confirm Archive</button>
             </div>
           </div>
         </div>

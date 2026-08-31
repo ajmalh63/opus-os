@@ -1,5 +1,5 @@
 import { Route, Switch, Redirect } from 'wouter';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { ensureUmami } from './lib/umami';
 
 function TrackInjector() {
@@ -10,20 +10,43 @@ import type { ReactNode } from 'react';
 import { SessionProvider } from './lib/session';
 import AuthGuard from './components/AuthGuard';
 import RoleGate from './components/RoleGate';
+// Eager — LCP & public shell (keep fast first paint)
+import PublicHome from './pages/PublicHome';
 import PublicLeadForm from './pages/PublicLeadForm';
-import KanbanBoard from './pages/KanbanBoard';
-import Client360 from './pages/Client360';
-import ClientPortal from './pages/ClientPortal';
-import PartnerDashboard from './pages/PartnerDashboard';
-import PaymentConfirmed from './pages/PaymentConfirmed';
-import AdminConsole from './pages/AdminConsole';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+// Gold standard: route-level lazy + Suspense for heavy authenticated/dashboard/division routes
+// Vite + manualChunks will code-split these into per-route chunks → entry <700kB, cache-hit 89% (code-splitting.com, Mykola 2025)
+const KanbanBoard = lazy(() => import('./pages/KanbanBoard'));
+const Client360 = lazy(() => import('./pages/Client360'));
+const ClientPortal = lazy(() => import('./pages/ClientPortal'));
+const PartnerDashboard = lazy(() => import('./pages/PartnerDashboard'));
+const PaymentConfirmed = lazy(() => import('./pages/PaymentConfirmed'));
+const AdminConsole = lazy(() => import('./pages/AdminConsole'));
+const DashboardHome = lazy(() => import('./pages/DashboardHome'));
+const ClientsList = lazy(() => import('./pages/ClientsList'));
+const DivisionsHub = lazy(() => import('./pages/divisions/DivisionsHub'));
+const StudyAbroadPortal = lazy(() => import('./pages/divisions/StudyAbroadPortal'));
+const VisaPrepPortal = lazy(() => import('./pages/divisions/VisaPrepPortal'));
+const AttestationPortal = lazy(() => import('./pages/divisions/AttestationPortal'));
+const UmrahPortal = lazy(() => import('./pages/divisions/UmrahPortal'));
+const ManpowerPortal = lazy(() => import('./pages/divisions/ManpowerPortal'));
+const Inbox = lazy(() => import('./pages/Inbox'));
+const Settings = lazy(() => import('./pages/Settings'));
+const GoRedirectPage = lazy(() => import('./pages/GoRedirectPage'));
+const ChatwootDashboardWidget = lazy(() => import('./pages/ChatwootDashboardWidget'));
+const BlogIndex = lazy(() => import('./pages/BlogIndex'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
+const FleetConsole = lazy(() => import('./components/fleet/FleetConsole'));
+const TestPaymentPage = lazy(() => import('./pages/TestPaymentPage'));
+const SignAgreementPage = lazy(() => import('./pages/SignAgreementPage'));
+import { HelpdeskCommandCenter } from './pages/HelpdeskCommandCenter';
 import WorkspaceShell from './components/WorkspaceShell';
 import ErrorBoundary from './components/ErrorBoundary';
 import { WorkspaceRouter, WorkspaceModule } from './components/WorkspaceRouter';
 import VisibilityHub from './components/VisibilityHub';
 import BookingsTab from './components/BookingsTab';
 import AgreementsTab from './components/AgreementsTab';
-import PublicHome from './pages/PublicHome';
 import StudyAbroadPage from './pages/public/StudyAbroadPage';
 import VisaServicesPage from './pages/public/VisaServicesPage';
 import ToursTravelPage from './pages/public/ToursTravelPage';
@@ -37,25 +60,8 @@ import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/public/TermsOfServicePage';
 import RefundPolicyPage from './pages/public/RefundPolicyPage';
 import ShippingPolicyPage from './pages/public/ShippingPolicyPage';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import DashboardHome from './pages/DashboardHome';
-import ClientsList from './pages/ClientsList';
-import DivisionsHub from './pages/divisions/DivisionsHub';
-import StudyAbroadPortal from './pages/divisions/StudyAbroadPortal';
-import VisaPrepPortal from './pages/divisions/VisaPrepPortal';
-import AttestationPortal from './pages/divisions/AttestationPortal';
-import UmrahPortal from './pages/divisions/UmrahPortal';
-import ManpowerPortal from './pages/divisions/ManpowerPortal';
-import Inbox from './pages/Inbox';
-import Settings from './pages/Settings';
-import GoRedirectPage from './pages/GoRedirectPage';
-import ChatwootDashboardWidget from './pages/ChatwootDashboardWidget';
-import BlogIndex from './pages/BlogIndex';
-import BlogPost from './pages/BlogPost';
-import FleetConsole from './components/fleet/FleetConsole';
-import TestPaymentPage from './pages/TestPaymentPage';
-import SignAgreementPage from './pages/SignAgreementPage';
+
+const RouteFallback = () => <div className="p-8 text-center text-xs font-semibold text-brand-navy/40 animate-pulse">Loading…</div>;
 
 // ONE umbrella: every authenticated page renders inside the WorkspaceShell so
 // sidebar/brand/topbar persist across ALL modules. The workspace shell owns
@@ -76,6 +82,7 @@ export default function App() {
             Switch: a route-less child inside <Switch> becomes a "*" catch-all
             (wouter matchRoute: route || "*") and swallows every later route. */}
         <TrackInjector />
+        <Suspense fallback={<RouteFallback />}>
         <Switch>
         {/* Public surface */}
         <Route path="/" component={PublicHome} />
@@ -108,8 +115,9 @@ export default function App() {
         <Route path="/portal/agreements/:id" component={SignAgreementPage} />
         <Route path="/partner" component={PartnerDashboard} />
         <Route path="/payment-confirmed" component={PaymentConfirmed} />
-        <Route path="/test-payment" component={TestPaymentPage} />
-        <Route path="/pay" component={TestPaymentPage} />
+        {/* Payment test surface — STAFF/ADMIN ONLY (P0-1 fix: was publicly reachable) */}
+        <Route path="/test-payment">{() => <AuthGuard><TestPaymentPage /></AuthGuard>}</Route>
+        <Route path="/pay">{() => <AuthGuard><TestPaymentPage /></AuthGuard>}</Route>
         <Route path="/go/:ref/:type/:id" component={GoRedirectPage} />
         <Route path="/widget/chatwoot" component={ChatwootDashboardWidget} />
         <Route path="/staff/chatwoot-sidebar" component={ChatwootDashboardWidget} />
@@ -177,6 +185,9 @@ export default function App() {
         <Route path="/divisions/manpower">
           {() => <AuthGuard><WorkspaceRoute><ManpowerPortal /></WorkspaceRoute></AuthGuard>}
         </Route>
+        <Route path="/helpdesk">
+          {() => <AuthGuard><HelpdeskCommandCenter /></AuthGuard>}
+        </Route>
         <Route path="/inbox">
           {() => <AuthGuard><WorkspaceRoute><Inbox /></WorkspaceRoute></AuthGuard>}
         </Route>
@@ -199,6 +210,7 @@ export default function App() {
           <Redirect to="/" />
         </Route>
       </Switch>
+        </Suspense>
       </SessionProvider>
     </ErrorBoundary>
   );

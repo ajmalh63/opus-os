@@ -1,3 +1,5 @@
+PRAGMA foreign_keys = OFF;
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `employer_demands` (
   `id` text PRIMARY KEY NOT NULL,
   `company_name` text NOT NULL,

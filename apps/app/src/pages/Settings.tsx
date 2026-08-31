@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '../lib/session';
 import TwoFactorSetup from '../components/TwoFactorSetup';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // ============================================================
 // Profile Settings — /settings

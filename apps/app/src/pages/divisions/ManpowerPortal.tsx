@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 interface Client {
   id: string;
@@ -21,7 +21,6 @@ interface JobPosting {
   sector: string;
   salaryText: string;
   collar: 'blue_collar' | 'white_collar';
-  tier: 'public' | 'secret';
   status: string;
   description?: string | null;
   employer?: string | null;
@@ -74,24 +73,23 @@ interface Deployment {
 }
 
 const COLLAR_LABEL: Record<string, string> = { blue_collar: 'Blue Collar', white_collar: 'White Collar' };
+function gradeBadge(score?: number){ if(score===undefined) return null; if(score>=75) return {label:'A', cls:'bg-emerald-600 text-white'}; if(score>=50) return {label:'B', cls:'bg-amber-500 text-white'}; return {label:'C', cls:'bg-slate-500 text-white'}; }
 
 export default function ManpowerPortal() {
   const queryClient = useQueryClient();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [activeSubTab, setActiveSubTab] = useState<'jobs' | 'deployments' | 'community' | 'demands'>('jobs');
-  const [jobTier, setJobTier] = useState<'public' | 'secret'>('public');
+  const [activeSubTab, setActiveSubTab] = useState<'jobs' | 'deployments' | 'community' | 'demands' | 'workflows'>('jobs');
   const [jobCategory, setJobCategory] = useState<'blue_collar' | 'white_collar'>('blue_collar');
   const [showAddJob, setShowAddJob] = useState(false);
   const [showDeploy, setShowDeploy] = useState(false);
   const [editJobId, setEditJobId] = useState<string | null>(null);
   const [previewJob, setPreviewJob] = useState<JobPosting | null>(null);
   const [jobStatusFilter, setJobStatusFilter] = useState('all');
-  const [exclusiveEnabled, setExclusiveEnabled] = useState(true);
   const [triageFilter, setTriageFilter] = useState<'all' | 'top_match' | 'standard' | 'cold_pool' | 'paid_vas'>('all');
 
   const [jobForm, setJobForm] = useState({
     title: '', country: '', sector: '', salaryText: '', collar: 'blue_collar' as 'blue_collar' | 'white_collar',
-    tier: 'public' as 'public' | 'secret', description: '', employer: '', employerReference: '',
+    description: '', employer: '', employerReference: '',
     salaryMinPaise: '', salaryMaxPaise: '', currency: 'AED', vacancies: 1, benefits: '', requirements: '',
     experienceYearsMin: 0, tradeCategory: '', visaProvided: true, medicalRequired: true, deadline: '', featured: false,
   });
@@ -115,6 +113,16 @@ export default function ManpowerPortal() {
     },
     enabled: activeSubTab === 'demands',
     refetchInterval: 15000,
+  });
+
+  const { data: workflowsData } = useQuery<{ success: boolean; workflows: any[] }>({
+    queryKey: ['manpowerWorkflows'],
+    queryFn: async () => {
+      const r = await fetch(`${API}/api/manpower/workflows`);
+      if (!r.ok) throw new Error('workflows');
+      return r.json();
+    },
+    enabled: activeSubTab === 'workflows',
   });
 
   const { data: candidatesData } = useQuery<{ candidates: Client[] }>({
@@ -151,7 +159,7 @@ export default function ManpowerPortal() {
     enabled: !!selectedCandidate && activeSubTab === 'deployments'
   });
 
-  const filteredJobs = jobs.filter(j => j.collar === jobCategory && j.tier === jobTier && (jobStatusFilter === 'all' || j.status === jobStatusFilter));
+  const filteredJobs = jobs.filter(j => j.collar === jobCategory && (jobStatusFilter === 'all' || j.status === jobStatusFilter));
 
   const addJobMutation = useMutation({
     mutationFn: async (payload: any) => {
@@ -166,7 +174,7 @@ export default function ManpowerPortal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manpowerJobs'] });
       setShowAddJob(false);
-      setJobForm({ title: '', country: '', sector: '', salaryText: '', collar: 'blue_collar', tier: 'public', description: '', employer: '', employerReference: '', salaryMinPaise: '', salaryMaxPaise: '', currency: 'AED', vacancies: 1, benefits: '', requirements: '', experienceYearsMin: 0, tradeCategory: '', visaProvided: true, medicalRequired: true, deadline: '', featured: false });
+      setJobForm({ title: '', country: '', sector: '', salaryText: '', collar: 'blue_collar', description: '', employer: '', employerReference: '', salaryMinPaise: '', salaryMaxPaise: '', currency: 'AED', vacancies: 1, benefits: '', requirements: '', experienceYearsMin: 0, tradeCategory: '', visaProvided: true, medicalRequired: true, deadline: '', featured: false });
     },
     onError: (e: any) => alert(e.message)
   });
@@ -186,7 +194,7 @@ export default function ManpowerPortal() {
       setShowAddJob(false);
       setEditJobId(null);
       setPreviewJob(null);
-      setJobForm({ title: '', country: '', sector: '', salaryText: '', collar: 'blue_collar', tier: 'public', description: '', employer: '', employerReference: '', salaryMinPaise: '', salaryMaxPaise: '', currency: 'AED', vacancies: 1, benefits: '', requirements: '', experienceYearsMin: 0, tradeCategory: '', visaProvided: true, medicalRequired: true, deadline: '', featured: false });
+      setJobForm({ title: '', country: '', sector: '', salaryText: '', collar: 'blue_collar', description: '', employer: '', employerReference: '', salaryMinPaise: '', salaryMaxPaise: '', currency: 'AED', vacancies: 1, benefits: '', requirements: '', experienceYearsMin: 0, tradeCategory: '', visaProvided: true, medicalRequired: true, deadline: '', featured: false });
     },
     onError: (e: any) => alert(e.message)
   });
@@ -209,7 +217,7 @@ export default function ManpowerPortal() {
     setEditJobId(j.id);
     setJobForm({
       title: j.title, country: j.country, sector: j.sector, salaryText: j.salaryText,
-      collar: j.collar, tier: j.tier,
+      collar: j.collar,
       description: j.description || '', employer: j.employer || '', employerReference: j.employerReference || '',
       salaryMinPaise: j.salaryMinPaise ? String(j.salaryMinPaise) : '', salaryMaxPaise: j.salaryMaxPaise ? String(j.salaryMaxPaise) : '',
       currency: j.currency || 'AED', vacancies: j.vacancies || 1,
@@ -274,37 +282,10 @@ export default function ManpowerPortal() {
 
   const deployments = deploymentsData?.deployments || [];
 
-  // ---- Exclusive community: membership plans (admin) ----
-  const [planForm, setPlanForm] = useState({ key: '', name: '', description: '', pricePaise: '', durationDays: 30, tier: 'basic', perks: '', active: true, sortOrder: 0 });
-  const [editPlanId, setEditPlanId] = useState<string | null>(null);
-  const [showPlanModal, setShowPlanModal] = useState(false);
-
-  const { data: plansData, refetch: refetchPlans } = useQuery<{ success: boolean; plans: any[] }>({
-    queryKey: ['membershipPlans'],
-    queryFn: async () => { const r = await fetch(`${API}/api/manpower/membership-plans`); if (!r.ok) throw new Error('plans'); return r.json(); },
-  });
-  const plans = plansData?.plans || [];
-
-  const savePlanMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      const url = editPlanId ? `/api/manpower/membership-plans/${editPlanId}` : '/api/manpower/membership-plans';
-      const r = await fetch(url, { method: editPlanId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!r.ok) throw new Error('Failed to save plan');
-      return r.json();
-    },
-    onSuccess: () => { refetchPlans(); setShowPlanModal(false); },
-    onError: (e: any) => alert(e.message),
-  });
-
-  const deactivatePlanMutation = useMutation({
-    mutationFn: async (id: string) => { const r = await fetch(`${API}/api/manpower/membership-plans/${id}`, { method: 'DELETE' }); if (!r.ok) throw new Error('Failed'); return r.json(); },
-    onSuccess: () => refetchPlans(),
-    onError: (e: any) => alert(e.message),
-  });
-
+  // ---- Candidate Pass (₹100 lifetime): manual grant/revoke support tool ----
   const grantMembershipMutation = useMutation({
-    mutationFn: async ({ clientId, exclusiveMember, planKey, durationDays }: any) => {
-      const r = await fetch(`${API}/api/manpower/clients/${clientId}/membership`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exclusiveMember, planKey, durationDays }) });
+    mutationFn: async ({ clientId, exclusiveMember }: { clientId: string; exclusiveMember: boolean }) => {
+      const r = await fetch(`${API}/api/manpower/clients/${clientId}/membership`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exclusiveMember, planKey: 'candidate-pass' }) });
       if (!r.ok) throw new Error('Failed');
       return r.json();
     },
@@ -313,22 +294,7 @@ export default function ManpowerPortal() {
   });
 
   const selectedClientFull = (clientsData?.clients || []).find((c) => c.id === selectedCandidate?.id);
-
-  const { data: settingsData } = useQuery<{ success: boolean; exclusiveCommunityEnabled: boolean }>({
-    queryKey: ['manpowerSettings'],
-    queryFn: async () => { const r = await fetch(`${API}/api/manpower/settings`); if (!r.ok) throw new Error('settings'); return r.json(); },
-  });
-  useEffect(() => { if (settingsData?.exclusiveCommunityEnabled !== undefined) setExclusiveEnabled(settingsData.exclusiveCommunityEnabled); }, [settingsData?.exclusiveCommunityEnabled]);
-
-  const toggleCommunityMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const r = await fetch(`${API}/api/manpower/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exclusiveCommunityEnabled: enabled }) });
-      if (!r.ok) throw new Error('Failed to update settings');
-      return r.json();
-    },
-    onSuccess: (d) => { setExclusiveEnabled(d.exclusiveCommunityEnabled); },
-    onError: (e: any) => alert(e.message),
-  });
+  const passHolders = (clientsData?.clients || []).filter((c) => c.exclusiveMember);
 
   return (
     <div className="space-y-6 font-sans">
@@ -362,8 +328,8 @@ export default function ManpowerPortal() {
           onClick={() => setActiveSubTab('community')}
           className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'community' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
         >
-          <span>🔒</span>
-          <span>Exclusive Community</span>
+          <span>🎫</span>
+          <span>Candidate Pass</span>
         </button>
         <button
           onClick={() => setActiveSubTab('demands')}
@@ -372,6 +338,13 @@ export default function ManpowerPortal() {
           <span>🏢</span>
           <span>Employer Demands</span>
         </button>
+        <button
+          onClick={() => setActiveSubTab('workflows')}
+          className={`px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${activeSubTab === 'workflows' ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm' : 'text-brand-textLight hover:text-brand-navy hover:bg-brand-navy/5'}`}
+        >
+          <span>🌍</span>
+          <span>Country Workflows</span>
+        </button>
       </div>
 
       {activeSubTab === 'jobs' && (
@@ -379,22 +352,8 @@ export default function ManpowerPortal() {
           <div className="lg:col-span-1 rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm space-y-4 h-fit backdrop-blur-sm">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h5 className="font-bold text-brand-gold uppercase tracking-widest text-xs">Job Board Tier</h5>
+                <h5 className="font-bold text-brand-gold uppercase tracking-widest text-xs">Job Filters</h5>
                 <button onClick={() => setShowAddJob(true)} className="bg-brand-gold text-brand-navy text-[13px] font-bold px-2.5 py-1 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer">+ Add</button>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setJobTier('public')}
-                  className={`flex-1 text-center py-2 rounded-lg font-bold cursor-pointer transition-all border ${jobTier === 'public' ? 'border-brand-gold bg-brand-gold/10 text-brand-gold' : 'border-brand-navy/10 bg-brand-navy/[0.04] text-brand-navy/50 hover:text-brand-navy'}`}
-                >
-                  Public vacancies
-                </button>
-                <button
-                  onClick={() => setJobTier('secret')}
-                  className={`flex-1 text-center py-2 rounded-lg font-bold cursor-pointer transition-all border ${jobTier === 'secret' ? 'border-brand-gold bg-brand-gold/10 text-brand-gold' : 'border-brand-navy/10 bg-brand-navy/[0.04] text-brand-navy/50 hover:text-brand-navy'}`}
-                >
-                  Secret openings
-                </button>
               </div>
             </div>
 
@@ -415,7 +374,7 @@ export default function ManpowerPortal() {
                 </button>
               </div>
             </div>
-            <p className="text-[13px] text-brand-navy/40 italic">Secret roles are staff-visible only and never leak to the public manpower page.</p>
+            <p className="text-[13px] text-brand-navy/40 italic">All openings are public and appear on the public manpower page.</p>
           </div>
 
           <div className="lg:col-span-3">
@@ -455,7 +414,6 @@ export default function ManpowerPortal() {
                       <div className="flex gap-2 items-center flex-wrap">
                         <span className="bg-brand-navy/[0.06] text-brand-navy/70 rounded px-1.5 py-0.5 text-xs font-mono border border-brand-navy/10">{j.country}</span>
                         <span className="bg-brand-gold/10 text-brand-gold rounded px-1.5 py-0.5 text-xs font-bold capitalize">{COLLAR_LABEL[j.collar] || j.collar.replace('_', ' ')}</span>
-                        {j.tier === 'secret' && <span className="bg-amber-500/15 text-amber-700 rounded px-1.5 py-0.5 text-xs font-bold uppercase">Secret</span>}
                         {typeof j.applicantCount === 'number' && <span className="bg-emerald-500/15 text-emerald-700 rounded px-1.5 py-0.5 text-xs font-bold">{j.applicantCount} applied</span>}
                       </div>
                       {j.employer && <p className="text-[13px] text-brand-navy/50">Employer: <span className="font-medium text-brand-navy/70">{j.employer}</span></p>}
@@ -483,74 +441,59 @@ export default function ManpowerPortal() {
 
       {activeSubTab === 'community' && (
         <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 shadow-sm space-y-4 text-xs backdrop-blur-sm">
-          <div className="flex justify-between items-center border-b border-brand-navy/10 pb-3">
+          <div className="flex flex-wrap justify-between items-center gap-3 border-b border-brand-navy/10 pb-3">
             <div>
-              <h3 className="font-display font-extrabold text-brand-navy text-sm">Exclusive Community — Membership Plans</h3>
-              <p className="text-[13px] text-brand-navy/50">Control prices, durations, tiers, and perks for the paid job-seeker community. Active plans appear on the client paywall.</p>
+              <h3 className="font-display font-extrabold text-brand-navy text-sm">Candidate Pass — ₹100 lifetime</h3>
+              <p className="text-[13px] text-brand-navy/50">The manpower division's single payment: one ₹100 pass, valid for life. Grant or revoke it from a candidate's profile in the Deployment Status tab.</p>
             </div>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <span className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/50">Community</span>
-                <button
-                  onClick={() => toggleCommunityMutation.mutate(!exclusiveEnabled)}
-                  className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${exclusiveEnabled ? 'bg-emerald-500' : 'bg-brand-navy/[0.15]'}`}
-                >
-                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${exclusiveEnabled ? 'left-5' : 'left-0.5'}`} />
-                </button>
-                <span className={`text-[13px] font-bold uppercase tracking-wider ${exclusiveEnabled ? 'text-emerald-700' : 'text-brand-navy/40'}`}>{exclusiveEnabled ? 'Live' : 'Coming Soon'}</span>
-              </label>
-              <button
-                onClick={() => { setEditPlanId(null); setPlanForm({ key: '', name: '', description: '', pricePaise: '', durationDays: 30, tier: 'basic', perks: '', active: true, sortOrder: 0 }); setShowPlanModal(true); }}
-                className="bg-brand-gold text-brand-navy text-[13px] font-bold px-3 py-1.5 rounded-lg hover:bg-brand-gold/90 transition-all cursor-pointer"
-              >
-                + New Plan
-              </button>
-            </div>
+            <span className="text-[13px] font-bold uppercase tracking-wider text-brand-navy/50">{passHolders.length} holder{passHolders.length === 1 ? '' : 's'}</span>
           </div>
 
           <div className="overflow-x-auto border border-brand-navy/10 rounded-xl">
             <table className="w-full text-left text-xs">
               <thead className="bg-brand-navy/[0.04] text-[13px] uppercase font-bold text-brand-gold border-b border-brand-navy/[0.08]">
                 <tr>
-                  <th className="px-4 py-3">Plan</th>
-                  <th className="px-4 py-3">Tier</th>
-                  <th className="px-4 py-3 text-right">Price</th>
-                  <th className="px-4 py-3 text-right">Duration</th>
-                  <th className="px-4 py-3 text-center">Status</th>
-                  <th className="px-4 py-3 text-center">Actions</th>
+                  <th className="px-4 py-3">Candidate</th>
+                  <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Pass</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-navy/[0.08] text-brand-navy/70">
-                {plans.map((p) => (
-                  <tr key={p.id} className="hover:bg-brand-navy/[0.04]">
+                {passHolders.map((c) => (
+                  <tr key={c.id} className="hover:bg-brand-navy/[0.04]">
                     <td className="px-4 py-3">
-                      <div className="font-bold text-brand-navy">{p.name}</div>
-                      <div className="text-[13px] text-brand-navy/40 font-mono">{p.key}</div>
+                      <div className="font-bold text-brand-navy">{c.name}</div>
+                      <div className="text-[13px] text-brand-navy/40 font-mono">{c.id}</div>
                     </td>
-                    <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${p.tier === 'premium' ? 'bg-purple-50 text-purple-600' : p.tier === 'pro' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>{p.tier}</span></td>
-                    <td className="px-4 py-3 text-right font-bold text-brand-gold">₹{(p.pricePaise / 100).toLocaleString('en-IN')}</td>
-                    <td className="px-4 py-3 text-right">{p.durationDays} days</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${p.active ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>{p.active ? 'Active' : 'Inactive'}</span>
-                    </td>
-                    <td className="px-4 py-3 text-center space-x-2.5">
-                      <button
-                        onClick={() => { setEditPlanId(p.id); setPlanForm({ key: p.key, name: p.name, description: p.description || '', pricePaise: String(p.pricePaise / 100), durationDays: p.durationDays, tier: p.tier, perks: (() => { try { return JSON.parse(p.perksJson || '[]').join(', '); } catch { return ''; } })(), active: !!p.active, sortOrder: p.sortOrder || 0 }); setShowPlanModal(true); }}
-                        className="text-brand-navy hover:underline font-bold cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                      {p.active && (
-                        <button onClick={() => { if (confirm('Deactivate this plan?')) deactivatePlanMutation.mutate(p.id); }} className="text-rose-600 hover:underline font-bold cursor-pointer">
-                          Deactivate
-                        </button>
-                      )}
+                    <td className="px-4 py-3">{c.phone || '—'}</td>
+                    <td className="px-4 py-3">{c.email || '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700">Candidate Pass</span>
+                      {c.exclusiveExpiresAt && <span className="ml-2 text-[13px] text-brand-navy/40 font-mono">expires {new Date(c.exclusiveExpiresAt * 1000).toLocaleDateString()}</span>}
                     </td>
                   </tr>
                 ))}
-                {plans.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-brand-navy/50 italic">No membership plans yet. Create one to start the paid community.</td></tr>}
+                {passHolders.length === 0 && (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-brand-navy/50 italic">No candidates hold the Candidate Pass yet. Grant it from a candidate's profile in the Deployment Status tab.</td></tr>
+                )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === 'workflows' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between"><h3 className="font-display font-bold text-brand-navy">🌍 6 GCC Country Workflows</h3><span className="text-xs text-brand-navy/50">{workflowsData?.workflows?.length ?? 0} destinations · read-only for counselor, manager can edit SLA</span></div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {(workflowsData?.workflows || []).map((w:any)=>(<div key={w.country} className="rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm space-y-2">
+              <div className="flex items-center justify-between"><span className="font-black text-brand-navy">{w.countryName} <span className="font-mono text-xs text-brand-navy/40">{w.country}</span></span><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${w.medicalType==='wafid'?'bg-sky-50 text-sky-700':w.medicalType==='gamca'?'bg-amber-50 text-amber-700':w.medicalType==='qvc'?'bg-purple-50 text-purple-700':'bg-slate-50 text-slate-600'}`}>{w.medicalType}</span></div>
+              <div className="text-xs text-brand-navy/60">SLA {w.slaDays} days · {w.active?'Active':'Inactive'}</div>
+              <div className="text-xs"><span className="font-bold text-brand-navy/60">Stages:</span> <span className="text-brand-navy">{(w.stages||[]).join(' → ')}</span></div>
+              <div className="text-xs"><span className="font-bold text-brand-navy/60">Docs:</span> {(w.requiredDocs||[]).map((d:string)=>(<span key={d} className="inline-block bg-brand-navy/[0.06] border border-brand-navy/10 rounded px-1.5 py-0.5 text-xs mr-1">{d}</span>))}</div>
+              <div className="text-xs"><span className="font-bold text-brand-navy/60">Visa:</span> <span className="text-brand-navy/70">{(w.visaSteps||[]).join(' → ')}</span></div>
+            </div>))}
           </div>
         </div>
       )}
@@ -578,7 +521,7 @@ export default function ManpowerPortal() {
                 <div key={d.id} className="rounded-2xl border border-brand-navy/10 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <div className="font-bold text-brand-navy">{d.companyName} <span className="font-normal text-brand-navy/60">— {d.contactName}</span></div>
+                      <div className="font-bold text-brand-navy flex items-center gap-2">{d.companyName} {d.blindBridge && <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-xs font-bold">🔒 Blind</span>} <span className="font-normal text-brand-navy/60">— {d.contactName}</span></div>
                       <div className="text-xs text-brand-navy/60 mt-0.5">{d.workEmail} · {d.phone} · {d.industry} · {d.positionType} × {d.numberOfPositions}</div>
                       <div className="text-xs text-brand-navy/50 mt-1">Urgency: <b className="text-brand-navy">{d.urgency}</b> · Engagement: {d.engagementType} · Pay: {d.payRange}</div>
                     </div>
@@ -595,6 +538,7 @@ export default function ManpowerPortal() {
                     {d.status === 'active' && <button onClick={async () => { await fetch(`${API}/api/employer-demands/${d.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'closed' }) }); refetchDemands(); }} className="rounded-full bg-white border border-brand-navy/15 px-4 py-2 text-xs font-bold text-brand-navy hover:border-brand-gold">Mark Closed</button>}
                     <a href={`https://wa.me/${d.phone.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">WhatsApp →</a>
                     <a href={`mailto:${d.workEmail}`} className="rounded-full border border-brand-navy/10 px-4 py-2 text-xs font-bold text-brand-navy/70 hover:text-brand-navy">Email →</a>
+                    <button onClick={async()=>{await fetch(`${API}/api/employer-demands/${d.id}/blind-bridge`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({blindBridge:!d.blindBridge})}); refetchDemands();}} className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 hover:bg-amber-100">{d.blindBridge?'Reveal Employer':'Enable Blind'}</button>
                   </div>
                 </div>
               ))}
@@ -634,22 +578,21 @@ export default function ManpowerPortal() {
                     <h2 className="font-display text-lg font-bold text-brand-navy">{selectedCandidate.name}</h2>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${selectedClientFull?.exclusiveMember ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-navy/[0.06] text-brand-navy/40'}`}>
-                        {selectedClientFull?.exclusiveMember ? '✓ Exclusive Member' : 'Free Member'}
+                        {selectedClientFull?.exclusiveMember ? '✓ Candidate Pass' : 'No Pass'}
                       </span>
                       {selectedClientFull?.exclusiveExpiresAt && <span className="text-xs text-brand-navy/40 font-mono">expires {new Date(selectedClientFull.exclusiveExpiresAt * 1000).toLocaleDateString()}</span>}
                       {selectedClientFull?.instagramHandle && <span className="text-xs text-brand-navy/40 font-mono">@{selectedClientFull.instagramHandle}</span>}
                       <button
                         onClick={() => {
                           if (selectedClientFull?.exclusiveMember) {
-                            if (confirm('Revoke exclusive membership for this client?')) grantMembershipMutation.mutate({ clientId: selectedCandidate.id, exclusiveMember: false });
+                            if (confirm('Revoke the Candidate Pass for this candidate?')) grantMembershipMutation.mutate({ clientId: selectedCandidate.id, exclusiveMember: false });
                           } else {
-                            const days = prompt('Grant exclusive membership for how many days?', '30');
-                            if (days) grantMembershipMutation.mutate({ clientId: selectedCandidate.id, exclusiveMember: true, planKey: 'exclusive-30', durationDays: parseInt(days, 10) || 30 });
+                            if (confirm('Grant the ₹100 lifetime Candidate Pass to this candidate?')) grantMembershipMutation.mutate({ clientId: selectedCandidate.id, exclusiveMember: true });
                           }
                         }}
                         className="text-xs font-bold uppercase tracking-wider text-brand-gold hover:underline cursor-pointer"
                       >
-                        {selectedClientFull?.exclusiveMember ? 'Revoke' : 'Grant'}
+                        {selectedClientFull?.exclusiveMember ? 'Revoke Pass' : 'Grant Pass'}
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-brand-navy/40 font-mono text-[13px] mt-1">
@@ -718,14 +661,14 @@ export default function ManpowerPortal() {
                                 </span>
                               )}
                               {d.matchScore !== undefined && (
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase flex items-center gap-1 ${
                                   d.matchTier === 'top_match'
                                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                     : d.matchTier === 'standard'
                                     ? 'bg-amber-100 text-amber-800 border border-amber-300'
                                     : 'bg-slate-100 text-slate-700 border border-slate-300'
                                 }`}>
-                                  {d.matchTier === 'top_match' ? '🔥 Top Match ' : ''}{d.matchScore}% Match Score
+                                  <span className={`grid place-items-center w-5 h-5 rounded-full text-xs font-black ${gradeBadge(d.matchScore)?.cls||''}`}>{gradeBadge(d.matchScore)?.label}</span>{d.matchTier === 'top_match' ? '🔥 Top Match ' : ''}{d.matchScore}% (5-factor)
                                 </span>
                               )}
                             </div>
@@ -851,67 +794,6 @@ export default function ManpowerPortal() {
         </div>
       )}
 
-      {showPlanModal && (
-        <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-xs flex items-center justify-center z-50">
-          <div className="rounded-2xl border border-brand-navy/10 bg-white p-6 w-[30rem] max-w-[95vw] max-h-[90vh] overflow-y-auto shadow-lg space-y-4 text-xs">
-            <div className="flex justify-between items-center border-b border-brand-navy/10 pb-2">
-              <h3 className="font-display font-extrabold text-brand-navy text-sm">{editPlanId ? 'Edit Membership Plan' : 'New Membership Plan'}</h3>
-              <button onClick={() => setShowPlanModal(false)} className="text-brand-navy/40 hover:text-brand-navy text-lg cursor-pointer">✕</button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <label className="font-semibold text-brand-navy/40 block mb-1">Plan Key</label>
-                <input value={planForm.key} onChange={(e) => setPlanForm({ ...planForm, key: e.target.value })} placeholder="e.g. exclusive-30" className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold" />
-              </div>
-              <div className="col-span-2">
-                <label className="font-semibold text-brand-navy/40 block mb-1">Plan Name</label>
-                <input value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} placeholder="e.g. Exclusive 30 Days" className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold" />
-              </div>
-              <div className="col-span-2">
-                <label className="font-semibold text-brand-navy/40 block mb-1">Description</label>
-                <input value={planForm.description} onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })} className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold" />
-              </div>
-              <div>
-                <label className="font-semibold text-brand-navy/40 block mb-1">Price (₹)</label>
-                <input type="number" min={0} value={planForm.pricePaise} onChange={(e) => setPlanForm({ ...planForm, pricePaise: e.target.value })} className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold" />
-              </div>
-              <div>
-                <label className="font-semibold text-brand-navy/40 block mb-1">Duration (days)</label>
-                <input type="number" min={1} value={planForm.durationDays} onChange={(e) => setPlanForm({ ...planForm, durationDays: Number(e.target.value) })} className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold" />
-              </div>
-              <div>
-                <label className="font-semibold text-brand-navy/40 block mb-1">Tier</label>
-                <select value={planForm.tier} onChange={(e) => setPlanForm({ ...planForm, tier: e.target.value })} className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold cursor-pointer [&>option]:bg-white">
-                  <option value="basic">Basic</option>
-                  <option value="pro">Pro</option>
-                  <option value="premium">Premium</option>
-                </select>
-              </div>
-              <div>
-                <label className="font-semibold text-brand-navy/40 block mb-1">Sort Order</label>
-                <input type="number" value={planForm.sortOrder} onChange={(e) => setPlanForm({ ...planForm, sortOrder: Number(e.target.value) })} className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold" />
-              </div>
-              <div className="col-span-2">
-                <label className="font-semibold text-brand-navy/40 block mb-1">Perks (comma separated)</label>
-                <input value={planForm.perks} onChange={(e) => setPlanForm({ ...planForm, perks: e.target.value })} placeholder="Secret job offers, Direct apply, Priority shortlisting" className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold" />
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer text-brand-navy/70 font-semibold col-span-2">
-                <input type="checkbox" checked={planForm.active} onChange={(e) => setPlanForm({ ...planForm, active: e.target.checked })} className="rounded border-brand-navy/20 accent-brand-gold" /> Active (visible on client paywall)
-              </label>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button onClick={() => setShowPlanModal(false)} className="flex-1 border border-brand-navy/15 bg-brand-navy/[0.04] hover:border-brand-gold/50 py-2 rounded-lg font-bold text-brand-navy cursor-pointer transition-all">Cancel</button>
-              <button
-                disabled={!planForm.key || !planForm.name || !planForm.pricePaise}
-                onClick={() => savePlanMutation.mutate({ key: planForm.key, name: planForm.name, description: planForm.description, pricePaise: Math.round(parseFloat(planForm.pricePaise) * 100), durationDays: planForm.durationDays, tier: planForm.tier, perks: planForm.perks.split(',').map((x) => x.trim()).filter(Boolean), active: planForm.active, sortOrder: planForm.sortOrder })}
-                className="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-2 rounded-lg font-bold cursor-pointer transition-all disabled:opacity-50"
-              >
-                {editPlanId ? 'Save Changes' : 'Create Plan'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Job Detail + Lifecycle Drawer */}
       {previewJob && (
@@ -935,7 +817,6 @@ export default function ManpowerPortal() {
                 previewJob.status === 'closed' ? 'bg-rose-50 text-rose-700' :
                 previewJob.status === 'archived' ? 'bg-brand-navy/[0.06] text-brand-navy/40' : 'bg-brand-navy/[0.06] text-brand-navy/40'
               }`}>{previewJob.status || 'open'}</span>
-              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-navy/[0.06] text-brand-navy/70">{previewJob.tier}</span>
               <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-gold/10 text-brand-gold">{previewJob.collar?.replace('_', ' ')}</span>
               {previewJob.featured && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-gold/15 text-brand-gold">Featured</span>}
             </div>
@@ -1045,13 +926,6 @@ export default function ManpowerPortal() {
                 <select value={jobForm.collar} onChange={(e) => setJobForm({ ...jobForm, collar: e.target.value as any })} className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold cursor-pointer [&>option]:bg-white">
                   <option value="blue_collar">Blue Collar</option>
                   <option value="white_collar">White Collar</option>
-                </select>
-              </div>
-              <div>
-                <label className="font-semibold text-brand-navy/40 block mb-1">Tier</label>
-                <select value={jobForm.tier} onChange={(e) => setJobForm({ ...jobForm, tier: e.target.value as any })} className="w-full rounded-lg border border-brand-navy/10 bg-white px-3 py-2 text-brand-navy outline-none focus:border-brand-gold cursor-pointer [&>option]:bg-white">
-                  <option value="public">Public</option>
-                  <option value="secret">Secret</option>
                 </select>
               </div>
               <div className="col-span-2">

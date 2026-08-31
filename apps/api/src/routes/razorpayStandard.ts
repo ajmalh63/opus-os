@@ -71,6 +71,10 @@ standardOrderRouter.post("/", zValidator("json", createOrderSchema), async (c) =
   const data = c.req.valid("json");
   const keyId = c.env.RAZORPAY_KEY_ID;
   const keySecret = c.env.RAZORPAY_KEY_SECRET;
+  // P1-4 fail-closed: never create live-money orders with TEST keys in production
+  if ((c.env as any).ENVIRONMENT === "production" && String(keyId || "").startsWith("rzp_test")) {
+    return c.json({ error: "Payments are misconfigured for production (test key detected). Contact support." }, 503);
+  }
 
   if (!keyId || !keySecret) {
     return c.json(

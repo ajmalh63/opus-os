@@ -35,16 +35,15 @@ async function resolveIdentity(c: any): Promise<{ plane:'staff'|'client'|'partne
     return { plane:'client', tenantId: row.id, channels };
   }
 
-  // 3) Partner — Authorization: Bearer <api_token>
+  // 3) Partner — Authorization: Bearer <api_token> OR ?api_token=... (browser WS handshake) OR partner session
   const auth = c.req.header('authorization') || c.req.header('Authorization');
-  if (auth?.startsWith('Bearer ')) {
-    const t = auth.slice(7).trim();
-    if (t && c.env?.DB) {
-      const db = getDb(c.env.DB);
-      const row = await db.select().from(partners).where(eq(partners.apiToken, t)).get();
-      if (!row || row.status === 'blocked') return null;
-      return { plane:'partner', tenantId: row.id, channels };
-    }
+  const queryPartnerToken = url.searchParams.get('api_token') || url.searchParams.get('apiToken');
+  const partnerToken = auth?.startsWith('Bearer ') ? auth.slice(7).trim() : queryPartnerToken;
+  if (partnerToken && c.env?.DB) {
+    const db = getDb(c.env.DB);
+    const row = await db.select().from(partners).where(eq(partners.apiToken, partnerToken)).get();
+    if (!row || row.status === 'blocked') return null;
+    return { plane:'partner', tenantId: row.id, channels };
   }
 
   return null;

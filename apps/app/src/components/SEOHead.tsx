@@ -12,6 +12,43 @@ export interface SEOHeadProps {
 const DOMAIN = 'https://opusoverseas.com';
 const DEFAULT_OG_IMAGE = 'https://opusoverseas.com/og-image.png';
 
+/**
+ * Pure string renderer for build-time prerender (Vite prerender / Prestruct).
+ * Returns the full <title> + meta + OG + Twitter + canonical + JSON-LD block
+ * as HTML string — injected into static HTML so crawlers/AI see it without JS.
+ * Gold standard: Google JS SEO Dec 2025 — critical SEO elements must be in
+ * initial HTML, not injected via useEffect.
+ */
+export function renderSEOHeadString(props: SEOHeadProps): string {
+  const { title, description, canonicalPath = '', ogImage = DEFAULT_OG_IMAGE, ogType = 'website', schemas = [] } = props;
+  const fullCanonical = `${DOMAIN}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`;
+  const tags: string[] = [];
+  tags.push(`<title>${escapeHtml(title)}</title>`);
+  tags.push(`<meta name="description" content="${escapeHtml(description)}">`);
+  tags.push(`<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">`);
+  tags.push(`<meta property="og:title" content="${escapeHtml(title)}">`);
+  tags.push(`<meta property="og:description" content="${escapeHtml(description)}">`);
+  tags.push(`<meta property="og:url" content="${escapeHtml(fullCanonical)}">`);
+  tags.push(`<meta property="og:type" content="${ogType}">`);
+  tags.push(`<meta property="og:site_name" content="Opus Overseas">`);
+  tags.push(`<meta property="og:locale" content="en_IN">`);
+  tags.push(`<meta property="og:image" content="${escapeHtml(ogImage)}">`);
+  tags.push(`<meta name="twitter:card" content="summary_large_image">`);
+  tags.push(`<meta name="twitter:title" content="${escapeHtml(title)}">`);
+  tags.push(`<meta name="twitter:description" content="${escapeHtml(description)}">`);
+  tags.push(`<meta name="twitter:image" content="${escapeHtml(ogImage)}">`);
+  tags.push(`<link rel="canonical" href="${escapeHtml(fullCanonical)}">`);
+  if (schemas.length > 0) {
+    const graphData = { '@context': 'https://schema.org', '@graph': schemas };
+    tags.push(`<script type="application/ld+json" id="opus-seo-schema">${JSON.stringify(graphData)}</script>`);
+  }
+  return tags.join('\n  ');
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export default function SEOHead({
   title,
   description,

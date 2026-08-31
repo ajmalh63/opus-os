@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { getBookingUrlForDivision, isConsultationDivision, LEAD_FORM_ROUTE } from '../../config/booking';
 import BookingModal from '../BookingModal';
 import { useLocation } from 'wouter';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 export type FunnelDivision = 'study-abroad' | 'visa' | 'umrah' | 'attestation' | 'manpower';
 

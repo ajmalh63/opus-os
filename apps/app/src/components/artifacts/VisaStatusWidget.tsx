@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import ArtifactShell from './ArtifactShell';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 const PIPELINE_STAGES = [
   { key: 'lead', label: 'File Initiated', done: true },

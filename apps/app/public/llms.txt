@@ -1,0 +1,36 @@
+# Opus Overseas — Business OS for Overseas Education, Visas, Travel & Manpower
+
+> Hyderabad's overseas education, visa, attestation & overseas manpower platform. 5 divisions, token-based client portal, partner workspace, and 99-table D1 OS.
+
+## Study Abroad
+- Study Abroad counselling -> https://opusoverseas.com/study-abroad: Snapshot model (no catalog), live Match/Reach/Safe 0-100, 9 English tests normalized to IELTS, DPDP university-sharing consent
+- Student portal wizard -> https://opusoverseas.com/portal: 4-step profile, per-app doc uploads with staff checklist auto-sync
+
+## Visa Services
+- Visa processing 165+ countries -> https://opusoverseas.com/visa-services: Tourist/Business/Work/Student/Medical, deadline cascade biometrics→medical→submit, C5 anxiety-grade tracker
+
+## Tours & Travels (Umrah)
+- Umrah & international holidays -> https://opusoverseas.com/umrah-travel: 60-col package inventory, 72h party booking (₹500×pax), group departures cap 30, solo supplement & child pricing
+- Tours explorer -> https://opusoverseas.com/tours-travels: Domestic & corporate MICE
+
+## Attestation
+- Certificate attestation -> https://opusoverseas.com/attestation: HRD→MEA→Embassy/Apostille indicative rate cards, chain timeline, Blue Dart/DTDC AWB
+
+## Recruitment & Manpower
+- Overseas jobs -> https://opusoverseas.com/recruitment: Public/secret tiers, masked salary, 15 Gulf/Europe sectors, TAR@5K membership
+- For employers -> https://opusoverseas.com/manpower/hire: B2B demand intake with waOutbox
+
+## Platform
+- Client portal (token auth) -> https://opusoverseas.com/portal: Health 0-100, Vault 50MB, 30d retention, Helpdesk ITIL
+- Partner workspace -> https://opusoverseas.com/partner: Booking tower, commission ledger, goRedirect with SubID & QR
+- API & docs -> https://opusoverseas.com/api/v1/docs: OpenAPI 3.1 + Scalar, scoped API keys opus_live_sk_…
+
+## Trust & Compliance
+- About us -> https://opusoverseas.com/about
+- Contact -> https://opusoverseas.com/contact
+- Privacy -> https://opusoverseas.com/privacy | Terms -> https://opusoverseas.com/terms
+- Refund -> https://opusoverseas.com/refund-policy | Shipping -> https://opusoverseas.com/shipping-policy
+
+## Blog & Resources
+- Blog engine -> https://opusoverseas.com/blog: 8 pillars, TL;DR, FAQ 5×<50w, Person/Org @id
+

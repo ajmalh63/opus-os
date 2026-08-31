@@ -2,7 +2,7 @@ import { Link, useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { useVisibilityTracking } from '../lib/visibilityTracking';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // Minimal markdown → HTML (headings, tables, faq, bold, links, lists) — keeps bundle light vs full MDX
 function mdToHtml(md: string): string {

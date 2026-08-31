@@ -9,7 +9,7 @@ import { createStaffAlert } from '../infra/staffAlerts.js';
 import { publishSyncEvent } from './sync.js';
 
 export const publicEmployerDemandsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
-export const employerDemandsRouter = new Hono<{ Bindings: { DB: D1Database } }>();
+export const employerDemandsRouter = new Hono<{ Bindings: { DB: D1Database }; Variables: { user?: { id?: string; role?: string } | null } }>();
 
 const createEmployerDemandSchema = z.object({
   companyName: z.string().min(2, 'Company name is required'),
@@ -114,7 +114,12 @@ publicEmployerDemandsRouter.post('/', zValidator('json', createEmployerDemandSch
   }
 });
 
-// GET /api/employer-demands — staff list (manager+)
+// GET /api/employer-demands — staff list (manager+ with blind-bridge masking for agency roles)
+function maskDemandForAgency(row: any) {
+  if (!row?.blindBridge) return row;
+  return { ...row, companyName: 'Confidential Employer', payRange: 'Confidential', workEmail: row.workEmail ? row.workEmail.replace(/(?<=.{2}).*(?=@)/, '***') : row.workEmail, phone: row.phone ? '***-***-' + String(row.phone).slice(-4) : row.phone };
+}
+function isAgencyRole(role?: string) { return role === 'counselor' || role === 'partner' || role === 'coordinator' || role === 'receptionist'; }
 employerDemandsRouter.get('/', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
@@ -122,6 +127,8 @@ employerDemandsRouter.get('/', async (c) => {
     const status = c.req.query('status');
     let rows = await db.select().from(employerDemands).orderBy(desc(employerDemands.createdAt)).all();
     if (status) rows = rows.filter((r: any) => r.status === status);
+    const role = (c.get('user' as any) as any)?.role;
+    if (isAgencyRole(role)) rows = rows.map((r:any)=> maskDemandForAgency(r));
     return c.json({ success: true, demands: rows, count: rows.length });
   } catch (e: any) {
     return c.json({ error: 'Failed to fetch demands', details: e?.message }, 500);
@@ -152,14 +159,34 @@ employerDemandsRouter.patch('/:id/status', async (c) => {
   }
 });
 
-// GET /api/employer-demands/:id — detail
+// PATCH /api/employer-demands/:id/blind-bridge — toggle (manager+)
+employerDemandsRouter.patch('/:id/blind-bridge', async (c) => {
+  const role = (c.get('user' as any) as any)?.role;
+  if (role !== 'super_admin' && role !== 'manager') return c.json({ error: 'Forbidden — manager+ only' }, 403);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const id = c.req.param('id');
+  const body = await c.req.json().catch(()=>({})) as any;
+  if (typeof body.blindBridge !== 'boolean') return c.json({ error: 'blindBridge boolean required' }, 400);
+  try {
+    const row = await db.select().from(employerDemands).where(eq(employerDemands.id, id)).get();
+    if (!row) return c.json({ error: 'Demand not found' }, 404);
+    await db.update(employerDemands).set({ blindBridge: body.blindBridge, updatedAt: Math.floor(Date.now()/1000) }).where(eq(employerDemands.id, id));
+    await auditEvent(c as any, { action: 'EMPLOYER_DEMAND_BLIND_TOGGLE', entityName: 'employer_demands', entityId: id, afterState: { blindBridge: body.blindBridge } }).catch(()=>{});
+    return c.json({ success: true, blindBridge: body.blindBridge });
+  } catch (e:any) { return c.json({ error: 'Failed to toggle blindBridge', details: e?.message }, 500); }
+});
+
+// GET /api/employer-demands/:id — detail (masked for agency if blindBridge)
 employerDemandsRouter.get('/:id', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const row = await db.select().from(employerDemands).where(eq(employerDemands.id, c.req.param('id'))).get();
+    const row:any = await db.select().from(employerDemands).where(eq(employerDemands.id, c.req.param('id'))).get();
     if (!row) return c.json({ error: 'Demand not found' }, 404);
-    return c.json({ success: true, demand: row });
+    const role = (c.get('user' as any) as any)?.role;
+    const out = isAgencyRole(role) && row.blindBridge ? maskDemandForAgency(row) : row;
+    return c.json({ success: true, demand: out });
   } catch (e: any) {
     return c.json({ error: 'Failed to fetch demand', details: e?.message }, 500);
   }

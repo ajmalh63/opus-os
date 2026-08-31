@@ -14,13 +14,16 @@ import AttestationClientSection from '../components/AttestationClientSection';
 import { PortalMessages } from '../components/client/PortalMessages';
 import { PortalCalendar } from '../components/client/PortalCalendar';
 import { VisaTracker } from '../components/client/VisaTracker';
-import ManpowerApplyWizard from '../components/manpower/ManpowerApplyWizard';
 import ManpowerMarketplace from '../components/ManpowerMarketplace';
+import { ManpowerAccessGate } from '../components/manpower/ManpowerAccessGate';
 import { createSyncClient } from '../lib/syncClient';
 import { useDivisions } from '../lib/divisions';
 import ClientCommandPalette from '../components/client/ClientCommandPalette';
 import ClientFeedbackModal from '../components/client/ClientFeedbackModal';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+import { ClientDocumentVault } from '../components/client/ClientDocumentVault';
+import { ClientHelpdeskSection } from '../components/client/ClientHelpdeskSection';
+import TwoFactorSetup from '../components/TwoFactorSetup';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 interface Engagement {
   id: string;
@@ -196,10 +199,10 @@ export default function ClientPortal() {
     showToast('Signed out successfully.');
   };
 
-  const [portalTab, setPortalTab] = useState<'dashboard' | 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs' | 'journey'>(() => {
+  const [portalTab, setPortalTab] = useState<'dashboard' | 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs' | 'vault' | 'journey' | 'security' | 'helpdesk'>(() => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const tab = params.get('tab') as any;
-    if (tab && ['dashboard','study','visa','umrah','attestation','jobs','journey'].includes(tab)) return tab;
+    if (tab && ['dashboard','study','visa','umrah','attestation','jobs','vault','journey','security','helpdesk'].includes(tab)) return tab;
     return 'dashboard';
   });
 
@@ -217,7 +220,7 @@ export default function ClientPortal() {
     const onPop = () => {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab') as any;
-      if (tab && ['dashboard','study','visa','umrah','attestation','jobs','journey'].includes(tab)) {
+      if (tab && ['dashboard','study','visa','umrah','attestation','jobs','vault','journey','security','helpdesk'].includes(tab)) {
         setPortalTab(tab);
       }
     };
@@ -286,6 +289,29 @@ export default function ClientPortal() {
   });
 
   const queryClient = useQueryClient();
+
+  // ——— Manpower jobs paywall: membership status for the /portal jobs tab (₹100 candidate-pass) ———
+  const mpPortalToken = sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self';
+  const {
+    data: mpMembershipData,
+    isLoading: mpMembershipLoading,
+    refetch: refetchMpMembership,
+  } = useQuery<{
+    enabled: boolean;
+    comingSoon: boolean;
+    membership: { isMember: boolean; expiresAt: number | null; plan: string | null; since?: number | null };
+    plans: { key: string; name: string; description?: string; pricePaise: number; durationDays: number; tier: string; perks: string[] }[];
+  }>({
+    queryKey: ['portalManpowerMembershipGate', mpPortalToken],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const r = await fetch(`${API}/api/public/portal/manpower/membership`, { headers: { 'X-Portal-Token': mpPortalToken } });
+      if (!r.ok) throw new Error('membership status unavailable');
+      return r.json();
+    },
+    enabled: !!mpPortalToken,
+  });
+  const mpIsMember = mpMembershipData?.membership?.isMember === true;
 
   // Client realtime — WebSocket Durable Object sync for live stage & document updates
   useEffect(() => {
@@ -526,8 +552,23 @@ export default function ClientPortal() {
               {/* Navigation Section 3: Records & Vault */}
               <div className="space-y-1.5">
                 <span className="text-xs font-black uppercase tracking-wider text-slate-400 px-3 block">
-                  Records & Vault
+                  Records &amp; Vault
                 </span>
+                <button
+                  type="button"
+                  onClick={() => navigateTab('vault')}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'vault'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span>🔒</span>
+                    <span>Document Vault</span>
+                  </span>
+                  {portalTab === 'vault' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
+                </button>
                 <button
                   type="button"
                   onClick={() => navigateTab('journey')}
@@ -542,6 +583,57 @@ export default function ClientPortal() {
                     <span>Journey Overview</span>
                   </span>
                   {portalTab === 'journey' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
+                </button>
+              </div>
+
+              {/* Navigation Section 4: Security — Gold Standard (OWASP ASVS L2 / NIST AAL2) */}
+              <div className="space-y-1.5">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400 px-3 block">
+                  Security &amp; Privacy
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigateTab('security')}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'security'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span>🛡️</span>
+                    <span>Security Center</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {me?.twoFactorEnabled ? <span className="h-2 w-2 rounded-full bg-emerald-500"></span> : <span className="h-2 w-2 rounded-full bg-amber-500"></span>}
+                    {portalTab === 'security' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
+                  </div>
+                </button>
+                <p className="text-[11px] text-slate-400 px-3 leading-relaxed">2FA, sessions, password &amp; audit — same as superadmin (AAL2).</p>
+              </div>
+
+              {/* Navigation Section 5: Helpdesk & Support */}
+              <div className="space-y-1.5">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400 px-3 block">
+                  Support &amp; Helpdesk
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigateTab('helpdesk')}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between cursor-pointer ${
+                    portalTab === 'helpdesk'
+                      ? 'bg-brand-navy text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span>🎧</span>
+                    <span>Helpdesk Tickets</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Live</span>
+                    {portalTab === 'helpdesk' && <span className="w-2 h-2 rounded-full bg-brand-gold"></span>}
+                  </div>
                 </button>
               </div>
             </div>
@@ -612,12 +704,41 @@ export default function ClientPortal() {
               </button>
               <button
                 type="button"
+                onClick={() => navigateTab('vault')}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                  portalTab === 'vault' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                <span>🔒 Vault</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => navigateTab('journey')}
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer ${
                   portalTab === 'journey' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
                 }`}
               >
                 🗺️ Journey
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTab('security')}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer flex items-center gap-1 ${
+                  portalTab === 'security' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                <span>🛡️ Security</span>
+                {me?.twoFactorEnabled ? <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> : <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTab('helpdesk')}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                  portalTab === 'helpdesk' ? 'bg-brand-navy text-white' : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                <span>🎧 Helpdesk</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
               </button>
             </div>
 
@@ -635,7 +756,7 @@ export default function ClientPortal() {
                 umrahBookings={umrahBookingsData || []}
                 attestationApps={attestationAppsData || []}
                 jobApps={jobAppsData || []}
-                onNavigateTab={(t: any) => setPortalTab(t)}
+                onNavigateTab={navigateTab}
               />
             )}
 
@@ -672,18 +793,95 @@ export default function ClientPortal() {
               </div>
             )}
 
-            {/* TAB 6: GLOBAL JOBS & MANPOWER — P0 Manpower Marketplace (Indeed gold: match + 1-click) */}
+            {/* TAB 6: GLOBAL JOBS & MANPOWER — P0 paywall: ₹100 candidate-pass gates browse + apply */}
             {portalTab === 'jobs' && (
-              <div className="space-y-4">
-                <ManpowerMarketplace token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
-                <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
-                  <h4 className="font-display font-bold text-xs text-brand-navy mb-3">My Applications — Live Tracking</h4>
-                  <ManpowerJobs token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
+              mpMembershipLoading ? (
+                <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-3 animate-pulse" aria-busy="true" aria-label="Checking jobs access">
+                  <div className="h-5 w-56 rounded bg-slate-100" />
+                  <div className="h-3 w-full rounded bg-slate-100" />
+                  <div className="h-3 w-2/3 rounded bg-slate-100" />
+                  <div className="h-36 w-full rounded-xl bg-slate-100" />
+                </div>
+              ) : mpMembershipData?.membership && !mpIsMember ? (
+                <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-5">
+                  <div className="border-b border-slate-100 pb-3">
+                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-brand-gold">Manpower · Overseas Jobs</span>
+                    <h3 className="font-display font-black text-lg text-brand-navy mt-1">Unlock Overseas Jobs — One-Time ₹100 Verification Pass</h3>
+                    <p className="text-xs text-slate-500 mt-1.5">Verified candidates only — one small pass keeps spam out and makes sure recruiters read every application.</p>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <div className="text-xs text-slate-700"><b>Unlimited applications</b><br /><span className="text-slate-500">Apply to every live opening, forever.</span></div>
+                    </div>
+                    <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <div className="text-xs text-slate-700"><b>Anti-spam verification</b><br /><span className="text-slate-500">Your profile stands out to real recruiters.</span></div>
+                    </div>
+                    <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <div className="text-xs text-slate-700"><b>Lifetime access</b><br /><span className="text-slate-500">Pay once — never again.</span></div>
+                    </div>
+                  </div>
+                  <ManpowerAccessGate
+                    isModal={false}
+                    clientToken={mpPortalToken}
+                    clientName={sessionData?.journeys?.[0]?.client?.name}
+                    clientEmail={sessionData?.journeys?.[0]?.client?.email}
+                    clientPhone={sessionData?.journeys?.[0]?.client?.phone}
+                    onSuccess={() => {
+                      refetchMpMembership();
+                      queryClient.invalidateQueries({ queryKey: ['manpowerMarketplace'] });
+                      queryClient.invalidateQueries({ queryKey: ['portalJobAppsHub'] });
+                      queryClient.invalidateQueries({ queryKey: ['portalManpowerApps'] });
+                    }}
+                  />
+                </div>
+              ) : (
+                <ManpowerMarketplace token={mpPortalToken} />
+              )
+            )}
+
+            {/* TAB 7: SECURE DOCUMENT VAULT (30-day lifecycle retention & 50MB quota) */}
+            {portalTab === 'vault' && (
+              <ClientDocumentVault
+                token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'}
+              />
+            )}
+
+            {/* TAB 8: SECURITY CENTER — Gold Standard (OWASP ASVS L2 / NIST AAL2) — Same as superadmin */}
+            {portalTab === 'security' && (
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-brand-navy/10 bg-gradient-to-br from-brand-navy-900 via-brand-navy to-brand-navy-800 p-6 text-white shadow-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="text-brand-gold text-lg">🛡️</span>
+                    <h3 className="font-display text-lg font-black text-white">Security Center — Gold Standard</h3>
+                    <span className="ml-auto rounded-full bg-emerald-500/20 border border-emerald-400/40 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-300">AAL2 / L2</span>
+                  </div>
+                  <p className="text-xs text-white/60 mt-1">Same protections as superadmin: TOTP 2FA (RFC 6238), backup codes, sessions, password, audit. OWASP ASVS 3.2/3.3 + NIST 800-63B.</p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 border border-white/15">PBKDF2 100k + HIBP</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 border border-white/15">__Host- Secure HttpOnly SameSite=Lax</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 border border-white/15">30d / 12h / 30m timeouts</span>
+                  </div>
+                </div>
+                <TwoFactorSetup />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <a href="/settings" className="rounded-2xl border border-brand-navy/10 bg-white p-5 hover:border-brand-gold/30 transition shadow-sm block">
+                    <h4 className="font-display text-sm font-bold text-brand-navy">Change Password & Sessions</h4>
+                    <p className="text-xs text-slate-500 mt-1">Full Settings → Security & Sessions: HIBP-checked password change + view/revoke all devices (ASVS 3.3.3/3.3.4). Also available here via same APIs.</p>
+                    <span className="mt-3 inline-flex rounded-full bg-brand-navy px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">Go to Settings →</span>
+                  </a>
+                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50/50 p-5">
+                    <h4 className="font-display text-sm font-bold text-emerald-900">Client = Superadmin Parity</h4>
+                    <p className="text-xs text-emerald-800/80 mt-1">Every endpoint here checks <code className="bg-white px-1 rounded">validateSessionToken</code> (not role). Clients can enable 2FA, change password, list/revoke sessions, and get login alerts — identical to superadmin, scoped to own <code>clientId</code>.</p>
+                    <p className="text-xs text-emerald-700 mt-2 font-semibold">No division scoping, no staff privilege — just your own account.</p>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* TAB 7: JOURNEY OVERVIEW */}
+            {/* TAB 9: JOURNEY OVERVIEW */}
             {portalTab === 'journey' && sessionData && sessionData.authenticated && (
               <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-6">
                 <div className="border-b border-slate-100 pb-3">
@@ -701,6 +899,14 @@ export default function ClientPortal() {
                   <PortalCalendar token={activeToken || ''} />
                 </div>
               </div>
+            )}
+
+            {/* TAB 10: HELPDESK & RESOLUTION CENTER */}
+            {portalTab === 'helpdesk' && (
+              <ClientHelpdeskSection
+                token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'}
+                clientId={sessionData?.journeys?.[0]?.client?.id || me?.id || activeToken || 'client'}
+              />
             )}
           </main>
         </div>
@@ -780,7 +986,7 @@ export default function ClientPortal() {
         </div>
       </footer>
       {/* Mobile Bottom Nav — thumb zone, fixed, 44px min targets */}
-      <ClientMobileNav active={portalTab as any} onChange={(t) => setPortalTab(t as any)} />
+      <ClientMobileNav active={portalTab} onChange={(t) => navigateTab(t)} />
       <ChatWidget
         user={{
           id: me?.id || sessionData?.journeys?.[0]?.client?.id || activeToken,
@@ -797,8 +1003,8 @@ export default function ClientPortal() {
       <ClientCommandPalette
         open={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
-        onNavigateTab={(tab) => setPortalTab(tab as any)}
-        onOpenUpload={() => setPortalTab('vault' as any)}
+        onNavigateTab={(tab) => navigateTab(tab)}
+        onOpenUpload={() => navigateTab('vault')}
         onOpenFeedback={() => setFeedbackModalOpen(true)}
         counselorName={sessionData?.journeys?.[0]?.assignedCounselor?.name}
       />
@@ -2100,562 +2306,3 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
     </div>
   );
 }
-
-type JobRow = { id: string; title: string; country: string; sector: string; salaryText: string; collar: string; employer?: string; description?: string; salaryMinPaise?: number | null; salaryMaxPaise?: number | null; currency?: string; vacancies?: number; benefits?: string[]; requirements?: string[]; experienceYearsMin?: number; tradeCategory?: string; visaProvided?: boolean; medicalRequired?: boolean; deadline?: number | null; featured?: boolean; exclusive?: boolean };
-
-type JobApplication = {
-  id: string;
-  jobId: string;
-  jobTitle: string;
-  jobCountry: string;
-  selectionStatus: string;
-  medicalStatus: string;
-  visaStatus: string;
-  flightStatus: string;
-  appliedAt?: number | null;
-  rejectionReason?: string | null;
-  resumeKey?: string | null;
-  notes?: string | null;
-  matchScore?: number;
-  matchTier?: 'top_match' | 'standard' | 'cold_pool';
-  matchStrengths?: string[];
-  matchGaps?: string[];
-};
-
-type VasPlan = {
-  key: string;
-  title: string;
-  description: string;
-  pricePaise: number;
-  durationDays: number;
-  deliverable: string;
-};
-
-const COLLAR = { blue_collar: 'Blue Collar', white_collar: 'White Collar' } as Record<string, string>;
-const SEL = { applied: 'Applied', shortlisted: 'Shortlisted', selected: 'Selected', rejected: 'Rejected' } as Record<string, string>;
-const MED = { pending: 'Medical Pending', fit: 'Medically Fit', unfit: 'Unfit', restricted: 'Restricted' } as Record<string, string>;
-const VISA = { pending: 'Visa Pending', submitted: 'Visa Submitted', stamped: 'Visa Stamped', rejected: 'Visa Rejected' } as Record<string, string>;
-const FLT = { pending: 'Awaiting Flight', booked: 'Flight Booked', deployed: 'Deployed' } as Record<string, string>;
-
-function ManpowerJobs({ token }: { token: string }) {
-  const [view, setView] = useState<'browse' | 'apply' | 'tracker' | 'vas'>('browse');
-  const [selectedJob, setSelectedJob] = useState<JobRow | null>(null);
-  const [applying, setApplying] = useState(false);
-  const [resumeKey, setResumeKey] = useState<string | null>(null);
-  const [resumeName, setResumeName] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const [turnstileToken] = useState<string>('cf_ts_simulated_token_' + Date.now());
-  const [form, setForm] = useState(() => ({
-    personal: { fullName: '', dob: '', gender: 'male', maritalStatus: 'single', nationality: 'Indian', currentCity: '', currentState: '', languages: '' },
-    contact: { phone: '', email: '', alternatePhone: '', emergencyContact: '', emergencyPhone: '' },
-    passport: { hasPassport: true, passportNumber: '', issueDate: '', expiryDate: '' },
-    experience: { totalYears: 0, currentRole: '', currentEmployer: '', skills: '', willingToTravel: true, availableFrom: '' },
-    education: { highestQualification: '', institution: '', fieldOfStudy: '' },
-    salary: { currentSalaryPaise: '', expectedSalaryPaise: '', noticePeriodDays: 0 },
-    medical: { selfDeclaredFit: true, hasChronicCondition: false },
-    additional: { tradeCertifications: '', drivingLicense: '', references: '' },
-  }));
-
-  const { data: jobsData, refetch: refetchJobs } = useQuery<{ jobs: JobRow[] }>({
-    queryKey: ['portalManpowerJobs', token],
-    staleTime: 60_000,
-    queryFn: async () => { const r = await fetch(`${API}/api/public/portal/manpower/jobs`, { headers: token ? { 'X-Portal-Token': token } : {} }); if (!r.ok) throw new Error('jobs'); return r.json(); },
-  });
-  const jobs = jobsData?.jobs || [];
-  const [exclusiveFilter, setExclusiveFilter] = useState<'all' | 'exclusive'>('all');
-  const visibleJobs = (() => {
-    const filtered = exclusiveFilter === 'exclusive' ? jobs.filter((j) => j.exclusive) : jobs;
-    const seen = new Set<string>();
-    return filtered.filter((j) => {
-      if (seen.has(j.id)) return false;
-      seen.add(j.id);
-      return true;
-    });
-  })();
-
-  const { data: appsData, refetch: refetchApps } = useQuery<{ applications: JobApplication[]; activeCount?: number; maxQuota?: number }>({
-    queryKey: ['portalManpowerApps', token],
-    staleTime: 30_000,
-    queryFn: async () => { const r = await fetch(`${API}/api/public/portal/manpower/applications?token=${encodeURIComponent(token)}`); if (!r.ok) throw new Error('apps'); return r.json(); },
-    enabled: !!token,
-  });
-  const applications = appsData?.applications || [];
-  const activeCount = appsData?.activeCount ?? applications.filter(d => !['rejected'].includes(d.selectionStatus) && d.flightStatus !== 'deployed').length;
-  const maxQuota = appsData?.maxQuota ?? 3;
-
-  const { data: vasData } = useQuery<{ plans: VasPlan[] }>({
-    queryKey: ['portalManpowerVas'],
-    staleTime: 300_000,
-    queryFn: async () => { const r = await fetch(`${API}/api/public/portal/manpower/vas-plans`); if (!r.ok) throw new Error('vas'); return r.json(); },
-  });
-  const vasPlans = vasData?.plans || [];
-
-  const up = (section: string, key: string, value: any) => setForm((f) => ({ ...f, [section]: { ...(f as any)[section], [key]: value } }));
-
-  // Calculate local profile readiness percentage
-  const profileReadiness = Math.min(100, (
-    (form.personal.fullName && form.personal.dob ? 20 : 0) +
-    (form.contact.phone && form.contact.email ? 20 : 0) +
-    (form.passport.passportNumber ? 20 : 0) +
-    (form.experience.skills ? 20 : 0) +
-    (form.education.highestQualification ? 20 : 0)
-  ));
-
-  const uploadResume = async (file: File) => {
-    setUploading(true); setMsg(null);
-    try {
-      const fd = new FormData(); fd.append('resume', file); fd.append('token', token);
-      const r = await fetch(`${API}/api/public/manpower/resume`, { method: 'POST', body: fd });
-      const j = await r.json();
-      if (!r.ok || !j.resumeKey) throw new Error(j.error || 'Resume upload failed');
-      setResumeKey(j.resumeKey); setResumeName(file.name);
-    } catch (e: any) { setMsg({ ok: false, text: e.message }); } finally { setUploading(false); }
-  };
-
-  const buildFormJson = () => ({
-    personal: { ...form.personal, languages: form.personal.languages.split(',').map((s) => s.trim()).filter(Boolean) },
-    contact: form.contact,
-    passport: form.passport,
-    experience: { ...form.experience, skills: form.experience.skills.split(',').map((s) => s.trim()).filter(Boolean), totalYears: Number(form.experience.totalYears) || 0 },
-    education: form.education,
-    salary: { currentSalaryPaise: form.salary.currentSalaryPaise ? Math.round(Number(form.salary.currentSalaryPaise) * 100) : undefined, expectedSalaryPaise: form.salary.expectedSalaryPaise ? Math.round(Number(form.salary.expectedSalaryPaise) * 100) : undefined, noticePeriodDays: Number(form.salary.noticePeriodDays) || 0 },
-    medical: form.medical,
-    additional: { ...form.additional, tradeCertifications: form.additional.tradeCertifications.split(',').map((s) => s.trim()).filter(Boolean) },
-  });
-
-  const submit = async () => {
-    if (activeCount >= maxQuota) {
-      setMsg({ ok: false, text: `Active application quota reached (${activeCount}/${maxQuota}). Please await decision on current applications.` });
-      return;
-    }
-    setApplying(true); setMsg(null);
-    try {
-      const r = await fetch(`${API}/api/public/portal/manpower/applications`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          jobId: selectedJob!.id,
-          formJson: buildFormJson(),
-          resumeKey,
-          turnstileToken
-        }),
-      });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error || 'Submit failed' + (j.missingSections ? ` (missing: ${j.missingSections.join(', ')})` : ''));
-      refetchApps();
-      setView('tracker');
-      setMsg({
-        ok: true,
-        text: j.message || `Application submitted! Match Score: ${j.matchScore}%`
-      });
-    } catch (e: any) { setMsg({ ok: false, text: e.message }); } finally { setApplying(false); }
-  };
-
-  const { data: membershipData, refetch: refetchMembership } = useQuery<{ enabled: boolean; comingSoon: boolean; membership: { isMember: boolean; expiresAt: number | null; plan: string | null }; plans: { key: string; name: string; description?: string; pricePaise: number; durationDays: number; tier: string; perks: string[] }[] }>({
-    queryKey: ['portalManpowerMembership', token],
-    staleTime: 60_000,
-    queryFn: async () => { const r = await fetch(`${API}/api/public/portal/manpower/membership`, { headers: { 'X-Portal-Token': token } }); if (!r.ok) throw new Error('membership'); return r.json(); },
-    enabled: !!token,
-  });
-  const membership = membershipData?.membership;
-  const plans = membershipData?.plans || [];
-  const [payBusy, setPayBusy] = useState(false);
-  const [acceptedVasTerms, setAcceptedVasTerms] = useState(false);
-
-  const loadRazorpay = () => new Promise<boolean>((resolve) => {
-    if ((window as any).Razorpay) return resolve(true);
-    const sc = document.createElement('script');
-    sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    sc.onload = () => resolve(true);
-    sc.onerror = () => resolve(false);
-    document.body.appendChild(sc);
-  });
-
-  const subscribe = async (planKey: string) => {
-    setPayBusy(true); setMsg(null);
-    try {
-      const loaded = await loadRazorpay();
-      if (!loaded) throw new Error('Razorpay checkout failed to load.');
-      const oRes = await fetch(`${API}/api/public/portal/manpower/membership/order`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, planKey }),
-      });
-      const o = await oRes.json();
-      if (!oRes.ok || !o.order_id) throw new Error(o.error || 'Failed to create order');
-      const result = await new Promise<{ razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string } | null>((resolve) => {
-        const rz = new (window as any).Razorpay({
-          key: o.key, amount: o.amount_paise, currency: o.currency || 'INR',
-          name: 'Opus Overseas', description: 'Exclusive Jobs Membership',
-          order_id: o.order_id,
-          handler: (res: any) => resolve({ razorpay_payment_id: res.razorpay_payment_id, razorpay_order_id: res.razorpay_order_id, razorpay_signature: res.razorpay_signature }),
-          modal: { ondismiss: () => resolve(null) },
-        });
-        rz.open();
-      });
-      if (!result) { setMsg({ ok: false, text: 'Payment window closed.' }); return; }
-      const vRes = await fetch(`${API}/api/public/portal/manpower/membership/verify`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, planKey, ...result }),
-      });
-      const v = await vRes.json();
-      if (!vRes.ok) throw new Error(v.error || 'Verification failed');
-      refetchMembership(); refetchJobs(); setMsg({ ok: true, text: v.message || 'Membership activated!' });
-    } catch (e: any) { setMsg({ ok: false, text: e.message }); } finally { setPayBusy(false); }
-  };
-
-  const purchaseVas = async (serviceKey: string) => {
-    setPayBusy(true); setMsg(null);
-    try {
-      const loaded = await loadRazorpay();
-      if (!loaded) throw new Error('Razorpay checkout failed to load.');
-      const oRes = await fetch(`${API}/api/public/portal/manpower/vas/order`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, serviceKey }),
-      });
-      const o = await oRes.json();
-      if (!oRes.ok || !o.order_id) throw new Error(o.error || 'Failed to initialize service order');
-
-      const result = await new Promise<{ razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string } | null>((resolve) => {
-        const rz = new (window as any).Razorpay({
-          key: o.key, amount: o.amount_paise, currency: o.currency || 'INR',
-          name: 'Opus Overseas Career Advisory', description: o.title || 'Career Service',
-          order_id: o.order_id,
-          handler: (res: any) => resolve({ razorpay_payment_id: res.razorpay_payment_id, razorpay_order_id: res.razorpay_order_id, razorpay_signature: res.razorpay_signature }),
-          modal: { ondismiss: () => resolve(null) },
-        });
-        rz.open();
-      });
-      if (!result) { setMsg({ ok: false, text: 'Payment window closed.' }); return; }
-
-      const vRes = await fetch(`${API}/api/public/portal/manpower/vas/verify`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, serviceKey, ...result }),
-      });
-      const v = await vRes.json();
-      if (!vRes.ok) throw new Error(v.error || 'Payment verification failed');
-      setMsg({ ok: true, text: v.message || 'Career service confirmed! Our team will reach out.' });
-    } catch (e: any) { setMsg({ ok: false, text: e.message }); } finally { setPayBusy(false); }
-  };
-
-  const input = 'w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-white placeholder:text-white/30 focus:border-brand-gold focus:outline-none';
-  const label = 'block text-[13px] uppercase tracking-wider text-white/60 font-bold mb-1.5';
-  const pill = (active: boolean) => `px-3 py-1.5 rounded-full text-[13px] font-bold uppercase tracking-wider transition cursor-pointer ${active ? 'bg-brand-gold text-brand-navy' : 'border border-white/15 text-white/60 hover:text-white'}`;
-  const sectionTitle = 'text-[13px] font-bold uppercase tracking-widest text-brand-gold border-b border-white/10 pb-2 mb-3';
-  // legacy wizard state now delegated to ManpowerApplyWizard — keep refs to satisfy TS (enterprise cleanup pending)
-  void applying; void resumeKey; void resumeName; void uploading; void up; void profileReadiness; void uploadResume; void buildFormJson; void submit; void input; void label; void sectionTitle;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-full bg-white/5 p-1 w-fit border border-white/10">
-          <button onClick={() => setView('browse')} className={pill(view === 'browse')}>🧑‍🔧 Open Vacancies</button>
-          <button onClick={() => setView('tracker')} className={pill(view === 'tracker')}>📋 My Applications ({applications.length})</button>
-          <button onClick={() => setView('vas')} className={pill(view === 'vas')}>✨ Career Add-Ons</button>
-        </div>
-
-        {/* Anti-Spam Quota Indicator */}
-        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1 text-[13px]">
-          <span className="text-white/50">Active Quota:</span>
-          <span className={`font-bold ${activeCount >= maxQuota ? 'text-amber-400' : 'text-emerald-400'}`}>
-            {activeCount}/{maxQuota} Active
-          </span>
-          <span className="text-xs text-white/40 border-l border-white/10 pl-2">🛡️ Cloudflare Bot Guard</span>
-        </div>
-      </div>
-
-      {msg && <div className={`rounded-xl px-4 py-3 text-xs font-semibold ${msg.ok ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/15 text-rose-300'}`}>{msg.text}</div>}
-
-      {view === 'browse' && (
-        <>
-        {membership?.isMember ? (
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold text-emerald-300">✓ Exclusive Member</p>
-              <p className="text-[13px] text-emerald-300/70 mt-0.5">Plan: {membership.plan} · Expires: {membership.expiresAt ? new Date(membership.expiresAt * 1000).toLocaleDateString() : '—'}</p>
-            </div>
-            <span className="text-[13px] text-emerald-300/70">Secret job offers unlocked</span>
-          </div>
-        ) : membershipData?.comingSoon ? (
-          <div className="rounded-2xl border border-brand-gold/30 bg-brand-gold/[0.06] p-5 space-y-2">
-            <p className="text-[13px] font-bold uppercase tracking-widest text-brand-gold">🔒 Exclusive Jobs Community</p>
-            <p className="text-sm text-white/60">Coming soon — we're preparing exclusive job offers. You'll be able to join the paid community once openings are live.</p>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-brand-gold/30 bg-brand-gold/[0.06] p-5 space-y-3">
-            <div>
-              <p className="text-[13px] font-bold uppercase tracking-widest text-brand-gold">🔒 Exclusive Jobs Community</p>
-              <p className="text-sm text-white/60 mt-1">Join the paid community to unlock secret job offers. Apply directly, upload your resume, and get shortlisted by our recruitment desk.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {plans.map((p) => (
-                <div key={p.key} className="rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold text-white">{p.name}</p>
-                    <p className="text-[13px] text-white/40 mt-0.5">{p.description}</p>
-                    <p className="text-brand-gold font-bold text-lg mt-2">₹{(p.pricePaise / 100).toLocaleString('en-IN')}</p>
-                    <p className="text-[13px] text-white/40">{p.durationDays} days</p>
-                  </div>
-                  <button
-                    disabled={payBusy}
-                    onClick={() => subscribe(p.key)}
-                    className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-sm font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30 cursor-pointer"
-                  >
-                    {payBusy ? 'Processing…' : 'Subscribe'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Enterprise KPI Strip — Honest, visible on light */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">Open Vacancies</p>
-            <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-slate-800">{jobs.length}<span className="ml-2 text-xs font-bold text-emerald-600">● Live</span></p>
-            <p className="text-xs text-slate-500">{visibleJobs.length} showing · {jobs.filter(j=>j.featured).length} featured</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">Exclusive Access</p>
-            <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-slate-800">{membership?.isMember ? 'Unlocked' : `${jobs.filter(j=>j.exclusive).length} locked`}</p>
-            <p className="text-xs text-slate-500">{membership?.isMember ? 'Secret jobs visible' : 'Join community to unlock'}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">My Active Quota</p>
-            <p className={`mt-1 font-display text-2xl font-extrabold tracking-tight ${activeCount >= maxQuota ? 'text-amber-600' : 'text-slate-800'}`}>{activeCount}/{maxQuota}</p>
-            <p className="text-xs text-slate-500">{activeCount >= maxQuota ? 'Await decisions' : `${maxQuota - activeCount} slots remaining`}</p>
-          </div>
-        </div>
-
-        <div className="flex gap-1 rounded-full bg-white/5 p-1 w-fit border border-white/10">
-          <button onClick={() => setExclusiveFilter('all')} className={pill(exclusiveFilter === 'all')}>All Jobs</button>
-          <button onClick={() => setExclusiveFilter('exclusive')} className={pill(exclusiveFilter === 'exclusive')}>🔒 Exclusive</button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {visibleJobs.map((j) => (
-            <div key={j.id} className="group rounded-2xl border border-slate-200 bg-white p-5 flex flex-col justify-between gap-4 shadow-sm hover:border-brand-gold/30 hover:shadow-md transition-all duration-300">
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-display font-bold text-sm text-slate-800 leading-snug">{j.title}</h3>
-                  {j.featured && <span className="shrink-0 bg-brand-gold/15 text-brand-gold text-xs font-bold uppercase px-2 py-0.5 rounded">Featured</span>}
-                  {j.exclusive && <span className="shrink-0 bg-rose-500/15 text-rose-300 text-xs font-bold uppercase px-2 py-0.5 rounded">🔒 Exclusive</span>}
-                </div>
-                <div className="flex flex-wrap gap-2 text-[13px]">
-                  <span className="bg-slate-100 text-slate-600 rounded px-2 py-0.5 font-mono border border-slate-200">{j.country}</span>
-                  <span className="bg-slate-100 text-slate-600 rounded px-2 py-0.5">{j.sector}</span>
-                  <span className="bg-brand-gold/10 text-brand-gold rounded px-2 py-0.5 font-bold capitalize">{COLLAR[j.collar] || j.collar}</span>
-                </div>
-                {j.employer && <p className="text-sm text-slate-500">Employer: <span className="text-slate-700 font-medium">{j.employer}</span></p>}
-                {j.description && <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">{j.description}</p>}
-                {(j.benefits?.length || 0) > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {j.benefits!.slice(0, 4).map((b, i) => <span key={i} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-1.5 py-0.5 rounded">{b}</span>)}
-                  </div>
-                )}
-                {(j.requirements?.length || 0) > 0 && (
-                  <p className="text-[13px] text-slate-500">Requires: {j.requirements!.slice(0, 4).join(', ')}</p>
-                )}
-                {j.experienceYearsMin ? <p className="text-[13px] text-slate-500">Min {j.experienceYearsMin}+ yrs experience · {j.vacancies} opening{j.vacancies === 1 ? '' : 's'}</p> : null}
-              </div>
-              <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                <span className="text-brand-gold font-bold text-sm">{j.salaryText}</span>
-                <button
-                  disabled={activeCount >= maxQuota}
-                  onClick={() => { setSelectedJob(j); setView('apply'); setMsg(null); }}
-                  className="min-h-11 bg-brand-gold hover:bg-brand-gold-hover text-brand-navy text-sm font-extrabold uppercase tracking-wider px-5 rounded-xl transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-gold/30 cursor-pointer"
-                >
-                  {activeCount >= maxQuota ? 'Quota Full (3/3)' : 'Apply Free'}
-                </button>
-              </div>
-            </div>
-          ))}
-          {visibleJobs.length === 0 && <p className="col-span-full py-10 text-center text-xs text-slate-500">No open vacancies right now — check back soon.</p>}
-        </div>
-        </>
-      )}
-
-      {view === 'vas' && (
-        <div className="space-y-5">
-          {/* Honest Activity Strip — no fake numbers, building in public */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-            <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[13px] text-white/50 uppercase tracking-widest font-bold">Nizamabad HQ</p>
-              <p className="text-sm font-bold text-white mt-0.5">Trusted Guidance</p>
-            </div>
-            <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[13px] text-white/50 uppercase tracking-widest font-bold">Our Aim</p>
-              <p className="text-sm font-bold text-emerald-400 mt-0.5">Transparent steps</p>
-            </div>
-            <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[13px] text-white/50 uppercase tracking-widest font-bold">Your Data</p>
-              <p className="text-sm font-bold text-brand-gold mt-0.5">Handled with care</p>
-            </div>
-            <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
-              <p className="text-[13px] text-white/50 uppercase tracking-widest font-bold">To Apply</p>
-              <p className="text-sm font-bold text-white/80 mt-0.5">Free to start</p>
-            </div>
-          </div>
-
-          {/* Legal Safety, Selection & No-Refund Transparency Notice */}
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-5 space-y-3">
-            <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">
-              <span>⚠️</span>
-              <span>Important: First-Come, First-Served & No-Refund Policy</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-white/80 leading-relaxed">
-              <div className="space-y-1">
-                <p className="font-bold text-white flex items-center gap-1.5">
-                  <span className="text-amber-400">1.</span> First-Come, First-Served Employer Review
-                </p>
-                <p className="text-white/60">
-                  International hiring authorities evaluate candidates sequentially. If a candidate ahead of you is selected for a specific opening, your professional deliverable (ATS resume, interview coaching) remains permanently valid and active for all present and future overseas openings in your trade.
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="font-bold text-white flex items-center gap-1.5">
-                  <span className="text-amber-400">2.</span> No Job Guarantee & Non-Refundable Fee Policy
-                </p>
-                <p className="text-white/60">
-                  Under the <strong>Indian Emigration Act 1983</strong> and <strong>ILO C181</strong>, standard job recruitment is strictly free. These optional fees cover expert resume writing, mock interview coaching, and express screening labor. They <strong>do not guarantee employment or visa issuance</strong>. Fees are non-refundable once deliverable work commences.
-                </p>
-              </div>
-            </div>
-
-            {/* Checkbox Acknowledgment */}
-            <label className="flex items-start gap-2.5 cursor-pointer bg-black/20 border border-white/10 rounded-xl p-3 mt-1 hover:border-amber-400/40 transition">
-              <input
-                type="checkbox"
-                checked={acceptedVasTerms}
-                onChange={(e) => setAcceptedVasTerms(e.target.checked)}
-                className="mt-0.5 rounded border-white/30 text-brand-gold focus:ring-brand-gold cursor-pointer"
-              />
-              <span className="text-sm text-white/90">
-                I understand this is an optional professional career coaching & document enhancement service. It does not guarantee job selection or visa outcome, and fees are non-refundable once work begins.
-              </span>
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {vasPlans.map((plan) => (
-              <div key={plan.key} className="group rounded-2xl border border-white/15 bg-white/[0.06] p-5 flex flex-col justify-between gap-4 backdrop-blur hover:bg-white/[0.08] hover:border-brand-gold/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.25)] transition-all duration-300">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-bold uppercase tracking-widest text-brand-gold">{plan.durationDays} Days SLA</span>
-                    <span className="text-[13px] bg-white/10 text-white/70 px-2 py-0.5 rounded">Optional VAS</span>
-                  </div>
-                  <h4 className="font-display font-bold text-sm text-white">{plan.title}</h4>
-                  <p className="text-sm text-white/60 leading-relaxed">{plan.description}</p>
-                  <div className="rounded-lg bg-white/5 border border-white/10 p-2.5 text-[13px] text-white/70">
-                    <span className="text-brand-gold font-bold">Deliverable: </span>{plan.deliverable}
-                  </div>
-                  <div className="text-xs text-emerald-400/90 font-medium">
-                    {plan.key === 'ats_revamp' ? '🔥 78 candidates upgraded this month' : plan.key === 'mock_interview' ? '🎙️ 41 candidates prepped this month' : '⚡ 23 candidates fast-tracked this week'}
-                  </div>
-                </div>
-
-                <div className="border-t border-white/10 pt-3 flex items-center justify-between">
-                  <span className="text-brand-gold font-bold text-base">₹{(plan.pricePaise / 100).toLocaleString('en-IN')}</span>
-                  <button
-                    disabled={payBusy || !acceptedVasTerms}
-                    onClick={() => purchaseVas(plan.key)}
-                    className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy text-sm font-bold uppercase px-4 py-2 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    {payBusy ? 'Processing…' : !acceptedVasTerms ? 'Accept Terms' : 'Purchase'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {view === 'apply' && selectedJob && (
-        <ManpowerApplyWizard
-          job={selectedJob}
-          token={token}
-          turnstileToken={turnstileToken}
-          activeCount={activeCount}
-          maxQuota={maxQuota}
-          onClose={() => setView('browse')}
-          onSuccess={(message, _score) => {
-            refetchApps();
-            setView('tracker');
-            setMsg({ ok: true, text: message });
-          }}
-        />
-      )}
-
-      {view === 'tracker' && (
-        <div className="space-y-4">
-          {applications.map((a) => (
-            <div key={a.id} className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3 backdrop-blur">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-display font-bold text-sm text-white">{a.jobTitle}</h3>
-                    {a.matchScore !== undefined && (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${a.matchTier === 'top_match' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : a.matchTier === 'standard' ? 'bg-brand-gold/20 text-brand-gold border border-brand-gold/30' : 'bg-white/10 text-white/60'}`}>
-                        {a.matchTier === 'top_match' ? '🔥 ' : ''}{a.matchScore}% Match
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[13px] text-white/40 mt-0.5">{a.jobCountry} · applied {a.appliedAt ? new Date(a.appliedAt * 1000).toLocaleDateString() : ''}</p>
-                </div>
-                <span className={`px-2.5 py-1 rounded-full text-[13px] font-bold uppercase ${a.selectionStatus === 'rejected' ? 'bg-rose-500/15 text-rose-300' : a.selectionStatus === 'selected' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-brand-gold/15 text-brand-gold'}`}>{SEL[a.selectionStatus]}</span>
-              </div>
-
-              {/* Strengths & Matching Highlights */}
-              {(a.matchStrengths?.length || 0) > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {a.matchStrengths!.map((st, i) => (
-                    <span key={i} className="bg-emerald-500/10 text-emerald-300 text-xs px-2 py-0.5 rounded-md flex items-center gap-1">
-                      <span>✓</span> {st}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Enterprise Decision Timeline — operational dashboard hierarchy (NN/g) */}
-              <div className="relative rounded-xl border border-white/10 bg-white/[0.04] p-3.5">
-                <div className="flex items-center justify-between gap-2">
-                  {[
-                    { label: 'Applied', done: true, active: a.selectionStatus !== 'applied', ok: a.selectionStatus !== 'rejected' },
-                    { label: 'Shortlisted', done: ['shortlisted','selected'].includes(a.selectionStatus), active: a.selectionStatus === 'shortlisted', ok: a.selectionStatus !== 'rejected' },
-                    { label: 'Selected', done: a.selectionStatus === 'selected', active: a.selectionStatus === 'selected', ok: a.selectionStatus !== 'rejected' },
-                    { label: 'Medical', done: a.medicalStatus === 'fit', active: a.medicalStatus === 'pending', ok: a.medicalStatus !== 'unfit' },
-                    { label: 'Visa', done: a.visaStatus === 'stamped', active: a.visaStatus === 'submitted', ok: a.visaStatus !== 'rejected' },
-                    { label: 'Deployed', done: a.flightStatus === 'deployed', active: a.flightStatus === 'booked', ok: true },
-                  ].map((s, i, arr) => (
-                    <div key={s.label} className="flex flex-1 items-center gap-2">
-                      <div className="flex flex-col items-center gap-1">
-                        <div className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-extrabold ${s.done ? (s.ok ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-rose-500 text-white border-rose-500') : s.active ? 'bg-brand-gold text-brand-navy border-brand-gold animate-pulse' : 'bg-white/10 text-white/40 border-white/15'}`}>{s.done ? '✓' : i+1}</div>
-                        <span className={`text-[13px] font-bold uppercase tracking-wider ${s.done ? 'text-white' : s.active ? 'text-brand-gold' : 'text-white/40'}`}>{s.label}</span>
-                      </div>
-                      {i < arr.length -1 && <div className={`h-px flex-1 ${s.done ? 'bg-emerald-500/50' : 'bg-white/10'}`} aria-hidden />}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                  <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"><span className="text-white/50 uppercase text-[13px] font-bold">Medical</span><p className={`font-bold ${a.medicalStatus === 'fit' ? 'text-emerald-300' : a.medicalStatus === 'unfit' ? 'text-rose-300' : 'text-white'}`}>{MED[a.medicalStatus]}</p></div>
-                  <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"><span className="text-white/50 uppercase text-[13px] font-bold">Visa</span><p className={`font-bold ${a.visaStatus === 'stamped' ? 'text-emerald-300' : a.visaStatus === 'rejected' ? 'text-rose-300' : 'text-white'}`}>{VISA[a.visaStatus]}</p></div>
-                  <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2"><span className="text-white/50 uppercase text-[13px] font-bold">Flight</span><p className={`font-bold ${a.flightStatus === 'deployed' ? 'text-emerald-300' : 'text-white'}`}>{FLT[a.flightStatus]}</p></div>
-                </div>
-              </div>
-              {a.rejectionReason && <p className="text-sm text-rose-300 bg-rose-500/10 rounded-lg px-3 py-2">Reason: {a.rejectionReason}</p>}
-              {a.notes && <p className="text-sm text-white/60 bg-white/5 rounded-lg px-3 py-2">Note: {a.notes}</p>}
-            </div>
-          ))}
-          {applications.length === 0 && (
-            <div className="py-10 text-center space-y-2">
-              <p className="text-xs text-white/50">You haven't applied to any vacancies yet.</p>
-              <button onClick={() => setView('browse')} className="bg-brand-gold text-brand-navy text-sm font-bold uppercase px-5 py-2.5 rounded-lg">Browse Open Jobs</button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-

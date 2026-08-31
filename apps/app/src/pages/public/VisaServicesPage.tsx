@@ -15,7 +15,7 @@ import { getBookingUrlForDivision } from '../../config/booking';
 import BookingModal from '../../components/BookingModal';
 import DomainBackdrop from '../../components/DomainBackdrop';
 import DomainDarkGraphics from '../../components/DomainDarkGraphics';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 const VISA_FAQS = [
   {

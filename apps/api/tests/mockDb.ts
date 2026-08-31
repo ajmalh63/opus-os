@@ -82,10 +82,15 @@ export class MockD1Database {
     feedback_submissions: [] as any[],
     utm_events: [] as any[],
     ga_events: [] as any[],
+    visa_deadlines: [] as any[],
+    payment_schedules: [] as any[],
+    two_factor: [] as any[],
+    support_tickets: [] as any[],
+    ticket_messages: [] as any[],
   };
 
   private getTableName(sql: string): string {
-    const match = sql.match(/(?:from|into|update)\s+(\w+)/i);
+    const match = sql.match(/(?:from|into|update|delete\s+from)\s+(\w+)/i);
     return match ? match[1] : '';
   }
 
@@ -135,15 +140,16 @@ export class MockD1Database {
   private async execute(sql: string, tableName: string, params: any[]) {
     // 0. DELETE FROM — WHERE <col> = ? (drizzle .delete().where(eq()))
     if (sql.toUpperCase().startsWith('DELETE')) {
-      const whereMatch = sql.match(/where\s+([\w_]+)\s*=\s*\?/i);
-      if (whereMatch) {
+      const whereMatch = sql.match(/where\s+(?:[`"]?[\w_]+[`"]?\.)?[`"]?([\w_]+)[`"]?\s*=\s*\?/i);
+      if (whereMatch && (this.tables as any)[tableName]) {
         const col = whereMatch[1];
-        const camel = col.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+        const camel = col.replace(/_([a-z0-9])/g, (g) => g[1].toUpperCase());
+        const snake = col.replace(/([A-Z])/g, "_$1").toLowerCase();
         const value = params[0];
         (this.tables as any)[tableName] = (this.tables as any)[tableName].filter(
-          (r: any) => String(r[col] ?? r[camel]) !== String(value)
+          (r: any) => String(r[col] ?? r[camel] ?? r[snake]) !== String(value)
         );
-      } else {
+      } else if ((this.tables as any)[tableName]) {
         (this.tables as any)[tableName] = [];
       }
       return { success: true, results: [] };
@@ -160,7 +166,7 @@ export class MockD1Database {
       if (conflictTarget || doNothing) {
         const colsMatch = parts[0].match(/\(([^)]+)\)/);
         if (colsMatch) {
-          const columns = colsMatch[1].split(',').map(c => c.trim());
+          const columns = colsMatch[1].split(',').map(c => c.trim().replace(/[`"]/g, ''));
           const conflictIdx = conflictTarget ? columns.indexOf(conflictTarget) : -1;
           if (conflictTarget && conflictIdx >= 0 && params[conflictIdx] !== undefined) {
             const existing = (this.tables as any)[tableName].find(
@@ -176,13 +182,15 @@ export class MockD1Database {
                   const col = m[1];
                   const val = params[columns.length + i];
                   existing[col] = val;
-                  const camelKey = col.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+                  const camelKey = col.replace(/_([a-z0-9])/g, (g) => g[1].toUpperCase());
+                  const snakeKey = col.replace(/([A-Z])/g, "_$1").toLowerCase();
                   existing[camelKey] = val;
+                  existing[snakeKey] = val;
                 });
                 return { success: true, results: [existing] };
               }
               if (incrementCol) {
-                const camelKey = incrementCol.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+                const camelKey = incrementCol.replace(/_([a-z0-9])/g, (g) => g[1].toUpperCase());
                 const cur = Number(existing[incrementCol] ?? existing[camelKey]) || 0;
                 existing[incrementCol] = cur + 1;
                 existing[camelKey] = cur + 1;
@@ -212,7 +220,7 @@ export class MockD1Database {
       const valsMatch = parts[1].match(/\(([^)]+)\)/);
       if (!colsMatch || !valsMatch) return { success: true, results: [] };
       
-      const columns = colsMatch[1].split(',').map(c => c.trim());
+      const columns = colsMatch[1].split(',').map(c => c.trim().replace(/[`"]/g, '').replace(/^[a-zA-Z0-9_]+\./, ''));
       const valTokens = valsMatch[1].split(',').map(v => v.trim());
       
       const row: any = {};
@@ -221,15 +229,25 @@ export class MockD1Database {
         const token = valTokens[idx];
         if (!token) return;
         
+        let val: any = null;
         if (token === '?') {
-          row[col] = params[paramIdx++];
+          val = params[paramIdx++];
         } else if (token.toLowerCase() === 'null') {
-          row[col] = null;
+          val = null;
         } else {
-          row[col] = token.replace(/^['"]|['"]$/g, '');
+          val = token.replace(/^['"]|['"]$/g, '');
         }
+
+        const camelKey = col.replace(/_([a-z0-9])/g, (g) => g[1].toUpperCase());
+        const snakeKey = col.replace(/([A-Z])/g, "_$1").toLowerCase();
+        row[col] = val;
+        row[camelKey] = val;
+        row[snakeKey] = val;
       });
       
+      if (!(this.tables as any)[tableName]) {
+        (this.tables as any)[tableName] = [];
+      }
       (this.tables as any)[tableName].push(row);
       return { success: true, results: [row] };
     }
@@ -240,14 +258,14 @@ export class MockD1Database {
       if (tableList) {
         // Match rows by WHERE column equality (params correspond to SET terms then WHERE terms)
         const setClauseMatch = sql.match(/SET\s+(.+?)\s+WHERE/i);
-        const whereMatches = [...(sql.match(/WHERE\s+([\w_]+)\s*=\s*\?/i) || [])];
+        const whereMatches = [...(sql.match(/WHERE\s+(?:[`"]?[\w_]+[`"]?\.)?[`"]?([\w_]+)[`"]?\s*=\s*\?/i) || [])];
         const whereCol = whereMatches.length ? whereMatches[1] : null;
         let row = null;
         if (setClauseMatch && whereCol) {
           const setTermCount = setClauseMatch[1].split(',').length;
           const whereVal = params[setTermCount]; // value after all SET params
           row = tableList.find((r: any) => {
-            const camelKey = whereCol.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+            const camelKey = whereCol.replace(/_([a-z0-9])/g, (g) => g[1].toUpperCase());
             const snakeKey = whereCol.replace(/([A-Z])/g, "_$1").toLowerCase();
             const val = r[whereCol] ?? r[camelKey] ?? r[snakeKey];
             return val !== undefined && String(val) === String(whereVal);
@@ -255,16 +273,18 @@ export class MockD1Database {
         } else {
           // legacy fallback: match on last param vs id|client_id
           const idParam = params[params.length - 1];
-          row = tableList.find((r: any) => r.id === idParam || r.client_id === idParam);
+          row = tableList.find((r: any) => r.id === idParam || r.client_id === idParam || r.clientId === idParam);
         }
         if (row && setClauseMatch) {
           const setTerms = setClauseMatch[1].split(',').map(t => t.trim());
           setTerms.forEach((term, idx) => {
-            const col = term.split('=')[0].trim();
+            const col = term.split('=')[0].trim().replace(/[`"]/g, '').replace(/^[a-zA-Z0-9_]+\./, '');
             const val = params[idx];
+            const camelKey = col.replace(/_([a-z0-9])/g, (g) => g[1].toUpperCase());
+            const snakeKey = col.replace(/([A-Z])/g, "_$1").toLowerCase();
             row[col] = val;
-            const camelKey = col.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
             row[camelKey] = val;
+            row[snakeKey] = val;
           });
         }
       }
@@ -278,20 +298,26 @@ export class MockD1Database {
       if (sql.toLowerCase().includes('where')) {
         const whereIndex = sql.toLowerCase().indexOf('where');
         const whereClause = sql.substring(whereIndex + 5);
-        const eqMatches = [...whereClause.matchAll(/([\w_]+)\s*=\s*\?/g)];
-        const lteMatches = [...whereClause.matchAll(/([\w_]+)\s*<=\s*\?/g)];
+        const eqMatches = [...whereClause.matchAll(/(?:[`"]?[\w_]+[`"]?\.)?[`"]?([\w_]+)[`"]?\s*=\s*\?/g)];
+        const lteMatches = [...whereClause.matchAll(/(?:[`"]?[\w_]+[`"]?\.)?[`"]?([\w_]+)[`"]?\s*<=\s*\?/g)];
         if (eqMatches.length > 0 || lteMatches.length > 0) {
           results = results.filter(row => {
             const rowKey = (key: string) => {
-              const k = [key, key.replace(/_([a-z])/g, (g) => g[1].toUpperCase()), key.replace(/([A-Z])/g, "_$1").toLowerCase()];
+              const k = [key, key.replace(/_([a-z0-9])/g, (g) => g[1].toUpperCase()), key.replace(/([A-Z])/g, "_$1").toLowerCase()];
               return k.map(x => row[x]).find(v => v !== undefined);
+            };
+
+            const normalizeVal = (v: any) => {
+              if (v === false || v === 'false' || v === 0 || v === '0') return '0';
+              if (v === true || v === 'true' || v === 1 || v === '1') return '1';
+              return String(v);
             };
 
             // Equality conditions consume params[0..eqMatches.length)
             const eqOk = eqMatches.every((m, idx) => {
               const val = params[idx];
               const rowVal = rowKey(m[1]);
-              return rowVal !== undefined && String(rowVal) === String(val);
+              return rowVal !== undefined && normalizeVal(rowVal) === normalizeVal(val);
             });
 
             // lte conditions consume params[eqMatches.length + i]

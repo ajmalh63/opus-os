@@ -65,7 +65,7 @@ export default function PartnerDashboardHub({
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `Plan your Study Abroad, Visa Stamping, or Umrah journey with Opus Overseas. Get verified counseling and fast-track processing: ${referralUrl}`
+      `Plan your Study Abroad, Global Visa, Tours & Travels, or Overseas Career journey with Opus Overseas. Get verified counseling and fast-track processing: ${referralUrl}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -340,9 +340,8 @@ export default function PartnerDashboardHub({
                 className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 outline-none focus:border-brand-gold"
               >
                 <option value="study_abroad">🎓 Study Abroad (Admissions)</option>
-                <option value="visa_services">🛂 Visa Processing</option>
-                <option value="umrah_pilgrimage">🕋 Umrah Pilgrimage</option>
-                <option value="attestation">📑 Document Attestation</option>
+                <option value="visa_services">🛂 Global Visa Processing</option>
+                <option value="tours_travels">🧳 Tours & Travels (Holidays & Umrah)</option>
                 <option value="global_jobs">💼 Overseas Jobs & Manpower</option>
               </select>
             </div>

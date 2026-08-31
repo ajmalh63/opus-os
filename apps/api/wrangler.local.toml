@@ -1,0 +1,165 @@
+# ============================================================================
+# wrangler.local.toml — OFFLINE LOCAL DEV ONLY (never deploy this file)
+#
+# Why this exists:
+#   `wrangler dev` with the [ai] (Workers AI) and [[vectorize]] bindings
+#   ALWAYS runs those bindings remotely, even in local mode. That forces a
+#   "remote proxy session" which dies with a connect timeout on offline /
+#   flaky networks, killing the whole dev server.
+#
+#   This config is identical to wrangler.toml EXCEPT:
+#     - the [[vectorize]] block (VECTOR_INDEX) is REMOVED
+#     - the [ai] block (AI) is REMOVED
+#   The code already degrades gracefully without those bindings
+#   (see src/infra/vector.ts — checks `if (!env.VECTOR_INDEX)`), so semantic
+#   search/AI features simply return empty/degraded results locally.
+#
+#   Production deploys use wrangler.toml (with AI + Vectorize) as before:
+#     wrangler deploy
+#
+# Usage:
+#   cd apps/api && npx wrangler dev --config wrangler.local.toml --port 8787
+# ============================================================================
+name = "opusos-api"
+main = "src/index.ts"
+compatibility_date = "2026-08-18" # keep current per Cloudflare Workers best practices
+compatibility_flags = [ "nodejs_compat" ]
+workers_dev = true
+
+# ============================================================
+# Cloudflare Workers Smart Placement (100% Free)
+# Automatically runs worker execution in optimal data centers
+# closest to D1 database to minimize multi-roundtrip network hops.
+# ============================================================
+[placement]
+mode = "smart"
+
+# ============================================================
+# Cloudflare Workers Observability
+# ============================================================
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+
+# ============================================================
+# Wave 1 — Uptime Kuma push heartbeat producer (cron).
+# Every 6h the scheduled handler pings KUMA_PUSH_URL with status
+# up/down (D1 reachability). Set the URL after creating the push
+# monitor: prod → `wrangler secret put KUMA_PUSH_URL`.
+# ============================================================
+[triggers]
+crons = [ "0 */6 * * *", "0 3 1 * *", "30 3 1 * *", "0 4 * * 1", "0 2 * * *" ]
+
+# NOTE — credential-bearing vars are NOT in [vars] (they would ship to any
+# deploy verbatim). Local dev values live in .dev.vars (gitignored); production
+# MUST use `wrangler secret put` for: ENVIRONMENT, TURNSTILE_SECRET_KEY,
+# MANPOWER_AI, AUTOMATION_TOKEN, ADMIN_PASSWORD, OPENWA_API_KEY, WA_WEBHOOK_SECRET.
+[vars]
+
+# Wave 1 — Uptime Kuma push monitor URL (heartbeat cron). DEV placeholder;
+# production MUST use `wrangler secret put KUMA_PUSH_URL` (never in [vars]).
+KUMA_PUSH_URL = ""
+
+# First-run owner bootstrap (auth gateway). ADMIN_EMAIL is public-safe;
+# ADMIN_PASSWORD lives in .dev.vars (local) / `wrangler secret put ADMIN_PASSWORD` (prod).
+ADMIN_EMAIL = "ajmalsn63@gmail.com"
+
+# NOTE — BETTER_AUTH_SECRET is intentionally NOT in [vars] (it is a secret):
+#   local dev  → put it in `.dev.vars` (gitignored)
+#   production → `wrangler secret put BETTER_AUTH_SECRET` (encrypted, hidden)
+# It signs better-auth session cookies and presigned upload URLs. Missing it
+# makes auth + document uploads fail-closed with a clear error.
+
+# ============================================================
+# Unified messaging — PRODUCTION VIA CLOUDFLARE TUNNEL (Tunnel 6f1a97cc...)
+# All services now routed via public hostnames (listmonk.opusoverseas.com etc.)
+# Tailscale IPs remain as fallback for local dev via .dev.vars override.
+# ============================================================
+WA_PROVIDER = "openwa"
+OPENWA_BASE_URL = "https://wa.opusoverseas.com"
+OPENWA_API_URL = "https://wa.opusoverseas.com"
+OPENWA_SESSION_ID = "main"
+
+# ERPNext back-office integration (Frappe REST) — owner-only sync endpoints
+ERPNEXT_BASE_URL = "https://erpnext.opusoverseas.com"
+CHATWOOT_BASE_URL = "https://chat.opusoverseas.com"
+N8N_BASE_URL = "https://n8n.opusoverseas.com"
+KUMA_BASE_URL = "https://status.opusoverseas.com"
+UMAMI_BASE_URL = "https://analytics.opusoverseas.com"
+TWENTY_BASE_URL = "https://crm.opusoverseas.com"
+MAUTIC_URL = "https://mautic.opusoverseas.com"
+LISTMONK_BASE_URL = "https://listmonk.opusoverseas.com"
+# ── Unified Docker fleet — all via public hostnames (Cloudflare Tunnel 6f1a97cc...) ──
+# Tailscale IPs remain as local-dev fallback via .dev.vars override only
+NOCODB_BASE_URL = "https://nocodb.opusoverseas.com"
+POSTIZ_BASE_URL = "https://postiz.opusoverseas.com"
+SOCIAL_BASE_URL = "https://social.opusoverseas.com"
+OPENREPLY_BASE_URL = "https://openreply.opusoverseas.com"
+ERP_BASE_URL = "https://erp.opusoverseas.com"
+INDIA_POST_BASE_URL = "https://india-post.opusoverseas.com"
+
+account_id = "b66f3697a847cba87b1fd44bc8a13827"
+
+# NOTE: [[routes]] removed from this local config — zone_name route
+# validation is meaningless offline and `wrangler dev --local` ignores
+# routes anyway; dropping it avoids any zone lookup/permission prompts.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "opusos-db"
+database_id = "0cc0da81-bddf-43e8-8298-6adad0472cd9"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "opusdocs"
+preview_bucket_name = "opusdocs"
+
+# NOTE: queues are producer-only here (no [[queues.consumers]] yet — same as
+# wrangler.toml). `wrangler dev` accepts producer-only queues; messages sent
+# locally are simply dropped with a warning until the consumer lands (H1).
+
+[[queues.producers]]
+queue = "opusos-jobs-queue"
+binding = "JOBS_QUEUE"
+
+[[queues.producers]]
+queue = "opusos-dlq"
+binding = "DLQ"
+
+# ============================================================
+# KV - cache + feature flags ONLY (Section 3.4 / 18.4.2)
+# Sessions deliberately live in D1 (KV free tier = 1k writes/day).
+# ============================================================
+[[kv_namespaces]]
+binding = "KV"
+id = "578e838ad5484185875c62fe1e0adce5"
+preview_id = "578e838ad5484185875c62fe1e0adce5"
+
+# [[vectorize]] — REMOVED in local config (see header). Prod keeps it in wrangler.toml.
+# [ai] — REMOVED in local config (see header). Prod keeps it in wrangler.toml.
+
+# ============================================================
+# Durable Objects - Team Hub (§5.5) + Sync Fabric v2 (Gold-standard Hibernatable WS)
+# TeamHub stays internal-only; SyncHub is the public-safe bus for client/partner/staff sync.
+# Local dev: DOs run in workerd via `wrangler dev --local`.
+# ============================================================
+[[durable_objects.bindings]]
+name = "TEAM_HUB"
+class_name = "TeamHubRoom"
+
+[[durable_objects.bindings]]
+name = "SYNC_HUB"
+class_name = "SyncHub"
+
+# NOTE: DO migrations are REQUIRED even in local dev — workerd refuses to
+# start SQLite-backed DO classes without them. Kept identical to wrangler.toml.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TeamHubRoom"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["SyncHub"]

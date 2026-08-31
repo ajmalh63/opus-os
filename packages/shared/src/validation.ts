@@ -538,3 +538,51 @@ export const manpowerVasVerifySchema = z.object({
 export type ManpowerApplicationInput = z.infer<typeof manpowerApplicationSchema>;
 export type ManpowerVasOrderInput = z.infer<typeof manpowerVasOrderSchema>;
 export type ManpowerVasVerifyInput = z.infer<typeof manpowerVasVerifySchema>;
+
+// 13. Helpdesk & Support Ticket Schemas
+export const createTicketSchema = z.object({
+  division: z.enum(['study-abroad', 'visa', 'umrah', 'attestation', 'manpower', 'billing', 'technical', 'general']).default('general'),
+  category: z.enum(['application_status', 'document_issue', 'payment_billing', 'visa_query', 'commission_payout', 'booking_change', 'technical_bug', 'escalation', 'other']).default('other'),
+  subject: z.string().min(3, 'Subject must be at least 3 characters').max(200),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(5000),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+  attachments: z.array(z.object({
+    id: z.string().optional(),
+    fileName: z.string(),
+    r2Key: z.string(),
+    sizeBytes: z.number().int().optional(),
+    mimeType: z.string().optional()
+  })).optional()
+});
+
+export const updateTicketStatusSchema = z.object({
+  status: z.enum(['open', 'in_progress', 'waiting_on_user', 'resolved', 'closed']),
+  note: z.string().max(1000).optional(),
+});
+
+export const assignTicketSchema = z.object({
+  assigneeId: z.string().nullable(),
+});
+
+export const createTicketMessageSchema = z.object({
+  message: z.string().min(1, 'Message is required').max(5000),
+  isInternalNote: z.boolean().default(false),
+  attachments: z.array(z.object({
+    id: z.string().optional(),
+    fileName: z.string(),
+    r2Key: z.string(),
+    sizeBytes: z.number().int().optional(),
+    mimeType: z.string().optional()
+  })).optional()
+});
+
+export const ticketSatisfactionSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  feedback: z.string().max(1000).optional()
+});
+
+export type CreateTicketInput = z.infer<typeof createTicketSchema>;
+export type UpdateTicketStatusInput = z.infer<typeof updateTicketStatusSchema>;
+export type AssignTicketInput = z.infer<typeof assignTicketSchema>;
+export type CreateTicketMessageInput = z.infer<typeof createTicketMessageSchema>;
+export type TicketSatisfactionInput = z.infer<typeof ticketSatisfactionSchema>;

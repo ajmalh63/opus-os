@@ -2,7 +2,7 @@ import { useLocation } from 'wouter';
 import { useSession } from '../../lib/session';
 import { useRevealRoot } from '../../lib/reveal';
 import { useQuery } from '@tanstack/react-query';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 const AUTH = {
   get Authorization() {

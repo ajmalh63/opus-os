@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRoute } from 'wouter';
 import { useSession } from '../lib/session';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+import OcrWorkbench from '../components/OcrWorkbench';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // ==========================================
 // 1. TYPE DEFINITIONS
@@ -261,8 +262,8 @@ export default function Client360() {
   const meCanAgreements = ['super_admin', 'manager', 'counselor', 'coordinator'].includes(meRole);
 
 
-  // Navigation tabs state
-  const [activeTab, setActiveTab] = useState<'tasks' | 'vault' | 'agreements' | 'payments' | 'umrah' | 'courier' | 'study-abroad' | 'visa' | 'attestation' | 'manpower'>('tasks');
+  // Navigation tabs state — includes PRD-001 Staff OCR Workbench (staff-only, never portal)
+  const [activeTab, setActiveTab] = useState<'tasks' | 'vault' | 'ocr' | 'agreements' | 'payments' | 'umrah' | 'courier' | 'study-abroad' | 'visa' | 'attestation' | 'manpower'>('tasks');
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
 
   // Timeline Filter State
@@ -1189,6 +1190,8 @@ export default function Client360() {
   const sidebarTabs = [
     { id: 'tasks', label: 'Tasks & Reminders' },
     { id: 'vault', label: 'Document Vault' },
+    // PRD-001 Staff OCR Workbench — staff-only, HITL, never client portal (owner constraint)
+    ...((['super_admin','manager','counselor','coordinator'].includes(meRole)) ? [{ id: 'ocr', label: 'OCR Workbench (Staff)' }] : []),
     ...(meCanAgreements ? [{ id: 'agreements', label: 'Service Agreements' }] : []),
     ...(meRole === 'super_admin' || meRole === 'manager' ? [{ id: 'payments', label: 'Milestones & GST' }] : []),
     ...(meRole === 'super_admin' || meRole === 'manager' ? [{ id: 'umrah', label: 'Tours & Travels' }] : []),
@@ -1726,6 +1729,14 @@ export default function Client360() {
                   </table>
                 </div>
               </div>
+            )}
+
+            {/* ==========================================
+                TAB 1b: STAFF OCR WORKBENCH (PRD-001, staff-only, HITL)
+                Never exposed to client portal — staff processes, client sees only status.
+                ========================================== */}
+            {activeTab === 'ocr' && (
+              <OcrWorkbench clientId={clientId} clientName={client?.name || ''} showToast={showToast} />
             )}
 
             {/* ==========================================

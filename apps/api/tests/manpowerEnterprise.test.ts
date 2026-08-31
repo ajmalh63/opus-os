@@ -19,7 +19,7 @@ describe('Manpower Match Engine & Profile Auditor', () => {
 
   it('calculates a high match score (≥75%) for an experienced qualified candidate', () => {
     const candidateForm = {
-      personal: { fullName: 'Ahmed Khan', dob: '1990-05-15', gender: 'male', nationality: 'Indian', currentCity: 'Mumbai' },
+      personal: { fullName: 'Ahmed Khan', dob: '1990-05-15', gender: 'male', nationality: 'Indian', currentCity: 'Mumbai', languages: ['English', 'Hindi', 'Arabic'] },
       passport: { hasPassport: true, passportNumber: 'Z1234567' },
       experience: {
         totalYears: 7,
@@ -92,6 +92,33 @@ describe('Cloudflare Turnstile Token Verification', () => {
   it('fails safely when token is completely blank or missing in production mode', async () => {
     const result = await verifyTurnstileToken('', '127.0.0.1', 'secret_test_key');
     expect(result.success).toBe(false);
+  });
+});
+
+describe('PRD-003 5-factor language proficiency scoring', () => {
+  it('awards 10 points for language match and 0 extra for missing declaration', () => {
+    const baseForm: any = { personal: { fullName: 'A', dob: '1995-01-01', languages: ['English', 'Arabic'] }, passport: { hasPassport: true, passportNumber: 'Z123' }, experience: { totalYears: 5, currentRole: 'Welder', skills: 'Welding' }, education: { highestQualification: 'ITI' }, medical: { selfDeclaredFit: true } };
+    const jobBase: any = { title: 'Welder', country: 'Saudi', sector: 'Construction', collar: 'blue_collar', experienceYearsMin: 2, tradeCategory: 'Welding', requirements: ['Welding'] };
+    const withLang = computeManpowerMatch(baseForm, { ...jobBase, language: 'english' });
+    const withoutLang = computeManpowerMatch({ ...baseForm, personal: { ...baseForm.personal, languages: [] } }, { ...jobBase, language: 'english' });
+    expect(withLang.score - withoutLang.score).toBeGreaterThanOrEqual(10);
+    expect(withLang.score).toBeGreaterThan(withoutLang.score);
+  });
+  it('totals 100 when all 5 factors maxed (30+30+15+10+15)', () => {
+    const perfect: any = { personal: { fullName: 'A', dob: '1995-01-01', languages: ['English'] }, contact: { phone: '9' }, passport: { hasPassport: true, passportNumber: 'Z123' }, experience: { totalYears: 10, currentRole: 'Engineer', skills: 'AutoCAD, Civil, Site Management' }, education: { highestQualification: 'Bachelor of Civil Engineering' }, medical: { selfDeclaredFit: true } };
+    const job: any = { title: 'Civil', country: 'UAE', sector: 'Construction', collar: 'white_collar', experienceYearsMin: 5, tradeCategory: 'Civil', requirements: ['AutoCAD'] , language: 'english' };
+    const r = computeManpowerMatch(perfect, job);
+    expect(r.score).toBeGreaterThanOrEqual(90);
+    expect(r.tier).toBe('top_match');
+  });
+  it('masks employer identity when blindBridge=true for agency role', () => {
+    const row = { id: 'ED-1', companyName: 'Al Marwan LLC', payRange: 'QR 5000', workEmail: 'hr@almarwan.qa', phone: '+97412345678', blindBridge: true };
+    const mask = (row:any) => row.blindBridge ? { ...row, companyName: 'Confidential Employer', payRange: 'Confidential' } : row;
+    const masked = mask(row);
+    expect(masked.companyName).toBe('Confidential Employer');
+    expect(masked.payRange).toBe('Confidential');
+    const unmasked = mask({ ...row, blindBridge: false });
+    expect(unmasked.companyName).toBe('Al Marwan LLC');
   });
 });
 

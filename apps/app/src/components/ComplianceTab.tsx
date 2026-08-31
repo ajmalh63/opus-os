@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRevealRoot } from '../lib/reveal';
 import { exportGstr1Pdf, exportGstr3bPdf, exportCaPackPdf } from '../lib/pdf';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // A-5: session-driven auth —- read the live better-auth cookie; no forged admin token.
 const nowPeriod = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
@@ -23,8 +23,8 @@ export default function ComplianceTab() {
   const { data: g1, refetch: r1, isFetching: f1 } = useQuery<any>({ queryKey: ['gstr1', period], queryFn: async () => (await fetch(`${API}/api/compliance/gstr1?period=${period}`, { credentials: 'include' })).json(), enabled: false });
   const { data: g3, refetch: r3, isFetching: f3 } = useQuery<any>({ queryKey: ['gstr3b', period], queryFn: async () => (await fetch(`${API}/api/compliance/gstr3b?period=${period}`, { credentials: 'include' })).json(), enabled: false });
 
-  const runG1 = async () => { const d = await r1(); if (d.data?.stats) { exportGstr1Pdf(d.data.data, d.data.stats, period); flash(`GSTR-1 PDF exported: ${d.data.stats.b2bInvoices} B2B, ${d.data.stats.b2cLines} B2C`); } else flash('GSTR-1 failed', false); };
-  const runG3 = async () => { const d = await r3(); if (d.data?.computed) { exportGstr3bPdf(d.data.data, d.data.computed, period); flash(`GSTR-3B PDF: out ${rs(d.data.computed.outputTax)} · net ${rs(d.data.computed.netPayable)}`); } else flash('GSTR-3B failed', false); };
+  const runG1 = async () => { const d = await r1(); if (d.data?.stats) { await exportGstr1Pdf(d.data.data, d.data.stats, period); flash(`GSTR-1 PDF exported: ${d.data.stats.b2bInvoices} B2B, ${d.data.stats.b2cLines} B2C`); } else flash('GSTR-1 failed', false); };
+  const runG3 = async () => { const d = await r3(); if (d.data?.computed) { await exportGstr3bPdf(d.data.data, d.data.computed, period); flash(`GSTR-3B PDF: out ${rs(d.data.computed.outputTax)} · net ${rs(d.data.computed.netPayable)}`); } else flash('GSTR-3B failed', false); };
 
 const [rec, setRec] = useState<any>(null);
   const on2b = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +88,7 @@ const [rec, setRec] = useState<any>(null);
       const r = await fetch(`${API}/api/compliance/export?period=${period}`, { credentials: 'include' });
       const d = await r.json();
       if (!r.ok || !d.success) throw new Error(d?.error || 'Export failed');
-      exportCaPackPdf(d.pack, period);
+      await exportCaPackPdf(d.pack, period);
       flash(`CA pack PDF exported (${period}) — logged to audit.`);
     } catch (er: any) { flash(er.message, false); }
     setIsExporting(false);

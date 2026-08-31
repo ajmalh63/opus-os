@@ -15,6 +15,7 @@ import { auditEvent } from '../middleware/audit.js';
 import { publishSyncEvent } from './sync.js';
 import { createStaffAlert } from '../infra/staffAlerts.js';
 import { guardUpload, sha256Hex } from '../infra/uploadGuard.js';
+import { scanDocumentBytes } from '../lib/docScan.js';
 
 export const portalRouter = new Hono<{ Bindings: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL?: string; RAZORPAY_KEY_ID?: string; RAZORPAY_KEY_SECRET?: string } }>();
 
@@ -298,6 +299,27 @@ portalRouter.get('/dashboard', async (c) => {
   const deadlines = await db.select().from(visaDeadlines).where(eq(visaDeadlines.clientId, client.id)).all().catch(()=>[]);
   const pays = await db.select().from(payments).where(eq(payments.clientId, client.id)).all().catch(()=>[]);
   const schedules = await db.select().from(paymentSchedules).where(eq(paymentSchedules.clientId, client.id)).all().catch(()=>[]);
+  
+  let ctx: any = {};
+  try { ctx = JSON.parse((client as any).intakeContext || '{}'); } catch {}
+  
+  // Real database-driven onboarding completion
+  const isProfileDone = !!(client.name && (client.phone || ctx.personalDetails?.phone) && (client.city || ctx.personalDetails?.city));
+  const isPassportDone = !!(client.passportNumber || ctx.passportDetails?.status === 'no_passport' || ctx.passportDetails?.status === 'applied');
+  const isEducationDone = !!(client.highestQualification || ctx.education?.highestQualification);
+  const isIntentDone = !!(client.primaryDivision || client.intentDivisions || ctx.intent?.primaryDivision || ctx.intent?.targetCountry);
+
+  const steps = [
+    { key: 'welcome', label: 'Welcome', hint: 'Account created', done: true },
+    { key: 'profile', label: 'Complete profile', hint: 'Name, phone, city', done: isProfileDone },
+    { key: 'passport', label: 'Passport details', hint: 'Number + expiry', done: isPassportDone },
+    { key: 'education', label: 'Education', hint: 'Highest qualification', done: isEducationDone },
+    { key: 'intent', label: 'Intent', hint: 'Country + intake', done: isIntentDone },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const pct = Math.round((doneCount / steps.length) * 100);
+  const onboarding = { pct, steps, updatedAt: Math.floor(Date.now() / 1000) };
+
   // Health: docs 40% + deadlines 30% + engagement 20% + payment 10%
   const docPct = Math.min(100, docs.length * 20);
   const overdue = (deadlines as any[]).filter(d=> d.status==='overdue').length;
@@ -307,18 +329,189 @@ portalRouter.get('/dashboard', async (c) => {
   const paymentHealth = schedules.length ? Math.round((schedules.filter((s:any)=> s.status==='paid').length / schedules.length)*100) : (pays.length? 80: 50);
   const healthScore = Math.round(docPct*0.4 + deadlineHealth*0.3 + engagement*0.2 + paymentHealth*0.1);
   const tier = healthScore >=70 ? 'green' : healthScore>=40 ? 'yellow' : 'red';
-  // One clear CTA: next deadline <3d → Upload, else offer pending, else booking
-  let nextAction: {label:string, href:string} | null = null;
+
+  // One clear CTA: Onboarding pending -> open onboarding wizard, next deadline <3d -> Upload, else booking
+  let nextAction: { label: string; href: string; action?: string; stepKey?: string } | null = null;
+  const nextPendingStep = steps.find((s) => !s.done);
   const nextDue = (deadlines as any[]).filter(d=> d.status==='pending').sort((a,b)=> a.dueAt - b.dueAt)[0];
-  if (nextDue && nextDue.dueAt - Date.now()/1000 < 3*86400) nextAction = { label: `Upload ${nextDue.type}`, href: `/portal?tab=journey` };
-  else if (docs.length < 3) nextAction = { label: 'Complete profile', href: `/portal?tab=journey` };
-  else nextAction = { label: 'Book consultation', href: `/portal?tab=journey` };
-  let onboarding: any = {};
-  try { onboarding = JSON.parse((client as any).intakeContext || '{}').onboarding || { pct: 0, steps: [] }; } catch {}
-  if (!onboarding.steps?.length) onboarding = { pct: 0, steps: [{key:'welcome',done:true},{key:'profile',done:false},{key:'passport',done:false},{key:'education',done:false},{key:'intent',done:false}] };
+
+  if (nextPendingStep) {
+    nextAction = { label: nextPendingStep.label, href: '#onboarding', action: 'open_onboarding', stepKey: nextPendingStep.key };
+  } else if (nextDue && nextDue.dueAt - Date.now()/1000 < 3*86400) {
+    nextAction = { label: `Upload ${nextDue.type}`, href: `/portal?tab=documents`, action: 'upload_document' };
+  } else if (docs.length < 3) {
+    nextAction = { label: 'Upload Documents', href: `/portal?tab=documents`, action: 'upload_document' };
+  } else {
+    nextAction = { label: 'Book consultation', href: `/portal?tab=journey`, action: 'consultation' };
+  }
+
   const nextDeadline = nextDue ? { type: nextDue.type, dueAt: nextDue.dueAt, daysLeft: Math.ceil((nextDue.dueAt - Date.now()/1000)/86400) } : null;
   return c.json({ success: true, healthScore, tier, nextAction, nextDeadline, onboarding, docsCount: docs.length, deadlinesCount: deadlines.length });
 });
+
+// GET /onboarding/profile — live client profile data for onboarding wizard
+portalRouter.get('/onboarding/profile', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+
+  let ctx: any = {};
+  try { ctx = JSON.parse((client as any).intakeContext || '{}'); } catch {}
+
+  const isProfileDone = !!(client.name && (client.phone || ctx.personalDetails?.phone) && (client.city || ctx.personalDetails?.city));
+  const isPassportDone = !!(client.passportNumber || ctx.passportDetails?.status === 'no_passport' || ctx.passportDetails?.status === 'applied');
+  const isEducationDone = !!(client.highestQualification || ctx.education?.highestQualification);
+  const isIntentDone = !!(client.primaryDivision || client.intentDivisions || ctx.intent?.primaryDivision || ctx.intent?.targetCountry);
+
+  const steps = [
+    { key: 'welcome', label: 'Welcome', hint: 'Account created', done: true },
+    { key: 'profile', label: 'Complete profile', hint: 'Name, phone, city', done: isProfileDone },
+    { key: 'passport', label: 'Passport details', hint: 'Number + expiry', done: isPassportDone },
+    { key: 'education', label: 'Education', hint: 'Highest qualification', done: isEducationDone },
+    { key: 'intent', label: 'Intent', hint: 'Country + intake', done: isIntentDone },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const pct = Math.round((doneCount / steps.length) * 100);
+
+  return c.json({
+    success: true,
+    client: {
+      id: client.id,
+      name: client.name || '',
+      email: client.email || '',
+      phone: client.phone || ctx.personalDetails?.phone || '',
+      city: client.city || ctx.personalDetails?.city || '',
+      state: client.state || ctx.personalDetails?.state || '',
+      dob: client.dob || ctx.personalDetails?.dob || '',
+      gender: ctx.personalDetails?.gender || '',
+      passportNumber: client.passportNumber || ctx.passportDetails?.passportNumber || '',
+      passportExpiry: client.passportExpiry || ctx.passportDetails?.passportExpiry || '',
+      passportStatus: ctx.passportDetails?.status || (client.passportNumber ? 'valid' : 'no_passport'),
+      placeOfIssue: ctx.passportDetails?.placeOfIssue || '',
+      highestQualification: client.highestQualification || ctx.education?.highestQualification || '',
+      degree: ctx.education?.degree || '',
+      university: ctx.education?.university || '',
+      yearOfPassing: ctx.education?.yearOfPassing || '',
+      grade: ctx.education?.grade || '',
+      primaryDivision: client.primaryDivision || ctx.intent?.primaryDivision || 'study-abroad',
+      intentDivisions: client.intentDivisions ? (typeof client.intentDivisions === 'string' ? JSON.parse(client.intentDivisions) : client.intentDivisions) : ['study-abroad'],
+      targetCountry: ctx.intent?.targetCountry || '',
+      targetIntake: ctx.intent?.targetIntake || '',
+    },
+    onboarding: {
+      pct,
+      steps,
+      updatedAt: Math.floor(Date.now() / 1000),
+    },
+  });
+});
+
+// POST /onboarding/save-step — real-time field persistence and CRM sync
+portalRouter.post('/onboarding/save-step', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+
+  const body = await c.req.json().catch(() => ({})) as { step?: string; data?: Record<string, any> };
+  const step = body.step;
+  const data = body.data || {};
+  if (!step) return c.json({ error: 'step required' }, 400);
+
+  let ctx: any = {};
+  try { ctx = JSON.parse((client as any).intakeContext || '{}'); } catch {}
+
+  const updates: Record<string, any> = {
+    updatedAt: Math.floor(Date.now() / 1000),
+    lastEngagementAt: Math.floor(Date.now() / 1000),
+  };
+
+  if (step === 'profile') {
+    if (data.name) updates.name = data.name;
+    if (data.phone) updates.phone = data.phone;
+    if (data.city) updates.city = data.city;
+    if (data.state) updates.state = data.state;
+    if (data.dob) updates.dob = data.dob;
+    ctx.personalDetails = { ...(ctx.personalDetails || {}), ...data };
+  } else if (step === 'passport') {
+    if (data.passportNumber) updates.passportNumber = data.passportNumber;
+    if (data.passportExpiry) updates.passportExpiry = data.passportExpiry;
+    ctx.passportDetails = { ...(ctx.passportDetails || {}), ...data };
+  } else if (step === 'education') {
+    if (data.highestQualification) updates.highestQualification = data.highestQualification;
+    ctx.education = { ...(ctx.education || {}), ...data };
+  } else if (step === 'intent') {
+    if (data.primaryDivision) updates.primaryDivision = data.primaryDivision;
+    if (data.intentDivisions) updates.intentDivisions = JSON.stringify(data.intentDivisions);
+    ctx.intent = { ...(ctx.intent || {}), ...data };
+  }
+
+  // Compute updated completeness
+  const currentName = updates.name || client.name;
+  const currentPhone = updates.phone || client.phone || ctx.personalDetails?.phone;
+  const currentCity = updates.city || client.city || ctx.personalDetails?.city;
+  const currentPass = updates.passportNumber || client.passportNumber || ctx.passportDetails?.status === 'no_passport' || ctx.passportDetails?.status === 'applied';
+  const currentEdu = updates.highestQualification || client.highestQualification || ctx.education?.highestQualification;
+  const currentIntent = updates.primaryDivision || client.primaryDivision || ctx.intent?.primaryDivision || ctx.intent?.targetCountry;
+
+  const isProfileDone = !!(currentName && currentPhone && currentCity);
+  const isPassportDone = !!currentPass;
+  const isEducationDone = !!currentEdu;
+  const isIntentDone = !!currentIntent;
+
+  const steps = [
+    { key: 'welcome', label: 'Welcome', hint: 'Account created', done: true },
+    { key: 'profile', label: 'Complete profile', hint: 'Name, phone, city', done: isProfileDone },
+    { key: 'passport', label: 'Passport details', hint: 'Number + expiry', done: isPassportDone },
+    { key: 'education', label: 'Education', hint: 'Highest qualification', done: isEducationDone },
+    { key: 'intent', label: 'Intent', hint: 'Country + intake', done: isIntentDone },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const pct = Math.round((doneCount / steps.length) * 100);
+
+  ctx.onboarding = { pct, steps, updatedAt: Math.floor(Date.now() / 1000) };
+  updates.intakeContext = JSON.stringify(ctx);
+
+  await db.update(clients).set(updates).where(eq(clients.id, client.id));
+
+  // Audit event
+  await auditEvent(c as any, {
+    action: 'ONBOARDING_STEP_SAVED',
+    entityName: 'clients',
+    entityId: client.id,
+    afterState: { step, pct, savedFields: Object.keys(data) },
+  }).catch(() => {});
+
+  // Realtime Sync WebSocket Broadcast
+  try {
+    await publishSyncEvent(c.env as any, {
+      channel: `client:${client.id}:journey`,
+      type: 'ONBOARDING_PROGRESS',
+      payload: { step, pct, steps },
+    }, (c as any).executionCtx);
+  } catch {}
+
+  try {
+    await publishSyncEvent(c.env as any, {
+      channel: 'staff:global:leads',
+      type: 'CLIENT_PROFILE_UPDATED',
+      payload: { clientId: client.id, step, pct, name: currentName, phone: currentPhone, city: currentCity },
+    }, (c as any).executionCtx);
+  } catch {}
+
+  return c.json({
+    success: true,
+    step,
+    onboarding: ctx.onboarding,
+    message: pct === 100 ? 'Onboarding 100% complete! Your counselor has been notified.' : `Step '${step}' saved successfully.`,
+  });
+});
+
 portalRouter.post('/onboarding/progress', async (c) => {
   const token = getPortalToken(c) || '';
   if (!token) return c.json({ error: 'Token required' }, 401);
@@ -463,6 +656,8 @@ const signUploadPath = async (secret: string, clientId: string, filename: string
 portalRouter.get('/documents/presigned', async (c) => {
   const token = getPortalToken(c) || '';
   const filename = c.req.query('filename');
+  const label = c.req.query('label') || c.req.query('docLabel') || '';
+  const division = c.req.query('division') || 'general';
   if (!token || !filename) {
     return c.json({ error: "Missing token or filename" }, 400);
   }
@@ -476,7 +671,7 @@ portalRouter.get('/documents/presigned', async (c) => {
     const secret = c.env.BETTER_AUTH_SECRET;
     const signature = await signUploadPath(secret, token, filename, expires);
 
-    const presignedUrl = `/api/public/portal/documents/upload?token=${token}&filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}`;
+    const presignedUrl = `/api/public/portal/documents/upload?token=${token}&filename=${encodeURIComponent(filename)}&expires=${expires}&signature=${signature}&label=${encodeURIComponent(label)}&division=${encodeURIComponent(division)}`;
     return c.json({ success: true, url: presignedUrl, expires });
   } catch (error: any) {
     return c.json({ error: "Presigned URL generation failed",  }, 500);
@@ -489,6 +684,7 @@ portalRouter.put('/documents/upload', async (c) => {
   const filename = c.req.query('filename');
   const expiresStr = c.req.query('expires');
   const signature = c.req.query('signature');
+  const docLabel = c.req.query('label') || c.req.query('docLabel') || null;
 
   if (!token || !filename || !expiresStr || !signature) {
     return c.json({ error: "Missing upload parameters" }, 400);
@@ -531,10 +727,13 @@ portalRouter.put('/documents/upload', async (c) => {
       await bucket.put(r2Key, fileBody, { httpMetadata: { contentType: mimeType } });
     }
 
+    const client = await resolveClientByToken(db, token);
+    const actualClientId = client ? client.id : token;
+
     const existingDocs = await db
       .select()
       .from(documents)
-      .where(and(eq(documents.clientId, token), eq(documents.fileName, safeName)))
+      .where(and(eq(documents.clientId, actualClientId), eq(documents.fileName, safeName)))
       .all();
 
     let version = "v1.0";
@@ -547,11 +746,14 @@ portalRouter.put('/documents/upload', async (c) => {
       version = `v${(maxVer + 1.0).toFixed(1)}`;
     }
 
+    const scan = scanDocumentBytes(bytes, mimeType, safeName);
+
     const docId = crypto.randomUUID();
     await db.insert(documents).values({
       id: docId,
-      clientId: token,
+      clientId: actualClientId,
       fileName: safeName,
+      docLabel: docLabel || null,
       r2Key,
       version,
       status: 'pending',
@@ -559,21 +761,23 @@ portalRouter.put('/documents/upload', async (c) => {
       sizeBytes: bytes.byteLength,
       mimeType,
       sha256: digest,
-      uploadedBy: 'client'
+      uploadedBy: 'client',
+      scanStatus: scan.status,
+      scanNote: scan.note,
     });
 
     // Automatically create a document verification task
-    const engs = await db.select().from(engagements).where(eq(engagements.clientId, token)).all();
+    const engs = await db.select().from(engagements).where(eq(engagements.clientId, actualClientId)).all();
     const primaryEng = engs[0];
     if (primaryEng) {
       await db.insert(tasks).values({
         id: crypto.randomUUID(),
-        clientId: token,
+        clientId: actualClientId,
         engagementId: primaryEng.id,
         assigneeId: null,
         title: `Verify uploaded document: ${safeName}`,
-        description: `Client ${token} uploaded ${safeName} (${version}) via public portal. Please review.`,
-        priority: 'medium',
+        description: `Client ${actualClientId} uploaded ${safeName} (${version}) via public portal. ${scan.status === 'flagged' ? `[FLAGGED: ${scan.note}] ` : ''}Please review.`,
+        priority: scan.status === 'flagged' ? 'urgent' : 'medium',
         status: 'open',
         cos: 'standard',
         createdAt: Math.floor(Date.now() / 1000),
@@ -585,15 +789,288 @@ portalRouter.put('/documents/upload', async (c) => {
       action: 'DOC_UPLOAD',
       entityName: 'documents',
       entityId: docId,
-      afterState: { clientId: token, fileName: safeName, version, status: 'pending' }
+      afterState: { clientId: actualClientId, fileName: safeName, version, status: 'pending', scanStatus: scan.status }
     }).catch(() => {});
-    try { await publishSyncEvent(c.env as any, { channel: `client:${token}:documents`, type: 'DOCUMENT_UPLOADED', payload: { documentId: docId, fileName: safeName, version } }, (c as any).executionCtx); await publishSyncEvent(c.env as any, { channel: `staff:global:alerts`, type: 'DOCUMENT_UPLOADED', payload: { documentId: docId, clientId: token, fileName: safeName } }, (c as any).executionCtx); } catch {}
+    try { await publishSyncEvent(c.env as any, { channel: `client:${actualClientId}:documents`, type: 'DOCUMENT_UPLOADED', payload: { documentId: docId, fileName: safeName, version, scanStatus: scan.status } }, (c as any).executionCtx); await publishSyncEvent(c.env as any, { channel: `staff:global:alerts`, type: 'DOCUMENT_UPLOADED', payload: { documentId: docId, clientId: actualClientId, fileName: safeName, scanStatus: scan.status } }, (c as any).executionCtx); } catch {}
 
-    await createStaffAlert(c.env as any, { division: 'visa', type: 'document_upload', title: `Document uploaded: ${safeName}`, body: `Client ${token} uploaded ${safeName} (${version})`, clientId: token, payload: { fileName: safeName, version } });
+    await createStaffAlert(c.env as any, { division: 'visa', type: 'document_upload', title: `${scan.status === 'flagged' ? '⚠️ [FLAGGED] ' : ''}Document uploaded: ${safeName}`, body: `Client ${actualClientId} uploaded ${safeName} (${version})${scan.status === 'flagged' ? ` — Note: ${scan.note}` : ''}`, clientId: actualClientId, payload: { fileName: safeName, version, scanStatus: scan.status } });
     return c.json({ success: true, docId, version, message: "Document uploaded successfully." });
   } catch (error: any) {
     return c.json({ error: "Upload failed",  }, 500);
   }
+});
+
+// GET /api/public/portal/vault — Document Vault summary with 30-day lifecycle retention & 50MB quota
+portalRouter.get('/vault', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+
+  const clientDocs = await db.select().from(documents).where(eq(documents.clientId, client.id)).all();
+  const totalSizeBytes = clientDocs.reduce((acc, d) => acc + (d.sizeBytes || 0), 0);
+  const maxStorageBytes = 52428800; // 50 MB
+
+  // Check client's active vs completed engagements
+  const engs = await db.select().from(engagements).where(eq(engagements.clientId, client.id)).all().catch(() => []);
+  const activeEngs = engs.filter((e) => e.status === 'active' && e.stageKey !== 'complete');
+  const completedEngs = engs.filter((e) => e.status === 'closed' || e.stageKey === 'complete');
+
+  const now = Math.floor(Date.now() / 1000);
+  let retentionStatus: 'active_journey' | 'grace_period' | 'expired' = 'active_journey';
+  let graceDaysLeft = 30;
+  let retentionExpiresAt: number | null = null;
+
+  if (activeEngs.length === 0 && (completedEngs.length > 0 || engs.length > 0)) {
+    // Find latest completion timestamp from completed engagements
+    const completionTimes = completedEngs.map((e: any) => e.updatedAt || e.createdAt || e.updated_at || e.created_at).filter(Boolean);
+    const latestCompletion = completionTimes.length > 0 ? Math.max(...completionTimes) : (client.updatedAt || client.createdAt || now);
+    const expires = latestCompletion + 30 * 86400; // 30 Days Retention Policy
+    retentionExpiresAt = expires;
+    const secondsLeft = expires - now;
+
+    if (secondsLeft <= 0) {
+      retentionStatus = 'expired';
+      graceDaysLeft = 0;
+    } else {
+      retentionStatus = 'grace_period';
+      graceDaysLeft = Math.ceil(secondsLeft / 86400);
+    }
+  }
+
+  const slotMap: Record<string, any> = {
+    passport: clientDocs.find((d) => d.fileName.toLowerCase().includes('passport') || d.docLabel?.toLowerCase().includes('passport')),
+    academics: clientDocs.find((d) => d.fileName.toLowerCase().includes('degree') || d.fileName.toLowerCase().includes('transcript') || d.docLabel?.toLowerCase().includes('academic')),
+    language: clientDocs.find((d) => d.fileName.toLowerCase().includes('ielts') || d.fileName.toLowerCase().includes('toefl') || d.fileName.toLowerCase().includes('pte') || d.docLabel?.toLowerCase().includes('language')),
+    resume: clientDocs.find((d) => d.fileName.toLowerCase().includes('resume') || d.fileName.toLowerCase().includes('cv') || d.docLabel?.toLowerCase().includes('resume')),
+    financials: clientDocs.find((d) => d.fileName.toLowerCase().includes('bank') || d.fileName.toLowerCase().includes('financial') || d.docLabel?.toLowerCase().includes('financial')),
+    visa_stamp: clientDocs.find((d) => d.fileName.toLowerCase().includes('visa') || d.fileName.toLowerCase().includes('attest') || d.docLabel?.toLowerCase().includes('visa')),
+  };
+
+  const slotDocIds = new Set(Object.values(slotMap).filter(Boolean).map((d: any) => d.id));
+  const customDocs = clientDocs.filter((d) => !slotDocIds.has(d.id));
+
+  return c.json({
+    success: true,
+    clientId: client.id,
+    documents: clientDocs.map((d) => ({
+      id: d.id,
+      fileName: d.fileName,
+      version: d.version,
+      status: d.status,
+      sizeBytes: d.sizeBytes || 0,
+      mimeType: d.mimeType,
+      uploadedAt: d.uploadedAt,
+      verifiedAt: d.verifiedAt,
+      sha256: d.sha256,
+      docLabel: d.docLabel,
+      isPurged: !d.r2Key || d.status === 'rejected',
+    })),
+    slots: slotMap,
+    customDocuments: customDocs.map((d) => ({
+      id: d.id,
+      fileName: d.fileName,
+      version: d.version,
+      status: d.status,
+      sizeBytes: d.sizeBytes || 0,
+      mimeType: d.mimeType,
+      uploadedAt: d.uploadedAt,
+      verifiedAt: d.verifiedAt,
+      sha256: d.sha256,
+      docLabel: d.docLabel || 'Additional Document',
+      isPurged: !d.r2Key || d.status === 'rejected',
+    })),
+    storage: {
+      usedBytes: totalSizeBytes,
+      usedMb: parseFloat((totalSizeBytes / (1024 * 1024)).toFixed(2)),
+      maxBytes: maxStorageBytes,
+      maxMb: 50,
+      percentUsed: Math.min(100, Math.round((totalSizeBytes / maxStorageBytes) * 100)),
+    },
+    lifecycle: {
+      retentionStatus,
+      retentionPolicyDays: 30,
+      graceDaysLeft,
+      retentionExpiresAt,
+      hasActiveJourneys: activeEngs.length > 0,
+      totalJourneys: engs.length,
+      completedJourneys: completedEngs.length,
+    },
+  });
+});
+
+// DELETE /api/public/portal/documents/:id — Delete a specific document from vault and R2
+portalRouter.delete('/documents/:id', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  const docId = c.req.param('id');
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+
+  const doc = await db.select().from(documents).where(and(eq(documents.id, docId), eq(documents.clientId, client.id))).get();
+  if (!doc) return c.json({ error: 'Document not found' }, 404);
+
+  const bucket = (c.env as any).BUCKET || (c.env as any).DOCS_BUCKET;
+  if (doc.r2Key && bucket) {
+    await bucket.delete(doc.r2Key).catch(() => {});
+  }
+
+  await db.delete(documents).where(eq(documents.id, docId));
+
+  await auditEvent(c as any, {
+    action: 'DOC_DELETED',
+    entityName: 'documents',
+    entityId: docId,
+    afterState: { clientId: client.id, fileName: doc.fileName },
+  }).catch(() => {});
+
+  try {
+    await publishSyncEvent(c.env as any, {
+      channel: `client:${client.id}:journey`,
+      type: 'DOCUMENT_DELETED',
+      payload: { documentId: docId },
+    }, (c as any).executionCtx);
+  } catch {}
+
+  return c.json({ success: true, message: 'Document deleted successfully and cloud storage freed.' });
+});
+
+// GET /api/public/portal/documents/:id/download — Secure direct document download
+portalRouter.get('/documents/:id/download', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  const docId = c.req.param('id');
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+
+  const doc = await db.select().from(documents).where(and(eq(documents.id, docId), eq(documents.clientId, client.id))).get();
+  if (!doc) return c.json({ error: 'Document not found' }, 404);
+  if (!doc.r2Key) return c.json({ error: 'Document binary has been purged per 30-day retention policy' }, 410);
+
+  const bucket = (c.env as any).BUCKET || (c.env as any).DOCS_BUCKET;
+  if (!bucket) {
+    return c.json({ error: 'Storage bucket not available' }, 500);
+  }
+
+  const obj = await bucket.get(doc.r2Key);
+  if (!obj) {
+    return c.json({ error: 'Object not found in storage' }, 404);
+  }
+
+  const headers = new Headers();
+  obj.writeHttpMetadata(headers);
+  headers.set('etag', obj.httpEtag);
+  headers.set('Content-Disposition', `attachment; filename="${encodeURIComponent(doc.fileName)}"`);
+  headers.set('Content-Type', doc.mimeType || 'application/octet-stream');
+
+  return new Response(obj.body, { headers });
+});
+
+// POST /api/public/portal/vault/purge-voluntary — Voluntary client vault cleanup after downloading
+portalRouter.post('/vault/purge-voluntary', async (c) => {
+  const token = getPortalToken(c) || '';
+  if (!token) return c.json({ error: 'Token required' }, 401);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const client = await resolveClientByToken(db, token);
+  if (!client) return c.json({ error: 'Client not found' }, 404);
+
+  const clientDocs = await db.select().from(documents).where(eq(documents.clientId, client.id)).all();
+  const bucket = (c.env as any).BUCKET || (c.env as any).DOCS_BUCKET;
+
+  let purgedCount = 0;
+  for (const doc of clientDocs) {
+    if (doc.r2Key) {
+      if (bucket) {
+        await bucket.delete(doc.r2Key).catch(() => {});
+      }
+      purgedCount++;
+    }
+  }
+
+  // Update DB records: keep hash metadata for legal proof, mark r2Key null
+  for (const doc of clientDocs) {
+    await db.update(documents).set({ r2Key: `purged-${doc.id}` } as any).where(eq(documents.id, doc.id));
+  }
+
+  await auditEvent(c as any, {
+    action: 'VAULT_VOLUNTARY_PURGED',
+    entityName: 'documents',
+    entityId: client.id,
+    afterState: { clientId: client.id, purgedCount },
+  }).catch(() => {});
+
+  try {
+    await publishSyncEvent(c.env as any, {
+      channel: `client:${client.id}:journey`,
+      type: 'VAULT_PURGED',
+      payload: { purgedCount },
+    }, (c as any).executionCtx);
+  } catch {}
+
+  return c.json({
+    success: true,
+    purgedCount,
+    message: 'Your document binaries have been deleted from cloud storage. Metadata and cryptographic proof retained for legal verification.',
+  });
+});
+
+// POST /api/public/portal/vault/cleanup-expired — 30-Day Automated Lifecycle Storage Purge Engine
+portalRouter.post('/vault/cleanup-expired', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const bucket = (c.env as any).BUCKET || (c.env as any).DOCS_BUCKET;
+  const now = Math.floor(Date.now() / 1000);
+  const thirtyDaysAgo = now - 30 * 86400;
+
+  const allClients = await db.select().from(clients).all();
+  let totalPurgedDocs = 0;
+  const purgedClients: string[] = [];
+
+  for (const cl of allClients) {
+    const engs = await db.select().from(engagements).where(eq(engagements.clientId, cl.id)).all().catch(() => []);
+    if (engs.length === 0) continue;
+
+    const hasActive = engs.some((e) => e.status === 'active' && e.stageKey !== 'complete');
+    if (hasActive) continue; // Active journey — protected storage
+
+    const completedEngs = engs.filter((e) => e.status === 'closed' || e.stageKey === 'complete');
+    const completionTimes = completedEngs.map((e: any) => e.updatedAt || e.createdAt || e.updated_at || e.created_at).filter(Boolean);
+    const latestCompletion = completionTimes.length > 0 ? Math.max(...completionTimes) : (cl.updatedAt || cl.createdAt || now);
+
+    if (latestCompletion < thirtyDaysAgo) {
+      // 30 days elapsed since completion — purge binary files
+      const docsToPurge = await db.select().from(documents).where(and(eq(documents.clientId, cl.id))).all();
+      let clientPurged = false;
+      for (const d of docsToPurge) {
+        if (d.r2Key && !d.r2Key.startsWith('purged-')) {
+          if (bucket) {
+            await bucket.delete(d.r2Key).catch(() => {});
+          }
+          await db.update(documents).set({ r2Key: `purged-${d.id}` } as any).where(eq(documents.id, d.id));
+          totalPurgedDocs++;
+          clientPurged = true;
+        }
+      }
+      if (clientPurged) {
+        purgedClients.push(cl.id);
+      }
+    }
+  }
+
+  return c.json({
+    success: true,
+    totalPurgedDocs,
+    purgedClientsCount: purgedClients.length,
+    purgedClients,
+    message: `30-Day lifecycle cleanup completed. Purged ${totalPurgedDocs} expired documents across ${purgedClients.length} clients.`,
+  });
 });
 
 // POST /api/public/portal/visa/inquiry — Client custom country visa inquiry request

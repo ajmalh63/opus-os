@@ -97,12 +97,14 @@ export async function computeTotp(secretBase32: string, timeStep: number): Promi
 
 /**
  * Verifies a 6-digit TOTP token against a Base32 secret with a sliding time window (±1 step / 30s).
+ * Includes RFC 6238 replay defense by checking against lastVerifiedStep.
  */
 export async function verifyTotp(
   token: string,
   secretBase32: string,
   timeWindow = 1,
-  currentTimeMs = Date.now()
+  currentTimeMs = Date.now(),
+  lastVerifiedStep?: number
 ): Promise<boolean> {
   if (!token || token.length !== 6 || !secretBase32) return false;
 
@@ -110,6 +112,9 @@ export async function verifyTotp(
 
   for (let i = -timeWindow; i <= timeWindow; i++) {
     const step = currentStep + i;
+    if (lastVerifiedStep !== undefined && step <= lastVerifiedStep) {
+      continue; // Replay defense: prevent reusing same or earlier step
+    }
     const expectedOtp = await computeTotp(secretBase32, step);
     if (token === expectedOtp) {
       return true;

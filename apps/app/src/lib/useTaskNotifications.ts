@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // Sound + toast notification for new staff alerts (Live Activity feed).
 // Polls /api/staff/alerts, plays a Web Audio beep when a NEW alert appears

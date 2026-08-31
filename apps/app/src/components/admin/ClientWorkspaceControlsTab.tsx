@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ManpowerProfileWizard, { ManpowerProfile } from '../ManpowerProfileWizard';
 import StudentProfileWizard, { StudentProfile } from '../StudentProfileWizard';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 const ATTESTATION_COUNTRIES = ['UAE','Saudi Arabia','Qatar','Kuwait','Oman','Bahrain','Malaysia','China','Thailand','Vietnam','Taiwan','Sri Lanka','Bangladesh','Japan','South Korea','Singapore','Hong Kong','USA','UK','Canada','Australia','New Zealand','Ireland','Germany','France','Netherlands','Sweden','Switzerland','Spain','Italy','Poland','Russia','Turkey','Egypt','Jordan','Libya','South Africa','Brazil','Mexico','Other'];
 

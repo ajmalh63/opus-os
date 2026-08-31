@@ -1,0 +1,36 @@
+# Opus Overseas — robots.txt (GEO optimized 2026)
+# Allow AI search crawlers for visibility (seo-geo gold: GPTBot, ClaudeBot, PerplexityBot)
+# Googlebot controls search+AI Overviews; Google-Extended controls Gemini training only.
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: *
+Allow: /
+
+Sitemap: https://opusoverseas.com/sitemap.xml
+Host: https://opusoverseas.com
+
+# llms.txt discovery (2026 agent surface)
+# See https://llmstxt.org

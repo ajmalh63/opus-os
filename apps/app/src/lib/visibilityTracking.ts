@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // Visibility Hub — public-site tracking (GA4 + GTM + Meta Pixel + CF WA + D1)
 // Elite wiring: one fetch to /api/visibility/ga4/config drives all pixels.

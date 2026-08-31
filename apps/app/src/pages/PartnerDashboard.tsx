@@ -15,7 +15,8 @@ import { useVisibilityTracking } from '../lib/visibilityTracking';
 import { createSyncClient } from '../lib/syncClient';
 import { BookingTower } from '../components/partner/BookingTower';
 import { CommissionPerformance } from '../components/partner/CommissionPerformance';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+import { PartnerHelpdeskSection } from '../components/partner/PartnerHelpdeskSection';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // ============================================================================
 // OPUS OVERSEAS — PARTNER & AFFILIATE COMMAND CENTER (GOLD STANDARD ARCHITECTURE)
@@ -29,7 +30,7 @@ const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmals
 // 7. Dynamic creative kit, copy swipe library, & instant QR code studio.
 // ============================================================================
 
-type TabKey = 'overview' | 'links' | 'referrals' | 'payouts' | 'tiers';
+type TabKey = 'overview' | 'links' | 'referrals' | 'payouts' | 'tiers' | 'helpdesk';
 
 interface CommissionRow {
   referralId: string;
@@ -192,7 +193,7 @@ const ago = (ts: number | null): string => {
   return d(ts);
 };
 
-// 5 Divisions definition
+// 4 Affiliate Divisions definition
 interface DivisionConfig {
   id: string;
   name: string;
@@ -244,18 +245,6 @@ const DIVISIONS: DivisionConfig[] = [
     whatsappText: (url) => `Explore world holiday tours, 5-Star Umrah packages, and custom getaways via Opus Overseas: ${url}`,
   },
   {
-    id: 'attestation',
-    name: 'Document Attestation & Apostille',
-    badge: 'Compliance',
-    path: '/attestation',
-    tagline: 'MEA, HRD, Embassy attestation, Apostille & door-to-door courier tracking across India.',
-    avgCommission: '₹1,500 – ₹4,500 / certificate',
-    typicalFee: 20000,
-    estRate: 15,
-    color: '#7c3aed',
-    whatsappText: (url) => `Verified MEA / Embassy certificate attestation and Apostille services across India with Opus Overseas: ${url}`,
-  },
-  {
     id: 'recruitment',
     name: 'International Manpower',
     badge: 'Recruitment',
@@ -277,7 +266,7 @@ const SWIPE_TEMPLATES = [
     channel: 'WhatsApp & SMS',
     hint: 'Best for direct 1-to-1 contacts or broadcasting to client groups.',
     body: (url: string) =>
-      `Hi there! 👋 If you or anyone in your family is planning for Study Abroad (UK/US/Canada/Australia), Global Visas, Umrah Pilgrimages, Certificate Attestation, or Overseas Jobs, I highly recommend Opus Overseas.\n\nThey offer transparent guidance with exceptional success rates. Connect directly with their senior advisors here:\n👉 ${url}`,
+      `Hi there! 👋 If you or anyone in your family is planning for Study Abroad (UK/US/Canada/Australia), Global Visas, Tours & Travels, Umrah Departures, or Overseas Careers, I highly recommend Opus Overseas.\n\nThey offer transparent guidance with exceptional success rates. Connect directly with their senior advisors here:\n👉 ${url}`,
   },
   {
     id: 'email-warm',
@@ -285,7 +274,7 @@ const SWIPE_TEMPLATES = [
     channel: 'Email Newsletter / Client Note',
     hint: 'Use when emailing your existing client list or student alumni.',
     body: (url: string) =>
-      `Subject: Trusted Partner for Global Visas, Study Abroad & Pilgrimages\n\nDear Client,\n\nNavigating international admissions, visa procedures, or pilgrimage travel requires verified, professional handling. I am pleased to partner with Opus Overseas — India's premier global mobility consultancy.\n\nWhether you require:\n• Direct University Admissions (UK, USA, Canada, Australia)\n• Fast-track Tourist, Business or Work Visas (40+ countries)\n• All-inclusive Umrah & Hajj Group Departures\n• MEA & Embassy Document Attestation / Apostille\n\nYou can book a priority consultation with their team here:\n${url}\n\nWarm regards,\nYour Trusted Partner`,
+      `Subject: Trusted Partner for Global Visas, Study Abroad & World Travel\n\nDear Client,\n\nNavigating international admissions, visa procedures, or holiday travel requires verified, professional handling. I am pleased to partner with Opus Overseas — India's premier global mobility consultancy.\n\nWhether you require:\n• Direct University Admissions (UK, USA, Canada, Australia)\n• Fast-track Tourist, Business or Work Visas (40+ countries)\n• Curated World Holidays & 5-Star Umrah Group Departures\n• Overseas Recruitment & Career Placement\n\nYou can book a priority consultation with their team here:\n${url}\n\nWarm regards,\nYour Trusted Partner`,
   },
   {
     id: 'social-linkedin',
@@ -293,7 +282,7 @@ const SWIPE_TEMPLATES = [
     channel: 'LinkedIn & Facebook',
     hint: 'High-trust copy for professional networks, HRs, and educators.',
     body: (url: string) =>
-      `Global ambitions require seamless execution. 🛂🎓\n\nI am proud to partner with Opus Overseas to provide end-to-end pathways for:\n1. Global Higher Education & Scholarships\n2. Compliant Visa & Immigration Services\n3. Embassy Attestation & Apostille Logistics\n4. Verified Overseas Recruitment & Umrah Departures\n\nExplore official offerings or schedule an expert consultation:\n👉 ${url}\n\n#GlobalMobility #StudyAbroad #Immigration #OpusOverseas`,
+      `Global ambitions require seamless execution. 🛂🎓\n\nI am proud to partner with Opus Overseas to provide end-to-end pathways for:\n1. Global Higher Education & Scholarships\n2. Compliant Visa & Immigration Services\n3. Curated World Travel & Pilgrimage Logistics\n4. Verified Overseas Recruitment\n\nExplore official offerings or schedule an expert consultation:\n👉 ${url}\n\n#GlobalMobility #StudyAbroad #Immigration #OpusOverseas`,
   },
   {
     id: 'instagram-bio',
@@ -301,7 +290,7 @@ const SWIPE_TEMPLATES = [
     channel: 'Instagram Bio / Status',
     hint: 'Short & punchy format for bio links or swipe-up stories.',
     body: (url: string) =>
-      `🛂 Official Partner @ Opus Overseas | Study Abroad • Fast-Track Visas • Umrah Packages • MEA Attestation\n🔗 Priority Consultation Link: ${url}`,
+      `🛂 Official Partner @ Opus Overseas | Study Abroad • Fast-Track Visas • Tours & Umrah • Overseas Careers\n🔗 Priority Consultation Link: ${url}`,
   },
 ];
 
@@ -387,8 +376,44 @@ export default function PartnerDashboard() {
     setTimeout(() => setToast({ show: false, msg: '', type: 'gold' }), 4000);
   };
 
-  // State management
-  const [tab, setTab] = useState<TabKey>('overview');
+  // State management with URL query synchronization
+  const getInitialTab = (): TabKey => {
+    if (typeof window === 'undefined') return 'overview';
+    const p = new URLSearchParams(window.location.search).get('tab');
+    if (p && ['overview', 'links', 'referrals', 'payouts', 'tiers', 'helpdesk'].includes(p)) {
+      return p as TabKey;
+    }
+    return 'overview';
+  };
+
+  const [tab, setTab] = useState<TabKey>(getInitialTab);
+
+  const navigateTab = (nextTab: TabKey) => {
+    setTab(nextTab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (nextTab === 'overview') {
+        url.searchParams.delete('tab');
+      } else {
+        url.searchParams.set('tab', nextTab);
+      }
+      window.history.pushState(null, '', url.toString());
+    }
+  };
+
+  useEffect(() => {
+    const onPop = () => {
+      const p = new URLSearchParams(window.location.search).get('tab');
+      if (p && ['overview', 'links', 'referrals', 'payouts', 'tiers', 'helpdesk'].includes(p)) {
+        setTab(p as TabKey);
+      } else {
+        setTab('overview');
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   const [copiedLinkKey, setCopiedLinkKey] = useState<string | null>(null);
   const [openReferral, setOpenReferral] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -411,11 +436,10 @@ export default function PartnerDashboard() {
     return `${base}/${div}${deep}${ref}${utm}`;
   };
 
-  // Landing page Calculator State
+  // Landing page Calculator State (4 Affiliate Verticals)
   const [calcStudy, setCalcStudy] = useState(3);
   const [calcVisas, setCalcVisas] = useState(6);
   const [calcUmrah, setCalcUmrah] = useState(2);
-  const [calcAttest, setCalcAttest] = useState(4);
   const [calcManpower, setCalcManpower] = useState(1);
 
   // Legacy Partner auth fallback
@@ -946,10 +970,10 @@ export default function PartnerDashboard() {
     return () => clearTimeout(t);
   }, [tab, sessionActive]);
 
-  // Projected Commission calculation for Landing Simulator
+  // Projected Commission calculation for Landing Simulator (4 Verticals)
   const simulatedMonthlyEarnings = useMemo(() => {
-    return (calcStudy * 20000) + (calcVisas * 5000) + (calcUmrah * 8000) + (calcAttest * 2500) + (calcManpower * 15000);
-  }, [calcStudy, calcVisas, calcUmrah, calcAttest, calcManpower]);
+    return (calcStudy * 20000) + (calcVisas * 5000) + (calcUmrah * 8000) + (calcManpower * 15000);
+  }, [calcStudy, calcVisas, calcUmrah, calcManpower]);
 
   const baseInput = 'w-full rounded-xl border border-brand-navy/15 bg-white px-3.5 py-2.5 text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 focus:outline-none transition';
   const goldBtn = 'tactile-btn rounded-full bg-brand-gold px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-brand-navy transition hover:bg-brand-gold-hover hover:text-white active:scale-[0.97] disabled:opacity-40 shadow-sm inline-flex items-center justify-center gap-1.5 cursor-pointer';
@@ -1000,13 +1024,13 @@ export default function PartnerDashboard() {
                     Turn your client network into substantial recurring commission.
                   </h1>
                   <p className="mt-4 text-sm leading-relaxed text-brand-navy/70 md:text-base">
-                    Partner with Opus Overseas — India’s trusted global mobility platform. Monetize your referrals across Study Abroad, Global Visas, Umrah Pilgrimages, Attestation, and International Recruitment with real-time attribution and direct bank settlement.
+                    Partner with Opus Overseas — India’s trusted global mobility platform. Monetize your referrals across Study Abroad, Global Visas, Tours & Travels, and International Recruitment with real-time attribution and direct bank settlement.
                   </p>
 
                   {/* Program Highlights Ribbon */}
                   <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {[
-                      { label: '5 High-Yield Verticals', sub: 'Education, Visa, Umrah & Jobs' },
+                      { label: '4 High-Yield Verticals', sub: 'Education, Visa, Travel & Jobs' },
                       { label: 'Up to 15% Payout', sub: 'Calculated on gross service fees' },
                       { label: 'Sub-Minute Tracking', sub: 'No lost cookies or attribution gap' },
                       { label: 'Automated Clearance', sub: 'Direct NEFT/RTGS/UPI transfers' },
@@ -1040,12 +1064,11 @@ export default function PartnerDashboard() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                   {[
                     { label: 'Study Abroad Clients', val: calcStudy, set: setCalcStudy, rate: '₹20,000 avg', min: 0, max: 20 },
                     { label: 'Global Visa Cases', val: calcVisas, set: setCalcVisas, rate: '₹5,000 avg', min: 0, max: 30 },
-                    { label: 'Umrah Pilgrims', val: calcUmrah, set: setCalcUmrah, rate: '₹8,000 avg', min: 0, max: 25 },
-                    { label: 'Attestation Chains', val: calcAttest, set: setCalcAttest, rate: '₹2,500 avg', min: 0, max: 30 },
+                    { label: 'Tours & Umrah Travellers', val: calcUmrah, set: setCalcUmrah, rate: '₹8,000 avg', min: 0, max: 25 },
                     { label: 'Manpower Placements', val: calcManpower, set: setCalcManpower, rate: '₹15,000 avg', min: 0, max: 15 },
                   ].map((ctrl) => (
                     <div key={ctrl.label} className="rounded-xl border border-brand-navy/10 bg-white p-4 shadow-sm">
@@ -1382,10 +1405,11 @@ export default function PartnerDashboard() {
                     { key: 'referrals' as TabKey, label: `Commission Ledger (${totalReferredCount})` },
                     { key: 'payouts' as TabKey, label: 'Payout Station' },
                     { key: 'tiers' as TabKey, label: `VIP Loyalty Tier (${thrive?.totalPoints || 0} pts)` },
+                    { key: 'helpdesk' as TabKey, label: 'Support & Escalations' },
                   ].map((t) => (
                     <button
                       key={t.key}
-                      onClick={() => setTab(t.key)}
+                      onClick={() => navigateTab(t.key)}
                       className={`tactile-btn rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                         tab === t.key
                           ? 'bg-gradient-to-r from-brand-gold to-amber-500 text-brand-navy font-black shadow-sm'
@@ -1415,7 +1439,7 @@ export default function PartnerDashboard() {
                   partnerTier={thrive?.tier?.name || 'Gold Partner'}
                   totals={totals}
                   referrals={effectiveSummary?.referrals || []}
-                  onNavigateTab={(t) => setTab(t)}
+                  onNavigateTab={(t) => navigateTab(t)}
                   onQuickReferralSubmit={async (lead) => {
                     await logReferralMutation.mutateAsync({
                       partnerId: activePartnerId || '',
@@ -1573,8 +1597,8 @@ export default function PartnerDashboard() {
                       <div className="flex flex-wrap gap-2">
                         {[
                           { key: 'university', label: 'Universities' },
-                          { key: 'umrah_package', label: 'Umrah Packages' },
-                          { key: 'departure', label: 'Departures' },
+                          { key: 'umrah_package', label: 'Tours & Umrah Packages' },
+                          { key: 'departure', label: 'Group Departures' },
                           { key: 'visa', label: 'Visa Products' },
                           { key: 'job', label: 'Jobs' },
                         ].map((btn) => (
@@ -2129,6 +2153,16 @@ export default function PartnerDashboard() {
                   </section>
                 </div>
               )}
+
+              {/* ============================================================ */}
+              {/* TAB 6: SUPPORT & ESCALATION DESK                            */}
+              {/* ============================================================ */}
+              {tab === 'helpdesk' && activePartnerId && (
+                <PartnerHelpdeskSection
+                  partnerId={activePartnerId}
+                  apiToken={partnerToken || undefined}
+                />
+              )}
             </div>
           </div>
         )}
@@ -2137,7 +2171,7 @@ export default function PartnerDashboard() {
       </main>
 
       {/* Mobile Bottom Nav — thumb-zone, fixed (ITA Group: bottom nav +40% engagement vs top hamburger) */}
-      {activePartnerId && <PartnerMobileNav active={tab} onChange={(t) => setTab(t)} />}
+      {activePartnerId && <PartnerMobileNav active={tab} onChange={(t) => navigateTab(t)} />}
 
       <Footer />
 

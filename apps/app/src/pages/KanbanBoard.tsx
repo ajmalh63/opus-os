@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import BoardsTab from '../components/BoardsTab.js';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 const divisionIcons: Record<string, string> = {
   'study-abroad': '🎓 Study Abroad',
@@ -254,6 +254,10 @@ onSuccess: (data) => {
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [draggedSourceStage, setDraggedSourceStage] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  // WCAG 2.5.7 Dragging Movements — single-pointer alternative state
+  const [openMoveMenuId, setOpenMoveMenuId] = useState<string | null>(null);
+  const [a11yAnnounce, setA11yAnnounce] = useState('');
+  const announce = (msg: string) => { setA11yAnnounce(''); setTimeout(() => setA11yAnnounce(msg), 30); };
   const kanbanScrollerRef = React.useRef<HTMLDivElement>(null);
   const [kanbanIdx, setKanbanIdx] = useState(0);
 
@@ -570,7 +574,15 @@ onSuccess: (data) => {
                         draggable
                         onDragStart={(e) => handleDragStart(e, card.id, column.key)}
                         onClick={() => setSelectedCardId(card.id)}
-                        className={`bg-white p-4 rounded-lg border shadow-sm hover:shadow-md hover:border-brand-gold transition duration-200 cursor-grab active:cursor-grabbing flex flex-col gap-3 select-none ${
+                        tabIndex={0}
+                        role="listitem"
+                        aria-label={`${card.clientName}, ${divisionIcons[card.division] || card.division}, position ${filteredCards.indexOf(card)+1} of ${filteredCards.length} in ${column.name}`}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedCardId(card.id); }
+                          if (e.key === 'm' || e.key === 'M') { e.preventDefault(); setOpenMoveMenuId(openMoveMenuId === card.id ? null : card.id); }
+                          if (e.key === 'Escape' && openMoveMenuId === card.id) setOpenMoveMenuId(null);
+                        }}
+                        className={`bg-white p-4 rounded-lg border shadow-sm hover:shadow-md hover:border-brand-gold transition duration-200 cursor-grab active:cursor-grabbing flex flex-col gap-3 select-none focus:outline-none focus:ring-2 focus:ring-brand-gold/40 ${
                           hasBlocker ? 'border-l-4 border-l-brand-error' : 'border-brand-navy/10'
                         }`}
                       >
@@ -578,6 +590,37 @@ onSuccess: (data) => {
                           <span className="text-xs font-bold text-brand-gold uppercase tracking-wider bg-brand-gold/10 px-1.5 py-0.5 rounded truncate max-w-[150px]">
                             {divisionIcons[card.division] || card.division}
                           </span>
+                          {/* WCAG 2.5.7 — single-pointer Move menu alternative to drag */}
+                          <div className="relative shrink-0">
+                            <button
+                              aria-label={`Move options for ${card.clientName}`}
+                              aria-haspopup="menu"
+                              aria-expanded={openMoveMenuId === card.id}
+                              onClick={(e) => { e.stopPropagation(); setOpenMoveMenuId(openMoveMenuId === card.id ? null : card.id); }}
+                              className="w-6 h-6 rounded border border-brand-navy/10 bg-white hover:bg-brand-navy/[0.06] flex items-center justify-center text-[10px] font-bold text-brand-navy/60 hover:text-brand-navy focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                            >⋮</button>
+                            {openMoveMenuId === card.id && (
+                              <div role="menu" className="absolute right-0 top-7 z-30 min-w-[160px] rounded-lg border border-brand-navy/10 bg-white shadow-xl py-1 text-xs">
+                                {(boardData?.columns || []).map((col) => (
+                                  <button
+                                    key={col.key}
+                                    role="menuitem"
+                                    disabled={col.key === column.key}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMoveMenuId(null);
+                                      if (col.key !== column.key) {
+                                        moveMutation.mutate({ cardId: card.id, sourceStage: column.key, targetStage: col.key });
+                                        announce(`Moved ${card.clientName} to ${col.name}`);
+                                      }
+                                    }}
+                                    className={`w-full text-left px-3 py-1.5 hover:bg-brand-gold/10 disabled:opacity-40 disabled:cursor-not-allowed ${col.key === column.key ? 'font-bold text-brand-navy/40' : 'text-brand-navy'}`}
+                                  >Move to {col.name}{col.key === column.key ? ' ✓' : ''}</button>
+                                ))}
+                                <div className="border-t border-brand-navy/10 mt-1 pt-1 px-2 text-[10px] text-brand-navy/30">or drag & drop</div>
+                              </div>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1">
                             {(() => {
                               const nowSec = Math.floor(Date.now() / 1000);
@@ -873,6 +916,10 @@ onSuccess: (data) => {
         <span className="font-bold text-brand-gold">KANBAN BOARD:</span>
         <span>{toast.msg}</span>
       </div>
+      {/* a11y live region for WCAG 4.1.3 + 2.5.7 announcements */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">{a11yAnnounce}</div>
+      {/* Page semantics for kanban */}
+      <div className="sr-only" aria-hidden="true">Kanban pipeline board — use Move menu on each card for keyboard/single-pointer alternative to dragging</div>
     </div>
   );
 }

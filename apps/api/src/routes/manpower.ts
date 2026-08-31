@@ -8,7 +8,7 @@ function getPortalToken(c: any): string | undefined {
   return undefined;
 }
 import { getDb } from '../db/client.js';
-import { clients, engagements, consents, candidateProfiles, manpowerDeployments, jobPostings, membershipPlans, appSettings, tasks } from '../db/schema.js';
+import { clients, engagements, consents, candidateProfiles, manpowerDeployments, jobPostings, membershipPlans, tasks, manpowerWorkflows } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { parseResumeWithAI } from '../infra/ai.js';
 import { auditEvent } from '../middleware/audit.js';
@@ -278,6 +278,7 @@ manpowerRouter.get('/deployments', async (c) => {
       const job = jobs.find(j => j.id === d.jobId);
       const cl = allClients.find(c => c.id === d.clientId);
       const clientVasTask = vasTasks.find(t => t.clientId === d.clientId);
+      // exclusiveMember flag now means 'active Candidate Pass holder' (legacy column name)
       const hasPaidVas = !!clientVasTask || !!cl?.exclusiveMember;
       let formJson = null;
       try { formJson = d.formJson ? JSON.parse(d.formJson) : null; } catch { formJson = null; }
@@ -308,7 +309,7 @@ manpowerRouter.get('/deployments', async (c) => {
         candidatePhone: cl?.phone || '',
         exclusiveMember: !!cl?.exclusiveMember,
         hasPaidVas,
-        vasServiceTitle: clientVasTask?.title || (cl?.exclusiveMember ? 'Exclusive Community' : null),
+        vasServiceTitle: clientVasTask?.title || (cl?.exclusiveMember ? 'Candidate Pass' : null),
         matchScore: match.score,
         matchTier: match.tier,
         matchStrengths: match.strengths,
@@ -496,7 +497,8 @@ manpowerRouter.get('/jobs', async (c) => {
   }
 });
 
-// POST /api/manpower/jobs — Create a job posting (public or secret tier, rich agency fields)
+// POST /api/manpower/jobs — Create a job posting (single tier; employer masking
+// for non-pass-holders is enforced by the Candidate Pass paywall at the portal layer)
 manpowerRouter.post('/jobs', async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -517,7 +519,7 @@ manpowerRouter.post('/jobs', async (c) => {
       sector: body.sector,
       salaryText: body.salaryText,
       collar: body.collar || 'blue_collar',
-      tier: body.tier || 'public',
+      tier: 'public', // legacy column kept for backward compatibility — single tier since the secret tier was retired
       status: 'open',
       description: body.description || null,
       employer: body.employer || null,
@@ -542,7 +544,7 @@ manpowerRouter.post('/jobs', async (c) => {
       action: 'JOB_POSTED',
       entityName: 'job_postings',
       entityId: id,
-      afterState: { id, title: body.title, tier: body.tier || 'public', employer: body.employer || null }
+      afterState: { id, title: body.title, employer: body.employer || null }
     }).catch(() => {});
     return c.json({ success: true, id, message: "Job posting created." });
   } catch (error: any) {
@@ -550,7 +552,7 @@ manpowerRouter.post('/jobs', async (c) => {
   }
 });
 
-// PATCH /api/manpower/jobs/:id — Update posting (status fill, collar/tier + rich fields)
+// PATCH /api/manpower/jobs/:id — Update posting (status fill, collar + rich fields)
 manpowerRouter.patch('/jobs/:id', async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
@@ -564,7 +566,6 @@ manpowerRouter.patch('/jobs/:id', async (c) => {
     const text = ['title', 'country', 'sector', 'salaryText', 'description', 'employer', 'employerReference', 'currency', 'tradeCategory'];
     for (const k of text) if (body[k] !== undefined) updates[k] = body[k];
     if (body.collar !== undefined) updates.collar = body.collar;
-    if (body.tier !== undefined) updates.tier = body.tier;
     if (body.status !== undefined) updates.status = body.status;
     if (body.salaryMinPaise !== undefined) updates.salaryMinPaise = body.salaryMinPaise;
     if (body.salaryMaxPaise !== undefined) updates.salaryMaxPaise = body.salaryMaxPaise;
@@ -587,8 +588,10 @@ manpowerRouter.patch('/jobs/:id', async (c) => {
 });
 
 // ============================================================
-// PAID EXCLUSIVE COMMUNITY — ADMIN-MANAGED MEMBERSHIP PLANS
-// Superadmin controls prices, durations, tiers, perks, active state.
+// MEMBERSHIP PLANS — read-only admin listing.
+// The single active plan is the ₹100 lifetime candidate-pass (seeded via
+// seedMembershipPlans). Plan CRUD write endpoints were removed when the
+// legacy exclusive-30/90/365 plans were discontinued.
 // ============================================================
 
 // GET /api/manpower/membership-plans — list all plans (incl. inactive)
@@ -606,73 +609,8 @@ manpowerRouter.get('/membership-plans', async (c) => {
   }
 });
 
-// POST /api/manpower/membership-plans — create a plan
-manpowerRouter.post('/membership-plans', async (c) => {
-  if (c.get('user')?.role !== 'super_admin') return c.json({ error: 'Forbidden — super admin only' }, 403);
-  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
-  const db = getDb(c.env.DB);
-  const body = await c.req.json().catch(() => ({})) as any;
-  if (!body.key || !body.name || !body.pricePaise || !body.durationDays) {
-    return c.json({ error: "Missing required fields: key, name, pricePaise, durationDays" }, 400);
-  }
-  const now = Math.floor(Date.now() / 1000);
-  try {
-    const id = crypto.randomUUID();
-    await db.insert(membershipPlans).values({
-      id, key: body.key, name: body.name, description: body.description || null,
-      pricePaise: body.pricePaise, durationDays: body.durationDays,
-      tier: body.tier || 'basic', perksJson: Array.isArray(body.perks) ? JSON.stringify(body.perks) : '[]',
-      active: body.active !== false, sortOrder: body.sortOrder ?? 0, createdAt: now, updatedAt: now,
-    });
-    await auditEvent(c as any, { action: 'MEMBERSHIP_PLAN_CREATED', entityName: 'membership_plans', entityId: id, afterState: { key: body.key, pricePaise: body.pricePaise } }).catch(() => {});
-    return c.json({ success: true, id, message: "Membership plan created." });
-  } catch (error: any) {
-    return c.json({ error: "Failed to create membership plan", details: error.message }, 500);
-  }
-});
-
-// PUT /api/manpower/membership-plans/:id — update a plan
-manpowerRouter.put('/membership-plans/:id', async (c) => {
-  if (c.get('user')?.role !== 'super_admin') return c.json({ error: 'Forbidden — super admin only' }, 403);
-  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
-  const db = getDb(c.env.DB);
-  const id = c.req.param('id');
-  const body = await c.req.json().catch(() => ({})) as any;
-  try {
-    const existing = await db.select().from(membershipPlans).where(eq(membershipPlans.id, id)).get();
-    if (!existing) return c.json({ error: "Membership plan not found" }, 404);
-    const updates: any = { updatedAt: Math.floor(Date.now() / 1000) };
-    if (body.key !== undefined) updates.key = body.key;
-    if (body.name !== undefined) updates.name = body.name;
-    if (body.description !== undefined) updates.description = body.description;
-    if (body.pricePaise !== undefined) updates.pricePaise = body.pricePaise;
-    if (body.durationDays !== undefined) updates.durationDays = body.durationDays;
-    if (body.tier !== undefined) updates.tier = body.tier;
-    if (Array.isArray(body.perks)) updates.perksJson = JSON.stringify(body.perks);
-    if (body.active !== undefined) updates.active = body.active;
-    if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
-    await db.update(membershipPlans).set(updates).where(eq(membershipPlans.id, id));
-    return c.json({ success: true, id, message: "Membership plan updated." });
-  } catch (error: any) {
-    return c.json({ error: "Failed to update membership plan", details: error.message }, 500);
-  }
-});
-
-// DELETE /api/manpower/membership-plans/:id — deactivate a plan
-manpowerRouter.delete('/membership-plans/:id', async (c) => {
-  if (c.get('user')?.role !== 'super_admin') return c.json({ error: 'Forbidden — super admin only' }, 403);
-  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
-  const db = getDb(c.env.DB);
-  const id = c.req.param('id');
-  try {
-    await db.update(membershipPlans).set({ active: false, updatedAt: Math.floor(Date.now() / 1000) }).where(eq(membershipPlans.id, id));
-    return c.json({ success: true, id, message: "Membership plan deactivated." });
-  } catch (error: any) {
-    return c.json({ error: "Failed to deactivate membership plan", details: error.message }, 500);
-  }
-});
-
-// PATCH /api/manpower/clients/:id/membership — staff manual grant/revoke
+// PATCH /api/manpower/clients/:id/membership — superadmin support tool to
+// manually grant/revoke a Candidate Pass (legacy exclusive_member columns).
 manpowerRouter.patch('/clients/:id/membership', async (c) => {
   const role = c.get('user')?.role;
   if (role !== 'super_admin' && role !== 'manager') return c.json({ error: 'Forbidden' }, 403);
@@ -687,10 +625,11 @@ manpowerRouter.patch('/clients/:id/membership', async (c) => {
     const updates: any = { updatedAt: now };
     if (body.exclusiveMember === true) {
       updates.exclusiveMember = true;
-      updates.exclusivePlan = body.planKey || client.exclusivePlan || 'exclusive-30';
+      // Legacy column names kept — exclusive_plan now stores 'candidate-pass' (the only plan).
+      updates.exclusivePlan = body.planKey || client.exclusivePlan || 'candidate-pass';
       updates.exclusiveSince = client.exclusiveSince || now;
       const base = (client.exclusiveMember && client.exclusiveExpiresAt && client.exclusiveExpiresAt > now) ? client.exclusiveExpiresAt : now;
-      updates.exclusiveExpiresAt = base + (body.durationDays || 30) * 86400;
+      updates.exclusiveExpiresAt = base + (body.durationDays || 36500) * 86400; // default: lifetime pass
     } else if (body.exclusiveMember === false) {
       updates.exclusiveMember = false;
       updates.exclusiveExpiresAt = null;
@@ -720,36 +659,86 @@ manpowerRouter.delete('/jobs/:id', async (c) => {
 });
 
 // ============================================================
-// APP SETTINGS — owner-controlled feature switches
+// PRD-003 — 6 GCC COUNTRY WORKFLOWS (manager+ CRUD, counselor read)
+// Seed data + CRUD at /api/manpower/workflows + /api/staff/manpower/workflows
 // ============================================================
+const GCC_WORKFLOWS_SEED = [
+  { country: 'qatar', countryName: 'Qatar', stagesJson: JSON.stringify(['sourcing','screening','qvc','visa','deployment','probation']), requiredDocsJson: JSON.stringify(['passport','pcc','qvc_medical','employment_contract']), medicalType: 'qvc', visaStepsJson: JSON.stringify(['wakala','mofa','enjaz','qvc','stamping']), slaDays: 35 },
+  { country: 'uae', countryName: 'United Arab Emirates', stagesJson: JSON.stringify(['sourcing','screening','mohre','visa','deployment','probation']), requiredDocsJson: JSON.stringify(['passport','pcc','attested_degree','offer_letter']), medicalType: 'mohre', visaStepsJson: JSON.stringify(['mohre_approval','entry_permit','status_change','emirates_id','medical_inside']), slaDays: 30 },
+  { country: 'saudi', countryName: 'Saudi Arabia', stagesJson: JSON.stringify(['sourcing','screening','wafid','wakala','visa','deployment']), requiredDocsJson: JSON.stringify(['passport','pcc','gamca','wakala','tafweed']), medicalType: 'wafid', visaStepsJson: JSON.stringify(['wakala','tafweed','mofa','enjaz','stamping','musaned']), slaDays: 45 },
+  { country: 'kuwait', countryName: 'Kuwait', stagesJson: JSON.stringify(['sourcing','screening','gamca','visa','deployment']), requiredDocsJson: JSON.stringify(['passport','pcc','gamca','pcc_attested']), medicalType: 'gamca', visaStepsJson: JSON.stringify(['wakala','mofa','enjaz','stamping']), slaDays: 40 },
+  { country: 'bahrain', countryName: 'Bahrain', stagesJson: JSON.stringify(['sourcing','screening','gamca','lmra','visa','deployment']), requiredDocsJson: JSON.stringify(['passport','pcc','gamca','lmra_contract']), medicalType: 'gamca', visaStepsJson: JSON.stringify(['lmra_approval','visa_application','stamping']), slaDays: 38 },
+  { country: 'oman', countryName: 'Oman', stagesJson: JSON.stringify(['sourcing','screening','gamca','pcc','visa','deployment','probation']), requiredDocsJson: JSON.stringify(['passport','pcc','gamca','royal_oman_police_clearance']), medicalType: 'gamca', visaStepsJson: JSON.stringify(['pcc_attestation','mofa','visa_request','stamping']), slaDays: 42 },
+] as const;
 
-// GET /api/manpower/settings — read feature switches (superadmin)
-manpowerRouter.get('/settings', async (c) => {
-  if (c.get('user')?.role !== 'super_admin') return c.json({ error: 'Forbidden — super admin only' }, 403);
-  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
-  const db = getDb(c.env.DB);
-  try {
-    const row = await db.select().from(appSettings).where(eq(appSettings.key, 'exclusive_community_enabled')).get();
-    return c.json({ success: true, exclusiveCommunityEnabled: row?.value !== 'false' });
-  } catch (error: any) {
-    return c.json({ error: "Failed to fetch settings", details: error.message }, 500);
-  }
-});
-
-// PUT /api/manpower/settings — set feature switches (superadmin)
-manpowerRouter.put('/settings', async (c) => {
-  if (c.get('user')?.role !== 'super_admin') return c.json({ error: 'Forbidden — super admin only' }, 403);
-  if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
-  const db = getDb(c.env.DB);
-  const body = await c.req.json().catch(() => ({})) as { exclusiveCommunityEnabled?: boolean };
+async function ensureManpowerWorkflows(db: any) {
   const now = Math.floor(Date.now() / 1000);
-  try {
-    const value = body.exclusiveCommunityEnabled === false ? 'false' : 'true';
-    await db.insert(appSettings).values({ key: 'exclusive_community_enabled', value, updatedAt: now })
-      .onConflictDoUpdate({ target: appSettings.key, set: { value, updatedAt: now } });
-    await auditEvent(c as any, { action: 'SETTINGS_UPDATED', entityName: 'app_settings', entityId: 'exclusive_community_enabled', afterState: { value } }).catch(() => {});
-    return c.json({ success: true, exclusiveCommunityEnabled: value === 'true' });
-  } catch (error: any) {
-    return c.json({ error: "Failed to update settings", details: error.message }, 500);
+  for (const w of GCC_WORKFLOWS_SEED) {
+    const existing = await db.select().from(manpowerWorkflows).where(eq(manpowerWorkflows.country, w.country)).get().catch(()=>null);
+    if (!existing) {
+      await db.insert(manpowerWorkflows).values({ id: crypto.randomUUID(), country: w.country as any, countryName: w.countryName, stagesJson: w.stagesJson, requiredDocsJson: w.requiredDocsJson, medicalType: w.medicalType as any, visaStepsJson: w.visaStepsJson, slaDays: w.slaDays, active: true, createdAt: now, updatedAt: now });
+    }
   }
+}
+
+function canManageWorkflows(role?: string) { return role === 'super_admin' || role === 'manager'; }
+
+manpowerRouter.get('/workflows', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try { await ensureManpowerWorkflows(db); } catch {}
+  try {
+    const list = await db.select().from(manpowerWorkflows).all();
+    list.sort((a:any,b:any)=> a.country.localeCompare(b.country));
+    const parsed = list.map((w:any)=> ({ ...w, stages: (()=>{try{return JSON.parse(w.stagesJson||'[]')}catch{return []}})(), requiredDocs: (()=>{try{return JSON.parse(w.requiredDocsJson||'[]')}catch{return []}})(), visaSteps: (()=>{try{return JSON.parse(w.visaStepsJson||'[]')}catch{return []}})() }));
+    return c.json({ success: true, workflows: parsed, count: parsed.length });
+  } catch (e:any) { return c.json({ error: 'Failed to fetch workflows', details: e?.message }, 500); }
 });
+
+manpowerRouter.get('/workflows/:country', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try {
+    const row = await db.select().from(manpowerWorkflows).where(eq(manpowerWorkflows.country, c.req.param('country') as any)).get();
+    if (!row) return c.json({ error: 'Workflow not found' }, 404);
+    const parsed = { ...row, stages: (()=>{try{return JSON.parse((row as any).stagesJson||'[]')}catch{return []}})(), requiredDocs: (()=>{try{return JSON.parse((row as any).requiredDocsJson||'[]')}catch{return []}})(), visaSteps: (()=>{try{return JSON.parse((row as any).visaStepsJson||'[]')}catch{return []}})() };
+    return c.json({ success: true, workflow: parsed });
+  } catch (e:any) { return c.json({ error: 'Failed to fetch workflow', details: e?.message }, 500); }
+});
+
+manpowerRouter.put('/workflows/:country', async (c) => {
+  const role = c.get('user')?.role;
+  if (!canManageWorkflows(role)) return c.json({ error: 'Forbidden — manager+ only' }, 403);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  const country = c.req.param('country');
+  const body = await c.req.json().catch(()=>({})) as any;
+  try {
+    const existing = await db.select().from(manpowerWorkflows).where(eq(manpowerWorkflows.country, country as any)).get();
+    if (!existing) return c.json({ error: 'Workflow not found' }, 404);
+    const updates: any = { updatedAt: Math.floor(Date.now()/1000) };
+    if (body.stagesJson !== undefined) updates.stagesJson = typeof body.stagesJson==='string'?body.stagesJson:JSON.stringify(body.stagesJson);
+    else if (Array.isArray(body.stages)) updates.stagesJson = JSON.stringify(body.stages);
+    if (body.requiredDocsJson !== undefined) updates.requiredDocsJson = typeof body.requiredDocsJson==='string'?body.requiredDocsJson:JSON.stringify(body.requiredDocsJson);
+    else if (Array.isArray(body.requiredDocs)) updates.requiredDocsJson = JSON.stringify(body.requiredDocs);
+    if (body.visaStepsJson !== undefined) updates.visaStepsJson = typeof body.visaStepsJson==='string'?body.visaStepsJson:JSON.stringify(body.visaStepsJson);
+    else if (Array.isArray(body.visaSteps)) updates.visaStepsJson = JSON.stringify(body.visaSteps);
+    if (body.medicalType !== undefined) updates.medicalType = body.medicalType;
+    if (body.slaDays !== undefined) updates.slaDays = Number(body.slaDays);
+    if (body.active !== undefined) updates.active = !!body.active;
+    if (body.countryName !== undefined) updates.countryName = body.countryName;
+    await db.update(manpowerWorkflows).set(updates).where(eq(manpowerWorkflows.country, country as any));
+    await auditEvent(c as any, { action: 'MANPOWER_WORKFLOW_UPDATED', entityName: 'manpower_workflows', entityId: country, afterState: updates }).catch(()=>{});
+    const updated = await db.select().from(manpowerWorkflows).where(eq(manpowerWorkflows.country, country as any)).get();
+    return c.json({ success: true, workflow: updated });
+  } catch (e:any) { return c.json({ error: 'Failed to update workflow', details: e?.message }, 500); }
+});
+
+manpowerRouter.post('/workflows/seed', async (c) => {
+  const role = c.get('user')?.role;
+  if (!canManageWorkflows(role)) return c.json({ error: 'Forbidden — manager+ only' }, 403);
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = getDb(c.env.DB);
+  try { await ensureManpowerWorkflows(db); const list = await db.select().from(manpowerWorkflows).all(); return c.json({ success: true, count: list.length }); } catch(e:any){ return c.json({ error: e?.message }, 500); }
+});
+

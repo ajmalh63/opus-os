@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 const ROLES = ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator'];
 const TYPES = ['visa_inquiry', 'visa_application', 'visa_sale', 'manpower_application', 'membership_sale', 'document_upload', 'resume_upload'];

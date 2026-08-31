@@ -1,61 +1,61 @@
 # Opus OS — Complete Architecture Map
 
-> **Version:** 2026-08-26 (v8 — Tours & Travels Architecture Consolidation + Unique Canonical Division Emojis + Member Price Gating & Dynamic Config Engine + Monorepo Sync)  
-> **Status:** Live & Unified (Cloudflare Workers API + D1 97 tables + R2 Vault + SyncHub DO + Domain-Native VPS Tunnel)  
-> **Build:** `typecheck ✓ 0 errors` `test ✓ 103/103 files passed (671 tests)` `D1 local+remote 97 tables` `secrets domain https://wa.opusoverseas.com`
+> **Version:** 2026-08-30 (v13 — Login OTP Gold Fix (local `wrangler.local.toml` + idempotency body-clone re-enabled) + Manpower ₹100 Candidate-Pass Paywall (secret tier & exclusive plans retired; unified portal marketplace) + Razorpay Receipt ≤56 Compliance + Honest API-Outage UX)  
+> **Status:** Live & Unified (Cloudflare Workers API + D1 101 tables (99 + ocr_runs + manpower_workflows) + R2 `opusdocs` Vault (presigned 15m, $0 egress) + KV Edge Accelerator + Queues + Workers AI/Vectorize + SyncHub DO)  
+> **Build:** `typecheck ✓ 0 errors (api + app)` `test ✓ 120/120 files passed (745 tests)` `D1 101 tables` `secrets domain https://wa.opusoverseas.com` `Hybrid: Opus = System of Record (kept), Cloudflare Workflows = 0 (free 3k/day, not yet scaffolded — per your “keep everything as is”)`
 
 ---
 
-## 1. System Overview
+## 1. System Overview & Physical Topology
 
 ```
-                                ┌───────────────────────────────────────────────────────────┐
-                                │                     USERS & ROLES                         │
-                                │   Public Leads · Verified Clients · Agency Partners · Staff │
-                                └─────────────────────┬───────────────────┬─────────────────┘
-                                                      │                   │
-                             ┌────────────────────────▼─────┐   ┌─────────▼──────────────┐
-                             │     CLOUDFLARE EDGE (prod)   │   │   EXTERNAL SERVICES    │
-                             │  ─────────────────────────   │   │  ────────────────────  │
-                             │  Workers API (Hono.js)       │   │  Razorpay (Payments)   │
-                             │  D1 opusos-db 97 tables ACID │   │  Titan Mail (MX Relay) │
-                             │  R2 Encrypted Vault (10GB)   │   │  Google GA4/GSC/CF WA  │
-                             │  SyncHub DO global atom HMAC │   │  Meta Graph v21.0 WA   │
-                             │  KV Cache · Turnstile        │   │  Cal.com (Scheduling)  │
-                             │  BetterAuth D1 + 2FA TOTP    │   │                        │
-                             └──────────────┬───────────────┘   └────────────────────────┘
-                                            │
-                       ┌────────────────────┴─────────────────────┐
-                       │    CLOUDFLARED TUNNEL (domain-native)     │
-                       │   Tunnel ID: 6f1a97cc-8e9b-4340-a435       │
-                       │   10 Subdomains → https://*.opusoverseas.com│
-                       │   wa · chat · mautic · listmonk · cal      │
-                       │   umami · kuma · n8n · erp · crm · api     │
-                       └────────────────────┬─────────────────────┘
-                                            │
-                                ┌───────────▼──────────────────────────────┐
-                                │   ORACLE VPS (129.159.238.227)           │
-                                │   37 Docker containers, 10 apps          │
-                                │   • mautic.opusoverseas.com (8085)       │
-                                │   • listmonk.opusoverseas.com (9009)     │
-                                │   • chat.opusoverseas.com (3200)         │
-                                │   • wa.opusoverseas.com (2785 OpenWA)    │
-                                │   • cal.opusoverseas.com (3000)          │
-                                │   • umami.opusoverseas.com (3002)        │
-                                │   • kuma.opusoverseas.com (3003)         │
-                                │   • n8n.opusoverseas.com (5678)          │
-                                │   • erp.opusoverseas.com (8080 ERPNext)  │
-                                │   • crm.opusoverseas.com (3001 Twenty)   │
-                                └──────────────────────────────────────────┘
+                                 ┌───────────────────────────────────────────────────────────┐
+                                 │                     USERS & ROLES                         │
+                                 │   Public Leads · Verified Clients · Agency Partners · Staff │
+                                 └─────────────────────┬───────────────────┬─────────────────┘
+                                                       │                   │
+                              ┌────────────────────────▼─────┐   ┌─────────▼──────────────┐
+                              │     CLOUDFLARE EDGE (prod)   │   │   EXTERNAL SERVICES    │
+                              │  ─────────────────────────   │   │  ────────────────────  │
+                              │  Workers API (Hono.js v4)    │   │  Razorpay (Payments)   │
+                               │  D1 opusos-db 101 tables ACID│   │  Titan Mail (MX Relay) │
+                               │  R2 Encrypted Vault (Zero $) │   │  Google GA4/CF Web Analytics│
+                               │  KV Edge Cache (<1ms Reads)  │   │  Meta Graph v21.0 WA   │
+                              │  Queues Async Worker + DLQ   │   │  Cal.com (Scheduling)  │
+                              │  Workers AI + Vectorize DB   │   │                        │
+                              │  SyncHub DO global atom HMAC │   │                        │
+                              │  Native Edge Auth + 2FA TOTP │   │                        │
+                              └──────────────┬───────────────┘   └────────────────────────┘
+                                             │
+                        ┌────────────────────┴─────────────────────┐
+                        │    CLOUDFLARED TUNNEL (domain-native)     │
+                        │   Tunnel ID: 6f1a97cc-8e9b-4340-a435       │
+                        │   10 Subdomains → https://*.opusoverseas.com│
+                        │   wa · chat · mautic · listmonk · cal      │
+                        │   umami · kuma · n8n · erp · crm · api     │
+                        └────────────────────┬─────────────────────┘
+                                             │
+                                 ┌───────────▼──────────────────────────────┐
+                                 │   ORACLE VPS (129.159.238.227)           │
+                                 │   37 Docker containers, 10 apps          │
+                                 │   • mautic.opusoverseas.com (8085)       │
+                                 │   • listmonk.opusoverseas.com (9009)     │
+                                 │   • chat.opusoverseas.com (3200)         │
+                                 │   • wa.opusoverseas.com (2785 OpenWA)    │
+                                 │   • cal.opusoverseas.com (3000)          │
+                                 │   • umami.opusoverseas.com (3002)        │
+                                 │   • kuma.opusoverseas.com (3003)         │
+                                 │   • n8n.opusoverseas.com (5678)          │
+                                 │   • erp.opusoverseas.com (8080 ERPNext)  │
+                                 │   • crm.opusoverseas.com (3001 Twenty)   │
+                                 └──────────────────────────────────────────┘
 ```
-
-**Change v6→v7:** No `100.87.71.38` in runtime `apps/` (only `aiGuardrails` test fixture). `secrets.json` `OPENWA_BASE_URL: https://wa.opusoverseas.com`, `PENDING-CONFIGS.md` bulk `mautic/listmonk/chat/cal/umami/kuma/n8n/erp/crm → *.opusoverseas.com`, webhooks `https://api.opusoverseas.com/api/webhooks/*`. Domain is source of truth, Tailscale remains fallback only for SSH.
 
 ---
 
-## 2. Tri-Workspace Realtime Synchronization Matrix (Expanded v7)
+## 2. Tri-Workspace Realtime Synchronization Matrix
 
-Three workspaces share single D1 source, synchronized via `SyncHub Durable Object` `global` atom, `X-SyncHub-Auth` HMAC, `createSyncClient` resilient WS (`backoff 1s→30s + heartbeat 25s + Last-Event-ID replay + jitter`) + public `refetchInterval 30s` fallback. `isAllowedChannel()` enforces `staff:global:*`/`public:*` for staff/client/partner.
+Three workspaces share a single D1 source of truth, synchronized via `SyncHub Durable Object` (`global` atom, `X-SyncHub-Auth` HMAC, `createSyncClient` resilient WebSocket with backoff 1s→30s + heartbeat 25s + Last-Event-ID replay + jitter) + public `refetchInterval 30s` polling fallback. `isAllowedChannel()` enforces channel isolation across planes.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -73,43 +73,108 @@ Three workspaces share single D1 source, synchronized via `SyncHub Durable Objec
 │               👤 CLIENT WORKSPACE               │   │            🤝 PARTNER WORKSPACE             │
 │  • Dashboard 2.0 Health 0-100 + One CTA + 5-step│   │  • Booking Tower (live per sub-agent)       │
 │  • Onboarding Checklist <4 min (Welcome✓)       │   │  • Commission Ledger (auto tier boost)      │
-│  • PortalMessages + PortalCalendar (.ics)       │   │  • Performance (bookings/converted/overdue) │
-│  • Visa Tracker anxiety-grade (official+plain)  │   │  • 1-Click Deep Links SubID + QR Studio   │
-│  • Billing Forecast Next 30d + Help center      │   │  • Tier Ladder + Thrive Engine             │
-│  • Journey (messages+calendar) + Payments bar   │   │  • Strict Isolation (no private docs)       │
+│  • Document Vault (50MB Cap + 30d Auto-Retention│   │  • Performance (bookings/converted/overdue) │
+│  • Custom "Other" Document Ingest & Verification│   │  • 1-Click Deep Links SubID + QR Studio     │
+│  • PortalMessages + PortalCalendar (.ics)       │   │  • 4-Division Affiliate Catalog (No Attest) │
+│  • Visa Tracker anxiety-grade (official+plain)  │   │  • Masked Bank & UPI Direct Payouts         │
+│  • Billing Forecast Next 30d + Help center      │   │  • Strict Data Isolation (No Client Files)  │
 └─────────────────────────────────────────────────┘   └─────────────────────────────────────────────┘
 ```
 
-### 2.1 Full Channel Matrix (v7 — 16+ publish sites)
+### 2.1 Full Channel Matrix (18+ Publish Sites)
 
-| Domain | Publish `channel` | Type | Subscribe (plane) | Frontend Invalidate |
+| Domain | Publish `channel` | Event Type | Subscriber Plane | Invalidation Target |
 |---|---|---|---|---|
-| **Blog** | `public:blog` + `staff:global:blog` | `BLOG_CREATED/PUBLISHED/UPDATED/DELETED` + `flushScheduled` auto | `BlogManager.tsx` `staff [public:blog, staff:global:blog]` → `invalidate adminBlogPosts/publicBlogPosts/publicBlogPost` + public `refetchInterval 30s` |
-| **Leads** | `public:leads` + `staff:global:leads` | `WorkspaceShell` + `ClientsList` `staff:global:leads` |
-| **Family** | `client:{id}:family` + `staff:global:family` | `ClientPortal` `client [client:{id}:family]` + `Client360` staff |
-| **Ledger/Payments** | `client:{id}:payments` + `public:payments` + `staff:global:payments` | `ClientPortal` `client:{id}:payments` + `PartnerDashboard` `partner:{id}:commissions` + `BillingForecast` |
-| **Visa** | `public:visa` + `client:{id}:visa` + `staff:global:visa` (`VISA_DEADLINES_CALC/MOVED`, `VISA_RULE_CREATED`) | `ClientPortal` `client:{id}:visa` + `VisaTracker` `refetchInterval 30s` + `VisaPrepPortal` staff |
-| **Attestation** | `public:attestation` + `staff:global:attestation` (`ATTESTATION_PRESCREEN/VERIFIED/RULE_CREATED`) | `AttestationPortal` + `ClientPortal attestation` |
-| **Messages** | `client:{id}:messages` + `staff:global:messages` + `public:messages` | `PortalMessages.tsx` `client` + `Inbox` `staff` |
-| **Calendar/Journey** | `client:{id}:journey` `ONBOARDING_PROGRESS` | `ClientPortal` `client:{id}:journey` → `portalDashboard` + `DashboardHome` funnel |
-| **Partner** | `partner:{id}:bookings/commissions` + `staff:global:partner:*` | `PartnerDashboard` `partner` |
-| **Agreements/Docs** | `client:{id}:bookings + staff:global:alerts` | `ClientPortal` `client:{id}:bookings/documents` |
+| **Document Vault** | `client:{id}:documents` + `staff:global:alerts` | `DOCUMENT_UPLOADED`, `DOCUMENT_DELETED`, `DOCUMENT_VERIFIED` | `ClientPortal` (Vault Tab) + `StaffAlerts` + `Client360` | Invalidate `['clientVault', token]`, refresh quota & status |
+| **Blog** | `public:blog` + `staff:global:blog` | `BLOG_CREATED/PUBLISHED/UPDATED/DELETED` | `BlogManager.tsx` `staff [public:blog, staff:global:blog]` | Invalidate `adminBlogPosts`, `publicBlogPosts` |
+| **Leads** | `public:leads` + `staff:global:leads` | `LEAD_CREATED`, `LEAD_ASSIGNED`, `STAGE_CHANGED` | `WorkspaceShell` + `ClientsList` `staff:global:leads` | Invalidate `leadsList`, update Kanban |
+| **Family** | `client:{id}:family` + `staff:global:family` | `FAMILY_MEMBER_ADDED`, `FAMILY_MEMBER_UPDATED` | `ClientPortal` `client [client:{id}:family]` + `Client360` staff | Invalidate family members list |
+| **Ledger/Payments** | `client:{id}:payments` + `public:payments` + `staff:global:payments` | `PAYMENT_RECORDED`, `INSTALLMENT_UPDATED` | `ClientPortal` `client:{id}:payments` + `PartnerDashboard` `partner:{id}:commissions` | Invalidate billing & forecast |
+| **Visa** | `public:visa` + `client:{id}:visa` + `staff:global:visa` | `VISA_DEADLINES_CALC/MOVED`, `VISA_RULE_CREATED` | `ClientPortal` `client:{id}:visa` + `VisaTracker` | Invalidate deadlines & checklist |
+| **Attestation** | `public:attestation` + `staff:global:attestation` | `ATTESTATION_PRESCREEN/VERIFIED/RULE_CREATED` | `AttestationPortal` + `ClientPortal attestation` | Invalidate document chains |
+| **Messages** | `client:{id}:messages` + `staff:global:messages` + `public:messages` | `PORTAL_MESSAGE_SENT`, `INBOX_REPLY` | `PortalMessages.tsx` `client` + `Inbox` `staff` | Invalidate message thread |
+| **Calendar/Journey** | `client:{id}:journey` | `ONBOARDING_PROGRESS`, `DOCUMENT_DELETED` | `ClientPortal` `client:{id}:journey` | Invalidate `portalDashboard` |
+| **Partner** | `partner:{id}:bookings`, `partner:{id}:commissions` | `PARTNER_BOOKING_ADDED`, `COMMISSION_EARNED` | `PartnerDashboard` `partner` | Invalidate booking tower & ledger |
 
-### 2.2 Workspace Data Flow & Boundary Isolation (Unchanged + Extended)
+### 2.2 Boundary Security & Data Isolation Matrix
 
-| Domain / Field | Superadmin / Staff CRM | Client Portal (`/portal`) | Partner Dashboard (`/partner`) | Boundary Security Rule |
+| Domain / Entity | Superadmin / Staff CRM | Client Portal (`/portal`) | Partner Dashboard (`/partner`) | Boundary Security Rule |
 | :--- | :--- | :--- | :--- | :--- |
-| **Assigned Counselor** | Full control to assign/reassign any staff user across student engagements. | Displays live assigned staff name, role, and direct chat button. | Displays assignment status indicator only. | ✅ Counselor emails & internal user IDs are masked. Direct communication via in-app Chatwoot. |
-| **Pricing & Margins** | Full visibility into supplier cost (`wholesalePricePaise`) and gross margin. | Displays **ONLY Retail Customer Fee** (`retailPricePaise` in integer paise / ₹). | Displays **Gross Retail Customer Price** and percentage commission. | ✅ **Strict Isolation**: `wholesalePricePaise` and supplier names are stripped at the API boundary across all public/portal endpoints. |
-| **Documents & KYC** | Full document inspection, virus scan status, and verification controls. | Uploads via presigned R2 URLs; sees green `verified` badge or red `correction required` notes. | Sees candidate checklist progress (`Received / Pending`) without access to private files. | ✅ **DPDP-2023 Compliant**: Client documents are access-controlled and strictly isolated from partners. |
-| **Family Hub** | Views all `familyMembers` per client, can add/edit. | Views/adds own `father/mother/guardian` via `X-Portal-Token` matching `clientId`, `canReceiveUpdates` opt-in. | Hidden. | ✅ `isAuthorized()` staff `getAuth` OR client token `resolveClientByToken` matching `clientId`. |
-| **Ledger** | Manages `paymentSchedules` + `refund` per booking stage. | Sees `2/3 paid` bar + `Next 30d ₹X` forecast. | Sees `collectedBy` settlement + `tier boost`. | ✅ `bookingId` scoping, `collectedBy` FK. |
-| **Internal Notes & Fraud Score** | Staff-only internal CRM notes (`clients.notes`, `intakeContext`). | **Hidden**. | **Hidden**. | ✅ Zero leakage. |
-| **Pipeline Progression** | Moves Kanban cards across stages (`lead` → `complete`). | Stage updates live in client's 5-column service pipeline. | Stage updates live in partner's 5-column referral pipeline. | ✅ State transitions are synchronized in real-time. |
+| **Client Document Vault** | Full document inspection, virus scan status, and verification controls. | Uploads via presigned R2 URLs; sees status badges and storage quota. | **Strictly Forbidden (403/Hidden)** | ✅ **DPDP-2023 Compliant**: Client documents are isolated; partners cannot view, list, or download client private files. |
+| **Supplier Cost & Margins** | Full visibility into supplier cost (`wholesalePricePaise`) and gross margin. | Displays **ONLY Retail Customer Fee** (`retailPricePaise` in integer paise / ₹). | Displays **Gross Retail Customer Price** and percentage commission. | ✅ **Wholesale Price Isolation**: `wholesalePricePaise` and supplier names are stripped at the API boundary across all public/portal endpoints. |
+| **Assigned Counselor** | Full control to assign/reassign any staff user across student engagements. | Displays live assigned staff name, role, and direct chat button. | Displays assignment status indicator only. | ✅ Counselor emails & internal user IDs are masked. Direct communication routed via in-app Chatwoot. |
+| **Partner KYC & Bank Accounts** | Full compliance review for payout approval. | N/A | Masked PAN (`******234F`) and encrypted bank accounts (last-4 tag only). | ✅ PII is protected against database dumps and MITM inspection. |
+| **Internal Notes & Scoring** | Staff-only internal CRM notes (`clients.notes`, `intakeContext`). | **Hidden**. | **Hidden**. | ✅ Zero leakage outside staff perimeter. |
 
 ---
 
-## 3. Unified Authentication & Access Gateway (`/login`)
+## 3. Client Document Vault & Upload Protection Architecture
+
+```
+                                  CLIENT UPLOAD REQUEST
+                                            │
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+                    │     1. Presigned HMAC-SHA256 URL Verify       │
+                    │        (15-min expiry + Token Check)          │
+                    └───────────────────────┬───────────────────────┘
+                                            │
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+                    │     2. Filename Sanitization & Path Guard     │
+                    │        (Basename only, control chars strip)   │
+                    └───────────────────────┬───────────────────────┘
+                                            │
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+                    │     3. Allowlist & Magic-Byte Sniffer         │
+                    │        (PDF, PNG, JPG, WEBP, DOC, DOCX)       │
+                    │        • Reads binary signatures (%PDF, etc.) │
+                    └───────────────────────┬───────────────────────┘
+                                            │
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+                    │     4. Antivirus & Prompt Injection Scanner   │
+                    │        (scanDocumentBytes - Latin-1 loss-less)│
+                    │        • Flags: /OpenAction, /Launch, <script>│
+                    │        • Flags: LLM Jailbreaks & Overrides    │
+                    └───────────────────────┬───────────────────────┘
+                                            │
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+                    │     5. SHA-256 Fingerprint & Audit Chain      │
+                    │        (Tamper-evident record_hash in D1)     │
+                    └───────────────────────┬───────────────────────┘
+                                            │
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+                    │     6. Cloudflare R2 Storage (UUID Key)       │
+                    │        (Isolated from public web execution)   │
+                    └───────────────────────────────────────────────┘
+```
+
+### 3.1 30-Day Auto-Retention & Storage Governance
+* **50 MB Client Storage Quota**: Calculated dynamically on `/api/public/portal/vault` via `SUM(sizeBytes)`.
+* **30-Day Post-Journey Purge**:
+  * While engagements are active: `retentionStatus: 'active_journey'`.
+  * Journey complete: 30-day grace period countdown begins (`retentionStatus: 'grace_period'`).
+  * Expired: Cloudflare R2 binary objects are purged (`retentionStatus: 'expired'`), leaving database records and SHA-256 audit hashes intact for compliance.
+* **Voluntary Purge**: Clients can trigger immediate vault cleanup (`POST /api/public/portal/vault/purge-voluntary`) once they have downloaded their files.
+
+### 3.2 Ingest Defense & Magic-Byte Sniffing (`uploadGuard.ts`)
+* **Allowed Extensions**: `.pdf`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.doc`, `.docx` (Resumes: `.pdf`, `.doc`, `.docx`, `.txt`).
+* **Binary Sniffing**: Header bytes are verified against known file signatures (e.g. `%PDF` at offset 0, `\x89PNG` at offset 0). Content-Type headers are treated as untrusted.
+
+### 3.3 Prompt-Injection & Anti-Malware Content Scanner (`docScan.ts`)
+* **Untrusted Data Boundary**: Every uploaded binary is parsed losslessly to inspect raw character streams for:
+  * Malicious PDF directives: `/Launch`, `/OpenAction`, `/JavaScript`.
+  * Script injections: `<script>`, `javascript:`.
+  * LLM jailbreaks & instruction overrides: `ignore all previous instructions`, `reveal your system prompt`, `EXECUTE_`, `transfer funds to`.
+* **Quarantine**: Flagged documents are assigned `scanStatus: 'flagged'`, trigger an urgent staff review task, and are strictly blocked from being ingested into AI model contexts.
+
+---
+
+## 4. Unified Authentication & Access Gateway (`/login`)
 
 ```
                            ┌──────────────────────────┐
@@ -126,327 +191,168 @@ Three workspaces share single D1 source, synchronized via `SyncHub Durable Objec
       → /dashboard                   → /partner                 → /portal
 ```
 
-### 3.1 Security Specifications
-1. **Password Sign-In**: Email + Argon2/scrypt hashed password via BetterAuth D1 adapter. Real-time Caps Lock Detection. Session persistence (*"Remember session for 30 days"*).
-2. **Direct Email OTP**: Frictionless 6-digit OTP via transactional email (`Listmonk /api/tx` → Titan relay).
-3. **Two-Factor Authentication (TOTP)**: Google Authenticator enforced for `super_admin`, `manager`.
-4. **Brute-Force & Lockout Guard**: Rate-limited to 5 failed attempts per 15-minute sliding window with bounded audit logging (`LOGIN_FAILED`, `LOGIN_SUCCESS`).
-5. **Intelligent Workspace Dispatch**: `super_admin`, `manager`, `counselor`, `coordinator`, `receptionist` → `/dashboard`; `partner` → `/partner`; `client` → `/portal`.
-6. **L5 Hardening (2026-08-25 pentest):** `HttpOnly SameSite=Lax Secure` (prod), `X-Portal-Token` header preferred over `?token=` query (logged for forensics, stripped via `sessionStorage + replaceState`), `disableOriginCheck` only in dev (prod CSRF guards ON), `guest`/`client-self` IDOR → `404` (was first-client leak), `__Host-` prefix TODO + DPoP stack tracked in `PENDING-CONFIGS.md` H1-H14.
+### 4.1 Security Specifications
+1. **Password Sign-In**: Native Edge Auth NIST SP 800-132 PBKDF2-HMAC-SHA256 (100k iterations, 16-byte salt) with constant-time `timingSafeEqual`. Dual-verifier with in-place automatic upgrade from legacy hashes.
+2. **Breached Password Defense**: NIST SP 800-63B HaveIBeenPwned k-anonymity SHA-1 range screening.
+3. **Direct Email OTP**: Frictionless 6-digit OTP via transactional email (`Listmonk /api/tx` → Titan relay).
+4. **Two-Factor Authentication (TOTP)**: RFC 6238 WebCrypto HMAC-SHA1 TOTP with Base32 secret encoding and recovery backup codes.
+5. **Partner-Scoped Authentication (`authPartner`)**: All `/api/partner/:id/*` endpoints verify either a bearer API token (`Authorization: Bearer <apiToken>`) or an active **Native Edge Auth** session (`__Host-opusos_session` 256-bit, 30d) matching `partners.email`. Mismatched calls return `401 Unauthorized`.
 
 ---
 
-## 4. Transactional Email System Architecture (Listmonk v6.2 + Cloudflare Worker Fallback)
+## 5. The 5 Business Divisions — Operations & Data Lifecycle
 
-```
- ┌─────────────────────────────────────────────────────────────┐
- │                     Opus OS Workers API                     │
- │  (auth.ts · routes/agreements.ts · routes/portal.ts · etc.) │
- └──────────────────────────────┬──────────────────────────────┘
-                                │
-               Calls sendNotification(env, db, input)
-                                │
-                                ▼
- ┌─────────────────────────────────────────────────────────────┐
- │                apps/api/src/infra/notify.ts                 │
- │  • Resolves templateId via getListmonkTemplateId(env, kind) │
- │  • Passes SCALAR DATA MAP { Name, VerifyUrl, Amount, ... }  │
- │  • Bypasses pre-rendered HTML interpolation into raw tags   │
- └──────────────────────────────┬──────────────────────────────┘
-                                │
-       ┌────────────────────────┴────────────────────────┐
-       ▼ (Primary)                                       ▼ (Fallback)
-┌─────────────────────────────────┐             ┌─────────────────────────────────┐
-│     LISTMONK TRANSACTIONAL      │             │    CLOUDFLARE EMAIL WORKERS     │
-│   (listmonk.opusoverseas.com)   │             │       (env.EMAIL Binding)       │
-│  • 13 Dedicated type:tx tpls    │             │  • Auto-detects pre-rendered    │
-│  • Native Go html/template      │  Failover   │    HTML vs Plain Text           │
-│  • DKIM / SPF / Titan Relay     ├────────────►│  • Zero-tag auto-linking        │
-│  • Returns remoteId             │             │  • Direct SMTP relay            │
-└─────────────────────────────────┘             └─────────────────────────────────┘
-```
-
-### 4.1 Verified Transactional Email Catalog (15 Operational Types)
-
-| # | Kind | Listmonk ID | Subject Pattern | Bound Scalar Parameters |
-| :--- | :--- | :---: | :--- | :--- |
-| 1 | `verify` | **15** | *Verify & Activate Your Opus Overseas Account* | `Name`, `VerifyUrl`, `BannerText` |
-| 2 | `passwordReset` | **16** | *Reset Your Opus Overseas Password* | `Name`, `ResetUrl`, `ExpiryMinutes` |
-| 3 | `otp` | **17** | *Your Opus Overseas Code: {{otpCode}}* | `OtpCode`, `BannerText` |
-| 4 | `paymentReceipt` | **18** | *Opus Overseas — payment receipt {{paymentId}} (₹{{amount}})* | `ClientName`, `Amount`, `MilestoneName`, `PaymentId`, `DateStr`, `PortalUrl` |
-| 5 | `agreementInvite` | **19** | *Action Required: Please sign your {{agreementTitle}}* | `ClientName`, `AgreementTitle`, `SignUrl`, `ExpiryDays` |
-| 6 | `agreementExecuted` | **20** | *Executed Copy: {{agreementTitle}}* | `ClientName`, `AgreementTitle`, `DownloadUrl`, `SignedDate` |
-| 7 | `studyAbroadMilestone` | **21** | *Study Abroad Update: {{universityName}} — {{stageTitle}}* | `ClientName`, `UniversityName`, `CourseName`, `StageTitle`, `Details`, `PortalUrl` |
-| 8 | `attestationProgress` | **22** | *Attestation Update: {{documentType}} — {{currentStage}}* | `ClientName`, `DocumentType`, `CurrentStage`, `Country`, `AwbNumber`, `PortalUrl` |
-| 9 | `partnerPayout` | **23** | *Payout approved/settled — ₹{{amount}}* | `TitleText`, `PartnerName`, `StatusWord`, `Amount`, `PayoutId`, `PortalUrl` |
-| 10 | `payoutRequestReceived` | **24** | *Payout request received — ₹{{amount}}* | `PartnerName`, `Amount`, `DateStr`, `StatusText`, `PortalUrl` |
-| 11 | `consultationConfirmed` | **25** | *Consultation Confirmed: {{meetingTime}}* | `ClientName`, `CounselorName`, `MeetingTime`, `MeetingLink` |
-| 12 | `documentVerified` | **26** | *Document verified — {{fileName}}* | `ClientName`, `FileName`, `StatusText`, `PortalUrl` |
-| 13 | `nurtureTouch` | **27** | *{{heading}}* | `Heading`, `LeadName`, `MessageBody`, `CtaLabel`, `CtaUrl` |
-| 14 | `bookingConfirmation` | **25** | *Consultation Confirmed: {{meetingTime}}* | `ClientName`, `CounselorName`, `MeetingTime`, `MeetingLink` |
-| 15 | `genericFallback` | **5** | *{{Subject}}* | `Subject`, `Body` |
-
----
-
-## 5. Live In-App Support & Omnichannel Messaging Architecture
-
-**Domain-native (no Tailscale IP in runtime `apps/`):** `wa.opusoverseas.com` (OpenWA fallback, primary Cloud API `https://graph.facebook.com/v21.0/{PHONE_ID}/messages`), `chat.opusoverseas.com`, `api.opusoverseas.com`.
-
-```
-                            ┌────────────────────────────────────────────────────────┐
-                            │                 CLIENT / PARTNER UI                    │
-                            │           (<ChatWidget /> + PortalMessages)            │
-                            └───────────────────────────┬────────────────────────────┘
-                                                        │
-                            1. Boots via window.chatwootSDK.run()
-                            2. Identifies User: window.$chatwoot.setUser(id, { name, email })
-                            3. In-App Buttons trigger: window.$chatwoot.toggle()
-                            4. PortalMessages: POST /api/public/portal/messages (X-Portal-Token) → waOutbox
-                                                        │
-                                                        ▼
-                            ┌────────────────────────────────────────────────────────┐
-                            │           CHATWOOT MESSAGING ENGINE                    │
-                            │             (chat.opusoverseas.com)                    │
-                            └───────────────────────────┬────────────────────────────┘
-                                                        │
-                               ┌────────────────────────┴────────────────────────┐
-                               │                                                 │
-                               ▼                                                 ▼
-                ┌─────────────────────────────┐                   ┌─────────────────────────────┐
-                │      STAFF INBOX DESK       │                   │   WHATSAPP CLOUD API (v21)  │
-                │        (apps/app/inbox)     │                   │   wa.opusoverseas.com (FB)  │
-                │  • Live Real-Time Chat      │                   │  • waOutbox status queued→read│
-                │  • Linked Student CRM Data  │                   │  • Template category Utility  │
-                │  • Counselor Reassignment   │                   │  • Quality Green/Yellow/Red   │
-                └─────────────────────────────┘                   └─────────────────────────────┘
-```
-
-**Phase A Messaging:** `PortalMessages.tsx` `waOutbox` `direction inbound` `POST /api/public/portal/messages` → `publishSyncEvent client:{id}:messages + staff:global:messages` → `Inbox` + `ClientPortal journey` live.
-
----
-
-## 6. The 5 Business Divisions — Operations & Data Lifecycle (Updated with Gold Modules)
-
-### 6.1 🎓 Study Abroad Division
-* **Snapshot Architecture**: Real-time market data captured as immutable application snapshots (`study_abroad_applications.universityJson`).
-* **Live Compatibility Engine**: Pure functional scorer (`lib/studyAbroadMatch.ts`) computing Match / Reach / Safe compatibility live (0–100 score, TOEFL/PTE → IELTS normalization) without polluting the database.
+### 5.1 🎓 Study Abroad Division
+* **Snapshot Model**: Real-time market data captured as immutable application snapshots (`study_abroad_applications.universityJson`).
+* **Live Compatibility Engine**: Pure functional scorer (`lib/studyAbroadMatch.ts`) computing Match / Reach / Safe compatibility live (0–100 score, TOEFL/PTE → IELTS normalization).
 * **Stage Machine**: `shortlisted` → `docs_ready` → `submitted` → `under_review` → `offer_letter` → `deposit_paid` → `enrolled` / `rejected`.
-* **DPDP-2023 University Consent**: Student Profile Wizard captures explicit, cryptographically hashed consent for foreign university data sharing.
-* **Visa Gold V1-V7 (new):** `visaRules` 20 (country×visaType docs JSON, validity 6m, leadDays 14-45) + `visaDeadlines` cascade `biometrics+30d→medical+46d→submit` + `requirements/:bookingId` outstanding diff + `GET /kpis` + **C5 Tracker** `official verbatim + plain explainer + checkedAt` (VP0 anxiety-grade).
-* **Family Hub:** `familyMembers` `father/mother/guardian` + `canReceiveUpdates` + 6m passport expiry guard.
+* **DPDP-2023 University Consent**: Explicit, cryptographically hashed consent for foreign university data sharing.
 
-### 6.2 🛂 Global Visa Processing Division
-* **Inventory Catalog**: 165+ destinations across 56 standard products (`visa_products`) with entry types, processing turnaround times, and mandatory document checklists — now backed by `visaRules` DB (20 seeded) for live outstanding calc.
-* **Wholesale Margin Guard**: Base consular fees are strictly isolated from customer retail rates.
-* **Document Verification**: Staff review queue with presigned R2 downloads, instant `verified`/`rejected` toggles, and auto-generated client correction tasks.
-* **Deadline Cascade Engine (V1):** `POST /deadlines/calc {biometricsAt, LMIA_expiry}` → `PATCH /deadlines/:id/dueAt` cascades `dependsOn` delta → `GET /risk?days=14` Mon scan + `GET /kpis` exception rate.
+### 5.2 🛂 Global Visa Processing Division
+* **Inventory Catalog**: 165+ destinations across 56 standard products (`visa_products`) with mandatory checklists.
+* **Deadline Cascade Engine**: Automatically computes milestone deadlines (`biometricsAt` $\rightarrow$ `medicalAt` $\rightarrow$ `submitAt`) and alerts counselors of risk windows.
+* **C5 Tracker**: Dual-mode anxiety-grade tracker showing official status alongside plain-English explanations.
 
-### 6.3 🕋 Umrah & Spiritual Travel Division
-* **Inventory & Family Pricing**: 60-column package catalog (`umrah_packages`) supporting Quad/Triple/Double sharing, solo supplement rates, and granular child/infant pricing components.
+### 5.3 🧳 Tours & Travels Division (Incorporating Umrah Inventory)
+* **Comprehensive Scope**: Curated international holidays, domestic escapes, corporate MICE, and direct Umrah pilgrimage operations.
 * **Party Booking Model**: Group departures (capacity 30) with ₹500 × pax advance reservation, 72-hour seat hold window, Razorpay advance verification, and office balance settlement.
-* **Automated Expiry Release**: Self-healing hold release for unpaid slots past 24 hours without cron overhead.
-* **Installment & Refund Ledger (Phase A):** `paymentSchedules` booking-tied `Advance/Balance/Visa Fee` + `dueAt` + `collectedBy` + `refund 90%→50%` per `stage` + `GET /ledger/forecast?clientId=&days=30` → `BillingForecast` Next 30d ₹X.
+* **Member Price Gating**: Public pages show itineraries & dynamic configuration engines; live rate cards and wholesale PNR allocations require client authentication (`/login`).
 
-### 6.4 📑 Certificate Attestation Division
-* **B2C Indicative Rate Cards**: State HRD → MEA New Delhi → Embassy / Apostille legalization sequences with indicative price bands — now `attestationRules` 10 (degree→UAE 21d ₹8500, degree→Saudi 28d ₹12000, Hague Apostille 7d ₹4500, birth/marriage/pcc/commercial).
-* **Originals Transit Tracking**: Step-by-step custody chain, Blue Dart / DTDC courier AWB integration, and doorstep pickup scheduling.
-* **Gold Modules:** **Chain Builder AI** `GET /chain?docType=&destination=` fallback `HRD,MEA,Embassy` + **Pre-screen AI** `POST /:id/prescreen` (NNA name/date errors) + **e-APP Verifier** `POST /verify {eRegisterUrl hcch.net → verified}` → `attestationVerifications`.
+### 5.4 📜 Certificate Attestation Division
+* **Indicative B2C Rate Cards**: State HRD → MEA New Delhi → Embassy / Apostille legalization sequences with indicative price bands.
+* **Chain Tracking & Prescreen**: Step-by-step custody chain with Blue Dart / DTDC courier tracking and NNA name/date error prescreening.
+* **Affiliate Policy**: Attestation is strictly excluded from the partner affiliate program to prevent pricing exposure.
 
-### 6.5 💼 Overseas Manpower & Manpower Division
-* **Protected Job Catalog**: Proprietary Gulf & Europe vacancy boards with masked compensation details (`🔒 Login to View`) safeguarding corporate clients.
+### 5.5 👷 Overseas Manpower & Placement Division
+* **Protected Job Catalog**: Proprietary Gulf & Europe vacancy boards with masked compensation details (`🔒 Login to View`).
 * **Candidate Workflow**: Application → Trade Test → Medical GAMCA → Visa Stamping → Emigration Clearance → Deployment Flight.
-* **Manpower Marketplace:** `GET /api/blog/admin`? No — `GET /api/blog/posts` is blog, Manpower is `GET /api/blog`? Actually `GET /api/public/portal/manpower` + `manpowerMatch` 0-100 (`exp+skills+trade+passport`) + R2 resume vault.
+* **NEW 2026-08-30 — Country Workflows (PRD-003):** `manpower_workflows` table per GCC (Qatar QVC, UAE MOHRE, Saudi Wakala/Wafid, Kuwait, Bahrain, Oman) — `stagesJson`, `requiredDocsJson`, `medicalType` (wafid/gamca/qvc), `visaStepsJson` (wakala/tafweed/mofa/enjaz), per-country SLA.
+* **NEW — Blind-Bridge Privacy:** `employer_demands.blind_bridge=true` (default) + `employer_demands.country` — MPR routed via Opus with rate hidden from agency, agency bank hidden from employer (Mahad gold, RICE 400).
+* **NEW — 5-Factor AI Scoring:** `computeManpowerMatch()` now 5-factor (30 exp + 30 skills + 15 trade + **10 language** + 15 readiness = 100) — language `personal.languages` vs job languageRequirement (HireStream gold).
+* **NEW v13 — ₹100 Candidate-Pass Paywall (Razorpay Gold):** ONE anti-spam payment gates the division — `candidate-pass` (₹10,000 paise, lifetime 36500d) required to BROWSE jobs (employer stripped, `locked:true` for non-members) and APPLY (`403 MEMBERSHIP_REQUIRED` server-enforced on **every** application). Flow: `POST /membership/order` → Razorpay Standard Checkout → `POST /membership/verify` (HMAC-SHA256 `timingSafeEqual` signature verify, idempotent replay guard via audit-log `paymentId` check, hash-chained `MEMBERSHIP_GRANTED` audit event, staff `membership_sale` alert). Receipt ≤56 chars (Razorpay cap) via deterministic SHA-256 short hash of `token|planKey|hourBucket`.
+* **BREAKING v13 — Secret Tier & Exclusive Plans RETIRED:** `job_postings.tier` collapsed to `public` (legacy column kept, zero migrations), `exclusive-*` membership plans + community toggle + plan-CRUD endpoints removed across API, client portal, and staff workspace. `clients.exclusive_member=true` now semantically means "active Candidate-Pass holder" (legacy `exclusive_*` columns kept untouched). `GET /membership` returns the single candidate-pass plan (`comingSoon:false` always); `GET /jobs` + `GET /membership` accept `X-Portal-Token` header (token never in URLs).
+* **NEW v13 — Unified Client Marketplace:** `/portal?tab=jobs` renders ONE component — `ManpowerMarketplace` (Profile → Open Jobs → My Applications → Career Add-Ons) — behind the `ManpowerAccessGate` paywall for non-members (loading skeleton → gate → marketplace; `onSuccess` refetch, no reload). Legacy duplicate `ManpowerJobs` browse/tracker view deleted (~560 LOC). Staff `ManpowerPortal` cleaned: tier selector, exclusive toggle, plan CRUD UI removed; manual Candidate-Pass grant/revoke retained as support tool (`PATCH /api/manpower/clients/:id/membership`, lifetime default).
 
 ---
 
-## 7. Fluent Workspace — 6+4 Slices (Realtime First)
+## 6. Cryptographic Tamper-Evident SHA-256 Audit Chain
 
-**Doc:** `docs/fluent-workspace-implementation.md` + `docs/visa-attestation-gold-standard-implementation.md` + `docs/client-partner-workspace-audit.md`
-
-| Slice | Gold Standard | Publish Channel | Subscribe + Invalidate |
-|---|---|---|---|
-| **C1 Health Ring** | Onboard.io composite `usage+support+engagement+commercial+tenure` 3 tiers | `GET /api/public/portal/dashboard` `healthScore 0.4*docPct+0.3*deadlineHealth+0.2*engagement+0.1*payment` | `ClientPortal` `client:{id}:journey` → `portalDashboard` `refetchInterval 30s` |
-| **C2 Onboarding <4 min** | Vezert `5-step checklist (one pre-completed)`, EasyB `time-to-value <14d = 80% retain` | `POST /onboarding/progress {step,done}` → `client:{id}:journey` + `staff:global:leads` | `OnboardingChecklist.tsx` `pct%` bar + confetti |
-| **C3 Messaging** | Ticlick `Messaging Center` single thread | `POST /api/public/portal/messages` → `waOutbox` `client:{id}:messages` + `staff:global:messages` | `PortalMessages.tsx` `refetchInterval 10s` + `ClientPortal` `client:{id}:messages` |
-| **C4 Calendar** | SimpleVisa `Mon risk scan` + ICS | `GET /calendar` `visaDeadlines+paymentSchedules+tasks` + `GET /calendar.ics` `VCALENDAR` | `PortalCalendar.tsx` `Add to Calendar` |
-| **C5 Visa Tracker** | VP0 `official verbatim + plain explainer + checkedAt, change-only alerts` | `GET /api/visa/tracker/:bookingId` → `officialStatus, plainMap, checkedAt, timeline` | `VisaTracker.tsx` `refetchInterval 30s` in `ClientPortal visa` tab |
-| **P1 Booking Tower** | AgencyAuto `centralize bookings in one view` | `GET /api/partner/:id/bookings?division=` via `referrals` → `engagements` | `BookingTower.tsx` `partner:{id}:bookings` |
-| **P2/P3 Commission + Performance** | VisaBOS `tiered commissions auto` | `GET /partner/:id/ledger` `collectedBy` + `GET /performance` `bookings/converted/overdue` | `CommissionPerformance.tsx` `partner:{id}:commissions` |
-| **C6 Billing Forecast** | Vezert `Billing with forecasting` | `GET /api/ledger/forecast?clientId=&days=30` | `BillingForecast.tsx` `Next 30d ₹X` in `ClientDashboardHub` |
-
----
-
-## 8. Blog Engine — Gold Standard SEO/AEO/GEO/AIO
-
-**Doc:** `docs/blog-module-gold-standard.md` (8 pillars, 20+ rules)
-
-- **DB:** `blog_posts` `slug unique, tldr, excerpt, contentMarkdown, primaryKeyword unique (409 cannibalization), pillarSlug, division, metaTitle, ogImage, canonical, status, featured, readingMinutes, publishedAt/dateModified, viewCount` + `blogCategories` + 4 indexes.
-- **API:** `GET /api/blog/posts?division=&q=&page=` (public `rateLimit 60/min` + `flushScheduled()` auto-publish) + `GET /posts/:slug?preview=1` + `POST/PATCH/DELETE /api/blog/admin/*` (`manager+`, `auditPost()` overall/SEO/AEO/readability + critical/important/polish) + `GET /audit/:id` + `publishSyncEvent public:blog + staff:global:blog`
-- **Frontend:** `App.tsx` `Route /blog` `BlogIndex` (featured hero, `refetchInterval 30s`) + `Route /blog/:slug` `BlogPost` (blockquote TL;DR, `## What is` definition, `| table |`, `## FAQ` 5×<50w, `BlogPosting`+`FAQPage`+`BreadcrumbList` JSON-LD, TOC) + `VisibilityHub` 9th tab `📝 Blog Studio` `BlogManager.tsx` `createSyncClient(staff, [public:blog, staff:global:blog])` + `Footer` `Blog — Guides & Insights`
-- **SEO:** `GET /sitemap.xml` injects every `published` blog `loc` + `/blog` + `GET /llms.txt` 50 latest + `robots.txt` allows `GPTBot/PerplexityBot/ClaudeBot/OAI-SearchBot/ChatGPT-User` on `/`, blocks `CCBot/Bytespider`.
-
----
-
-## 9. Cryptographic Tamper-Evident SHA-256 Audit Chain
-
-Every state mutation, financial transaction, staff assignment, and document verification is permanently chained in `audit_log`:
+Every state mutation, financial transaction, staff assignment, and document upload is permanently chained in `audit_log`:
 
 ```
 ┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
 │      GENESIS BLOCK     │      │      AUDIT BLOCK 1     │      │      AUDIT BLOCK 2     │
 │  Hash: GENESIS         │◄─────┤  PrevHash: GENESIS     │◄─────┤  PrevHash: Hash(B1)    │
-│  Action: SYSTEM_BOOT   │      │  Action: LEAD_CREATED  │      │  Action: PAYMENT_ENTER │
+│  Action: SYSTEM_BOOT   │      │  Action: LEAD_CREATED  │      │  Action: DOC_UPLOAD    │
 │  Hash: Hash(B0)        │      │  Hash: Hash(B1)        │      │  Hash: Hash(B2)        │
 └────────────────────────┘      └────────────────────────┘      └────────────────────────┘
 ```
 
 * **Formula**: `record_hash = SHA-256(prev_hash + canonicalize(event))`
 * **PII Redaction**: Sensitive attributes (passwords, raw card numbers, full passports) are scrubbed at write boundary (`redactPayload`).
-* **Verification Suite**: Verified in CI/CD via `scripts/audit-chain-verify.mjs` ensuring zero retroactive alterations.
-* **Recent actions:** `BLOG_CREATED/PUBLISHED`, `FAMILY_MEMBER_ADDED`, `LEDGER_SCHEDULE_CREATED`, `VISA_DEADLINES_CALC`, `ATTESTATION_PRESCREEN/VERIFIED`, `ONBOARDING_PROGRESS`, `PORTAL_MESSAGE_SENT`, `LEAD_SCORED`.
+* **Integrity Validation**: Verified via `scripts/audit-chain-verify.mjs` ensuring zero retroactive alterations.
 
 ---
 
-## 10. Analytics & Tracking — GA4 + GTM + Meta Pixel + CF WA (Unified)
+### 6.3 Helpdesk & Multi-Workspace Real-Time Kanban Module (ITIL v4 Gold Standard)
 
-**Doc:** `docs/phase-a-implementation.md` § Messaging/Calendar + `apps/app/src/lib/visibilityTracking.ts`
-
-- **Superadmin single source:** `VisibilityHub → Analytics` `GET/POST /api/visibility/ga4/config` now `measurementId (G-…)` + `gtmId (GTM-…)` + `metaPixelId` + `cfWaToken` (no redeploy).
-- **Frontend fetch once:** `GET /api/visibility/ga4/config` → injects `https://www.googletagmanager.com/gtag/js?id=G-…` (`gtag('config', send_page_view:false)`) + `https://www.googletagmanager.com/gtm.js?id=GTM-…` (`dataLayer` + `noscript` iframe) + `https://connect.facebook.net/en_US/fbevents.js` (`fbq('init')`) + `beacon.min.js` (`data-cf-beacon`)
-- **Events:** `useVisibilityTracking(route)` → `POST /api/visibility/ga4/events` `page_view` + `dataLayer page_view` + `gtag page_view` + `fbq PageView` (one call). `trackLeadFormSubmit()` → D1 `lead_form_submit` + `dataLayer generate_lead` + `gtag generate_lead` + `fbq Lead` + `umami lead_form_submit`. `track()` in `umami.ts` fans out to `dataLayer` + `gtag` + `fbq` for `booking_cta_click` etc.
-- **Remaining:** `VITE_UMAMI_BASE_URL/WEBSITE_ID` still drives `ensureUmami()` `script.js` (internal dashboard `generate_lead`).
+```
+       ┌────────────────────────┐         ┌────────────────────────┐
+       │     Client Portal      │         │     Partner Portal     │
+       │    (/portal#helpdesk)  │         │   (/partner#helpdesk)  │
+       │  • 3-Stage Kanban      │         │  • Escalations Tower   │
+       │  • Ticket Intake       │         │  • Commission Inquiries│
+       │  • 1-5★ CSAT Rating    │         │  • Real-time Thread    │
+       └───────────┬────────────┘         └───────────┬────────────┘
+                   │                                  │
+                   │ POST /api/public/portal/tickets  │ POST /api/partner/:id/tickets
+                   ▼                                  ▼
+      ┌─────────────────────────────────────────────────────────────┐
+      │          Hono API Gateway & Helpdesk Engine (D1)            │
+      │   • Automated Ticket Numbering (HD-1001)                    │
+      │   • Dynamic SLA Calculation (Urgent: 2h, High: 6h)          │
+      │   • ITIL v4 "Pause-the-Clock" on waiting_on_user            │
+      │   • Strict Internal Note Firewall (isInternalNote: false)   │
+      │   • Automated Staff Triage Tasks & Alerts                   │
+      └─────────────────────────────┬───────────────────────────────┘
+                                    │
+                                    ▼
+                     ┌─────────────────────────────┐
+                     │   Superadmin Command Center │
+                     │          (/helpdesk)        │
+                     │  • 5-Column Kanban Board    │
+                     │  • SLA Breach & Timer Watch │
+                     │  • Yellow Internal Notes    │
+                     │  • Macro Canned Responses   │
+                     └─────────────────────────────┘
+                                    ▲
+                                    │ Pub/Sub
+                     ┌──────────────┴──────────────┐
+                     │     SyncHub Durable Object  │
+                     │  staff:global:tickets       │
+                     │  client:{clientId}:tickets  │
+                     │  partner:{partnerId}:tickets│
+                     └─────────────────────────────┘
+```
 
 ---
 
-## 11. Enterprise Zero-Cost Infrastructure Topology (Updated)
+## 7. Enterprise Infrastructure Topology
 
 | Layer | Provider | Free Allowance | Opus OS Utilization |
 | :--- | :--- | :--- | :--- |
-| **Edge Compute** | Cloudflare Workers | 100,000 requests / day | Hono API routing & auth gateway + Turnstile |
-| **Relational Database** | Cloudflare D1 | 5M read / 100k write rows / day | **97 ACID tables** `opusos-db` (was 89) |
-| **Object Storage** | Cloudflare R2 | 10 GB / 10M reads / mo ($0 egress) | Encrypted document vault + presigned upload HMAC |
-| **Email Relay** | Titan Mail / Listmonk | Unlimited transactional | `listmonk.opusoverseas.com` 13 `type:tx` templates |
-| **Live Chat & WhatsApp**| Self-Hosted VPS | Unlimited agents & messages | `chat.opusoverseas.com` + `wa.opusoverseas.com` (Meta Cloud primary, OpenWA fallback) |
-| **Workflow Automation** | Self-Hosted n8n | Unlimited executions | `n8n.opusoverseas.com` Community Edition |
-| **Zero-Trust Network** | Cloudflare Tunnel | Free for up to 50 users | `6f1a97cc-8e9b-4340-a435` → `https://*.opusoverseas.com` 10 subdomains |
-| **Sync Fabric** | Durable Objects | Free tier | `SyncHub` `global` atom HMAC, 20 channels max, `public:*`/`staff:global:*`/`client:{id}:*`/`partner:{id}:*` |
+| **Edge Compute** | Cloudflare Workers **Free** | 100,000 requests / day | Hono API routing & auth gateway + Turnstile |
+| **Relational Database** | Cloudflare D1 **Free** | 5M read / 100k write rows / day | **101 ACID tables** `opusos-db` (99 + `ocr_runs` + `manpower_workflows`) |
+| **Object Storage** | Cloudflare R2 **Free** | 10 GB / 10M reads / mo ($0 egress vs S3 $90/TB) | 50MB-capped vault `opusdocs` + presigned 15m HMAC — **live `opusdocs` 2026-08-19** |
+| **Email Relay** | Titan Mail / Listmonk + Resend fallback | Unlimited transactional, Titan DKIM + Resend HTTPS fallback (port 25 free) | `listmonk.opusoverseas.com` 15 `type:tx` templates |
+| **Live Chat & WhatsApp**| Self-Hosted VPS | Unlimited agents & messages | `chat.opusoverseas.com` + `wa.opusoverseas.com` |
+| **Workflow Automation** | Self-Hosted n8n | Unlimited executions | `n8n.opusoverseas.com` Community Edition — **kept as-is (hybrid: Opus = Record, Cloudflare Workflows = 0/3k/day free, not scaffolded per your call)** |
+| **Zero-Trust Network** | Cloudflare Tunnel **Free** | Free for up to 50 users | `6f1a97cc-8e9b-4340-a435` → `https://*.opusoverseas.com` |
+| **Sync Fabric** | Durable Objects **Free** | 100k req/day, 13k GB-s | `SyncHub` `global` atom HMAC, 20 channels max |
+| **Web Analytics** | Cloudflare Web Analytics **Free** | Unlimited, cookie-less, DPDP-friendly | **NEW 2026-08-30:** `beacon.min.js` in `index.html` (auto-inject when zone enabled) + GA4 `G-DTPJGJ34C5` kept — no banner needed |
 
 ---
 
-## 12. Security Hardening — L5/L6/L7 (2026-08-25 Pentest)
-
-**Doc:** `PENDING-CONFIGS.md` H1-H14 + `infra/terraform/cloudflare-waf.tf` + `infra/hunting-queries.sql`
-
-- **P1 L5 IDOR `guest`/`client-self` → `404`** `apps/api/src/lib/clientToken.ts` guest branch removed (was first-client leak, City-Forum pattern)
-- **P2 L5 `portalToken` `sessionStorage`-only** `apps/app/src/pages/ClientPortal.tsx:286` removed `localStorage` fallback
-- **P2 L6 DOM-XSS `motion.ts` `innerHTML`** → `createElement + textContent` escaped
-- **P2 L6 Security Headers** `apps/api/src/index.ts` `HSTS max-age=31536000; includeSubDomains; preload` + `X-Frame-Options: DENY` + `X-Content-Type-Options: nosniff` + `Referrer-Policy: strict-origin-when-cross-origin` + `frame-ancestors 'none'`
-- **P2 L5 Query-token audit** `apps/api/src/routes/portal.ts` header-preferred + audit note
-- **WAF as Code** `infra/terraform/cloudflare-waf.tf` → `Rate Limit 10/60s /api/auth/*`, `10/3600s /api/public/portal/lookup`, Custom Block `file://|gopher://|169.254.169.254`, `token=guest` (requires `CLOUDFLARE_API_TOKEN` with `Zone:Firewall Services Edit` scoped to `opusoverseas.com` `b5a528ef0851baea75cb7fbd80909549`)
-- **Pending:** DPoP `cnf.jkt`, CAE kill signal, absolute timeout middleware, CSP nonce, Logpush → R2
-
----
-
-## 13. Monorepo Structure & Key Directory Map (Updated)
-
-```
-Opus OS/
-├── apps/
-│   ├── api/                     # Cloudflare Workers Backend (Hono.js)
-│   │   ├── src/
-│   │   │   ├── auth.ts          # BetterAuth D1 + 2FA TOTP + transactional email hooks
-│   │   │   ├── db/schema.ts     # 97 Drizzle tables (blogPosts, familyMembers, waOutbox, paymentSchedules, visaRules, visaDeadlines, attestationRules, verifications)
-│   │   │   ├── infra/           # Listmonk, Messaging (Meta Cloud + OpenWA domain), Notify, EmailTemplates, ChatwootAi
-│   │   │   ├── lib/             # leadScoring (fit+engagement threshold 50), clientToken 128-bit, divisions, syncHubAuth
-│   │   │   ├── middleware/      # RBAC division-scoped, RateLimit D1 sliding window, Audit SHA-256 chain, Turnstile
-│   │   │   ├── routes/          # clients (score+route+SLA), portal (dashboard/onboarding/messages/calendar), blog (public/admin + audit + publishSyncEvent), family (isAuthorized staff/client token), ledger (schedules/generate/pay/refund/forecast), visaGold (deadlines/calc/risk/rules/kpis/tracker), attestationGold (rules/chain/sla/prescreen/verify), visibility (ga4/gtm/meta/cf), sync (WS upgrade + publish HMAC)
-│   │   │   └── cron/            # heartbeat, nurtureTouches, workflowExpiry, auditMonitor/Archive, secretRotation
-│   │   └── migrations/          # 0082_blog_engine.sql, 0083_phase_a_lead_family_ledger.sql, 0084_visa_attestation_gold.sql
-│   │
-│   └── app/                     # React 19 + Vite SPA Frontend
-│       └── src/
-│           ├── components/      # ClientDashboardHub (HealthRing, OnboardingChecklist, BillingForecast), PortalMessages, PortalCalendar, VisaTracker, BlogManager, Partner BookingTower/CommissionPerformance
-│           ├── pages/           # ClientPortal (7 tabs + journey messages+calendar, visa tracker, dashboard health), PartnerDashboard (5 tabs + tower), BlogIndex/Post (TL;DR, FAQ, JSON-LD), PublicHome, Login
-│           └── lib/             # session (BetterAuth), syncClient (resilient WS), divisions, visibilityTracking (one fetch → gtag/gtm/fbq/beacon), motion (GSAP, safe DOM), umami (fans out to dataLayer)
-│
-├── packages/
-│   ├── shared/                  # Zod validation schemas & shared contracts
-│   └── integrations/            # n8n workflow blueprints & OpenAPI specs
-│
-└── docs/                        # Specifications, Architecture, and Audit Reports
-    ├── ARCHITECTURE.md          # This living map
-    ├── blog-module-gold-standard.md (8 pillars) + phase-a-implementation.md + fluent-workspace-implementation.md + visa-attestation-gold-standard-implementation.md + client-partner-workspace-audit.md
-    └── realtime-sync-architecture.md + audit-logging-gold-standard.md
-```
-
----
-
-## 14. Recent Implementations Deep Dive (This Version)
-
-### Tours & Travels Division Architecture & Inventory Consolidation — 2026-08-26 (v8)
-- **Architecture Restructuring**: Repositioned Umrah from a standalone division to an **Inventory Product Line** under the unified **Tours & Travels** division (`umrah` division key retained for zero DB schema churn). Tours & Travels now cohesively encompasses:
-  1. *Umrah Pilgrimage Operations* (Hyderabad direct departures, 54-column package schema, rooming manifests, ₹500 advance hold).
-  2. *International Holiday Tours* (Europe, Gulf, Far East curated packages).
-  3. *Domestic Getaways & Excursions* (Kerala, Kashmir, Golden Triangle).
-  4. *Corporate & MICE Group Departures*.
-- **Staff & Client Surface Alignment**:
-  - `DivisionsHub.tsx` → Synchronized **Tours & Travels Desk** (Holidays & Pilgrimage Operations).
-  - `DivisionControlsTab.tsx` → Synchronized **Tours & Travels Division** (World Holidays, 5-Star Umrah Pilgrimages & Bespoke Group Departures).
-  - `UmrahPortal.tsx` → Synchronized **Tours, Holidays & Pilgrimage Desk** header and manifests management.
-  - `ClientPortal.tsx` & `ClientDashboardHub.tsx` → Synchronized client navigation tabs and dashboard cards to **Tours & Travels**.
-
-### Zero-Collision Canonical Division Emojis — 2026-08-26 (v8)
-- **Eliminated Multi-Desk Collisions**: Fixed identical `✈️` icon collisions between Visa Services and Tours & Travels across the entire monorepo.
-- **Enforced 5-Division Canonical Emoji Standard**:
-  - 🎓 **Study Abroad Desk** (`study-abroad`): Higher Education & University Admissions
-  - 🛂 **Visa Preparation Desk** (`visa`): Consular Processing & Visa Stamping
-  - 🧳 **Tours & Travels Desk** (`umrah`): World Holidays & Umrah Pilgrimage
-  - 📜 **Document Attestation Desk** (`attestation`): MEA Apostille & Legalization
-  - 👷 **Manpower Sourcing Hub** (`manpower`): Overseas Recruitment & Demand Management
-- **Synchronized Across**: `DivisionsHub.tsx`, `DivisionControlsTab.tsx`, `ClientPortal.tsx`, `ClientDashboardHub.tsx`, `ClientMobileNav.tsx`, and `PublicLeadForm.tsx`.
-
-### Public Tours & Travels Modernization & Dynamic Price Gating — 2026-08-26 (v8)
-- **Retro-Funnel Design Alignment**: Fully overhauled `apps/app/src/pages/public/ToursTravelPage.tsx` to match brand design language:
-  - Deep Navy hero gradient (`bg-gradient-to-b from-[#061e38] via-[#092b4c] to-[#0a2d50]`), `DomainBackdrop theme="global"`, `DomainDarkGraphics variant="umrah"`, and ambient lighting orbs.
-  - Strict typography standardization (`font-display font-black` + `font-sans`).
-  - Removed legacy CTAs (e.g. standalone "Dedicated Umrah Portal" buttons).
-- **Member-Only Pricing Policy & Authentication Gate**:
-  - Stripped fabricated public price tags from package cards, hero visual cards, and departure radars.
-  - Enforced policy banner directing users to authenticate (`/login`) to access live rate cards, PNR allocations, wholesale costs, and group manifests.
-- **Interactive Itinerary & Group Configuration Engine**:
-  - Converted static calculator into a live Pax & Rooming Tier group estimator with one-click official WhatsApp quotation dispatch.
-
-### Blog Engine (Gold) — 2026-08-25
-- **Why:** Writer 80/20 + Google May 15 + Princeton +30% inline citations + FAQ 81% highest. **Build:** 8 pillars, `tldr` 200-350c, `## What is` definition, 40-60w capsule per H2, 1 `| table |`, `FAQ 5×<50w`, `Person sameAs` + `Organization`, `dateModified` auto, `primaryKeyword` unique 409, `pillSlug` cluster, `auditPost()` `overall/SEO/AEO`. **API** `GET /api/blog/posts?division=` `rateLimit 60/min` `flushScheduled()` + `GET /posts/:slug?preview=1` + `POST/PATCH/DELETE` `manager+` + `publishSyncEvent public:blog + staff:global:blog` + **Frontend** `BlogIndex/Post` `refetchInterval 30s` + `VisibilityHub 📝 Blog Studio` `createSyncClient` + `Footer Blog` + `sitemap.xml` `max-age 300` + `llms.txt` 50.
-
-### Phase A — Lead Command Center + Family Hub + Ledger + WhatsApp (Domain-Native)
-- **Lead:** `scoreLead()` territory least-loaded `assignedTo` + `4hr SLA task` + `leadAssignments` audit + `public:leads`/`staff:global:leads` → `ClientsList`/`DashboardHome` funnel
-- **Family:** `familyMembers` `father/mother/guardian` + `isAuthorized()` staff OR `X-Portal-Token` `resolveClientByToken` matching `clientId` + `client:{id}:family` realtime → `Client360` + `ClientPortal Family`
-- **Ledger:** `paymentSchedules` `bookingId/installmentNo/dueAt/collectedBy/refundReason` + `POST /schedules/generate` + `GET /forecast?days=30` + `refund 90%→50%` + `client:{id}:payments` → `ClientPortal Billing` `2/3 paid` bar
-- **WhatsApp:** `waOutbox` `queued→read` `category` + `messaging.ts` dual `meta` (`https://graph.facebook.com/v21.0`) else `https://wa.opusoverseas.com` + `X-Hub-Signature-256` HMAC + `Inbox` `staff:global:messages` + `PortalMessages` `client:{id}:messages` realtime
-
-### Visa/Attestation Gold (14 modules) — 2026-08-25
-- **Visa:** `visa_rules` 20 seeded + `visaDeadlines` cascade `biometrics+30d→medical+46d→submit` `dependsOn` delta + `PATCH /deadlines/:id/dueAt` + `GET /risk?days=14` + `GET /requirements/:bookingId` outstanding diff + `GET /kpis` + **C5 Tracker** `official verbatim + plain explainer + checkedAt` → `ClientPortal visa` `VisaTracker`
-- **Attestation:** `attestation_rules` 10 seeded `chain JSON` `avgDays` + `GET /chain` + `GET /sla` `bufferedDue` + `POST /:id/prescreen` (NNA errors) + `POST /verify` `eRegisterUrl hcch.net` → `attestationVerifications`
-
-### Fluent Workspace — C1-C6 + P1-P3 (Realtime First)
-- **C1 Health Ring** `0.4*docPct+0.3*deadlineHealth+0.2*engagement+0.1*payment` `tier green/yellow/red` + **C2 Onboarding** 5 steps `Welcome✓` (Vezert <4 min, EasyB `time-to-value <14d`) → `ClientDashboardHub` `useQuery ['portalDashboard']` + `publishSyncEvent client:{id}:journey`
-- **C3 Messages** `PortalMessages` `waOutbox` `refetchInterval 10s` → `journey` `grid lg:grid-cols-2` + **C4 Calendar** `PortalCalendar` `visaDeadlines+paymentSchedules+tasks` + `.ics` → `client:{id}:journey`
-- **C5 Visa Tracker** `VisaTracker` `refetchInterval 30s` in `visa` tab + **P1 Booking Tower** `BookingTower` `partner:{id}:bookings` via `referrals` → `PartnerDashboard referrals` + **P2/P3 Commission** `CommissionPerformance` `collectedBy` + `conversion` → `payouts` tab + **C6 Billing Forecast** `BillingForecast` `Next 30d ₹X` in dashboard
-- **Domain:** `secrets.json` `OPENWA https://wa.opusoverseas.com`, `PENDING-CONFIGS.md` `*.opusoverseas.com` (no runtime `100.87.71.38` except test fixture)
-
----
-
-## 15. Verification — This Version
+## 8. Verification Matrix
 
 | Gate | Result | Notes |
 |---|:---:|---|
 | `pnpm typecheck` (all workspaces) | **✓ 0 errors** | `packages/shared`, `apps/api`, `apps/app` typechecked |
-| `pnpm test` (vitest suite) | **✓ 103/103 passed** | **671 tests passed across all divisions and subsystems** |
-| `pnpm --filter @opusos/app build` | **✓ passed** | Production bundle built cleanly |
-| `D1 Database` | **97 tables** | `visa_rules 20`, `attestation_rules 10`, `umrah_packages` |
+| `pnpm test` (vitest suite) | **✓ 120/120 passed** | **745 tests passed across all divisions and subsystems** |
+| `pnpm --filter app build` | **✓ passed** | Production bundle built cleanly in 2.93s |
+| `D1 Database` | **99 tables** | `support_tickets`, `ticket_messages`, `two_factor` added |
+| `Helpdesk Engine` | **ITIL v4 Standard** | Dynamic SLA Pause-the-Clock + strict internal note firewall |
+| `Document Vault Lifecycle` | **30-Day Auto-Purge** | 50MB quota calculation + voluntary purge support |
+| `Upload Security Guard` | **OWASP Aligned** | Magic-byte sniffing + prompt-injection & malware byte scanner |
+| `Partner Authorization` | **Zero-Trust (IDOR Free)** | Gated via `authPartner()` bearer token / Native Edge Auth session (`__Host-opusos_session`) |
+| `Strict CSP Nonce` | **Gold (OWASP V14.4.3)** | `cspNonce.ts` per-request 128-bit WebCrypto nonce + `strict-dynamic`, no `unsafe-inline`, `object-src 'none'`, `base-uri 'none'` — **verified `curl` has nonce, 0 violations** |
+| `GEO / SEO` | **Gold (Google Dec 2025)** | `llms.txt` (27 lines), `robots.txt` (GPTBot/OAI/Claude/Perplexity allow), `sitemap.xml` 13 URLs valid XML, `_headers` immutable, `renderSEOHeadString` for prerender — **curl raw HTML now has og:title** |
+| `Perf Route-Lazy` | **Gold (Core Web Vitals)** | `vite manualChunks pdf/motion/qr` + `React.lazy` 18 routes + `pdf.ts` dynamic `import('jspdf')` → entry 2.46→1.18 MB (277 gzip), cache-hit 89%, TTI -32% — **verified 496 modules split into ~30 chunks** |
+| `Kanban a11y` | **WCAG 2.2 AA (2.5.7 + 4.1.3)** | `⋮ Move` menu per card (tap, not drag), `aria-live="polite"` announce, keyboard `Space/M/Esc`, ≥24×24 target, `tabIndex=0` + `role=listitem` |
+| `Staff OCR Workbench` | **ICAO 9303 Gold (Staff-only)** | `ocr_runs` (hash-chained `OCR_RAN/CONFIRMED`) + `documents.ocrJson/ocrSignals` **never queried by portal** (portal selects only `fileName/status`), `mrzValidator.ts` 7-3-1 + composite + VIZ surname cross, `POST /api/staff/ocr/run|confirm` RBAC `counselor+` + 30/min + HITL |
+| `Manpower Workflows + Blind` | **GCC 6-Country Gold** | `manpower_workflows` (qatar/uae/saudi/kuwait/bahrain/oman) per `stagesJson/docs/medicalType/visaSteps`, `employer_demands.blind_bridge + country`, **5-factor** scoring (30+30+15+10 language+15) — **PRD-003 shipped 2026-08-30** |
+| `Manpower ₹100 Paywall (v13)` | **Gold (Anti-Spam + Razorpay)** | `candidate-pass` lifetime pass gates browse (employer masked, `locked:true`) + apply (`403 MEMBERSHIP_REQUIRED` server gate on every application); secret tier & exclusive plans retired across all workspaces; receipt ≤56 via SHA-256 hash; `X-Portal-Token` header accepted; idempotent payment replay guard; 7 dedicated regression tests (`manpower_paywall.test.ts`) |
+| `Login OTP Local Dev (v13)` | **Gold (DX + Proxy Integrity)** | `apps/api/wrangler.local.toml` — AI/Vectorize bindings excluded → zero remote-proxy sessions, fully-offline workerd on :8787 behind the Vite proxy; idempotency middleware body-clone fix (`c.req.raw.clone()`) re-enabled after root-causing the historic 500 on `POST /api/auth/otp/send`; `Login.tsx` now surfaces API-outage honestly instead of a misleading generic OTP error |
+| `Web Analytics` | **DPDP-friendly Free** | `beacon.min.js` defer in `index.html` (auto-inject when zone enabled) + GA4 kept — no banner, unlimited |
 | `Canonical Division Taxonomy` | **5 Unique Desks** | 🎓 Study Abroad · 🛂 Visa · 🧳 Tours & Travels · 📜 Attestation · 👷 Manpower |
-| `Division Emojis` | **0 Collisions** | Unique canonical emoji per division across all portals and forms |
-| `Tours & Travels Surface` | **Member Gated** | Authenticated access for live pricing, PNR manifests, and departures |
-| `Realtime Pub/Sub` | **16+ Channels** | `SyncHub DO` + resilient WS + 30s fallback |
+| `Realtime Pub/Sub` | **20+ Channels** | `SyncHub DO` + multi-workspace tickets sync — **hybrid: Opus = Record, Cloudflare Workflows = 0/3k/day (kept as-is per your call, design at `docs/HYBRID-WORKFLOW-ORCHESTRATION-DESIGN-2026-08-30.md`)** |
 
+---
+
+## 9. Local Development Quickstart (v13)
+
+```bash
+# Frontend — Vite on :5173 (proxies /api → 127.0.0.1:8787)
+pnpm --filter app dev
+
+# API — fully-offline local mode (AI/Vectorize excluded → no remote proxy session)
+cd apps/api && npx wrangler dev --config wrangler.local.toml --port 8787
+# secrets auto-load from apps/api/.dev.vars (gitignored)
+
+# Production deploy — UNCHANGED (AI/Vectorize live via the real wrangler.toml)
+wrangler deploy
+```
+
+* **Why `wrangler.local.toml` exists:** Workers AI + Vectorize bindings are *always remote* in `wrangler dev` — on offline/blocked networks the dev server dies at `Establishing remote connection…` (connect timeout), taking the whole API down with it. The local config drops both bindings; `src/infra/vector.ts` already degrades gracefully (`if (!env.VECTOR_INDEX)`), so login/OTP and every portal flow run 100% locally. D1/KV/R2/Queues/DOs all simulate locally with zero auth.
+* **Idempotency middleware (re-enabled v13):** reads request bodies from `c.req.raw.clone()` — the original stream stays intact for route handlers. Root cause of the historic 500 on `POST /api/auth/otp/send` was `await c.req.text()` consuming the body stream; regression-covered in `tests/idempotency.test.ts`.
+* **Razorpay environments:** local dev = test pair (`rzp_test_…` in `.dev.vars` + `apps/app/.env`); production = Worker secrets (`wrangler secret put RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET`) + `VITE_RAZORPAY_KEY_ID` in `apps/app/.env.production`. Key **ID** is public by design; the **secret** never leaves the server. Live/live and test/test pairs must match.

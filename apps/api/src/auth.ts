@@ -4,14 +4,16 @@ import { eq } from "drizzle-orm";
 import { sendNotification } from "./infra/notify.js";
 import { verificationEmailTemplate, passwordResetEmailTemplate, otpEmailTemplate } from "./infra/emailTemplates.js";
 import { getListmonkTemplateId } from "./infra/listmonk.js";
-import { hashPassword, verifyPassword, generateRandomToken, hashToken } from "./lib/auth/crypto.js";
+import { hashPassword, verifyPassword, verifyAndUpgradePassword, generateRandomToken, hashToken } from "./lib/auth/crypto.js";
 import { createSession, validateSessionToken, invalidateSession, invalidateUserSessions, setSessionCookie, clearSessionCookie, getSessionTokenFromCookie } from "./lib/auth/session.js";
 import { ensureSuperadmin, CANONICAL_ADMIN_EMAIL, CANONICAL_ADMIN_NAME, ALL_DIVISIONS } from "./lib/auth/bootstrap.js";
 import { generateTotpSecret, verifyTotp, generateBackupCodes } from "./lib/auth/totp.js";
+import { generateCodeVerifier, generateCodeChallenge, generateOAuthState, getGoogleAuthorizationUrl, exchangeGoogleCode, getMicrosoftAuthorizationUrl, exchangeMicrosoftCode } from "./lib/auth/oauth.js";
 
 export {
   hashPassword,
   verifyPassword,
+  verifyAndUpgradePassword,
   generateRandomToken,
   hashToken,
   createSession,
@@ -25,6 +27,13 @@ export {
   generateTotpSecret,
   verifyTotp,
   generateBackupCodes,
+  generateCodeVerifier,
+  generateCodeChallenge,
+  generateOAuthState,
+  getGoogleAuthorizationUrl,
+  exchangeGoogleCode,
+  getMicrosoftAuthorizationUrl,
+  exchangeMicrosoftCode,
   CANONICAL_ADMIN_EMAIL,
   CANONICAL_ADMIN_NAME,
   ALL_DIVISIONS
@@ -124,10 +133,12 @@ export function getAuth(env: { DB: D1Database; BETTER_AUTH_SECRET?: string; BETT
   };
 }
 
-export async function sendPasswordResetEmail(env: any, db: any, user: { email: string; name?: string }, token: string): Promise<void> {
+export async function sendPasswordResetEmail(env: any, db: any, user: { email: string; name?: string }, tokenOrUrl: string): Promise<void> {
   const fallbackBase = (env as any)?.ENVIRONMENT === 'production' ? 'https://app.opusoverseas.com' : 'http://127.0.0.1:5173';
   const baseURL = env.BETTER_AUTH_URL || fallbackBase;
-  const url = `${baseURL}/reset-password?token=${encodeURIComponent(token)}`;
+  const url = tokenOrUrl.startsWith('http://') || tokenOrUrl.startsWith('https://')
+    ? tokenOrUrl
+    : `${baseURL}/reset-password?token=${encodeURIComponent(tokenOrUrl)}`;
 
   const { subject, html } = passwordResetEmailTemplate({
     name: user.name || 'Valued Member',
@@ -149,10 +160,12 @@ export async function sendPasswordResetEmail(env: any, db: any, user: { email: s
   }
 }
 
-export async function sendVerificationEmailSafe(env: any, db: any, user: { email: string; name?: string }, token: string): Promise<void> {
+export async function sendVerificationEmailSafe(env: any, db: any, user: { email: string; name?: string }, tokenOrUrl: string): Promise<void> {
   const fallbackBase = (env as any)?.ENVIRONMENT === 'production' ? 'https://app.opusoverseas.com' : 'http://127.0.0.1:5173';
   const baseURL = env.BETTER_AUTH_URL || fallbackBase;
-  const url = `${baseURL}/verify-email?token=${encodeURIComponent(token)}`;
+  const url = tokenOrUrl.startsWith('http://') || tokenOrUrl.startsWith('https://')
+    ? tokenOrUrl
+    : `${baseURL}/verify-email?token=${encodeURIComponent(tokenOrUrl)}`;
 
   const { subject, html } = verificationEmailTemplate({
     name: user.name || 'Valued Member',

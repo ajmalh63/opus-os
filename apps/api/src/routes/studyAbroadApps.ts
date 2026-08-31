@@ -808,7 +808,7 @@ portalStudyAbroadRouter.get('/applications', async (c) => {
   try {
     const client = await resolveClientByToken(db, token);
     if (!client) return c.json({ error: 'Client not found for token' }, 404);
-    const rows = await db.select().from(studyAbroadApplications).where(eq(studyAbroadApplications.clientId, token)).all();
+    const rows = await db.select().from(studyAbroadApplications).where(eq(studyAbroadApplications.clientId, client.id)).all();
     rows.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     return c.json({ success: true, applications: rows.map(r => serializeApplication(r, client)) });
   } catch (e: any) {

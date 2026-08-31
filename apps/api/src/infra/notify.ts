@@ -29,9 +29,29 @@ export type NotifyEnv = MessagingEnv & ListmonkEnv & {
   EMAIL?: any; // Cloudflare Email Workers binding (legacy fallback)
   TELEGRAM_BOT_TOKEN?: string;
   OPS_TELEGRAM_CHAT_ID?: string;
+  RESEND_API_KEY?: string;
+  RESEND_FROM_EMAIL?: string;
 };
 
 export type NotifyDb = { insert(table: any): any };
+
+// Resend HTTP API fallback (port 25 independent — Cloudflare Worker → https://api.resend.com → Gmail)
+async function sendResend(env: NotifyEnv, to: string, subject: string, html: string): Promise<SendResult | null> {
+  if (!env.RESEND_API_KEY) return null;
+  try {
+    const from = env.RESEND_FROM_EMAIL || 'Opus Overseas <info@opusoverseas.com>';
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: [to], subject, html }),
+    });
+    const json: any = await res.json().catch(() => ({}));
+    if (res.ok) return { ok: true, provider: 'resend', remoteId: json?.id };
+    return { ok: false, provider: 'resend', reason: json?.message || `HTTP ${res.status}` };
+  } catch (e: any) {
+    return { ok: false, provider: 'resend', reason: e?.message };
+  }
+}
 
 // Low-level per-channel senders (never throw → SendResult).
 async function sendEmail(
@@ -48,11 +68,8 @@ async function sendEmail(
     console.log(`[sendEmail] listmonkUpsertSubscriber result:`, JSON.stringify(mk));
     let htmlContent: string;
     if (body.trim().startsWith('<')) {
-      // Pre-rendered rich HTML template (used as Body for generic template,
-      // or as fallback HTML for per-kind templates that ignore Body)
       htmlContent = body;
     } else {
-      // Plain text: escape angle brackets and auto-link URLs
       const safe = body.replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/(https?:\/\/[^\s<"'>]+)/g, (u) => `<a href="${u}" style="color:#d7a019;font-weight:bold;text-decoration:underline;">${u}</a>`);
       htmlContent = `<p style="margin:0 0 16px 0;font-size:15px;color:#4a5568;line-height:1.6;">${safe}</p>`;
@@ -61,8 +78,18 @@ async function sendEmail(
     const res = await listmonkSendTransactional(env, to, subject, htmlContent, opts.data || {}, txOpts);
     console.log(`[sendEmail] listmonkSendTransactional result:`, JSON.stringify(res));
     if (res.ok) return { ok: true, provider: 'listmonk', remoteId: res.id != null ? String(res.id) : undefined };
+    // Fallback to Resend HTTP (bypasses Oracle port 25 block entirely — edge → api.resend.com:443)
+    const fallback = await sendResend(env, to, subject, htmlContent);
+    if (fallback) {
+      console.log(`[sendEmail] Resend fallback result:`, JSON.stringify(fallback));
+      if (fallback.ok) return fallback;
+      return { ok: false, provider: 'listmonk+resend', reason: `Listmonk: ${res.reason} | Resend: ${fallback.reason}` };
+    }
     return { ok: false, provider: 'listmonk', reason: res.reason || (mk.ok ? undefined : 'subscriber+send failed') };
   }
+  // No Listmonk → try Resend direct (port-25-free)
+  const directResend = await sendResend(env, to, subject, body.trim().startsWith('<') ? body : `<p>${body}</p>`);
+  if (directResend) return directResend;
   if (env.EMAIL) {
     try {
       const isHtml = body.trim().startsWith('<');

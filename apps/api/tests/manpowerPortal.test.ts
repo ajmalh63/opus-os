@@ -15,6 +15,7 @@ const FULL_FORM = {
 
 describe('Manpower Client Portal (Phase 2) — jobs browse + apply', () => {
   let mockD1: MockD1Database;
+  const now = Math.floor(Date.now() / 1000);
 
   beforeAll(() => {
     mockD1 = new MockD1Database();
@@ -26,6 +27,19 @@ describe('Manpower Client Portal (Phase 2) — jobs browse + apply', () => {
       name: 'Zeeshan Ali',
       phone: '+91 88888 77777',
       email: 'zeeshan@example.com',
+      exclusive_member: 1, // Candidate Pass holder — full portal flow tests
+      exclusive_expires_at: now + 86400 * 36500,
+      created_at: 0,
+      updated_at: 0,
+    } as any);
+
+    // Non-member (no Candidate Pass) — used for paywall gate tests
+    mockD1.tables.clients.push({
+      id: 'OP-2026-9102',
+      portal_token: 'OP-2026-9102',
+      name: 'Ravi Kumar',
+      phone: '+91 88888 11111',
+      email: 'ravi@example.com',
       created_at: 0,
       updated_at: 0,
     } as any);
@@ -53,13 +67,13 @@ describe('Manpower Client Portal (Phase 2) — jobs browse + apply', () => {
     } as any);
 
     mockD1.tables.job_postings.push({
-      id: 'job-secret-1',
+      id: 'job-open-2',
       title: 'Confidential Operator',
       country: 'Qatar',
       sector: 'Oil & Gas',
       salary_text: 'QAR 4,000',
       collar: 'blue_collar',
-      tier: 'secret',
+      tier: 'public',
       status: 'open',
       created_at: 0,
     } as any);
@@ -77,16 +91,26 @@ describe('Manpower Client Portal (Phase 2) — jobs browse + apply', () => {
     } as any);
   });
 
-  it('GET /api/public/portal/manpower/jobs returns only public open jobs', async () => {
+  it('GET /jobs returns all open jobs, employer masked + locked for anonymous/non-members', async () => {
     const res = await app.request('/api/public/portal/manpower/jobs', {}, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
     expect(res.status).toBe(200);
     const data = await res.json() as any;
     expect(data.success).toBe(true);
-    expect(data.jobs.length).toBe(1);
-    expect(data.jobs[0].id).toBe('job-public-1');
-    expect(data.jobs[0].benefits).toEqual(['Accommodation', 'Food']);
-    expect(data.jobs[0].requirements).toEqual(['ITI Fitter', '2+ yrs']);
-    expect(data.jobs[0].employer).toBe('Al Marwan LLC');
+    expect(data.jobs.length).toBe(2);
+    expect(data.jobs.map((j: any) => j.id).sort()).toEqual(['job-open-2', 'job-public-1']);
+    for (const j of data.jobs) {
+      expect(j.locked).toBe(true);
+      expect(j.employer).toBeNull();
+    }
+    expect(data.jobs.find((j: any) => j.id === 'job-public-1').benefits).toEqual(['Accommodation', 'Food']);
+  });
+
+  it('GET /jobs unlocks employer details for Candidate Pass holders', async () => {
+    const res = await app.request('/api/public/portal/manpower/jobs?token=OP-2026-9101', {}, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+    const data = await res.json() as any;
+    const pub = data.jobs.find((j: any) => j.id === 'job-public-1');
+    expect(pub.locked).toBe(false);
+    expect(pub.employer).toBe('Al Marwan LLC');
   });
 
   it('POST /applications rejects an incomplete form with missing sections', async () => {
@@ -130,13 +154,16 @@ describe('Manpower Client Portal (Phase 2) — jobs browse + apply', () => {
     expect(data.duplicate).toBe(true);
   });
 
-it('POST /applications blocks secret jobs from client self-apply (non-member)', async () => {
+it('POST /applications blocks non-members from applying to ANY job (403 MEMBERSHIP_REQUIRED)', async () => {
     const res = await app.request('/api/public/portal/manpower/applications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: 'OP-2026-9101', jobId: 'job-secret-1', formJson: FULL_FORM }),
+      body: JSON.stringify({ token: 'OP-2026-9102', jobId: 'job-open-2', formJson: FULL_FORM }),
     }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
     expect(res.status).toBe(403);
+    const data = await res.json() as any;
+    expect(data.code).toBe('MEMBERSHIP_REQUIRED');
+    expect(data.planKey).toBe('candidate-pass');
   });
 
   it('GET /applications?token= returns the joined application with job title', async () => {

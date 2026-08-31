@@ -64,10 +64,10 @@ describe('HaveIBeenPwned breached-password screening (NIST SP 800-63B)', () => {
     expect(url).not.toContain('SuperSecretPassphrase');
   });
 
-  it('fail-closed: HIBP network error rejects the sign-up (500)', async () => {
+  it('fail-open resilience: HIBP network error logs audit and allows sign-up (200)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
-    const res = await signUp('offline@test.com', 'Even-A-Good-Password-Fails-1');
-    expect(res.status).toBe(500);
-    expect((mockD1.tables.users as any[]).some((u: any) => u.email === 'offline@test.com')).toBe(false);
+    const res = await signUp('offline@test.com', 'Even-A-Good-Password-Passes-1');
+    expect(res.status).toBe(200);
+    expect((mockD1.tables.users as any[]).some((u: any) => u.email === 'offline@test.com')).toBe(true);
   });
 });

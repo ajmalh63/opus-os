@@ -35,7 +35,7 @@ export default function EarningsHero({
           <p className="text-sm tracking-[0.14em] font-black text-slate-400">EARNINGS HERO • WITHDRAW IN ONE TAP</p>
           <div className="mt-2 flex items-baseline gap-3">
             <span className="text-3xl lg:text-4xl font-black tracking-tight">{available}</span>
-            <span className="text-xs px-2 py-1 rounded-full bg-[#CEFF00] text-black font-black">Available to withdraw</span>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-brand-gold text-brand-navy font-black shadow-xs">Available to withdraw</span>
           </div>
           <p className="text-sm text-slate-400 mt-1">
             Next payout in <b className="text-white">3 days</b>
@@ -48,12 +48,12 @@ export default function EarningsHero({
           <div className="relative w-20 h-20">
             <svg className="w-20 h-20 -rotate-90" viewBox="0 0 44 44">
               <circle cx="22" cy="22" r="18" stroke="#1F2B45" strokeWidth={4} fill="none" />
-              <circle cx="22" cy="22" r="18" stroke="#CEFF00" strokeWidth={4} fill="none" strokeDasharray={113} strokeDashoffset={offset} strokeLinecap="round" />
+              <circle cx="22" cy="22" r="18" stroke="#d7a019" strokeWidth={4} fill="none" strokeDasharray={113} strokeDashoffset={offset} strokeLinecap="round" />
               <text x="22" y="25" textAnchor="middle" fontSize={7} fontWeight={700} fill="white">
                 {progressPct}%
               </text>
             </svg>
-            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[13px] px-2 py-0.5 rounded-full bg-[#CEFF00] text-black font-black whitespace-nowrap">
+            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[13px] px-2 py-0.5 rounded-full bg-brand-gold text-brand-navy font-black whitespace-nowrap shadow-xs">
               {tier} → {nextTier}
             </span>
           </div>
@@ -61,10 +61,10 @@ export default function EarningsHero({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button onClick={onWithdraw} className="h-10 px-6 rounded-full bg-[#CEFF00] text-black text-sm font-black hover:bg-[#B8E600] transition active:scale-[0.98]">
+        <button onClick={onWithdraw} className="h-10 px-6 rounded-full bg-brand-gold hover:bg-brand-goldHover text-brand-navy text-sm font-black transition active:scale-[0.98] cursor-pointer shadow-xs">
           Withdraw to UPI / Bank →
         </button>
-        <button onClick={onViewRewards} className="h-10 px-5 rounded-full bg-white/10 border border-white/15 text-sm font-semibold hover:bg-white/15 transition">
+        <button onClick={onViewRewards} className="h-10 px-5 rounded-full bg-white/10 border border-white/15 text-sm font-semibold hover:bg-white/15 transition cursor-pointer">
           View Rewards
         </button>
       </div>

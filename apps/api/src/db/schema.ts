@@ -13,6 +13,10 @@ export const users = sqliteTable('users', {
   twoFactorEnabled: integer('two_factor_enabled', { mode: 'boolean' }).notNull().default(false),
   role: text('role', { enum: ['super_admin', 'manager', 'counselor', 'receptionist', 'coordinator', 'partner', 'client'] }).notNull().default('client'),
   userDivisions: text('user_divisions').notNull().default('[]'), // JSON array of division keys
+  status: text('status', { enum: ['active','suspended','archived'] }).notNull().default('active'),
+  statusChangedAt: integer('status_changed_at', { mode: 'timestamp' }),
+  statusChangedBy: text('status_changed_by').references((): any => users.id),
+  archivedAt: integer('archived_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
 });
@@ -59,7 +63,9 @@ export const clients = sqliteTable('clients', {
   // operational truth once created, but intent survives even if it isn't.
 intentDivisions: text('intent_divisions'), // JSON array of division keys (multi-interest)
   primaryDivision: text('primary_division'), // first/most-important division key
-  // Paid exclusive community (Manpower): membership grants access to secret jobs.
+  // Candidate Pass (Manpower): the ₹100 lifetime Razorpay anti-spam pass.
+  // Legacy column names kept for backward compatibility (no migrations);
+  // exclusive_member=true now semantically means 'active Candidate Pass holder'.
   exclusiveMember: integer('exclusive_member', { mode: 'boolean' }).notNull().default(false),
   exclusiveExpiresAt: integer('exclusive_expires_at'),
   exclusivePlan: text('exclusive_plan'),
@@ -198,8 +204,31 @@ export const documents = sqliteTable('documents', {
   // Prompt-injection / content scan (gold standard: documents are UNTRUSTED data —
   // AI features must never ingest flagged content; see lib/docScan.ts)
   scanStatus: text('scan_status', { enum: ['pending', 'clean', 'flagged'] }).notNull().default('pending'),
-  scanNote: text('scan_note')
+  scanNote: text('scan_note'),
+  // PRD-001 Staff OCR — staff-only extraction (never exposed to client portal; see PRD-001)
+  // Produced only via POST /api/staff/ocr/* (counselor+), HITL confirm required.
+  ocrJson: text('ocr_json'), // JSON: {mrz, extracted fields, confidence} — staff-only, never portal
+  ocrSignals: text('ocr_signals'), // JSON: 4 tamper signals [{name, pass, confidence}] — 2/4 must pass
 });
+
+// ==========================================
+// 6a. OCR RUNS — PRD-001 Staff-Level MRZ + Rejection Guard (ICAO 9303)
+// Staff-only audit trail: every OCR run is hash-chained via audit_log OCR_RAN.
+// Never exposed to client portal (staff workbench only, HITL confirm required).
+// ==========================================
+export const ocrRuns = sqliteTable('ocr_runs', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  actorId: text('actor_id').notNull().references(() => users.id),
+  modelVersion: text('model_version').notNull().default('mrz-v1-icao9303'),
+  signalsJson: text('signals_json').notNull(), // JSON 4 signals [{name, pass, confidence}]
+  extractedJson: text('extracted_json').notNull(), // JSON {mrz, v circa fields, vizCross}
+  rawHash: text('raw_hash').notNull(), // SHA-256 of raw image bytes for chain of custody
+  createdAt: integer('created_at').notNull(),
+}, (t) => [
+  index('ocr_runs_document_idx').on(t.documentId),
+  index('ocr_runs_actor_idx').on(t.actorId),
+]);
 
 // ==========================================
 // 6. DPDP-2023 COMPLIANCE CONSENTS
@@ -573,7 +602,10 @@ export const jobPostings = sqliteTable('job_postings', {
   sector: text('sector').notNull(),
   salaryText: text('salary_text').notNull(),
   collar: text('collar', { enum: ['blue_collar', 'white_collar'] }).notNull().default('blue_collar'),
-  tier: text('tier', { enum: ['public', 'secret'] }).notNull().default('public'),
+  // Legacy column kept for backward compatibility — a single tier ('public') since
+  // the 'secret' tier was retired; paywall/employer-masking is now driven by the
+  // Candidate Pass, not by job tier.
+  tier: text('tier', { enum: ['public'] }).notNull().default('public'),
   status: text('status', { enum: ['draft', 'open', 'paused', 'filled', 'closed', 'archived'] }).notNull().default('open'),
   description: text('description'),
   employer: text('employer'),
@@ -744,18 +776,19 @@ updatedAt: integer('updated_at').notNull()
 });
 
 // ==========================================
-// 2b. PAID EXCLUSIVE COMMUNITY — ADMIN-MANAGED MEMBERSHIP PLANS (Manpower)
-// Superadmin controls prices, durations, tiers, perks, and active state.
-// Client-facing paywall reads only `active` plans, ordered by sortOrder.
+// 2b. MEMBERSHIP PLANS (Manpower) — legacy admin-managed plans table.
+// Only the ₹100 lifetime candidate-pass plan is actively used/seeded; the
+// exclusive-30/90/365 plans are discontinued. Table + columns kept for
+// backward compatibility (no migrations). Active plans are ordered by sortOrder.
 // ==========================================
 export const membershipPlans = sqliteTable('membership_plans', {
   id: text('id').primaryKey(),
-  key: text('key').notNull().unique(), // e.g. exclusive-30
+  key: text('key').notNull().unique(), // e.g. candidate-pass
   name: text('name').notNull(),
   description: text('description'),
   pricePaise: integer('price_paise').notNull(),
   durationDays: integer('duration_days').notNull(),
-  tier: text('tier').notNull().default('basic'), // basic | pro | premium
+  tier: text('tier').notNull().default('basic'), // legacy plan tier label (e.g. verified_candidate)
   perksJson: text('perks_json').notNull().default('[]'),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
@@ -765,7 +798,7 @@ export const membershipPlans = sqliteTable('membership_plans', {
 
 // ==========================================
 // 2c. APP SETTINGS (key-value) — owner-controlled feature switches
-// e.g. exclusive_community_enabled = 'true' | 'false'
+// (e.g. divisions_enabled = JSON map of division keys)
 // ==========================================
 export const appSettings = sqliteTable('app_settings', {
   key: text('key').primaryKey(),
@@ -1425,12 +1458,35 @@ export const employerDemands = sqliteTable('employer_demands', {
   decisionMaker: text('decision_maker'),
   status: text('status', { enum: ['new', 'qualified', 'active', 'closed', 'rejected'] }).notNull().default('new'),
   source: text('source').notNull().default('website-hire'),
+  // PRD-003 Blind-Bridge: employer ↔ agency anonymized via Opus as routing layer
+  blindBridge: integer('blind_bridge', { mode: 'boolean' }).notNull().default(true), // true = hide employer identity from agency view
+  country: text('country'), // GCC destination: qatar|uae|saudi|kuwait|bahrain|oman
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
 }, (t) => [
   index('employer_demands_status_idx').on(t.status),
   index('employer_demands_industry_idx').on(t.industry),
 ]);
+
+// ==========================================
+// 61b. MANPOWER COUNTRY WORKFLOWS — PRD-003 (6 GCC destinations)
+// Each country has its own recruitment → medical → visa → deploy workflow.
+// Staff manages via /api/staff/manpower/workflows (manager+), blind-bridge per MPR.
+// Mahad 92% readiness + HireStream 11-stage gold standard.
+// ==========================================
+export const manpowerWorkflows = sqliteTable('manpower_workflows', {
+  id: text('id').primaryKey(),
+  country: text('country', { enum: ['qatar','uae','saudi','kuwait','bahrain','oman'] }).notNull().unique(),
+  countryName: text('country_name').notNull(), // e.g. "United Arab Emirates"
+  stagesJson: text('stages_json').notNull().default('[]'), // ordered ["sourcing","screening","wafid","visa","deployment","probation"]
+  requiredDocsJson: text('required_docs_json').notNull().default('[]'), // ["passport","pcc","gamca"]
+  medicalType: text('medical_type', { enum: ['wafid','gamca','qvc','mohre','wakala','none'] }).notNull().default('wafid'),
+  visaStepsJson: text('visa_steps_json').notNull().default('[]'), // ["wakala","tafweed","mofa","enjaz","stamping"]
+  slaDays: integer('sla_days').notNull().default(45),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
 
 // ==========================================
 // 62. VISA PRODUCTS INVENTORY
@@ -1772,5 +1828,64 @@ export const feedbackSubmissions = sqliteTable('feedback_submissions', {
   index('feedback_source_idx').on(t.source),
   index('feedback_external_id_idx').on(t.externalId),
   index('feedback_featured_idx').on(t.isFeatured),
+]);
+
+// ==========================================
+// 71. MULTI-WORKSPACE HELPDESK & SUPPORT TICKETS (ITIL v4 Gold Standard)
+// Real-time synchronization across Client, Partner, and Superadmin workspaces.
+// Dynamic SLA pausing on waiting_on_user, CSAT ratings, and strict internal note isolation.
+// ==========================================
+export const supportTickets = sqliteTable('support_tickets', {
+  id: text('id').primaryKey(),
+  ticketNumber: text('ticket_number').notNull().unique(), // e.g. HD-1001
+  source: text('source', { enum: ['client', 'partner', 'internal'] }).notNull().default('client'),
+  clientId: text('client_id').references(() => clients.id),
+  partnerId: text('partner_id').references(() => partners.id),
+  createdById: text('created_by_id'),
+  creatorName: text('creator_name').notNull(),
+  creatorEmail: text('creator_email'),
+  creatorPhone: text('creator_phone'),
+  division: text('division', { enum: ['study-abroad', 'visa', 'umrah', 'attestation', 'manpower', 'billing', 'technical', 'general'] }).notNull().default('general'),
+  category: text('category', { enum: ['application_status', 'document_issue', 'payment_billing', 'visa_query', 'commission_payout', 'booking_change', 'technical_bug', 'escalation', 'other'] }).notNull().default('other'),
+  subject: text('subject').notNull(),
+  description: text('description').notNull(),
+  priority: text('priority', { enum: ['low', 'medium', 'high', 'urgent'] }).notNull().default('medium'),
+  status: text('status', { enum: ['open', 'in_progress', 'waiting_on_user', 'resolved', 'closed'] }).notNull().default('open'),
+  assigneeId: text('assignee_id').references(() => users.id),
+  slaDueAt: integer('sla_due_at'),
+  slaPausedAt: integer('sla_paused_at'),
+  slaRemainingSeconds: integer('sla_remaining_seconds'),
+  firstResponseAt: integer('first_response_at'),
+  resolvedAt: integer('resolved_at'),
+  closedAt: integer('closed_at'),
+  satisfactionRating: integer('satisfaction_rating'), // 1 to 5 stars
+  satisfactionFeedback: text('satisfaction_feedback'),
+  attachmentsJson: text('attachments_json').notNull().default('[]'),
+  metadataJson: text('metadata_json').notNull().default('{}'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (t) => [
+  index('ticket_client_idx').on(t.clientId),
+  index('ticket_partner_idx').on(t.partnerId),
+  index('ticket_status_idx').on(t.status),
+  index('ticket_priority_idx').on(t.priority),
+  index('ticket_division_idx').on(t.division),
+  index('ticket_assignee_idx').on(t.assigneeId),
+  index('ticket_created_idx').on(t.createdAt),
+]);
+
+export const ticketMessages = sqliteTable('ticket_messages', {
+  id: text('id').primaryKey(),
+  ticketId: text('ticket_id').notNull().references(() => supportTickets.id, { onDelete: 'cascade' }),
+  senderType: text('sender_type', { enum: ['client', 'partner', 'staff', 'system'] }).notNull(),
+  senderId: text('sender_id').notNull(),
+  senderName: text('sender_name').notNull(),
+  message: text('message').notNull(),
+  isInternalNote: integer('is_internal_note', { mode: 'boolean' }).notNull().default(false),
+  attachmentsJson: text('attachments_json').notNull().default('[]'),
+  createdAt: integer('created_at').notNull(),
+}, (t) => [
+  index('ticket_msg_ticket_idx').on(t.ticketId),
+  index('ticket_msg_created_idx').on(t.createdAt),
 ]);
 

@@ -6,7 +6,7 @@ import { useSession, type Me } from '../lib/session';
 import WorkspaceLogo from './WorkspaceLogo';
 import CommandPalette from './CommandPalette';
 import { createSyncClient } from '../lib/syncClient';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 export interface NavItem {
   key: string;
@@ -65,6 +65,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Operations',
     items: [
+      { key: 'helpdesk', label: 'Helpdesk Tickets', to: '/helpdesk', icon: I.inbox, roles: ALL, match: '/helpdesk' },
       { key: 'billing', label: 'Billing & GST', to: '/billing', icon: I.billing, roles: ALL, match: '/billing' },
       { key: 'analytics', label: 'Flow Analytics', to: '/analytics', icon: I.analytics, roles: ['super_admin', 'manager'], match: '/analytics' },
       { key: 'visibility', label: 'Visibility Hub', to: '/visibility', icon: I.visibility, roles: ['super_admin', 'manager'], match: '/visibility' },
@@ -86,7 +87,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { key: 'compliance', label: 'Compliance', to: '/workspaces/compliance', icon: I.compliance, roles: ['super_admin', 'manager'], match: '/workspaces/compliance' },
       { key: 'performance', label: 'Performance', to: '/workspaces/performance', icon: I.performance, roles: ['super_admin'], match: '/workspaces/performance' },
-      { key: 'growthmetrics', label: 'Growth Metrics', to: '/workspaces/growth', icon: I.growthmetrics, roles: ['super_admin'], match: '/workspaces/growth' },
+      { key: 'growthmetrics', label: 'Growth Metrics', to: '/workspaces/growthmetrics', icon: I.growthmetrics, roles: ['super_admin'], match: '/workspaces/growthmetrics' },
        { key: 'infra', label: 'Infra Health', to: '/workspaces/infra', icon: I.infra, roles: ['super_admin'], match: '/workspaces/infra' },
       { key: 'fleet', label: 'Fleet Console', to: '/workspaces/fleet', icon: I.infra, roles: ['super_admin'], match: '/workspaces/fleet' },
     ],

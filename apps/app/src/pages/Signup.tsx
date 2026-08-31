@@ -5,7 +5,7 @@ import { useLocation } from 'wouter';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import Logo from '../components/Logo';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // Dedicated public account creation page. Better Auth handles the sign-up +
 // email verification. Staff accounts are NOT created here — the owner/admin
@@ -50,7 +50,7 @@ export default function Signup() {
       });
       const j: any = await r.json().catch(() => ({}));
       if (!r.ok) {
-        const msg = j?.message || j?.error || `Resend failed (HTTP ${r.status})`;
+        const msg = String(j?.message ?? j?.error?.message ?? j?.error ?? `Resend failed (HTTP ${r.status})`);
         // Better Auth returns 429 on rate-limit, 400 if already verified, 404 if email not found
         if (r.status === 429) {
           setMsg({ kind: 'err', text: 'Too many resend attempts — please wait a minute and try again.' });
@@ -91,14 +91,15 @@ export default function Signup() {
       // hid Listmonk auth failures behind a fake green toast. Resend is handled by the button below
       // with cooldown + real error surfacing.
 
-      if (res.ok || data?.message?.toLowerCase().includes('already exists') || data?.error?.toLowerCase().includes('already exists')) {
+      const errMsg = String(data?.message ?? data?.error?.message ?? data?.error ?? '');
+      if (res.ok || errMsg.toLowerCase().includes('already exists')) {
         setResendCooldown(30);
         setMsg({
           kind: 'ok',
           text: 'Account registered! An activation link has been sent to your email. Please check your inbox (and Spam folder) to activate your account.',
         });
       } else {
-        setMsg({ kind: 'err', text: data?.message || data?.error || 'Sign-up failed.' });
+        setMsg({ kind: 'err', text: errMsg || 'Sign-up failed.' });
       }
     } catch (err: any) {
       setMsg({ kind: 'err', text: err?.message || 'Network error.' });

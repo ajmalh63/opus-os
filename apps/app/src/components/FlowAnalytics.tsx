@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import FunnelTab from './FunnelTab.js';
 import PerformanceTab from './PerformanceTab.js';
 import { useRevealRoot } from '../lib/reveal';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // §16.4.5 Flow Analytics — CFD (cumulative flow) + throughput + Monte Carlo
 // forecast of days-to-clear current WIP. Manager+ surface.

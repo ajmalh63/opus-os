@@ -10,7 +10,8 @@ import ChecklistRelief from './client/ChecklistRelief';
 import SocialProofAtHesitation from './client/SocialProofAtHesitation';
 import OfflineBanner from './shared/OfflineBanner';
 import DocumentUploadModal from './client/DocumentUploadModal';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+import { ClientOnboardingModal } from './client/ClientOnboardingModal';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 export interface ClientDashboardProps {
   portalToken?: string;
@@ -24,7 +25,7 @@ export interface ClientDashboardProps {
   umrahBookings: any[];
   attestationApps: any[];
   jobApps: any[];
-  onNavigateTab: (tab: 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs' | 'vault' | 'payments') => void;
+  onNavigateTab: (tab: 'dashboard' | 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs' | 'vault' | 'journey') => void;
 }
 
 export default function ClientDashboardHub({
@@ -44,6 +45,8 @@ export default function ClientDashboardHub({
   const { isEnabled } = useDivisions();
   const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState<'all' | 'study' | 'visa' | 'umrah' | 'attestation' | 'jobs'>('all');
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [activeOnboardingStep, setActiveOnboardingStep] = useState('profile');
 
   // C1+C2 — Health + Onboarding (realtime via staff/client journey sync)
   const { data: dashboardData } = useQuery<any>({
@@ -449,20 +452,80 @@ export default function ClientDashboardHub({
       {dashboardData && (
         <div className="grid lg:grid-cols-2 gap-4">
           <HealthRing score={dashboardData.healthScore} tier={dashboardData.tier} />
-          <OnboardingChecklist onboarding={dashboardData.onboarding} token={portalToken || ''} onUpdate={() => queryClient.invalidateQueries({ queryKey: ['portalDashboard', portalToken] })} />
+          <OnboardingChecklist
+            onboarding={dashboardData.onboarding}
+            token={portalToken || ''}
+            onUpdate={() => {
+              queryClient.invalidateQueries({ queryKey: ['portalDashboard', portalToken] });
+              queryClient.invalidateQueries({ queryKey: ['clientSession'] });
+            }}
+            onStepClick={(stepKey) => {
+              setActiveOnboardingStep(stepKey);
+              setIsOnboardingOpen(true);
+            }}
+          />
         </div>
       )}
       {dashboardData?.nextAction && (
         <div className="rounded-2xl border border-brand-gold/20 bg-gradient-to-r from-amber-50 to-white p-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs font-bold text-brand-navy">Next: {dashboardData.nextAction.label} {dashboardData.nextDeadline && <span className="font-normal text-brand-navy/60">• {dashboardData.nextDeadline.daysLeft}d left ({dashboardData.nextDeadline.type})</span>}</div>
-          <button onClick={() => { const href = dashboardData.nextAction.href; if (href.includes('?tab=')) { const t = href.split('tab=')[1]; if (onNavigateTab) onNavigateTab(t as any); else window.location.href = href; } else window.location.href = href; }} className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded-full text-xs font-bold">Do it now →</button>
+          <div className="text-xs font-bold text-brand-navy">
+            Next: {dashboardData.nextAction.label}{' '}
+            {dashboardData.nextDeadline && (
+              <span className="font-normal text-brand-navy/60">
+                • {dashboardData.nextDeadline.daysLeft}d left ({dashboardData.nextDeadline.type})
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => {
+              if (
+                dashboardData.nextAction.action === 'open_onboarding' ||
+                dashboardData.nextAction.href?.startsWith('#onboarding') ||
+                dashboardData.nextAction.label?.toLowerCase().includes('profile') ||
+                dashboardData.nextAction.label?.toLowerCase().includes('passport') ||
+                dashboardData.nextAction.label?.toLowerCase().includes('education') ||
+                dashboardData.nextAction.label?.toLowerCase().includes('intent')
+              ) {
+                setActiveOnboardingStep(dashboardData.nextAction.stepKey || 'profile');
+                setIsOnboardingOpen(true);
+                return;
+              }
+
+              const href = dashboardData.nextAction.href;
+              if (href.includes('?tab=')) {
+                const t = href.split('tab=')[1];
+                if (onNavigateTab) onNavigateTab(t as any);
+                else window.location.href = href;
+              } else if (href.startsWith('#')) {
+                setActiveOnboardingStep('profile');
+                setIsOnboardingOpen(true);
+              } else {
+                window.location.href = href;
+              }
+            }}
+            className="bg-brand-gold hover:bg-brand-gold/90 text-brand-navy px-4 py-2 rounded-full text-xs font-bold cursor-pointer transition shadow-sm"
+          >
+            Do it now →
+          </button>
         </div>
       )}
+
+      {/* Real-time Client Profile Onboarding Wizard Modal */}
+      <ClientOnboardingModal
+        token={portalToken || ''}
+        initialStepKey={activeOnboardingStep}
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['portalDashboard', portalToken] });
+          queryClient.invalidateQueries({ queryKey: ['clientSession'] });
+        }}
+      />
       {portalToken && (
         <BillingForecast
           token={portalToken}
           clientId={sessionData?.journeys?.[0]?.client?.id || accountId}
-          onPayNow={() => onNavigateTab('payments')}
+          onPayNow={() => onNavigateTab('dashboard')}
         />
       )}
 
@@ -513,7 +576,7 @@ export default function ClientDashboardHub({
               </span>
             </div>
             <p className="text-sm text-slate-600">
-              Live status tracking across university admissions, embassy visa files, attestation chains, and pilgrimage slots.
+              Live status tracking across university admissions, embassy visa files, attestation chains, tours &amp; Umrah packages, and overseas jobs.
             </p>
           </div>
 
@@ -523,7 +586,7 @@ export default function ClientDashboardHub({
               { id: 'all', label: 'All Files' },
               { id: 'study', label: '🎓 Study' },
               { id: 'visa', label: '🛂 Visa' },
-              { id: 'umrah', label: '🕋 Umrah' },
+              { id: 'umrah', label: '🧳 Tours & Travels' },
               { id: 'attestation', label: '📑 Attest' },
               { id: 'jobs', label: '💼 Jobs' },
             ].map((f) => (
@@ -686,7 +749,7 @@ export default function ClientDashboardHub({
             </div>
           </button>
 
-          {/* Division 3: Umrah Pilgrimage */}
+          {/* Division 3: Tours & Travels */}
           <button
             onClick={() => onNavigateTab('umrah')}
             type="button"
@@ -695,7 +758,7 @@ export default function ClientDashboardHub({
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="w-11 h-11 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  🕋
+                  🧳
                 </span>
                 <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
                   isEnabled('umrah') ? 'text-amber-800 bg-amber-50 border border-amber-200' : 'text-slate-600 bg-slate-100 border border-slate-200'
@@ -703,13 +766,13 @@ export default function ClientDashboardHub({
                   {isEnabled('umrah') ? 'Departures Open' : 'Coming Soon'}
                 </span>
               </div>
-              <h4 className="font-display font-black text-base sm:text-lg text-brand-navy">Umrah Pilgrimage Desk</h4>
+              <h4 className="font-display font-black text-base sm:text-lg text-brand-navy">Tours &amp; Travels Desk</h4>
               <p className="text-sm text-slate-600 leading-relaxed">
-                5-Star luxury packages in Makkah & Madinah, family pricing, direct flights, and guaranteed departure dates.
+                Curated international holidays, domestic escapes, corporate MICE, and sacred Umrah pilgrimage packages with guaranteed departure dates.
               </p>
             </div>
             <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-brand-navy group-hover:text-brand-gold">
-              <span>{isEnabled('umrah') ? 'View Packages & Departures' : 'View Coming Soon Status'}</span>
+              <span>{isEnabled('umrah') ? 'Explore Tours & Packages' : 'View Coming Soon Status'}</span>
               <span>→</span>
             </div>
           </button>
@@ -799,7 +862,7 @@ export default function ClientDashboardHub({
       </section>
 
       {/* Document Upload Modal — real link, back button closes, realtime sync */}
-      <DocumentUploadModal open={!!uploadDoc} docLabel={uploadDoc?.label || null} division={uploadDoc?.division || null} token={accountId} onClose={closeUpload} />
+      <DocumentUploadModal open={!!uploadDoc} docLabel={uploadDoc?.label || null} division={uploadDoc?.division || null} token={portalToken || accountId} onClose={closeUpload} />
     </div>
   );
 }

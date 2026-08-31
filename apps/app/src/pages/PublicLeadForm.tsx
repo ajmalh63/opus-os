@@ -7,7 +7,7 @@ import StickyCallBar from '../components/StickyCallBar';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { track, EVENTS } from '../lib/umami';
 import { prefersReducedMotion, animateHeadlineWords } from '../lib/motion';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 const siteKeyConfigured = !!((import.meta.env.VITE_TURNSTILE_SITE_KEY as string) || '');
 

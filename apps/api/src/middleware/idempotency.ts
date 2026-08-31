@@ -23,10 +23,13 @@ export function idempotency() {
     const apiKeyId = c.get('apiKey')?.id || null;
     const requestPath = c.req.path;
 
-    // Read and clone request body to compute hash
+    // Read the body from a CLONE of the raw request. Reading the original
+    // stream (c.req.text()) would consume it, breaking downstream handlers
+    // that call c.req.json() (the cause of the 500s on POST /api/auth/otp/send).
     let bodyText = '';
     try {
-      bodyText = await c.req.text();
+      const cloned = c.req.raw.clone();
+      bodyText = await cloned.text();
     } catch {
       bodyText = '';
     }

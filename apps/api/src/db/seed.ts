@@ -135,18 +135,18 @@ export async function seedDatabaseRest(db: DbClient): Promise<void> {
     }
   }
 
-  // 63. Job postings (Manpower board: public/secret + collar + manpower ticker).
-  // Segmented so the OS board can show secret roles while the public page only
-  // ever sees tier='public' rows (public.ts filters by tier).
+  // 63. Job postings (Manpower board + collar + manpower ticker). Single tier:
+  // the legacy secret/public split was retired; employer masking for non
+  // Candidate Pass holders is enforced by the portal paywall, not by tier.
   const jobRows = await db.select().from(jobPostings).all();
   if (jobRows.length === 0) {
     const defaultJobs = [
       { id: 'job-welder', title: 'Structural Welder', country: 'Qatar', sector: 'Construction', salaryText: 'QR 2,500 (~₹57,000)', collar: 'blue_collar' as const, tier: 'public' as const },
       { id: 'job-coordinator', title: 'Project Coordinator', country: 'UAE', sector: 'Infrastructure', salaryText: 'AED 8,500 (~₹1,92,000)', collar: 'white_collar' as const, tier: 'public' as const },
-      { id: 'job-electrician', title: 'Industrial Electrician', country: 'Oman', sector: 'Energy', salaryText: 'OMR 350 (~₹75,000)', collar: 'blue_collar' as const, tier: 'secret' as const },
+      { id: 'job-electrician', title: 'Industrial Electrician', country: 'Oman', sector: 'Energy', salaryText: 'OMR 350 (~₹75,000)', collar: 'blue_collar' as const, tier: 'public' as const },
       { id: 'job-supervisor', title: 'Construction Supervisor', country: 'Saudi Arabia', sector: 'Construction', salaryText: 'SAR 4,500 (~₹1,00,000)', collar: 'blue_collar' as const, tier: 'public' as const },
       { id: 'job-hvac', title: 'HVAC Technician', country: 'Qatar', sector: 'Facilities', salaryText: 'QR 2,200 (~₹50,000)', collar: 'blue_collar' as const, tier: 'public' as const },
-      { id: 'job-accountant', title: 'Accounts Officer', country: 'UAE', sector: 'Finance', salaryText: 'AED 6,000 (~₹1,35,000)', collar: 'white_collar' as const, tier: 'secret' as const },
+      { id: 'job-accountant', title: 'Accounts Officer', country: 'UAE', sector: 'Finance', salaryText: 'AED 6,000 (~₹1,35,000)', collar: 'white_collar' as const, tier: 'public' as const },
       { id: 'job-nurse', title: 'Staff Nurse', country: 'Saudi Arabia', sector: 'Healthcare', salaryText: 'SAR 3,800 (~₹85,000)', collar: 'white_collar' as const, tier: 'public' as const },
       { id: 'job-driver', title: 'Heavy Vehicle Driver', country: 'Qatar', sector: 'Logistics', salaryText: 'QR 1,900 (~₹43,000)', collar: 'blue_collar' as const, tier: 'public' as const },
     ];
@@ -266,7 +266,7 @@ export async function seedSuperAdmin(db: DbClient, adminEmail: string, adminPass
   const found = existing.find((u: any) => (u.email || '').toLowerCase() === adminEmail.toLowerCase());
   if (found) return { created: false, email: adminEmail };
 
-  const { hashPassword } = await import('better-auth/crypto');
+  const { hashPassword } = await import('../lib/auth/crypto.js');
   const pwHash = await hashPassword(adminPassword);
   const id = crypto.randomUUID();
   await db.insert(users).values({

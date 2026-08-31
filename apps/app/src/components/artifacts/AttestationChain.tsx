@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ArtifactShell from './ArtifactShell';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 interface ChainStep { 
   step: string; 

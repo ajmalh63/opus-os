@@ -7,7 +7,7 @@ import { useRevealRoot, useCountUp } from '../lib/reveal';
 import { useStaffAlerts } from '../lib/useStaffAlerts';
 import { useTaskNotifications } from '../lib/useTaskNotifications';
 import { Panel, PanelHead, KpiTile, EmptyState } from '../components/WorkChrome';
-const API = (import.meta as any).env?.VITE_API_URL || 'https://opusos-api.ajmalsn63.workers.dev';
+const API = (import.meta as any).env?.VITE_API_URL || '';
 
 
 interface Funnel {

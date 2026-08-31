@@ -98,6 +98,12 @@ export async function validateSessionToken(
     return null;
   }
 
+  // Gold standard: suspended/archived users are immediately denied even with valid session (no stale reads)
+  const userStatus = (user as any).status || 'active';
+  if (userStatus === 'suspended' || userStatus === 'archived') {
+    return null;
+  }
+
   // 3. Sliding window renewal: If less than 15 days remaining, extend by 30 days
   const remainingTime = new Date(session.expiresAt).getTime() - now.getTime();
   if (remainingTime < SESSION_SLIDING_WINDOW_SECONDS * 1000) {
