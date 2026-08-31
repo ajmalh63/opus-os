@@ -444,12 +444,15 @@ clientsRouter.get('/:id/documents/:docId/download', async (c) => {
   }
 });
 
+import { paginate } from '../lib/paginate.js';
+
 clientsRouter.get('/', async (c) => {
   if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
   const db = getDb(c.env.DB);
   try {
-    const list = await db.select().from(clients).all();
+    let list: any[] = await db.select().from(clients).all();
     // PII directory guard: counselors/coordinators only see clients in their
+    // assigned divisions (their division lives on the engagement rows).
     // assigned divisions (their division lives on the engagement rows).
     const user = (c.get('user') as any) || {};
     let divisions: string[] = [];
@@ -459,9 +462,16 @@ clientsRouter.get('/', async (c) => {
       const scopedIds = new Set(
         engs.filter((e) => divisions.includes(e.division)).map((e) => e.clientId),
       );
-      return c.json({ clients: list.filter((cl) => scopedIds.has(cl.id)) });
+      list = list.filter((cl: any) => scopedIds.has(cl.id));
     }
-    return c.json({ clients: list });
+    // P1-1 (AIP-158): page-size clamp + opaque cursor. Default 500 preserves the
+    // unpaginated contract for existing consumers; large datasets opt in via
+    // pageToken (nextPageToken present = more pages).
+    const page = paginate(c.req.query(), list.length, { defaultSize: 500, maxPage: 1000 });
+    const windowed = list.slice(page.offset, page.offset + page.limit);
+    return page.nextPageToken
+      ? c.json({ clients: windowed, nextPageToken: page.nextPageToken, totalSize: list.length })
+      : c.json({ clients: windowed });
   } catch (error: any) {
     return c.json({ error: 'Failed to fetch clients list',  }, 500);
   }

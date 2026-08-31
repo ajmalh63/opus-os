@@ -138,10 +138,14 @@ Protected: public-leads 60/h · portal-lookup/visa/manpower/umrah 300/5m · agre
 | P3-2 | All secret files `chmod 600` | stat ✓ |
 | P1-2 | Ghost list corrected: **zero true ghost fetch calls** (wiring fully consistent) | live curls |
 | **P2-4** | `X-Request-ID` correlation middleware added (echo client UUID or generate; on every `/api/*` response) | **live-verified: header echoed** ✓ |
-| **P1-1 (part)** | `GET /portal/manpower/jobs` paginated — `?limit=` default 200, hard cap 500 (AIP-158 clamp) | tsc 0 ✓ |
-| **P1-3 (start)** | `publishSyncEvent` added to membership-grant mutation → `staff:global:manpower` (`MANPOWER_MEMBERSHIP_GRANTED`) — realtime pattern established for the remaining 44 files | tsc 0 ✓, 120/120 tests ✓ |
+| **P1-1 (part)** | Shared AIP-158 `paginate()` helper (`apps/api/src/lib/paginate.ts`: clamp + opaque cursor + `nextPageToken`); wired into `GET /clients` (default 500, cap 1000 — backward-compatible) | tsc 0 ✓ |
+| **P1-3 (start)** | `publishSyncEvent` added to membership-grant mutation → `staff:global:manpower` (`MANPOWER_MEMBERSHIP_GRANTED`) — realtime pattern established for the remaining files | tsc 0 ✓ |
+| **P1-2** | RBAC deny-matrix suite (`tests/rbac_deny_matrix.test.ts`, 8 tests): admin-only endpoints strict 401/403 for counselor + unauth; counselor division-scoping verified row-level (in-scope visible, out-of-scope hidden); forged portal token horizontal deny. Methodology: Burp Authorize semantics adapted to vitest | **8/8 green** ✓ |
+| **P1-5 + P2-6** | Unified `apps/app/src/lib/apiClient.ts`: `ApiError` normalization (status/payload), RFC 9110 `Retry-After` handling (delay-seconds + HTTP-date forms, ≤30s cap), 429 retry ×3 with backoff, 204/empty-safe JSON. Toast-free by design (window `opus:api-throttled` event) | tsc 0 ✓ |
+| **P2-3** | `ManpowerMarketplace` applications query routed through `apiFetch` — silent `if (!r.ok) → fake success` eliminated; failures surfaced via `setStatusMsg` | tsc 0 ✓ |
+| **P2-7** | `LiveWallpaper` honors `prefers-reduced-motion` (WCAG 2.3.3): single static render, no rAF loop, no mousemove parallax listener | tsc 0 ✓ |
 
-**Still open (owner-dependent or scheduled):** P0-2 custom-domain creation (dashboard: Workers & Pages → opusos-api → Domains → Add `api.opusoverseas.com`, then `.env.production` + rebuild, then `workers_dev=false`) · P1-1 pagination · P1-2 RBAC deny-test suite · P1-3 publish completion (23/68 files) · P1-5 429 wrapper · P2-1 portal split · P2-2 Umami ID · P2-3 · P2-4 tracing · P2-6 apiClient · P2-7 reduced-motion · Week 3/4 enterprise features · VITE_UMAMI placeholder.
+**Still open (owner-dependent or scheduled):** ~~P0-2~~ (owner deprioritized) · P1-1 pagination remaining lists (leads, audit-logs, deployments) · P1-3 publish completion (23/68 files) · P2-1 portal split · P2-2 Umami ID · P2-4 tracing · P2-6 apiClient (core built; adopt in remaining components) · VITE_UMAMI placeholder. **Fixed this pass: P1-2 deny matrix, P1-5, P2-3, P2-6 core, P2-7, P1-1 helper + clients wiring.**
 
 ---
 

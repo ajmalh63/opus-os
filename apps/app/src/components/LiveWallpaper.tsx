@@ -10,6 +10,12 @@ export default function LiveWallpaper({ className = '' }: { className?: string }
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // P2-7 a11y: WCAG 2.3.3 — parallax/panning of a full-screen surface is a
+    // vestibular trigger. Under prefers-reduced-motion, render ONE static
+    // frame (nodes visible, zero velocity) and never start the rAF loop.
+    const reducedMotion =
+      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     let width = 0;
     let height = 0;
     let animationFrameId: number;
@@ -95,7 +101,7 @@ export default function LiveWallpaper({ className = '' }: { className?: string }
       mouse.targetX = e.clientX;
       mouse.targetY = e.clientY;
     };
-    window.addEventListener('mousemove', mouseMoveHandler);
+    if (!reducedMotion) window.addEventListener('mousemove', mouseMoveHandler);
 
     init();
 
@@ -133,12 +139,11 @@ export default function LiveWallpaper({ className = '' }: { className?: string }
         }
       }
 
-      animationFrameId = requestAnimationFrame(draw);
+      // P2-7: under reduced motion, do NOT schedule the next frame — one static render only.
+      if (!reducedMotion) animationFrameId = requestAnimationFrame(draw);
     };
 
-    draw();
-
-    return () => {
+    draw();    return () => {
       window.removeEventListener('resize', resizeHandler);
       window.removeEventListener('mousemove', mouseMoveHandler);
       cancelAnimationFrame(animationFrameId);

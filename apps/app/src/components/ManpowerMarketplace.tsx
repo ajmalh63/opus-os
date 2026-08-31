@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ManpowerProfileWizard, { ManpowerProfile, manpowerCompleteness } from './ManpowerProfileWizard';
 import { ManpowerAccessGate } from './manpower/ManpowerAccessGate';
 import { computeManpowerMatchFrontend } from '../lib/manpowerMatch';
+import { apiFetch } from '../lib/apiClient';
 const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // VAS (career add-on services) — single optional paid offering alongside the ₹100 Candidate Pass
@@ -191,12 +192,12 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
     }
   };
 
-  const { data: appsData } = useQuery<{ success: boolean; applications: any[]; activeCount?: number; maxQuota?: number }>({
+  const { data: appsData, error: appsError } = useQuery<{ success: boolean; applications: any[]; activeCount?: number; maxQuota?: number }>({
     queryKey: ['portalManpowerApps', token],
     queryFn: async () => {
-      const r = await fetch(`${API}/api/public/portal/manpower/applications?token=${token}`, { headers: { 'X-Portal-Token': token } });
-      if (!r.ok) return { success: true, applications: [] };
-      return r.json();
+      // P2-3 fix: route through apiFetch — failures now throw ApiError (status +
+      // server message) instead of silently masquerading as an empty success.
+      return apiFetch(`${API}/api/public/portal/manpower/applications?token=${token}`, { headers: { 'X-Portal-Token': token } });
     },
     enabled: !!token,
     refetchInterval: 30000,
@@ -204,6 +205,11 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
   const applications = appsData?.applications || [];
   const activeCount = appsData?.activeCount ?? applications.filter((d: any) => !['rejected'].includes(d.selectionStatus) && d.flightStatus !== 'deployed').length;
   const maxQuota = appsData?.maxQuota ?? 3;
+
+  // P2-3: surface fetch failures instead of showing a misleading empty state.
+  useEffect(() => {
+    if (appsError) setStatusMsg({ text: appsError instanceof Error ? appsError.message : 'Could not load your applications.', type: 'error' });
+  }, [appsError]);
 
   // ——— VAS career add-ons (ATS resume revamp, mock interviews, express screening) — optional, never required ———
   const { data: vasData } = useQuery<{ plans: VasPlan[] }>({
