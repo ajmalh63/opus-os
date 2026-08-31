@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { umrahPackages, groupDepartures, seatBookings, bookingPassengers, clients, waOutbox, appSettings } from '../../db/schema.js';
 import { eq, desc, and } from 'drizzle-orm';
@@ -165,7 +166,7 @@ v1UmrahRouter.post('/quote', apiKeyAuth(['tours:write']), idempotency(), async (
         }
       }
     } catch {}
-    c.executionCtx?.waitUntil(Promise.all([
+    safeExecutionCtx(c)?.waitUntil(Promise.all([
       auditEvent(c, { action: 'TOURS_QUOTE_SENT', entityName: 'wa_outbox', entityId: waId, result: 'success', category: 'workflow', actorType: 'service', authMethod: 'service_token', afterState: { toPhone: normalizedPhone, paxCount, totalPaise, packageId, departureId } }),
       dispatchWebhook(c.env, 'tours.quote_sent', { waId, toPhone: normalizedPhone, paxCount, totalPaise, packageId, departureId, clientId }),
     ]));
@@ -243,7 +244,7 @@ v1UmrahRouter.post('/bookings', apiKeyAuth(['umrah:write']), idempotency(), asyn
       });
     }
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       Promise.all([
         auditEvent(c, {
           action: 'UMRAH_SEATS_HELD',

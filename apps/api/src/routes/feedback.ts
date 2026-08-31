@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../lib/webhookDispatcher.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { getDb } from '../db/client.js';
 import { feedbackSubmissions, staffAlerts, clients } from '../db/schema.js';
@@ -200,7 +201,7 @@ feedbackRouter.get('/api/public/feedback/approved', async (c) => {
 feedbackRouter.get('/api/public/reviews', async (c) => {
   const url = new URL(c.req.url);
   url.pathname = '/api/public/feedback/approved';
-  return feedbackRouter.fetch(new Request(url.toString(), c.req.raw), c.env, c.executionCtx);
+  return feedbackRouter.fetch(new Request(url.toString(), c.req.raw), c.env, safeExecutionCtx(c));
 });
 
 // ── 3. SUPERADMIN & STAFF: GET ALL FEEDBACK + CSAT METRICS ──

@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { studyAbroadApplications, clients, bookings, appSettings } from '../../db/schema.js';
 import { eq, desc, and, or, sql, inArray } from 'drizzle-orm';
@@ -180,7 +181,7 @@ v1StudyAbroadRouter.post('/applications', apiKeyAuth(['study-abroad:write']), id
       updatedAt: now(),
     });
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       Promise.all([
         auditEvent(c, {
           action: 'APPLICATION_CREATED',

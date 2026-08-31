@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { documents } from '../../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -71,7 +72,7 @@ v1DocumentsRouter.patch('/:id/verify', apiKeyAuth(['documents:write']), idempote
       .where(eq(documents.id, id))
       .execute();
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       Promise.all([
         auditEvent(c, {
           action: 'DOC_VERIFIED',

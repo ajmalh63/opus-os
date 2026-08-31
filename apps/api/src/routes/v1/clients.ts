@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { clients, engagements, tasks, documents } from '../../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -98,7 +99,7 @@ v1ClientsRouter.patch('/:id/stage', apiKeyAuth(['clients:write']), idempotency()
 
     await db.update(clients).set({ updatedAt: now() }).where(eq(clients.id, id)).execute();
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       Promise.all([
         auditEvent(c, {
           action: 'STAGE_CHANGED',

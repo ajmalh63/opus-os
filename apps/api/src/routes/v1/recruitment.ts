@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { jobPostings, candidateProfiles, manpowerDeployments, clients, tasks } from '../../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -84,7 +85,7 @@ v1RecruitmentRouter.post('/jobs', apiKeyAuth(['recruitment:write']), idempotency
       createdAt: now(),
     });
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       Promise.all([
         auditEvent(c, {
           action: 'JOB_POSTING_CREATED',

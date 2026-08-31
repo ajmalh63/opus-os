@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { clients, engagements } from '../../db/schema.js';
 import { eq, desc, and } from 'drizzle-orm';
@@ -119,7 +120,7 @@ v1LeadsRouter.post('/', apiKeyAuth(['leads:write']), idempotency(), async (c) =>
     });
 
     // Outbound Webhook & Audit Event
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       Promise.all([
         auditEvent(c, {
           action: 'API_LEAD_CREATED',

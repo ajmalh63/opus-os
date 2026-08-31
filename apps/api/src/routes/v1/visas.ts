@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { visaApplications } from '../../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -65,7 +66,7 @@ v1VisasRouter.patch('/applications/:id/status', apiKeyAuth(['visa:write']), idem
 
     await db.update(visaApplications).set({ status, updatedAt: now() }).where(eq(visaApplications.id, id)).execute();
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       Promise.all([
         auditEvent(c, {
           action: 'VISA_STATUS_CHANGED',

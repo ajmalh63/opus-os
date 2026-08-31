@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { notifications } from '../../db/schema.js';
 import { apiKeyAuth } from '../../middleware/apiKeyAuth.js';
@@ -43,7 +44,7 @@ v1MessagesRouter.post('/whatsapp', apiKeyAuth(['messages:write']), idempotency()
       sentAt: result.ok ? now() : null,
     });
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       auditEvent(c as any, {
         action: 'WHATSAPP_DISPATCHED',
         entityName: 'notifications',

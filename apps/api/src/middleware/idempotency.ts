@@ -1,4 +1,5 @@
 import { Context, Next } from 'hono';
+import { safeExecutionCtx } from '../lib/webhookDispatcher.js';
 import { getDb } from '../db/client.js';
 import { idempotencyKeys } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -80,7 +81,7 @@ export function idempotency() {
         const clonedRes = c.res.clone();
         const responseBody = await clonedRes.text();
 
-        c.executionCtx?.waitUntil(
+        safeExecutionCtx(c)?.waitUntil(
           db
             .insert(idempotencyKeys)
             .values({

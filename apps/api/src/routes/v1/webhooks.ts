@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { outboundWebhooks } from '../../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -69,7 +70,7 @@ v1WebhooksRouter.post('/', apiKeyAuth(['webhooks:manage']), idempotency(), async
       updatedAt: now(),
     });
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       auditEvent(c, {
         action: 'WEBHOOK_SUBSCRIBED',
         entityName: 'outbound_webhooks',

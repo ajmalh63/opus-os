@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { apiKeys } from '../../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -90,7 +91,7 @@ v1ApiKeysRouter.post('/', apiKeyAuth(['*']), async (c) => {
       updatedAt: now(),
     });
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       auditEvent(c, {
         action: 'API_KEY_CREATED',
         entityName: 'api_keys',
@@ -137,7 +138,7 @@ v1ApiKeysRouter.delete('/:id', apiKeyAuth(['*']), async (c) => {
 
     await db.update(apiKeys).set({ isRevoked: true, updatedAt: now() }).where(eq(apiKeys.id, id)).execute();
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       auditEvent(c, {
         action: 'API_KEY_REVOKED',
         entityName: 'api_keys',

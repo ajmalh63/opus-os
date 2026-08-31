@@ -1,4 +1,5 @@
 import { Context, Next } from 'hono';
+import { safeExecutionCtx } from '../lib/webhookDispatcher.js';
 import { getDb } from '../db/client.js';
 import { apiKeys } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -142,7 +143,7 @@ export function apiKeyAuth(requiredScopes: string[] = []) {
     }
 
     // Update lastUsedAt asynchronously (fail-open)
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       db.update(apiKeys).set({ lastUsedAt: now }).where(eq(apiKeys.id, keyRow.id)).execute().catch(() => {}),
     );
 

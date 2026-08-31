@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { bookings } from '../../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
@@ -64,7 +65,7 @@ v1BookingsRouter.patch('/:id/status', apiKeyAuth(['bookings:write']), idempotenc
 
     await db.update(bookings).set({ status, updatedAt: now() }).where(eq(bookings.id, id)).execute();
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       Promise.all([
         auditEvent(c, {
           action: 'BOOKING_STATUS_CHANGED',

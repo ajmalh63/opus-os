@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../../lib/webhookDispatcher.js';
 import { getDb } from '../../db/client.js';
 import { attestationRateCards, attestationApplications, clients } from '../../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -81,7 +82,7 @@ v1AttestationRouter.post('/orders', apiKeyAuth(['attestation:write']), idempoten
       updatedAt: now(),
     });
 
-    c.executionCtx?.waitUntil(
+    safeExecutionCtx(c)?.waitUntil(
       Promise.all([
         auditEvent(c, {
           action: 'ATTESTATION_ORDER_CREATED',

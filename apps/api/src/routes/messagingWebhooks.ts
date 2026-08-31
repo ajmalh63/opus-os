@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { safeExecutionCtx } from '../lib/webhookDispatcher.js';
 import { newPortalToken } from '../lib/clientToken.js';
 import { getDb } from '../db/client.js';
 import { conversations, clients } from '../db/schema.js';
@@ -148,8 +149,9 @@ chatwootWebhookRouter.post('/', async (c) => {
 
     const safeWaitUntil = (p: Promise<any>) => {
       try {
-        if (c.executionCtx && typeof c.executionCtx.waitUntil === 'function') {
-          c.executionCtx.waitUntil(p);
+        const xc = safeExecutionCtx(c);
+        if (xc && typeof xc.waitUntil === 'function') {
+          xc.waitUntil(p);
           return;
         }
       } catch {
