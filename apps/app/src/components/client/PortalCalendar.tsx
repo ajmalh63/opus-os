@@ -6,7 +6,7 @@ export function PortalCalendar({ token }: { token: string }) {
     queryKey: ['portalCalendar', token],
     queryFn: async () => {
       const r = await fetch(`${API}/api/public/portal/calendar`, { headers: token ? { 'X-Portal-Token': token } : {} });
-      if (!r.ok) return { deadlines: [], schedules: [], tasks: [] };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!token,

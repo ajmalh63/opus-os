@@ -482,7 +482,7 @@ export default function PartnerDashboard() {
       try {
         const res = await fetch(`${API}/api/public/partners/session`, { credentials: 'include' });
         if (res.status === 401 || res.status === 404) return { success: true, authenticated: false, email: null };
-        if (!res.ok) return { success: true, authenticated: false, email: null };
+        if (!res.ok) throw new Error('Request failed (' + res.status + ').');
         return res.json();
       } catch {
         return { success: true, authenticated: false, email: null };

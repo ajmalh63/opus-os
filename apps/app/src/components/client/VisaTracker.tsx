@@ -6,7 +6,7 @@ export function VisaTracker({ bookingId, token }: { bookingId: string, token: st
     queryKey: ['visaTracker', bookingId],
     queryFn: async () => {
       const r = await fetch(`${API}/api/visa/tracker/${bookingId}`, { headers: token ? { 'X-Portal-Token': token } : {} });
-      if (!r.ok) return null;
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!bookingId,

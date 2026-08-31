@@ -100,7 +100,7 @@ export default function AttestationPage() {
     queryKey: ['publicAttestationChains'],
     queryFn: async () => {
       const res = await fetch(`${API}/api/public/attestation/chains`, { credentials: 'include', });
-      if (!res.ok) return { chains: [] };
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       return res.json();
     },
     staleTime: 120_000,

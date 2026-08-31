@@ -53,7 +53,7 @@ export default function ClientDashboardHub({
     queryKey: ['portalDashboard', portalToken],
     queryFn: async () => {
       const r = await fetch(`${API}/api/public/portal/dashboard`, { headers: portalToken ? { 'X-Portal-Token': portalToken } : {} });
-      if (!r.ok) return null;
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!portalToken,

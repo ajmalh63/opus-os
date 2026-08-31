@@ -209,7 +209,7 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
     queryKey: ['navInboxUnread'],
     queryFn: async () => {
       const r = await fetch(`${API}/api/inbox`);
-      if (!r.ok) return { unreadTotal: 0 };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     refetchInterval: 20000

@@ -54,7 +54,7 @@ export default function ManpowerMarketplace({ token, clientId }: { token: string
     queryKey: ['manpowerMarketplace', q, country],
     queryFn: async () => {
       const r = await fetch(`${API}/api/public/jobs`);
-      if (!r.ok) return { jobs: [] };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
   });

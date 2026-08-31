@@ -165,7 +165,7 @@ export default function AttestationPortal() {
     queryFn: async () => {
       if (!selectedClient?.id) return { success: true, shipments: [] as Shipment[] };
       const r = await fetch(`${API}/api/transit/shipments?clientId=${selectedClient.id}`);
-      if (!r.ok) return { success: true, shipments: [] as Shipment[] };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!selectedClient?.id && activeSubTab === 'tracking'
@@ -176,7 +176,7 @@ export default function AttestationPortal() {
     queryFn: async () => {
       if (!selectedClient?.id) return { success: true, applications: [] as AttestationApplication[] };
       const r = await fetch(`${API}/api/attestation/applications?clientId=${selectedClient.id}`);
-      if (!r.ok) return { success: true, applications: [] as AttestationApplication[] };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!selectedClient?.id && activeSubTab === 'applications'

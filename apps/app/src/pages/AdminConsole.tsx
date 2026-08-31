@@ -114,7 +114,7 @@ export default function AdminConsole() {
     queryKey: ['adminDivisions'],
     queryFn: async () => {
       const res = await fetch(`${API}/api/admin/divisions`);
-      if (!res.ok) return { enabled: {} };
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       return res.json();
     },
     staleTime: 30000,

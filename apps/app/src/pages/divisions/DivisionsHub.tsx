@@ -89,7 +89,7 @@ export default function DivisionsHub() {
     queryKey: ['publicDivisions'],
     queryFn: async () => {
       const r = await fetch(`${API}/api/public/divisions`);
-      if (!r.ok) return { enabled: { 'study-abroad': true } };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     staleTime: 30000

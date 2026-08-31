@@ -107,7 +107,7 @@ export default function InvoiceErpLedgerWidget() {
     queryKey: ["erpnextHealth"],
     queryFn: async () => {
       const res = await fetch(`${API}/api/erpnext/health`);
-      if (!res.ok) return { success: false, message: "ERPNext offline or configuring" };
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       return res.json();
     },
     refetchInterval: 60000,
@@ -135,7 +135,7 @@ export default function InvoiceErpLedgerWidget() {
     queryKey: ["invoiceSettings"],
     queryFn: async () => {
       const res = await fetch(`${API}/api/admin/invoice-settings`);
-      if (!res.ok) return { success: true, settings: DEFAULT_SETTINGS };
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       return res.json();
     },
   });

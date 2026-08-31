@@ -88,7 +88,7 @@ export default function UmrahTravelPage() {
     queryKey: ['publicUmrahDepartures'],
     queryFn: async () => {
       const res = await fetch(`${API}/api/public/umrah/departures`, { credentials: 'include', });
-      if (!res.ok) return { departures: [] };
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       return res.json();
     },
     staleTime: 60_000,

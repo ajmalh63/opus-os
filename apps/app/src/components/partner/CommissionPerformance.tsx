@@ -9,7 +9,7 @@ export function CommissionPerformance({ partnerId, token }: { partnerId: string,
         credentials: 'include',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!r.ok) return { ledger: [] };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!partnerId,
@@ -22,7 +22,7 @@ export function CommissionPerformance({ partnerId, token }: { partnerId: string,
         credentials: 'include',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!r.ok) return { performance: {} };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!partnerId,

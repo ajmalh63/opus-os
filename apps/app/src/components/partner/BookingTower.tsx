@@ -9,7 +9,7 @@ export function BookingTower({ partnerId, token }: { partnerId: string, token: s
         credentials: 'include',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!r.ok) return { bookings: [] };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!partnerId,

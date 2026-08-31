@@ -18,7 +18,7 @@ export function BillingForecast({
       const r = await fetch(`${API}/api/ledger/forecast?${p.toString()}`, {
         headers: token ? { 'X-Portal-Token': token } : {},
       });
-      if (!r.ok) return { forecast: { totalDue: 0, items: [] } };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!clientId,

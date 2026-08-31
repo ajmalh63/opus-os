@@ -53,7 +53,7 @@ export default function TransactionsTab() {
     queryKey: ['revenueSummary'],
     queryFn: async () => {
       const r = await fetch(`${API}/api/analytics/revenue`);
-      if (!r.ok) return null;
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     refetchInterval: 60000

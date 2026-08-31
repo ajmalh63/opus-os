@@ -522,7 +522,7 @@ export default function VisaPrepPortal() {
     queryFn: async () => {
       const lists = await Promise.all(visaClients.map(async (c) => {
         const r = await fetch(`${API}/api/visa/applications?clientId=${c.id}`, { credentials: 'include' });
-        if (!r.ok) return [];
+        if (!r.ok) throw new Error('Request failed (' + r.status + ').');
         const j = await r.json().catch(() => null);
         return (j?.applications || []).map((a: VisaApplication) => ({ ...a, clientName: c.name, clientToken: c.id }));
       }));

@@ -41,7 +41,7 @@ export default function SocialProofAtHesitation({
     queryKey: ['approvedFeedback'],
     queryFn: async () => {
       const res = await fetch(`${API}/api/public/feedback/approved`);
-      if (!res.ok) return { reviews: [] };
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       return res.json();
     },
     staleTime: 60000,

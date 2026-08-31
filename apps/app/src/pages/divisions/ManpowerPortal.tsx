@@ -150,7 +150,7 @@ export default function ManpowerPortal() {
     queryKey: ['manpowerCandidates'],
     queryFn: async () => {
       const r = await fetch(`${API}/api/manpower/candidates`);
-      if (!r.ok) return { candidates: [] as Client[] };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     }
   });
@@ -174,7 +174,7 @@ export default function ManpowerPortal() {
     queryFn: async () => {
       if (!selectedCandidate?.id) return { success: true, deployments: [] };
       const r = await fetch(`${API}/api/manpower/deployments?clientId=${selectedCandidate.id}`);
-      if (!r.ok) return { success: true, deployments: [] as Deployment[] };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!selectedCandidate && activeSubTab === 'deployments'

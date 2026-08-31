@@ -9,7 +9,7 @@ export function PortalMessages({ token }: { token: string }) {
     queryKey: ['portalMessages', token],
     queryFn: async () => {
       const r = await fetch(`${API}/api/public/portal/messages`, { headers: token ? { 'X-Portal-Token': token } : {} });
-      if (!r.ok) return { messages: [] };
+      if (!r.ok) throw new Error('Request failed (' + r.status + ').');
       return r.json();
     },
     enabled: !!token,
