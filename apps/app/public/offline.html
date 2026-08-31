@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a2d50">
+  <title>Opus Overseas — Offline</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
+    .card { max-width: 420px; text-align: center; padding: 40px 32px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 10px 30px rgba(10,45,80,.08); }
+    .logo { width: 56px; height: 56px; margin: 0 auto 16px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    p { font-size: 14px; color: #64748b; line-height: 1.6; margin: 0 0 20px; }
+    button { background: #0a2d50; color: #fff; border: 0; padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 13px; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+    button:hover { background: #d7a019; color: #0a2d50; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="#0a2d50" stroke-width="1.8" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c3 3.5 3 16.5 0 20M12 2c-3 3.5-3 16.5 0 20"/>
+    </svg>
+    <h1>You're offline</h1>
+    <p>Your portal needs a connection to load the latest updates. Check your network and try again — anything you already loaded stays available.</p>
+    <button onclick="location.reload()">Retry connection</button>
+  </div>
+</body>
+</html>

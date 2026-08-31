@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Opus Overseas | Study Abroad, Overseas Jobs & Travel</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0a2d50" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Opus" />
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/favicon.svg" />
@@ -32,5 +37,14 @@
 <body class="bg-brand-cream text-brand-text-dark font-sans min-h-screen">
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
+  <script>
+    // PWA service worker — registration is fail-safe: never blocks the app,
+    // never runs where SW is unsupported. Cache strategy never touches /api/*.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () { /* offline support unavailable — app unaffected */ });
+      });
+    }
+  </script>
 </body>
 </html>

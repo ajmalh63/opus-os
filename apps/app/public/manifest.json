@@ -1,0 +1,30 @@
+{
+  "name": "Opus Overseas — Study Abroad, Overseas Jobs & Travel",
+  "short_name": "Opus",
+  "description": "Client portal for Opus Overseas: applications, documents, payments and support — works even on weak networks.",
+  "start_url": "/portal",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#0a2d50",
+  "icons": [
+    {
+      "src": "/opus-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/opus-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
