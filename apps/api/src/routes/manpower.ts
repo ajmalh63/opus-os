@@ -258,6 +258,8 @@ manpowerRouter.post('/interviews/confirm', async (c) => {
 });
 
 // GET /api/manpower/deployments — Get deployment tracking (optionally by clientId / jobId / triageTier), joined + candidate detail & match scores
+import { paginate } from '../lib/paginate.js';
+
 manpowerRouter.get('/deployments', async (c) => {
   const clientId = c.req.query('clientId');
   const jobId = c.req.query('jobId');
@@ -270,6 +272,10 @@ manpowerRouter.get('/deployments', async (c) => {
     let list = await db.select().from(manpowerDeployments).all();
     if (clientId) list = list.filter((d) => d.clientId === clientId);
     if (jobId) list = list.filter((d) => d.jobId === jobId);
+    // P1-1 (AIP-158): clamp + cursor before the expensive join work.
+    const totalBeforeSlice = list.length;
+    const page = paginate(c.req.query(), totalBeforeSlice, { defaultSize: 200, maxPage: 500 });
+    list = list.slice(page.offset, page.offset + page.limit);
 
     const jobs = await db.select().from(jobPostings).all();
     const allClients = await db.select().from(clients).all();
@@ -328,6 +334,7 @@ manpowerRouter.get('/deployments', async (c) => {
     return c.json({
       success: true,
       deployments: filtered,
+      ...(page.nextPageToken ? { nextPageToken: page.nextPageToken, totalSize: totalBeforeSlice } : {}),
       counts: {
         total: joined.length,
         topMatch: joined.filter(d => d.matchTier === 'top_match').length,

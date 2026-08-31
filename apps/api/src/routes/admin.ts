@@ -144,6 +144,8 @@ adminRouter.get('/runtime-logs', async (c) => {
 });
 
 // GET /api/admin/audit-logs (Audit trails fetch) — newest first, bounded
+import { paginate } from '../lib/paginate.js';
+
 adminRouter.get('/audit-logs', async (c) => {
   if (!c.env || !c.env.DB) {
     return c.json({ error: "DB not available" }, 500);
@@ -153,8 +155,13 @@ adminRouter.get('/audit-logs', async (c) => {
 
   try {
     const rows = await db.select().from(auditLog).all();
-    const list = [...rows].sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 250);
-    return c.json({ logs: list });
+    const list = [...rows].sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
+    // P1-1 (AIP-158): cursor pagination — default 250 preserves the old contract.
+    const page = paginate(c.req.query(), list.length, { defaultSize: 250, maxPage: 1000 });
+    const windowed = list.slice(page.offset, page.offset + page.limit);
+    return page.nextPageToken
+      ? c.json({ logs: windowed, nextPageToken: page.nextPageToken, totalSize: list.length })
+      : c.json({ logs: windowed });
   } catch (error: any) {
     return c.json({ error: "Failed to fetch audit logs", details: error.message }, 500);
   }
