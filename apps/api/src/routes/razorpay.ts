@@ -131,6 +131,8 @@ async function verifySignature(orderId: string, paymentId: string, signature: st
   return timingSafeEqualHex(hex, signature);
 }
 
+import { publishSyncEvent } from './sync.js';
+
 razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
   const data = c.req.valid('json');
   if (!c.env || !c.env.DB) return c.json({ error: "DB not available" }, 500);
@@ -265,6 +267,10 @@ razorpayRouter.post('/verify', zValidator('json', verifySchema), async (c) => {
       safeExecutionCtx(c)
     );
 
+    // P1-3 realtime: client portal reflects the successful payment instantly.
+    safeExecutionCtx(c)?.waitUntil(
+      publishSyncEvent(c.env as any, { channel: `client:${data.clientId}:payments`, type: 'PAYMENT_VERIFIED', payload: { paymentId, razorpayPaymentId: data.razorpay_payment_id, amountPaise: invoiceAmount, milestoneName: data.milestoneName || null } }, safeExecutionCtx(c)).catch(() => {})
+    );
     return c.json({
       success: true,
       id: paymentId,

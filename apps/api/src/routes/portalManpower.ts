@@ -15,6 +15,7 @@ export { MANPOWER_VAS_CATALOG };
 
 // Client self-service Manpower surface (token = client.id).
 // Mounted at /api/public/portal/manpower.
+import { safeExecutionCtx } from '../lib/webhookDispatcher.js';
 import { publishSyncEvent } from './sync.js';
 
 export const portalManpowerRouter = new Hono<{
@@ -291,8 +292,9 @@ portalManpowerRouter.post('/membership/verify', async (c) => {
 
     await createStaffAlert(c.env as any, { division: 'manpower', type: 'membership_sale', title: `Membership purchased: ${plan.name}`, body: `${client.id} — expires ${new Date(expiresAt * 1000).toLocaleDateString()}`, clientId: client.id, payload: { planKey, expiresAt } });
     // P1-3 realtime: push to staff so the Candidate-Pass sale appears instantly
-    c.executionCtx?.waitUntil(
-      publishSyncEvent(c.env as any, { channel: 'staff:global:manpower', type: 'MANPOWER_MEMBERSHIP_GRANTED', payload: { clientId: client.id, planKey, expiresAt } }, c.executionCtx as any).catch(() => {})
+    const execCtx = safeExecutionCtx(c);
+    execCtx?.waitUntil(
+      publishSyncEvent(c.env as any, { channel: 'staff:global:manpower', type: 'MANPOWER_MEMBERSHIP_GRANTED', payload: { clientId: client.id, planKey, expiresAt } }, execCtx).catch(() => {})
     );
     return c.json({ success: true, message: 'Membership activated.', expiresAt });
   } catch (e: any) {

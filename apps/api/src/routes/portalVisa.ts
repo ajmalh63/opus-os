@@ -1,4 +1,6 @@
 import { resolveClientByToken } from '../lib/clientToken.js';
+import { publishSyncEvent } from './sync.js';
+import { safeExecutionCtx } from '../lib/webhookDispatcher.js';
 import { Hono } from 'hono';
 
 function getPortalToken(c: any): string | undefined {
@@ -322,7 +324,12 @@ portalVisaRouter.post('/applications/:id/submit', async (c) => {
     }).catch(() => {});
 
     await createStaffAlert(c.env as any, { division: 'visa', type: 'visa_application', title: `Visa application submitted: ${entry.country}`, body: `${entry.visaType} — ${entry.clientId}`, clientId: entry.clientId, payload: { country: entry.country, visaType: entry.visaType } });
-return c.json({ success: true, id, message: 'Visa application submitted for review.' });
+// P1-3 realtime: staff VisaPrep + the client's own portal see the submission instantly.
+    safeExecutionCtx(c)?.waitUntil(Promise.all([
+      publishSyncEvent(c.env as any, { channel: 'staff:global:visa', type: 'VISA_APPLICATION_SUBMITTED', payload: { applicationId: id, clientId: entry.clientId, country: entry.country, visaType: entry.visaType } }, safeExecutionCtx(c)).catch(() => {}),
+      publishSyncEvent(c.env as any, { channel: `client:${entry.clientId}:visa`, type: 'VISA_APPLICATION_SUBMITTED', payload: { applicationId: id, status: 'submitted' } }, safeExecutionCtx(c)).catch(() => {}),
+    ]));
+    return c.json({ success: true, id, message: 'Visa application submitted for review.' });
   } catch (error: any) {
     return c.json({ error: 'Failed to submit visa application',  }, 500);
   }

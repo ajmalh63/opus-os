@@ -258,7 +258,9 @@ manpowerRouter.post('/interviews/confirm', async (c) => {
 });
 
 // GET /api/manpower/deployments — Get deployment tracking (optionally by clientId / jobId / triageTier), joined + candidate detail & match scores
+import { safeExecutionCtx } from '../lib/webhookDispatcher.js';
 import { paginate } from '../lib/paginate.js';
+import { publishSyncEvent } from './sync.js';
 
 manpowerRouter.get('/deployments', async (c) => {
   const clientId = c.req.query('clientId');
@@ -380,6 +382,11 @@ manpowerRouter.post('/deployments', async (c) => {
       afterState: { id, clientId, jobId }
     }).catch(() => {});
 
+    // P1-3 realtime: candidate sees the new deployment; staff census updates live.
+    safeExecutionCtx(c)?.waitUntil(Promise.all([
+      publishSyncEvent(c.env as any, { channel: `client:${clientId}:applications`, type: 'MANPOWER_DEPLOYMENT_CREATED', payload: { deploymentId: id, jobId } }, safeExecutionCtx(c)).catch(() => {}),
+      publishSyncEvent(c.env as any, { channel: 'staff:global:manpower', type: 'MANPOWER_DEPLOYMENT_CREATED', payload: { deploymentId: id, clientId, jobId } }, safeExecutionCtx(c)).catch(() => {}),
+    ]));
     return c.json({ success: true, id, message: "Deployment record initialized." });
   } catch (error: any) {
     return c.json({ error: "Failed to create deployment record", details: error.message }, 500);
@@ -476,6 +483,11 @@ manpowerRouter.patch('/deployments/:id', async (c) => {
       afterState: updates
     }).catch(() => {});
 
+    // P1-3 realtime: selectionStatus/flightStatus changes reach the candidate instantly.
+    safeExecutionCtx(c)?.waitUntil(Promise.all([
+      publishSyncEvent(c.env as any, { channel: `client:${existing.clientId}:applications`, type: 'MANPOWER_DEPLOYMENT_UPDATED', payload: { deploymentId: id, selectionStatus: body.selectionStatus, medicalStatus: body.medicalStatus, visaStatus: body.visaStatus, flightStatus: body.flightStatus } }, safeExecutionCtx(c)).catch(() => {}),
+      publishSyncEvent(c.env as any, { channel: 'staff:global:manpower', type: 'MANPOWER_DEPLOYMENT_UPDATED', payload: { deploymentId: id, clientId: existing.clientId } }, safeExecutionCtx(c)).catch(() => {}),
+    ]));
     return c.json({ success: true, message: "Deployment record updated successfully." });
   } catch (error: any) {
     return c.json({ error: "Failed to update deployment", details: error.message }, 500);
@@ -553,6 +565,11 @@ manpowerRouter.post('/jobs', async (c) => {
       entityId: id,
       afterState: { id, title: body.title, employer: body.employer || null }
     }).catch(() => {});
+    // P1-3 realtime: public job board + staff census refresh live.
+    safeExecutionCtx(c)?.waitUntil(Promise.all([
+      publishSyncEvent(c.env as any, { channel: 'public:manpower', type: 'MANPOWER_JOB_POSTED', payload: { jobId: id, title: body.title } }, safeExecutionCtx(c)).catch(() => {}),
+      publishSyncEvent(c.env as any, { channel: 'staff:global:manpower', type: 'MANPOWER_JOB_POSTED', payload: { jobId: id } }, safeExecutionCtx(c)).catch(() => {}),
+    ]));
     return c.json({ success: true, id, message: "Job posting created." });
   } catch (error: any) {
     return c.json({ error: "Failed to create job posting", details: error.message }, 500);
