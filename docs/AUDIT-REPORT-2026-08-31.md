@@ -150,7 +150,7 @@ Protected: public-leads 60/h · portal-lookup/visa/manpower/umrah 300/5m · agre
 | **P2-3** | `ManpowerMarketplace` applications query routed through `apiFetch` — silent `if (!r.ok) → fake success` eliminated; failures surfaced via `setStatusMsg` | tsc 0 ✓ |
 | **P2-7** | `LiveWallpaper` honors `prefers-reduced-motion` (WCAG 2.3.3): single static render, no rAF loop, no mousemove parallax listener | tsc 0 ✓ |
 
-**Still open (owner-dependent or scheduled):** ~~P0-2~~ (owner deprioritized) · ~~P1-1~~ ✅ · ~~P1-3~~ ✅ end-to-end · ~~P2-4~~ ✅ · ~~P2-1~~ ✅ portal split · P2-6 apiClient (core built; **revenue-critical paywall surface adopted**; remaining components mechanical) — and Week 3–4 features. **Fixed: P1-2, P1-5, P2-3, P2-6 core+paywall, P2-7, P1-1, P2-2 (code-side), P1-3 (end-to-end), P2-1.**
+**Still open (owner-dependent or scheduled):** ~~P0-2~~ (owner deprioritized) · ~~P1-1~~ ✅ · ~~P1-3~~ ✅ end-to-end · ~~P2-4~~ ✅ · ~~P2-1~~ ✅ portal split · P2-6 ✅ core + paywall + **32 silent-swallow queryFns eliminated** (2 intentional background pollers preserved) · **NotificationCenter ✅ shipped** (realtime bell, live feed over existing SyncHub channels, unread persistence) · **PWA ✅ shipped** (manifest, fail-safe SW — never touches /api/*, offline.html fallback, guarded registration) · **i18n** — assessed: intentionally config-gated to EN (`config/i18n.ts` SUPPORTED_LANGUAGES, owner decision; enabling = edit one line) — not a defect · remaining feature backlog: exports, saved views, AR/HI translation content (post-enable).
 
 ---
 
