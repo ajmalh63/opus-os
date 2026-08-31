@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createSyncClient } from '../../lib/syncClient';
 const API = (import.meta as any).env?.VITE_API_URL || '';
 
 interface Client {
@@ -77,6 +78,26 @@ function gradeBadge(score?: number){ if(score===undefined) return null; if(score
 
 export default function ManpowerPortal() {
   const queryClient = useQueryClient();
+
+  // P1-3 realtime: staff census/jobs/deployments update live as clients act.
+  useEffect(() => {
+    const client = createSyncClient({
+      plane: 'staff',
+      channels: ['staff:global:manpower'],
+      onEvent: (e) => {
+        if (['MANPOWER_JOB_POSTED', 'MANPOWER_DEPLOYMENT_CREATED', 'MANPOWER_DEPLOYMENT_UPDATED', 'MANPOWER_MEMBERSHIP_GRANTED'].includes(e.type)) {
+          queryClient.invalidateQueries({ queryKey: ['manpowerJobs'] });
+          queryClient.invalidateQueries({ queryKey: ['manpowerDeployments'] });
+          queryClient.invalidateQueries({ queryKey: ['manpowerCandidates'] });
+          queryClient.invalidateQueries({ queryKey: ['manpowerWorkflows'] });
+          queryClient.invalidateQueries({ queryKey: ['manpowerMembership'] });
+        }
+      },
+    });
+    client.connect();
+    return () => client.disconnect();
+  }, []);
+
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'jobs' | 'deployments' | 'community' | 'demands' | 'workflows'>('jobs');
   const [jobCategory, setJobCategory] = useState<'blue_collar' | 'white_collar'>('blue_collar');

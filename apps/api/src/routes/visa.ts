@@ -5,6 +5,7 @@ import { clients, visaApplications, visaMockInterviews, engagements, tasks, visa
 import { eq, and, ne } from 'drizzle-orm';
 import { auditEvent } from '../middleware/audit.js';
 import { publishSyncEvent } from './sync.js';
+import { safeExecutionCtx } from '../lib/webhookDispatcher.js';
 import { visaFormSchema, missingVisaSections } from '../validation/visaForm.js';
 
 export const visaRouter = new Hono<{ Bindings: { DB: D1Database } }>();
@@ -242,6 +243,11 @@ visaRouter.patch('/applications/:id/status', async (c) => {
       entityId: id,
       afterState: { id, oldStatus: entry.status, newStatus: status }
     }).catch(() => {});
+
+    // P1-3 realtime: the client's VisaPrep tracker updates the instant staff changes the status.
+    safeExecutionCtx(c)?.waitUntil(
+      publishSyncEvent(c.env as any, { channel: `client:${entry.clientId}:visa`, type: 'VISA_STATUS_UPDATED', payload: { applicationId: id, status, appointmentDate: updateFields.appointmentDate ?? null, notes: updateFields.notes ?? null } }, safeExecutionCtx(c)).catch(() => {})
+    );
 
     return c.json({ success: true, message: `Visa application status updated to ${status}.` });
   } catch (error: any) {

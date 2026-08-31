@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../lib/session';
+import { createSyncClient } from '../../lib/syncClient';
 import AiVisaRiskCopilot from '../../components/ai/AiVisaRiskCopilot';
 const API = (import.meta as any).env?.VITE_API_URL || '';
 
@@ -361,6 +362,22 @@ const VISA_COUNTRIES = [
 
 export default function VisaPrepPortal() {
   const queryClient = useQueryClient();
+
+  // P1-3 realtime: staff visa queue updates live as clients submit.
+  useEffect(() => {
+    const client = createSyncClient({
+      plane: 'staff',
+      channels: ['staff:global:visa'],
+      onEvent: (e) => {
+        if (e.type === 'VISA_APPLICATION_SUBMITTED') {
+          queryClient.invalidateQueries({ queryKey: ['visaApplicationsAll'] });
+          queryClient.invalidateQueries({ queryKey: ['visaApplicationsAllFallback'] });
+        }
+      },
+    });
+    client.connect();
+    return () => client.disconnect();
+  }, []);
   const { me } = useSession();
   const [viewMode, setViewMode] = useState<'applicants' | 'inventory' | 'ai-copilot'>('applicants');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);

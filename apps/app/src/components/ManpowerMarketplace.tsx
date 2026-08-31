@@ -4,6 +4,7 @@ import ManpowerProfileWizard, { ManpowerProfile, manpowerCompleteness } from './
 import { ManpowerAccessGate } from './manpower/ManpowerAccessGate';
 import { computeManpowerMatchFrontend } from '../lib/manpowerMatch';
 import { apiFetch } from '../lib/apiClient';
+import { createSyncClient } from '../lib/syncClient';
 const API = (import.meta as any).env?.VITE_API_URL || '';
 
 // VAS (career add-on services) — single optional paid offering alongside the ₹100 Candidate Pass
@@ -15,7 +16,7 @@ const MED: Record<string, string> = { pending: 'Medical Pending', fit: 'Medicall
 const VISA: Record<string, string> = { pending: 'Visa Pending', submitted: 'Visa Submitted', stamped: 'Visa Stamped', rejected: 'Visa Rejected' };
 const FLT: Record<string, string> = { pending: 'Awaiting Flight', booked: 'Flight Booked', deployed: 'Deployed' };
 
-export default function ManpowerMarketplace({ token }: { token: string }) {
+export default function ManpowerMarketplace({ token, clientId }: { token: string; clientId?: string }) {
   const qc = useQueryClient();
   const [tab, setTab] = useState<'profile' | 'jobs' | 'applications' | 'vas'>('jobs');
   const [q, setQ] = useState('');
@@ -25,6 +26,29 @@ export default function ManpowerMarketplace({ token }: { token: string }) {
   const [showGate, setShowGate] = useState(false);
   const [payBusy, setPayBusy] = useState(false);
   const [acceptedVasTerms, setAcceptedVasTerms] = useState(false);
+
+  // P1-3 realtime: live application-status + payment events from SyncHub.
+  useEffect(() => {
+    if (!clientId) return;
+    const client = createSyncClient({
+      plane: 'client',
+      token,
+      channels: [`client:${clientId}:applications`, `client:${clientId}:payments`],
+      onEvent: (e) => {
+        if (e.type === 'MANPOWER_DEPLOYMENT_CREATED' || e.type === 'MANPOWER_DEPLOYMENT_UPDATED') {
+          qc.invalidateQueries({ queryKey: ['portalManpowerApps', token] });
+          qc.invalidateQueries({ queryKey: ['manpowerMarketplace'] });
+          qc.invalidateQueries({ queryKey: ['portalJobAppsHub'] });
+        }
+        if (e.type === 'PAYMENT_VERIFIED') {
+          qc.invalidateQueries({ queryKey: ['portalManpowerApps', token] });
+          qc.invalidateQueries({ queryKey: ['portalPayments', token] });
+        }
+      },
+    });
+    client.connect();
+    return () => client.disconnect();
+  }, [clientId, token]);
 
   const { data, isLoading } = useQuery<{ jobs: any[] }>({
     queryKey: ['manpowerMarketplace', q, country],

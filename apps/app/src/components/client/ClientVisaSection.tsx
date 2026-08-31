@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createSyncClient } from '../../lib/syncClient';
 
 const API = (import.meta as any).env?.VITE_API_URL || '';
 
@@ -295,7 +296,8 @@ function VBool(props: { label: string; value: boolean | undefined; onChange: (v:
   );
 }
 
-export default function VisaServices({ token }: { token: string }) {
+export default function VisaServices({ token, clientId }: { token: string; clientId?: string }) {
+  const qc = useQueryClient();
   const VISA_PAUSED = true; // subtle paused — pricing will be available soon, applications via waitlist only
   const [tab, setTab] = useState<'catalogue' | 'wizard' | 'tracker'>('catalogue');
   const [activeAppId, setActiveAppId] = useState<string | null>(null);
@@ -356,6 +358,23 @@ const [inquiryBusy, setInquiryBusy] = useState(false);
   const applications: VisaApplicationRow[] = appsQ.data || [];
   const countries: string[] = Array.from(new Set(products.map((p: VisaProduct) => p.country))).sort();
   const activeApp = applications.find((a) => a.id === activeAppId) || null;
+
+  // P1-3 realtime: tracker updates live when staff advances the application status.
+  useEffect(() => {
+    if (!clientId) return;
+    const client = createSyncClient({
+      plane: 'client',
+      token,
+      channels: [`client:${clientId}:visa`],
+      onEvent: (e) => {
+        if (e.type === 'VISA_STATUS_UPDATED' || e.type === 'VISA_APPLICATION_SUBMITTED') {
+          qc.invalidateQueries({ queryKey: ['portalVisaApplications', token] });
+        }
+      },
+    });
+    client.connect();
+    return () => client.disconnect();
+  }, [clientId, token]);
 
   const patch = (key: VisaSectionKey, p: Record<string, any>) =>
     setForm((f) => ({ ...f, [key]: { ...(f[key] || {}), ...p } }));

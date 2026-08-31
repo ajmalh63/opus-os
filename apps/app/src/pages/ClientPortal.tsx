@@ -776,7 +776,7 @@ export default function ClientPortal() {
                 )}
                 <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
                   <Suspense fallback={<div className="p-6 text-xs text-slate-400 animate-pulse" aria-busy="true" aria-label="Loading visa desk">Loading visa desk…</div>}>
-                    <ClientVisaSection token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} />
+                    <ClientVisaSection token={sessionData?.journeys?.[0]?.client?.portalToken || sessionData?.journeys?.[0]?.client?.id || activeToken || me?.id || 'client-self'} clientId={sessionData?.journeys?.[0]?.client?.id || me?.id || activeToken} />
                   </Suspense>
                 </div>
               </div>
@@ -841,7 +841,7 @@ export default function ClientPortal() {
                   />
                 </div>
               ) : (
-                <ManpowerMarketplace token={mpPortalToken} />
+                <ManpowerMarketplace token={mpPortalToken} clientId={sessionData?.journeys?.[0]?.client?.id || me?.id || activeToken} />
               )
             )}
 
