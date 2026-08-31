@@ -8,6 +8,7 @@ import ChatWidget from '../components/ChatWidget';
 import ClientDashboardHub from '../components/ClientDashboardHub';
 import ClientMobileNav from '../components/client/ClientMobileNav';
 import LanguagePill from '../components/client/LanguagePill';
+import NotificationCenter from '../components/client/NotificationCenter';
 import UmrahClientSection from '../components/UmrahClientSection';
 import StudyAbroadClientSection from '../components/StudyAbroadClientSection';
 import AttestationClientSection from '../components/AttestationClientSection';
@@ -234,7 +235,7 @@ export default function ClientPortal() {
     queryFn: async () => {
       if (!activeToken) return [];
       const res = await fetch(`${API}/api/public/portal/study-abroad/applications`, { headers: { 'X-Portal-Token': activeToken } });
-      if (!res.ok) return [];
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       const d = await res.json();
       return d.applications || [];
     },
@@ -246,7 +247,7 @@ export default function ClientPortal() {
     queryFn: async () => {
       if (!activeToken) return [];
       const res = await fetch(`${API}/api/public/portal/visa/applications`, { headers: { 'X-Portal-Token': activeToken } });
-      if (!res.ok) return [];
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       const d = await res.json();
       return d.applications || [];
     },
@@ -258,7 +259,7 @@ export default function ClientPortal() {
     queryFn: async () => {
       if (!activeToken) return [];
       const res = await fetch(`${API}/api/public/portal/umrah/my-bookings`, { headers: { 'X-Portal-Token': activeToken } });
-      if (!res.ok) return [];
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       const d = await res.json();
       return d.bookings || [];
     },
@@ -270,7 +271,7 @@ export default function ClientPortal() {
     queryFn: async () => {
       if (!activeToken) return [];
       const res = await fetch(`${API}/api/public/portal/attestation/applications`, { headers: { 'X-Portal-Token': activeToken } });
-      if (!res.ok) return [];
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       const d = await res.json();
       return d.applications || [];
     },
@@ -282,7 +283,7 @@ export default function ClientPortal() {
     queryFn: async () => {
       if (!activeToken) return [];
       const res = await fetch(`${API}/api/public/portal/manpower/applications`, { headers: { 'X-Portal-Token': activeToken } });
-      if (!res.ok) return [];
+      if (!res.ok) throw new Error('Request failed (' + res.status + ').');
       const d = await res.json();
       return d.applications || [];
     },
@@ -380,6 +381,10 @@ export default function ClientPortal() {
             </kbd>
           </button>
           <LanguagePill />
+          <NotificationCenter
+            token={sessionData?.journeys?.[0]?.client?.portalToken || activeToken || ''}
+            clientId={sessionData?.journeys?.[0]?.client?.id || me?.id || activeToken}
+          />
           <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200/70 text-emerald-800 px-3.5 py-1.5 rounded-full text-xs font-bold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Live Sync</span>
