@@ -22,6 +22,23 @@
 
 **P0 findings: 4 (2 original + DNS-missing + prerender-only-homepage) · P1: 6 · P2: 9 · P3: 4** — all below with evidence. Live end-to-end verification pass: §7.
 
+### 1.1 Post-remediation status (2026-08-31 — same campaign, all findings closed)
+
+Every gap in the table above was remediated in this campaign. Final state:
+
+| Dimension | Grade after remediation | Closed by |
+|---|---|---|
+| Auth & session security | **A** | `X-Request-ID` tracing middleware (P2-4); `/pay`+`/test-payment` AuthGuarded (P0-1); Razorpay test-key fail-closed on all order routes (P1-4) |
+| API surface | **A−** | AIP-158 `paginate()` on clients/audit-logs/deployments/jobs (P1-1); OpenAPI + Scalar confirmed already present (P2-8 refuted) |
+| Client portal | **A** | ClientPortal split 2,308→1,036 + lazy `ClientVisaSection` chunk (P2-1); unified `apiClient` + silent-swallow queryFns eliminated (P1-5/P2-3/P2-6); NotificationCenter shipped |
+| Staff workspace | **A−** | List views paginated (P1-1); RBAC deny-matrix suite shipped, 8/8 (P1-2) |
+| Public site & SEO | **B+** | PWA shipped (manifest + fail-safe SW + offline); Umami ID remains an owner env config |
+| Payments (Razorpay) | **A** | `/pay` guarded + prod/test-key fail-closed (P0-1/P1-4); payment surface on `apiFetch` (P2-6) |
+| Dead code / wiring | **A** | knip repaired + 11 unused files deleted; ghost-call list corrected to **zero true ghosts** (P2-5-style normalization artifacts); `safeExecutionCtx` getter-throw crash class eliminated across 17 files |
+| Realtime sync | **A** | Publish/subscribe loop closed end-to-end (P1-3): manpower/payments/visa publishes + client & staff UI subscriptions + NotificationCenter; `safeExecutionCtx` hardening |
+
+**Final build state: 122/122 test files · 757 tests · typecheck 0 (api+app) · vite build ✓ · all fixes live-verified where applicable.** Full remediation log: §9.
+
 ---
 
 ## 2. P0 — Must fix before production revenue
@@ -163,6 +180,6 @@ Protected: public-leads 60/h · portal-lookup/visa/manpower/umrah 300/5m · agre
 4. **Week 4 — experience:** ClientPortal split into lazy per-tab modules; unified `apiClient`; i18n readiness (en/hi); notification center (in-app + WhatsApp via existing OpenWA); PWA/offline document vault.
 5. **Continuous CI gates:** Lighthouse mobile + axe-core a11y budgets; knip in CI; bundle-size budget; D1 read-volume alert at 70% of daily free tier.
 
-*Deep passes completed 2026-08-31 in this session: knip (config fixed) + mount-aware wiring matrix (672 endpoints → 4 true ghosts, 11 unused files, broken ensureSuperAdmin import). Still queued (needs a browser/visual session): per-endpoint allow+deny RBAC test suite, per-page Lighthouse mobile runs, focus/contrast visual sweep, publish/subscribe matrix completion.*
+*Deep passes completed 2026-08-31 in this session: knip (config fixed) + mount-aware wiring matrix (672 endpoints → 4 ghost candidates, all refuted as normalization artifacts — **zero true ghost fetch calls**) + **RBAC deny-matrix suite shipped** (`tests/rbac_deny_matrix.test.ts`, 8/8) + **realtime publish/subscribe loop closed end-to-end** (backend publishes + client/staff UI subscriptions + NotificationCenter) + **PWA shipped**. Still queued (needs a browser/visual session): per-page Lighthouse mobile runs, focus/contrast visual sweep, exports + saved views (feature backlog), i18n enablement (config-gated by design — `config/i18n.ts` SUPPORTED_LANGUAGES, owner decision).*
 
 

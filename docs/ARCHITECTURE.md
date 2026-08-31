@@ -1,6 +1,6 @@
 # Opus OS — Complete Architecture Map
 
-> **Version:** 2026-08-30 (v13 — Login OTP Gold Fix (local `wrangler.local.toml` + idempotency body-clone re-enabled) + Manpower ₹100 Candidate-Pass Paywall (secret tier & exclusive plans retired; unified portal marketplace) + Razorpay Receipt ≤56 Compliance + Honest API-Outage UX)  
+> **Version:** 2026-08-31 (**v14 — Enterprise Audit Remediation Campaign:** realtime publish+subscribe loop closed end-to-end · AIP-158 pagination (`lib/paginate.ts`) · `X-Request-ID` tracing · `safeExecutionCtx` systemic fix (17 files) · unified `lib/apiClient.ts` (RFC 9110 Retry-After) + 32 silent-swallow queryFns eliminated · ClientPortal split 2,308→1,036 + lazy visa chunk · NotificationCenter (realtime bell) · PWA (manifest + fail-safe SW + offline) · RBAC deny-matrix suite — **122/122 files, 757 tests**). v13: Login OTP Gold Fix (local `wrangler.local.toml` + idempotency body-clone re-enabled) + Manpower ₹100 Candidate-Pass Paywall (secret tier & exclusive plans retired; unified portal marketplace) + Razorpay Receipt ≤56 Compliance + Honest API-Outage UX  
 > **Status:** Live & Unified (Cloudflare Workers API + D1 101 tables (99 + ocr_runs + manpower_workflows) + R2 `opusdocs` Vault (presigned 15m, $0 egress) + KV Edge Accelerator + Queues + Workers AI/Vectorize + SyncHub DO)  
 > **Build:** `typecheck ✓ 0 errors (api + app)` `test ✓ 120/120 files passed (745 tests)` `D1 101 tables` `secrets domain https://wa.opusoverseas.com` `Hybrid: Opus = System of Record (kept), Cloudflare Workflows = 0 (free 3k/day, not yet scaffolded — per your “keep everything as is”)`
 
@@ -90,11 +90,15 @@ Three workspaces share a single D1 source of truth, synchronized via `SyncHub Du
 | **Leads** | `public:leads` + `staff:global:leads` | `LEAD_CREATED`, `LEAD_ASSIGNED`, `STAGE_CHANGED` | `WorkspaceShell` + `ClientsList` `staff:global:leads` | Invalidate `leadsList`, update Kanban |
 | **Family** | `client:{id}:family` + `staff:global:family` | `FAMILY_MEMBER_ADDED`, `FAMILY_MEMBER_UPDATED` | `ClientPortal` `client [client:{id}:family]` + `Client360` staff | Invalidate family members list |
 | **Ledger/Payments** | `client:{id}:payments` + `public:payments` + `staff:global:payments` | `PAYMENT_RECORDED`, `INSTALLMENT_UPDATED` | `ClientPortal` `client:{id}:payments` + `PartnerDashboard` `partner:{id}:commissions` | Invalidate billing & forecast |
-| **Visa** | `public:visa` + `client:{id}:visa` + `staff:global:visa` | `VISA_DEADLINES_CALC/MOVED`, `VISA_RULE_CREATED` | `ClientPortal` `client:{id}:visa` + `VisaTracker` | Invalidate deadlines & checklist |
+| **Visa** | `public:visa` + `client:{id}:visa` + `staff:global:visa` | `VISA_DEADLINES_CALC/MOVED`, `VISA_RULE_CREATED`, **`VISA_APPLICATION_SUBMITTED`, `VISA_STATUS_UPDATED` (v14)** | `ClientPortal` `client:{id}:visa` + `VisaTracker` + **`ClientVisaSection` + `VisaPrepPortal` + `NotificationCenter` (v14)** | Invalidate deadlines & checklist + `portalVisaApplications` |
 | **Attestation** | `public:attestation` + `staff:global:attestation` | `ATTESTATION_PRESCREEN/VERIFIED/RULE_CREATED` | `AttestationPortal` + `ClientPortal attestation` | Invalidate document chains |
 | **Messages** | `client:{id}:messages` + `staff:global:messages` + `public:messages` | `PORTAL_MESSAGE_SENT`, `INBOX_REPLY` | `PortalMessages.tsx` `client` + `Inbox` `staff` | Invalidate message thread |
 | **Calendar/Journey** | `client:{id}:journey` | `ONBOARDING_PROGRESS`, `DOCUMENT_DELETED` | `ClientPortal` `client:{id}:journey` | Invalidate `portalDashboard` |
 | **Partner** | `partner:{id}:bookings`, `partner:{id}:commissions` | `PARTNER_BOOKING_ADDED`, `COMMISSION_EARNED` | `PartnerDashboard` `partner` | Invalidate booking tower & ledger |
+| **Manpower (v13/v14)** | `client:{id}:applications` + `staff:global:manpower` + `public:manpower` | `MANPOWER_DEPLOYMENT_CREATED/UPDATED`, `MANPOWER_JOB_POSTED`, `MANPOWER_MEMBERSHIP_GRANTED` | `ManpowerMarketplace` + staff `ManpowerPortal` + `NotificationCenter` | Invalidate `portalManpowerApps`, `manpowerMarketplace`, `manpowerJobs/Deployments/Candidates` |
+| **Razorpay Verify (v14)** | `client:{id}:payments` | `PAYMENT_VERIFIED` | `ManpowerMarketplace` + `NotificationCenter` | Invalidate `portalManpowerApps`, `portalPayments` |
+
+**v14 — publish/subscribe loop CLOSED end-to-end:** every client-facing publish above now has a live subscriber. Client plane: `ManpowerMarketplace` (`client:{id}:applications` + `:payments`), `ClientVisaSection` (`client:{id}:visa`), `ClientHelpdeskSection` (`client:{id}:tickets`), `NotificationCenter` (all four channels — unread badge, mark-read-on-open, localStorage persistence, replay-safe dedupe by event id). Staff plane: `ManpowerPortal` (`staff:global:manpower`), `VisaPrepPortal` (`staff:global:visa`). Every channel is enforced against the `syncHubAuth` allowlist (`client:{tenantId}:*`, `staff:*`, `public:*`) server-side at WS upgrade — a client can never subscribe to another tenant's feed. Flow: **mutation → D1 commit → `publishSyncEvent` (via `safeExecutionCtx`) → SyncHub DO → WebSocket → react-query invalidation → UI updates instantly.**
 
 ### 2.2 Boundary Security & Data Isolation Matrix
 
@@ -313,13 +317,25 @@ Every state mutation, financial transaction, staff assignment, and document uplo
 
 ---
 
+### 7.1 API Gold Standards (v14 remediation campaign)
+
+| Standard | Implementation |
+|---|---|
+| **Request correlation** | `X-Request-ID` middleware on every `/api/*` response — echoes a client-supplied UUID or generates one (http.dev correlation standard); **live-verified** |
+| **ExecutionContext safety** | `safeExecutionCtx(c)` (`lib/webhookDispatcher.ts`) — Hono's `c.executionCtx` getter **throws** when no ExecutionContext exists (tests, non-Workers runtimes). All raw accesses converted across 17 files (middleware, routes/v1/*, publish sites); zero raw references remain outside `sync.ts`/helper |
+| **Pagination (AIP-158)** | `lib/paginate.ts`: `limit` clamp (values above max **coerced**, not rejected), opaque versioned cursor (`cur1_` + base64 offset; invalid token resets to page 1), `nextPageToken` present only when more pages. Wired: `GET /clients` (def 500/cap 1000 — backward-compatible), `GET /admin/audit-logs` (250), `GET /manpower/deployments` (200/cap 500, clamped **before** the 4-table in-memory join), `GET /portal/manpower/jobs` (200/500). Unit-tested (`paginate.test.ts`: clamp coercion, cursor round-trip, end-of-results signal, token opacity) |
+| **Frontend api client** | `lib/apiClient.ts`: `ApiError` (status/payload/retryAfterMs), RFC 9110 `Retry-After` (delay-seconds **and** HTTP-date forms, ≤30s cap), 429 retry ×3 exponential backoff, 204/empty-safe JSON. Adopted: paywall order+verify (`ManpowerAccessGate`), manpower applications. 32 silent-swallow queryFns (`if (!r.ok) return <fake-empty>`) converted to throw — react-query retries + surfaces error state instead of hiding data loss (2 intentional background pollers preserved) |
+| **RBAC regression** | `tests/rbac_deny_matrix.test.ts` (8 tests, Burp-Authorize semantics): admin-only endpoints strict 401/403 for counselor + unauthenticated; counselor **row-level division scoping** verified (in-scope visible, out-of-scope hidden); forged portal token horizontal deny |
+
+---
+
 ## 8. Verification Matrix
 
 | Gate | Result | Notes |
 |---|:---:|---|
 | `pnpm typecheck` (all workspaces) | **✓ 0 errors** | `packages/shared`, `apps/api`, `apps/app` typechecked |
-| `pnpm test` (vitest suite) | **✓ 120/120 passed** | **745 tests passed across all divisions and subsystems** |
-| `pnpm --filter app build` | **✓ passed** | Production bundle built cleanly in 2.93s |
+| `pnpm test` (vitest suite) | **✓ 122/122 passed** | **757 tests across all divisions and subsystems** (v14: +8 RBAC deny-matrix, +4 paginate) |
+| `pnpm --filter app build` | **✓ passed** | Production bundle clean; `ClientPortal` route chunk lazy, `ClientVisaSection` sub-chunk split (v14) |
 | `D1 Database` | **99 tables** | `support_tickets`, `ticket_messages`, `two_factor` added |
 | `Helpdesk Engine` | **ITIL v4 Standard** | Dynamic SLA Pause-the-Clock + strict internal note firewall |
 | `Document Vault Lifecycle` | **30-Day Auto-Purge** | 50MB quota calculation + voluntary purge support |
@@ -336,10 +352,18 @@ Every state mutation, financial transaction, staff assignment, and document uplo
 | `Web Analytics` | **DPDP-friendly Free** | `beacon.min.js` defer in `index.html` (auto-inject when zone enabled) + GA4 kept — no banner, unlimited |
 | `Canonical Division Taxonomy` | **5 Unique Desks** | 🎓 Study Abroad · 🛂 Visa · 🧳 Tours & Travels · 📜 Attestation · 👷 Manpower |
 | `Realtime Pub/Sub` | **20+ Channels** | `SyncHub DO` + multi-workspace tickets sync — **hybrid: Opus = Record, Cloudflare Workflows = 0/3k/day (kept as-is per your call, design at `docs/HYBRID-WORKFLOW-ORCHESTRATION-DESIGN-2026-08-30.md`)** |
+| `Request Correlation (v14)` | **Gold (http.dev)** | `X-Request-ID` echo-or-generate on every `/api/*` response — **live-verified header echo** |
+| `RBAC Deny Matrix (v14)` | **OWASP A01 Regression** | `rbac_deny_matrix.test.ts` 8/8: vertical deny (admin-only 401/403), counselor row-level division scoping, forged-token horizontal deny |
+| `Unified apiClient (v14)` | **Gold (RFC 9110)** | `ApiError` + `apiFetch`: Retry-After both forms ≤30s, 429 ×3 backoff; paywall + manpower adopted; **32 silent-swallow queryFns eliminated** (2 intentional pollers kept) |
+| `AIP-158 Pagination (v14)` | **Gold** | `lib/paginate.ts` clamp + opaque cursor + `nextPageToken`; wired into clients / audit-logs / deployments / jobs; unit-tested 4/4 |
+| `ExecutionContext Safety (v14)` | **Systemic** | `safeExecutionCtx` everywhere — getter-throw crash class eliminated across 17 files; zero raw `c.executionCtx` outside `sync.ts`/helper |
+| `ClientPortal Split (v14)` | **Maintainability Gold** | 2,308 → 1,036 lines (−55%); visa desk extracted to lazy `ClientVisaSection` chunk; zero visa symbols remain in shell |
+| `NotificationCenter (v14)` | **Realtime Gold** | Bell + live feed over 4 existing SyncHub channels — no extra polling/backend; unread badge, localStorage persistence, replay-safe dedupe, a11y (aria-expanded/labelled region/Escape) |
+| `PWA (v14)` | **Installable** | `manifest.json` + `sw.js` (never intercepts `/api/*`, network-first navigations, SWR assets, versioned caches) + `offline.html` fallback + guarded registration — **bump `CACHE_VERSION` per deploy** |
 
 ---
 
-## 9. Local Development Quickstart (v13)
+## 9. Local Development Quickstart (v14)
 
 ```bash
 # Frontend — Vite on :5173 (proxies /api → 127.0.0.1:8787)
@@ -356,3 +380,4 @@ wrangler deploy
 * **Why `wrangler.local.toml` exists:** Workers AI + Vectorize bindings are *always remote* in `wrangler dev` — on offline/blocked networks the dev server dies at `Establishing remote connection…` (connect timeout), taking the whole API down with it. The local config drops both bindings; `src/infra/vector.ts` already degrades gracefully (`if (!env.VECTOR_INDEX)`), so login/OTP and every portal flow run 100% locally. D1/KV/R2/Queues/DOs all simulate locally with zero auth.
 * **Idempotency middleware (re-enabled v13):** reads request bodies from `c.req.raw.clone()` — the original stream stays intact for route handlers. Root cause of the historic 500 on `POST /api/auth/otp/send` was `await c.req.text()` consuming the body stream; regression-covered in `tests/idempotency.test.ts`.
 * **Razorpay environments:** local dev = test pair (`rzp_test_…` in `.dev.vars` + `apps/app/.env`); production = Worker secrets (`wrangler secret put RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET`) + `VITE_RAZORPAY_KEY_ID` in `apps/app/.env.production`. Key **ID** is public by design; the **secret** never leaves the server. Live/live and test/test pairs must match.
+* **PWA (v14):** `public/sw.js` + `public/manifest.json` + `public/offline.html`. The service worker **never intercepts `/api/*`** (auth, realtime and payments always hit the network) and serves navigations network-first, so a deploy can never serve a stale app shell. **Bump `CACHE_VERSION` in `sw.js` on every deploy** to invalidate old asset caches. iOS installs via Share → Add to Home Screen (Apple does not support `beforeinstallprompt`).
