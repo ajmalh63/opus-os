@@ -91,7 +91,8 @@ describe('Compliance calendar + CA export (manager+)', () => {
   let mockD1: MockD1Database;
   beforeAll(() => {
     mockD1 = new MockD1Database();
-    mockD1.tables.statutory_registers.push({ id: 's1', month: '2026-08', type: 'pf', employee_name: 'X', wage_amount: 100000, deduction_paise: 12000, employer_share: 13000, due_date: null, paid_at: null, status: 'paid', notes: null, created_at: 1, updated_at: 1 });
+    const curMonth = new Date().toISOString().slice(0, 7);
+    mockD1.tables.statutory_registers.push({ id: 's1', month: curMonth, type: 'pf', employee_name: 'X', wage_amount: 100000, deduction_paise: 12000, employer_share: 13000, due_date: null, paid_at: null, status: 'paid', notes: null, created_at: 1, updated_at: 1 });
   });
 
   it('GET /api/compliance/calendar returns 3-month statutory deadlines', async () => {

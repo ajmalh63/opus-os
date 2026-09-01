@@ -411,5 +411,56 @@ All technical, infrastructure, domain, database, security, and integration confi
   - Click **"Sync Google & Trustpilot"** to pull live reviews into Cloudflare D1.
   - Toggle **"✓ Live"** or **"★ Pinned"** on individual reviews to feature them across the homepage and division portals.
 
+---
+
+## ★ Deferred 3rd-Party Feature Integrations (As of 2026-09-01)
+
+These integrations are fully architected and supported with built-in fallbacks. They are deferred for future expansion and do NOT block production deployment.
+
+1. **[ ] Google Places / Business Profile Reviews**
+   - Keys: `GOOGLE_PLACES_API_KEY`, `GOOGLE_PLACE_ID`, `VITE_GOOGLE_REVIEW_URL`
+   - Purpose: Automatic pulling of Google Maps reviews.
+   - Fallback: Native verified customer reviews table in Cloudflare D1.
+
+2. **[ ] Trustpilot Business Reviews**
+   - Keys: `TRUSTPILOT_API_KEY`, `TRUSTPILOT_BUSINESS_UNIT_ID`, `VITE_TRUSTPILOT_REVIEW_URL`
+   - Purpose: Auto-syncing Trustpilot feedback.
+   - Fallback: Verified client testimonials carousel & D1 feedback repository.
+
+3. **[ ] India Post Enterprise Tracking API**
+   - Keys: `INDIA_POST_API_KEY`, `INDIA_POST_CONTRACT_ID`, `INDIA_POST_CUSTOMER_ID`
+   - Purpose: Direct server-side Speed Post tracking.
+   - Fallback: Dynamic tracking links to India Post, Blue Dart, and DTDC portals via AWB.
+
+4. **[ ] DevOps Telegram Alert Channel**
+   - Keys: `TELEGRAM_BOT_TOKEN`, `OPS_TELEGRAM_CHAT_ID`
+   - Purpose: Real-time emergency Telegram alerts to developer/owner phone.
+   - Fallback: Staff Workspace notifications & Uptime Kuma push heartbeat.
+
+5. **[ ] Meta WhatsApp Cloud API (Alternative Gateway)**
+   - Keys: `META_WHATSAPP_TOKEN`, `META_WHATSAPP_PHONE_ID`
+   - Purpose: Secondary WhatsApp cloud provider.
+   - Fallback: Primary self-hosted OpenWA VPS gateway (`OPENWA_API_KEY`, `OPENWA_BASE_URL`).
+
+6. **[ ] Resend HTTPS Email Relay**
+   - Keys: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
+   - Purpose: Secondary transactional mail relay.
+   - Fallback: Primary Listmonk transactional engine with Titan SMTP on VPS.
+
+7. **[ ] Google Cloud Document AI OCR**
+   - Keys: `GCP_SERVICE_ACCOUNT_JSON`, `GCP_SERVICE_ACCOUNT_EMAIL`
+   - Purpose: Advanced cloud passport/visa OCR.
+   - Fallback: Client-side + server-side WebCrypto ICAO 9303 Machine Readable Zone (MRZ) parser.
+
+---
+
+## ★ Live Production Credentials Activated (2026-09-01)
+
+- [x] **Razorpay Live Payments** — ✅ **LIVE & TESTED** (`rzp_live_TWiCYDLYD6vS7V` + Secret) in Cloudflare Worker secrets & `apps/app/.env.production`.
+- [x] **Umami Web Analytics** — ✅ **LIVE** (`bb9a2a45-c5be-4330-bbbf-31eb178d34fb`) in `apps/app/.env.production`.
+- [x] **Chatwoot Live Chat** — ✅ **LIVE** (`f36574fb918873fbba2749b6a2f18ac6`) in `apps/app/.env.production`.
+- [x] **Cloudflare Turnstile Bot Defense** — ✅ **LIVE** (`0x4AAAAAAEWhovYfefdqk_RI` / `0x4AAAAAAEWhomlnfH0fHzWpdSVEqoD5OOI`).
+
+
 
 

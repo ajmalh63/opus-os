@@ -150,6 +150,9 @@ app.use('/api/*', async (c, next) => {
 // JSON 404 handler — default Hono is plain text; gold standard is JSON.
 app.notFound((c) => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found' } }, 404));
 
+// Auth mutations — credential-stuffing guard (OWASP API4): 10/min per IP on all /api/auth/*
+app.use('/api/auth', rateLimit({ bucket: 'auth', windowSeconds: 60, limit: 10 }));
+app.use('/api/auth/*', rateLimit({ bucket: 'auth', windowSeconds: 60, limit: 10 }));
 // ===== PUBLIC (no session) =====
 app.route('/api/auth', authRouter);
 

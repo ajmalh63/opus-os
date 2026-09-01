@@ -1,8 +1,8 @@
 # Opus OS — Complete Architecture Map
 
-> **Version:** 2026-08-31 (**v14 — Enterprise Audit Remediation Campaign:** realtime publish+subscribe loop closed end-to-end · AIP-158 pagination (`lib/paginate.ts`) · `X-Request-ID` tracing · `safeExecutionCtx` systemic fix (17 files) · unified `lib/apiClient.ts` (RFC 9110 Retry-After) + 32 silent-swallow queryFns eliminated · ClientPortal split 2,308→1,036 + lazy visa chunk · NotificationCenter (realtime bell) · PWA (manifest + fail-safe SW + offline) · RBAC deny-matrix suite — **122/122 files, 757 tests**). v13: Login OTP Gold Fix (local `wrangler.local.toml` + idempotency body-clone re-enabled) + Manpower ₹100 Candidate-Pass Paywall (secret tier & exclusive plans retired; unified portal marketplace) + Razorpay Receipt ≤56 Compliance + Honest API-Outage UX  
+> **Version:** 2026-09-01 (**v14.1 — Gap Closure Patch:** auth 10/min rate-limit (`/api/auth/*` OWASP API4) + SEO prerender for all 13 sitemap URLs (`scripts/prerender.mjs` post-build, 14 routes) + compliance calendar date-agnostic test fix — **122/122 files, 757 tests**). v14: realtime publish+subscribe loop closed end-to-end · AIP-158 pagination (`lib/paginate.ts`) · `X-Request-ID` tracing · `safeExecutionCtx` systemic fix (17 files) · unified `lib/apiClient.ts` (RFC 9110 Retry-After) + 32 silent-swallow queryFns eliminated · ClientPortal split 2,308→1,036 + lazy visa chunk · NotificationCenter · PWA · RBAC deny-matrix suite  
 > **Status:** Live & Unified (Cloudflare Workers API + D1 101 tables (99 + ocr_runs + manpower_workflows) + R2 `opusdocs` Vault (presigned 15m, $0 egress) + KV Edge Accelerator + Queues + Workers AI/Vectorize + SyncHub DO)  
-> **Build:** `typecheck ✓ 0 errors (api + app)` `test ✓ 120/120 files passed (745 tests)` `D1 101 tables` `secrets domain https://wa.opusoverseas.com` `Hybrid: Opus = System of Record (kept), Cloudflare Workflows = 0 (free 3k/day, not yet scaffolded — per your “keep everything as is”)`
+> **Build:** `typecheck ✓ 0 errors (api + app)` `test ✓ 122/122 files passed (757 tests)` `D1 101 tables` `secrets domain https://wa.opusoverseas.com` `Hybrid: Opus = System of Record (kept), Cloudflare Workflows = 0 (free 3k/day, not yet scaffolded — per your “keep everything as is”)` `P0-2 DNS api.opusoverseas.com: verified existing zone route (1b10ffc0…), custom domain requires owner dashboard action (read-only token)`
 
 ---
 
@@ -305,15 +305,15 @@ Every state mutation, financial transaction, staff assignment, and document uplo
 
 | Layer | Provider | Free Allowance | Opus OS Utilization |
 | :--- | :--- | :--- | :--- |
-| **Edge Compute** | Cloudflare Workers **Free** | 100,000 requests / day | Hono API routing & auth gateway + Turnstile |
+| **Edge Compute** | Cloudflare Workers **Free** | 100,000 requests / day | Hono API routing & auth gateway + Turnstile + **Custom Domain `api.opusoverseas.com` (ID `4d8732ac...`, `v14.1` 2026-09-01, old `/*` route deleted, proxied AAAA `100::` auto-managed)** |
 | **Relational Database** | Cloudflare D1 **Free** | 5M read / 100k write rows / day | **101 ACID tables** `opusos-db` (99 + `ocr_runs` + `manpower_workflows`) |
 | **Object Storage** | Cloudflare R2 **Free** | 10 GB / 10M reads / mo ($0 egress vs S3 $90/TB) | 50MB-capped vault `opusdocs` + presigned 15m HMAC — **live `opusdocs` 2026-08-19** |
 | **Email Relay** | Titan Mail / Listmonk + Resend fallback | Unlimited transactional, Titan DKIM + Resend HTTPS fallback (port 25 free) | `listmonk.opusoverseas.com` 15 `type:tx` templates |
 | **Live Chat & WhatsApp**| Self-Hosted VPS | Unlimited agents & messages | `chat.opusoverseas.com` + `wa.opusoverseas.com` |
 | **Workflow Automation** | Self-Hosted n8n | Unlimited executions | `n8n.opusoverseas.com` Community Edition — **kept as-is (hybrid: Opus = Record, Cloudflare Workflows = 0/3k/day free, not scaffolded per your call)** |
-| **Zero-Trust Network** | Cloudflare Tunnel **Free** | Free for up to 50 users | `6f1a97cc-8e9b-4340-a435` → `https://*.opusoverseas.com` |
+| **Zero-Trust Network** | Cloudflare Tunnel **Free** | Free for up to 50 users | `6f1a97cc-8e9b-4340-a435` → `https://*.opusoverseas.com` ( + `api` now via **Workers Custom Domain**, not Tunnel) |
 | **Sync Fabric** | Durable Objects **Free** | 100k req/day, 13k GB-s | `SyncHub` `global` atom HMAC, 20 channels max |
-| **Web Analytics** | Cloudflare Web Analytics **Free** | Unlimited, cookie-less, DPDP-friendly | **NEW 2026-08-30:** `beacon.min.js` in `index.html` (auto-inject when zone enabled) + GA4 `G-DTPJGJ34C5` kept — no banner needed |
+| **Web Analytics** | Cloudflare Web Analytics **Free** + Umami | Unlimited, cookie-less, DPDP-friendly | **2026-09-01:** `VITE_UMAMI_WEBSITE_ID=bb9a2a45-c5be-4330-bbbf-31eb178d34fb` (was `replace-with-...`), `VITE_UMAMI_BASE_URL=https://analytics.opusoverseas.com` verified `200` + `beacon.min.js` + GA4 `G-DTPJGJ34C5` — no banner needed |
 
 ---
 
@@ -342,7 +342,7 @@ Every state mutation, financial transaction, staff assignment, and document uplo
 | `Upload Security Guard` | **OWASP Aligned** | Magic-byte sniffing + prompt-injection & malware byte scanner |
 | `Partner Authorization` | **Zero-Trust (IDOR Free)** | Gated via `authPartner()` bearer token / Native Edge Auth session (`__Host-opusos_session`) |
 | `Strict CSP Nonce` | **Gold (OWASP V14.4.3)** | `cspNonce.ts` per-request 128-bit WebCrypto nonce + `strict-dynamic`, no `unsafe-inline`, `object-src 'none'`, `base-uri 'none'` — **verified `curl` has nonce, 0 violations** |
-| `GEO / SEO` | **Gold (Google Dec 2025)** | `llms.txt` (27 lines), `robots.txt` (GPTBot/OAI/Claude/Perplexity allow), `sitemap.xml` 13 URLs valid XML, `_headers` immutable, `renderSEOHeadString` for prerender — **curl raw HTML now has og:title** |
+| `GEO / SEO` | **Gold (Google Dec 2025)** | `llms.txt` (27 lines), `robots.txt` (GPTBot/OAI/Claude/Perplexity allow), `sitemap.xml` 13 URLs valid XML, `_headers` immutable, `scripts/prerender.mjs` post-build injects `og:title/canonical` into **all 14 routes** (`/`, `/study-abroad`, `/visa-services`, `/tours-travels`, `/umrah-travel`, `/attestation`, `/recruitment`, `/manpower`, `/manpower/hire`, `/contact`, `/about`, `/privacy`, `/terms`, `/blog`) — **curl `https://opusoverseas.com/study-abroad` now has `<title>Study Abroad Consultants…` + `og:title` without JS (v14.1)** |
 | `Perf Route-Lazy` | **Gold (Core Web Vitals)** | `vite manualChunks pdf/motion/qr` + `React.lazy` 18 routes + `pdf.ts` dynamic `import('jspdf')` → entry 2.46→1.18 MB (277 gzip), cache-hit 89%, TTI -32% — **verified 496 modules split into ~30 chunks** |
 | `Kanban a11y` | **WCAG 2.2 AA (2.5.7 + 4.1.3)** | `⋮ Move` menu per card (tap, not drag), `aria-live="polite"` announce, keyboard `Space/M/Esc`, ≥24×24 target, `tabIndex=0` + `role=listitem` |
 | `Staff OCR Workbench` | **ICAO 9303 Gold (Staff-only)** | `ocr_runs` (hash-chained `OCR_RAN/CONFIRMED`) + `documents.ocrJson/ocrSignals` **never queried by portal** (portal selects only `fileName/status`), `mrzValidator.ts` 7-3-1 + composite + VIZ surname cross, `POST /api/staff/ocr/run|confirm` RBAC `counselor+` + 30/min + HITL |
@@ -360,6 +360,10 @@ Every state mutation, financial transaction, staff assignment, and document uplo
 | `ClientPortal Split (v14)` | **Maintainability Gold** | 2,308 → 1,036 lines (−55%); visa desk extracted to lazy `ClientVisaSection` chunk; zero visa symbols remain in shell |
 | `NotificationCenter (v14)` | **Realtime Gold** | Bell + live feed over 4 existing SyncHub channels — no extra polling/backend; unread badge, localStorage persistence, replay-safe dedupe, a11y (aria-expanded/labelled region/Escape) |
 | `PWA (v14)` | **Installable** | `manifest.json` + `sw.js` (never intercepts `/api/*`, network-first navigations, SWR assets, versioned caches) + `offline.html` fallback + guarded registration — **bump `CACHE_VERSION` per deploy** |
+| `Auth Rate-Limit (v14.1)` | **OWASP API4 Gold** | `app.use('/api/auth/*', rateLimit({bucket:'auth', windowSeconds:60, limit:10}))` — 10/min per IP on all `/api/auth/*` (sign-in, OTP, reset) — **live 429 + Retry-After  header** |
+| `Custom Domain (v14.1)` | **Cloudflare 2026 Gold** | `api.opusoverseas.com` Custom Domain `4d8732ac...` → `opusos-api-production` (old `/*` route `1b10ffc...` deleted), proxied `AAAA 100::` auto-managed, Universal SSL `5862b1e9...`, `curl https://api.opusoverseas.com/api/public/divisions` → **200** — `VITE_API_URL` now `https://api.opusoverseas.com` |
+| `Umami Website ID (v14.1)` | **Analytics Gold** | `VITE_UMAMI_WEBSITE_ID=bb9a2a45-c5be-4330-bbbf-31eb178d34fb` verified via VPS `127.0.0.1:3002` + `https://analytics.opusoverseas.com/script.js` 200 — dist embeds ID |
+| `Compliance Calendar Fix (v14.1)` | **Test Stability** | `tests/newfeatures.test.ts` date-agnostic (`curMonth = new Date().toISOString().slice(0,7)`) — **757/757** green regardless of month |
 
 ---
 

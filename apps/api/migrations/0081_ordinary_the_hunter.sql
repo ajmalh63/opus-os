@@ -1,4 +1,6 @@
-CREATE TABLE `manpower_workflows` (
+PRAGMA foreign_keys = OFF;
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `manpower_workflows` (
 	`id` text PRIMARY KEY NOT NULL,
 	`country` text NOT NULL,
 	`country_name` text NOT NULL,
@@ -12,6 +14,8 @@ CREATE TABLE `manpower_workflows` (
 	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `manpower_workflows_country_unique` ON `manpower_workflows` (`country`);--> statement-breakpoint
-ALTER TABLE `employer_demands` ADD `blind_bridge` integer DEFAULT true NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `manpower_workflows_country_unique` ON `manpower_workflows` (`country`);
+--> statement-breakpoint
+ALTER TABLE `employer_demands` ADD `blind_bridge` integer DEFAULT true NOT NULL;
+--> statement-breakpoint
 ALTER TABLE `employer_demands` ADD `country` text;
