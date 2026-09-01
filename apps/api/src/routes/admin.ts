@@ -245,9 +245,11 @@ adminRouter.patch('/staff/:id/status', zValidator('json', lifecycleStatusSchema)
     if (!user) return c.json({ error: 'Staff user not found' }, 404);
     if (user.status === 'archived') return c.json({ error: 'Archived users cannot be suspended. Restore first.' }, 400);
     if (isPermanentSuperAdmin(user.email)) return c.json({ error: 'Permanent superadmin cannot be suspended' }, 403);
-    const now = Math.floor(Date.now() / 1000);
-    const actorId = (c as any).get('user')?.id || null;
-    await db.update(users).set({ status, statusChangedAt: now, statusChangedBy: actorId, updatedAt: new Date() } as any).where(eq(users.id, staffId));
+    const now = new Date();
+    const rawActorId = (c as any).get('user')?.id || null;
+    const actorUser = rawActorId ? await db.select({ id: users.id }).from(users).where(eq(users.id, rawActorId)).get() : null;
+    const actorId = actorUser ? actorUser.id : null;
+    await db.update(users).set({ status, statusChangedAt: now, statusChangedBy: actorId, updatedAt: now } as any).where(eq(users.id, staffId));
     // Gold standard: kill live sessions synchronously before returning 200 (no window)
     if (status === 'suspended') {
       try { const { invalidateUserSessions } = await import('../lib/auth/session.js'); await invalidateUserSessions(db, staffId); } catch {}
@@ -256,7 +258,7 @@ adminRouter.patch('/staff/:id/status', zValidator('json', lifecycleStatusSchema)
     try { const { publishSyncEvent } = await import('./sync.js'); await publishSyncEvent(c.env as any, { channel: 'staff:global:roles', type: status === 'suspended' ? 'ROLE_SUSPENDED' : 'ROLE_UNSUSPENDED', payload: { userId: staffId, status } }); } catch {}
     try { const { publishSyncEvent } = await import('./sync.js'); await publishSyncEvent(c.env as any, { channel: `staff:${staffId}:auth`, type: 'AUTH_REVOKED', payload: { userId: staffId, reason } }); } catch {}
     return c.json({ success: true, status });
-  } catch (e:any) { return c.json({ error: 'Status update failed', details: e.message }, 500); }
+  } catch (e:any) { return c.json({ error: 'Status update failed', details: e?.message || String(e) }, 500); }
 });
 
 const archiveSchema = z.object({ reassignTo: z.string().optional(), reason: z.string().optional() });
@@ -270,8 +272,10 @@ adminRouter.post('/staff/:id/archive', zValidator('json', archiveSchema), async 
     if (!user) return c.json({ error: 'Staff user not found' }, 404);
     if (isPermanentSuperAdmin(user.email)) return c.json({ error: 'Permanent superadmin cannot be archived' }, 403);
     if (user.status === 'archived') return c.json({ error: 'Already archived' }, 400);
-    const now = Math.floor(Date.now() / 1000);
-    const actorId = (c as any).get('user')?.id || null;
+    const now = new Date();
+    const rawActorId = (c as any).get('user')?.id || null;
+    const actorUser = rawActorId ? await db.select({ id: users.id }).from(users).where(eq(users.id, rawActorId)).get() : null;
+    const actorId = actorUser ? actorUser.id : null;
     // Reassign open work if provided — gold standard: clients + engagements + tasks
     let reassigned = 0;
     if (reassignTo) {
@@ -292,14 +296,14 @@ adminRouter.post('/staff/:id/archive', zValidator('json', archiveSchema), async 
         } catch {}
       } catch {}
     }
-    await db.update(users).set({ status: 'archived', statusChangedAt: now, statusChangedBy: actorId, archivedAt: now, userDivisions: JSON.stringify([]), updatedAt: new Date() } as any).where(eq(users.id, staffId));
+    await db.update(users).set({ status: 'archived', statusChangedAt: now, statusChangedBy: actorId, archivedAt: now, userDivisions: JSON.stringify([]), updatedAt: now } as any).where(eq(users.id, staffId));
     // Gold standard: kill sessions + clear scopes + reassign already done
     try { const { invalidateUserSessions } = await import('../lib/auth/session.js'); await invalidateUserSessions(db, staffId); } catch {}
     await auditEvent(c, { action: 'STAFF_ARCHIVED', entityName: 'users', entityId: staffId, beforeState: { status: user.status, divisions: user.userDivisions }, afterState: { status: 'archived', reassignTo, reassigned } });
     try { const { publishSyncEvent } = await import('./sync.js'); await publishSyncEvent(c.env as any, { channel: 'staff:global:roles', type: 'ROLE_ARCHIVED', payload: { userId: staffId, reassignTo, reassigned } }); } catch {}
     try { const { publishSyncEvent } = await import('./sync.js'); await publishSyncEvent(c.env as any, { channel: `staff:${staffId}:auth`, type: 'AUTH_REVOKED', payload: { userId: staffId, reason: 'archived' } }); } catch {}
     return c.json({ success: true, status: 'archived', reassigned });
-  } catch (e:any) { return c.json({ error: 'Archive failed', details: e.message }, 500); }
+  } catch (e:any) { return c.json({ error: 'Archive failed', details: e?.message || String(e) }, 500); }
 });
 
 adminRouter.post('/staff/:id/restore', async (c) => {
@@ -310,13 +314,15 @@ adminRouter.post('/staff/:id/restore', async (c) => {
     const user = await db.select().from(users).where(eq(users.id, staffId)).get() as any;
     if (!user) return c.json({ error: 'Staff user not found' }, 404);
     if (user.status !== 'archived' && user.status !== 'suspended') return c.json({ error: 'User is already active' }, 400);
-    const now = Math.floor(Date.now() / 1000);
-    const actorId = (c as any).get('user')?.id || null;
-    await db.update(users).set({ status: 'active', statusChangedAt: now, statusChangedBy: actorId, archivedAt: null, updatedAt: new Date() } as any).where(eq(users.id, staffId));
+    const now = new Date();
+    const rawActorId = (c as any).get('user')?.id || null;
+    const actorUser = rawActorId ? await db.select({ id: users.id }).from(users).where(eq(users.id, rawActorId)).get() : null;
+    const actorId = actorUser ? actorUser.id : null;
+    await db.update(users).set({ status: 'active', statusChangedAt: now, statusChangedBy: actorId, archivedAt: null, updatedAt: now } as any).where(eq(users.id, staffId));
     await auditEvent(c, { action: 'STAFF_RESTORED', entityName: 'users', entityId: staffId, beforeState: { status: user.status }, afterState: { status: 'active' } });
     try { const { publishSyncEvent } = await import('./sync.js'); await publishSyncEvent(c.env as any, { channel: 'staff:global:roles', type: 'ROLE_RESTORED', payload: { userId: staffId } }); } catch {}
     return c.json({ success: true, status: 'active' });
-  } catch (e:any) { return c.json({ error: 'Restore failed', details: e.message }, 500); }
+  } catch (e:any) { return c.json({ error: 'Restore failed', details: e?.message || String(e) }, 500); }
 });
 
 adminRouter.delete('/staff/:id', async (c) => {
@@ -334,11 +340,12 @@ adminRouter.delete('/staff/:id', async (c) => {
     await auditEvent(c, { action: 'STAFF_HARD_DELETED', entityName: 'users', entityId: staffId, beforeState: user });
     try { const { publishSyncEvent } = await import('./sync.js'); await publishSyncEvent(c.env as any, { channel: 'staff:global:roles', type: 'ROLE_DELETED', payload: { userId: staffId } }); } catch {}
     return c.json({ success: true });
-  } catch (e:any) { return c.json({ error: 'Delete failed', details: e.message }, 500); }
+  } catch (e:any) { return c.json({ error: 'Delete failed', details: e?.message || String(e) }, 500); }
 });
 
 function isPermanentSuperAdmin(email: string) {
-  try { const { isPermanentSuperAdminEmail } = require('../ensureSuperAdmin.js'); return isPermanentSuperAdminEmail(email); } catch { return email.toLowerCase() === 'owner@opusoverseas.com' || email.toLowerCase() === 'ajmalsn63@gmail.com'; }
+  const clean = (email || '').toLowerCase().trim();
+  return clean === 'owner@opusoverseas.com' || clean === 'ajmalsn63@gmail.com';
 }
 
 // POST /api/admin/staff/:id/scope (Modify user division scopes)

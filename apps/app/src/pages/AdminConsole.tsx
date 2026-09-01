@@ -414,8 +414,8 @@ export default function AdminConsole() {
                                   <button
                                     onClick={async () => {
                                       if (!confirm(`Suspend ${user.name}? Access cut instantly (even with valid session).`)) return;
-                                      const r = await fetch(`${API}/api/admin/staff/${user.id}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status:'suspended', reason:'manual suspend' }) });
-                                      const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Suspend failed','error'); else { showToast('Suspended — access revoked','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
+                                      const r = await fetch(`${API}/api/admin/staff/${user.id}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ status:'suspended', reason:'manual suspend' }) });
+                                      const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.details||j.error||'Suspend failed','error'); else { showToast('Suspended — access revoked','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
                                     }}
                                     className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold rounded"
                                   >
@@ -425,8 +425,8 @@ export default function AdminConsole() {
                                 {st==='suspended' && (
                                   <button
                                     onClick={async () => {
-                                      const r = await fetch(`${API}/api/admin/staff/${user.id}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status:'active' }) });
-                                      const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Unsuspend failed','error'); else { showToast('Restored to active','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
+                                      const r = await fetch(`${API}/api/admin/staff/${user.id}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ status:'active' }) });
+                                      const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.details||j.error||'Unsuspend failed','error'); else { showToast('Restored to active','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
                                     }}
                                     className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold rounded"
                                   >
@@ -445,8 +445,8 @@ export default function AdminConsole() {
                                   <>
                                     <button
                                       onClick={async () => {
-                                        const r = await fetch(`${API}/api/admin/staff/${user.id}/restore`, { method:'POST' });
-                                        const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Restore failed','error'); else { showToast('Restored to active','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
+                                        const r = await fetch(`${API}/api/admin/staff/${user.id}/restore`, { method:'POST', credentials: 'include' });
+                                        const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.details||j.error||'Restore failed','error'); else { showToast('Restored to active','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
                                       }}
                                       className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold rounded"
                                     >
@@ -457,8 +457,8 @@ export default function AdminConsole() {
                                         if (!confirm(`Hard DELETE ${user.name} (${user.email})? Type DELETE to confirm. This destroys audit history and is irreversible.`)) return;
                                         const typed = prompt('Type DELETE to confirm hard delete:');
                                         if (typed !== 'DELETE') { showToast('Cancelled — type DELETE exactly','warning'); return; }
-                                        const r = await fetch(`${API}/api/admin/staff/${user.id}?confirm=DELETE`, { method:'DELETE' });
-                                        const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Delete failed','error'); else { showToast('Hard-deleted','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
+                                        const r = await fetch(`${API}/api/admin/staff/${user.id}?confirm=DELETE`, { method:'DELETE', credentials: 'include' });
+                                        const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.details||j.error||'Delete failed','error'); else { showToast('Hard-deleted','success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); }
                                       }}
                                       className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold rounded"
                                     >
@@ -688,8 +688,8 @@ export default function AdminConsole() {
             <div className="flex justify-end gap-3 text-xs pt-4 border-t border-brand-navy/10">
               <button onClick={() => { setShowArchiveModal(false); setActionStaff(null); }} className="px-4 py-2 border border-brand-navy/15 text-brand-navy/70 rounded hover:bg-brand-navy/[0.06]">Cancel</button>
               <button onClick={async () => {
-                const r = await fetch(`${API}/api/admin/staff/${actionStaff.id}/archive`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ reassignTo: reassignTo || undefined }) });
-                const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.error||'Archive failed','error'); else { showToast(`Archived — ${j.reassigned||0} clients reassigned`,'success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); setShowArchiveModal(false); setActionStaff(null); }
+                const r = await fetch(`${API}/api/admin/staff/${actionStaff.id}/archive`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ reassignTo: reassignTo || undefined }) });
+                const j = await r.json().catch(()=>({})); if (!r.ok) showToast(j.details||j.error||'Archive failed','error'); else { showToast(`Archived — ${j.reassigned||0} clients reassigned`,'success'); queryClient.invalidateQueries({queryKey:['adminStaff']}); setShowArchiveModal(false); setActionStaff(null); }
               }} className="px-4 py-2 bg-slate-800 hover:bg-black text-white rounded font-bold">Confirm Archive</button>
             </div>
           </div>

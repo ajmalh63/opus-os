@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import app from '../src/index.js';
 import { MockD1Database } from './mockDb.js';
 
@@ -168,5 +168,99 @@ describe('Super User Administration & Staff Management Tests', () => {
     const scopes = JSON.parse(user.user_divisions);
     expect(scopes).toContain("attestation");
     expect(scopes).toContain("study-abroad");
+  });
+
+  it('PATCH /api/admin/staff/:id/status should suspend and unsuspend staff accounts', async () => {
+    const staffId = "staff-lifecycle-1";
+    mockD1.tables.users.push({
+      id: staffId,
+      name: "Staff Lifecycle Test",
+      email: "lifecycle.test@test.com",
+      role: "counselor",
+      status: "active",
+      user_divisions: JSON.stringify(["visa"]),
+      created_at: 0,
+      updated_at: 0
+    });
+
+    // Suspend
+    const suspendRes = await app.request(`/api/admin/staff/${staffId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'better-auth.session_token=token-admin'
+      },
+      body: JSON.stringify({
+        status: 'suspended',
+        reason: 'inactive test user'
+      })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+
+    expect(suspendRes.status).toBe(200);
+    const suspendData = await suspendRes.json() as any;
+    expect(suspendData.success).toBe(true);
+    expect(suspendData.status).toBe('suspended');
+
+    const suspendedUser = mockD1.tables.users.find(u => u.id === staffId);
+    expect(suspendedUser?.status).toBe('suspended');
+
+    // Unsuspend
+    const unsuspendRes = await app.request(`/api/admin/staff/${staffId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'better-auth.session_token=token-admin'
+      },
+      body: JSON.stringify({
+        status: 'active'
+      })
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+
+    expect(unsuspendRes.status).toBe(200);
+    const unsuspendData = await unsuspendRes.json() as any;
+    expect(unsuspendData.success).toBe(true);
+    expect(unsuspendData.status).toBe('active');
+  });
+
+  it('POST /api/admin/staff/:id/archive and restore should lifecycle staff', async () => {
+    const staffId = "staff-archive-1";
+    mockD1.tables.users.push({
+      id: staffId,
+      name: "Staff Archive Test",
+      email: "archive.test@test.com",
+      role: "counselor",
+      status: "active",
+      user_divisions: JSON.stringify(["study-abroad"]),
+      created_at: 0,
+      updated_at: 0
+    });
+
+    // Archive
+    const archiveRes = await app.request(`/api/admin/staff/${staffId}/archive`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'better-auth.session_token=token-admin'
+      },
+      body: JSON.stringify({})
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+
+    expect(archiveRes.status).toBe(200);
+    const archiveData = await archiveRes.json() as any;
+    expect(archiveData.success).toBe(true);
+    expect(archiveData.status).toBe('archived');
+
+    // Restore
+    const restoreRes = await app.request(`/api/admin/staff/${staffId}/restore`, {
+      method: 'POST',
+      headers: {
+        'Cookie': 'better-auth.session_token=token-admin'
+      }
+    }, { DB: mockD1, BETTER_AUTH_SECRET: 'test-secret' });
+
+    expect(restoreRes.status).toBe(200);
+    const restoreData = await restoreRes.json() as any;
+    expect(restoreData.success).toBe(true);
+    expect(restoreData.status).toBe('active');
   });
 });
