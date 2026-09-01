@@ -1,11 +1,5 @@
 -- Phase A — Lead Command Center + Family Hub + WhatsApp Outbox + Installment Ledger
--- Add scoring/routing/SLA columns to clients (lead is client in Opus OS)
-ALTER TABLE `clients` ADD COLUMN `lead_score` integer NOT NULL DEFAULT 0;
-ALTER TABLE `clients` ADD COLUMN `lead_status` text NOT NULL DEFAULT 'new';
-ALTER TABLE `clients` ADD COLUMN `assigned_to` text REFERENCES `users`(`id`);
-ALTER TABLE `clients` ADD COLUMN `sla_due_at` integer;
-ALTER TABLE `clients` ADD COLUMN `mql_at` integer;
-ALTER TABLE `clients` ADD COLUMN `last_engagement_at` integer;
+-- Columns lead_score, lead_status, assigned_to, sla_due_at, mql_at, last_engagement_at already present on clients table
 
 -- Family Hub (multi-contact)
 CREATE TABLE IF NOT EXISTS `family_members` (
