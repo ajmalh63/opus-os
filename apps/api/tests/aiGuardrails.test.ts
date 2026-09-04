@@ -63,9 +63,9 @@ describe('AI Guardrails & Security Subsystem', () => {
     });
 
     it('redacts Cloudflare API tokens and Turnstile keys', () => {
-      const input = 'Use token cfut_2GTML90E1gmbyIRkUq24lcqPBtTySyWt2D6b665f373aed72 or 0x4AAAAAAEWhomlnfH0fHzWpdSVEqoD5OOI';
+      const input = 'Use token cfut_mock_test_token_1234567890abcdef12345678 or 0x4AAAAAAEWhomlnfH0fHzWpdSVEqoD5OOI';
       const output = sanitizeAndRedactOutput(input);
-      expect(output).not.toContain('cfut_2GTML90E1gmbyIRkUq24lcqPBtTySyWt2D6b665f373aed72');
+      expect(output).not.toContain('cfut_mock_test_token_1234567890abcdef12345678');
       expect(output).not.toContain('0x4AAAAAAEWhomlnfH0fHzWpdSVEqoD5OOI');
       expect(output).toContain('[REDACTED_SECRET]');
     });

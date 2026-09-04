@@ -122,7 +122,7 @@ describe('🚀 Opus OS Enterprise Concurrency & Stress Benchmarks', () => {
 
   it('5. Data Loss Prevention (DLP) Secret & IP Redaction (5,000 text streams)', () => {
     const t0 = performance.now();
-    const sampleText = 'Database is at 100.87.71.38 and key is cfut_2GTML90E1gmbyIRkUq24lcqPBtTySyWt2D6b665f373aed72 with ADMIN_PASSWORD="SuperSecretPassword123!".';
+    const sampleText = 'Database is at 100.87.71.38 and key is cfut_mock_test_token_1234567890abcdef12345678 with ADMIN_PASSWORD="SuperSecretPassword123!".';
 
     let redacted = 0;
     for (let i = 0; i < 5000; i++) {
