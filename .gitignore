@@ -51,3 +51,5 @@ probe-workspaces*.png
 # Deployment secrets (wrangler secret bulk input)
 apps/api/secrets.json
 *.secrets.json
+*tokens.json
+*.bak
