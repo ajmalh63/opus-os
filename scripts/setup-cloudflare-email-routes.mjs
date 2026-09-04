@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const CF_TOKEN = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_TOKEN || 'cfoat_FT1sZ8hxUeF_EVE80Q3zLwH8G3BsSGqcCaGz_9Aes80.HcdTDxeM5Ot0W-wed_Effvtk7gOWP6m0HcLcNDt731U';
+const CF_TOKEN = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_TOKEN || "";
 const ZONE_ID = process.env.CLOUDFLARE_ZONE_ID || 'b5a528ef0851baea75cb7fbd80909549';
 const DOMAIN = 'opusoverseas.com';
 const PRIMARY_DESTINATION = 'info@opusoverseas.com';

@@ -456,7 +456,7 @@ These integrations are fully architected and supported with built-in fallbacks. 
 
 ## ★ Live Production Credentials Activated (2026-09-01)
 
-- [x] **Razorpay Live Payments** — ✅ **LIVE & TESTED** (`rzp_live_TWiCYDLYD6vS7V` + Secret) in Cloudflare Worker secrets & `apps/app/.env.production`.
+- [x] **Razorpay Live Payments** — ✅ **LIVE & TESTED** (`rzp_live_[CONFIGURED_IN_SECRETS]` + Secret) in Cloudflare Worker secrets & `apps/app/.env.production`.
 - [x] **Umami Web Analytics** — ✅ **LIVE** (`bb9a2a45-c5be-4330-bbbf-31eb178d34fb`) in `apps/app/.env.production`.
 - [x] **Chatwoot Live Chat** — ✅ **LIVE** (`f36574fb918873fbba2749b6a2f18ac6`) in `apps/app/.env.production`.
 - [x] **Cloudflare Turnstile Bot Defense** — ✅ **LIVE** (`0x4AAAAAAEWhovYfefdqk_RI` / `0x4AAAAAAEWhomlnfH0fHzWpdSVEqoD5OOI`).

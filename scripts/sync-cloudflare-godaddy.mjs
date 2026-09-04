@@ -1,7 +1,7 @@
-const CF_TOKEN = 'cfoat_FT1sZ8hxUeF_EVE80Q3zLwH8G3BsSGqcCaGz_9Aes80.HcdTDxeM5Ot0W-wed_Effvtk7gOWP6m0HcLcNDt731U';
-const ZONE_ID = 'b5a528ef0851baea75cb7fbd80909549';
-const GD_KEY = 'hkny7iqEoH8Y_St8pFC1hdbT1EaFepX48HJ';
-const GD_SECRET = 'TQDp9TrFrY7F4p1vAz7k9m';
+const CF_TOKEN = process.env.CF_API_TOKEN || "";
+const ZONE_ID = process.env.CF_ZONE_ID || "";
+const GD_KEY = process.env.GODADDY_KEY || "";
+const GD_SECRET = process.env.GODADDY_SECRET || "";
 const DOMAIN = 'opusoverseas.com';
 
 async function main() {
