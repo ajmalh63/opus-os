@@ -71,13 +71,15 @@ describe('Public cal.com booking API — anti-spam funnel', () => {
     expect(j.slots).toEqual(['2026-09-02T09:00:00Z', '2026-09-02T10:00:00Z', '2026-09-03T09:00:00Z']);
   });
 
+  const futureSlot = new Date(Date.now() + 86400 * 1000).toISOString();
+
   it('POST /book: honeypot field filled → fake success, nothing booked', async () => {
     const book = mockD1.tables.bookings;
     const res = await app.request('/api/cal/public/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        division: 'study-abroad', start: '2026-09-02T09:00:00Z',
+        division: 'study-abroad', start: futureSlot,
         name: 'Spam Bot', email: 'bot@spam.com', website: 'http://spam.example',
       }),
     }, ENV());
@@ -87,13 +89,28 @@ describe('Public cal.com booking API — anti-spam funnel', () => {
     expect((fetch as any)).not.toHaveBeenCalledWith(expect.stringContaining('api.cal.com/v2/bookings'), expect.anything());
   });
 
+  it('POST /book: past start timestamp (>1h ago) → 400 invalid_slot', async () => {
+    const pastSlot = new Date(Date.now() - 7200 * 1000).toISOString();
+    const res = await app.request('/api/cal/public/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        division: 'study-abroad', start: pastSlot,
+        name: 'Past User', email: 'genuine@example.com',
+      }),
+    }, ENV());
+    expect(res.status).toBe(400);
+    const j = await res.json() as any;
+    expect(j.reason).toBe('invalid_slot');
+  });
+
   it('POST /book: high suspicion score (disposable email + no phone) → 403, no booking', async () => {
     const book = mockD1.tables.bookings;
     const res = await app.request('/api/cal/public/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        division: 'study-abroad', start: '2026-09-02T09:00:00Z',
+        division: 'study-abroad', start: futureSlot,
         name: 'Test User', email: 'spam@mailinator.com',
       }),
     }, ENV());
@@ -116,7 +133,7 @@ describe('Public cal.com booking API — anti-spam funnel', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        division: 'study-abroad', start: '2026-09-02T09:00:00Z',
+        division: 'study-abroad', start: futureSlot,
         name: 'Flooder', email: 'flood@example.com', phone: '+911234567890',
       }),
     }, ENV());
@@ -133,7 +150,7 @@ describe('Public cal.com booking API — anti-spam funnel', () => {
         expect(body.attendee.timeZone).toBe('Asia/Kolkata');
         return new Response(JSON.stringify({
           status: 'success',
-          data: { uid: 'cal-uid-123', start: '2026-09-02T09:00:00Z', end: '2026-09-02T09:30:00Z', status: 'scheduled' },
+          data: { uid: 'cal-uid-123', start: futureSlot, end: new Date(Date.now() + 86400 * 1000 + 1800 * 1000).toISOString(), status: 'scheduled' },
         }), { status: 201, headers: { 'Content-Type': 'application/json' } });
       }
       return new Response('{}', { status: 404 });
@@ -142,7 +159,7 @@ describe('Public cal.com booking API — anti-spam funnel', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        division: 'study-abroad', start: '2026-09-02T09:00:00Z',
+        division: 'study-abroad', start: futureSlot,
         name: 'Genuine Student', email: 'genuine@example.com', phone: '+919876543210',
         timeZone: 'Asia/Kolkata',
       }),
@@ -164,7 +181,7 @@ describe('Public cal.com booking API — anti-spam funnel', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        division: 'manpower', start: '2026-09-02T09:00:00Z',
+        division: 'manpower', start: futureSlot,
         name: 'Genuine', email: 'genuine@example.com', phone: '+919876543210',
       }),
     }, ENV());
@@ -177,7 +194,7 @@ describe('Public cal.com booking API — anti-spam funnel', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        division: 'umrah', start: '2026-09-02T09:00:00Z',
+        division: 'umrah', start: futureSlot,
         name: 'Genuine', email: 'genuine@example.com',
       }),
     }, ENV());

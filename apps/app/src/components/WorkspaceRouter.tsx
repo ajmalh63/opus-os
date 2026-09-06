@@ -1,24 +1,24 @@
+import { lazy, Suspense, useState } from 'react';
 import { useRoute } from 'wouter';
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '../lib/session';
 import { useRevealRoot } from '../lib/reveal';
-import DashboardHome from '../pages/DashboardHome';
-import FunnelTab from './FunnelTab';
-import CampaignsTab from './CampaignsTab';
-import GrowthTab from './GrowthTab';
-import ComplianceTab from './ComplianceTab';
-import RolesTab from './RolesTab';
-import FlowAnalytics from './FlowAnalytics';
-import TeamHub from './TeamHub';
-import TransactionsTab from './TransactionsTab';
-import InfraHealth from './InfraHealth';
-import FleetConsole from './fleet/FleetConsole';
-import PerformanceTab from './PerformanceTab';
-import MarketingTab from './MarketingTab';
-import BoardsTab from './BoardsTab';
-import AiGovernanceTab from './admin/AiGovernanceTab';
-import GrowthMetricsTab from './GrowthMetricsTab';
+const FunnelTab = lazy(() => import('./FunnelTab'));
+const CampaignsTab = lazy(() => import('./CampaignsTab'));
+const GrowthTab = lazy(() => import('./GrowthTab'));
+const ComplianceTab = lazy(() => import('./ComplianceTab'));
+const RolesTab = lazy(() => import('./RolesTab'));
+const FlowAnalytics = lazy(() => import('./FlowAnalytics'));
+const TeamHub = lazy(() => import('./TeamHub'));
+const TransactionsTab = lazy(() => import('./TransactionsTab'));
+const InfraHealth = lazy(() => import('./InfraHealth'));
+const PerformanceTab = lazy(() => import('./PerformanceTab'));
+const MarketingTab = lazy(() => import('./MarketingTab'));
+const BoardsTab = lazy(() => import('./BoardsTab'));
+const AiGovernanceTab = lazy(() => import('./admin/AiGovernanceTab'));
+const GrowthMetricsTab = lazy(() => import('./GrowthMetricsTab'));
+const DashboardHome = lazy(() => import('../pages/DashboardHome'));
+const FleetConsole = lazy(() => import('./fleet/FleetConsole'));
 const API = (import.meta as any).env?.VITE_API_URL || '';
 
 
@@ -240,29 +240,39 @@ export function WorkspaceModule({ name }: { name: string }) {
   const allowed = (MODULE_ROLES[name] || []).includes(me?.role || '');
   if (!allowed) return <RestrictedModule name={name} />;
 
-  switch (name) {
-    case 'audit': return <AuditView />;
-    case 'funnel': return <FunnelTab />;
-    case 'campaigns': return <CampaignsTab />;
-    case 'growth': return <GrowthTab />;
-    case 'growthmetrics': return <GrowthMetricsTab />;
-    case 'compliance': return <ComplianceTab />;
-    case 'roles': return <RolesTab />;
-    case 'infra': return <InfraHealth />;
-    case 'fleet': return <FleetConsole />;
-    case 'flow': return <FlowAnalytics />;
-    case 'teamhub': return <TeamHub />;
-case 'transactions': return <TransactionsTab />;
-    case 'performance': return <PerformanceTab />;
-    case 'boards': return <BoardsTab />;
-    case 'marketing': return <MarketingTab />;
-    case 'ai': return <AiGovernanceTab />;
-    default: return <NotFoundModule name={name} />;
-  }
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs font-semibold text-brand-navy/40 animate-pulse">Loading module…</div>}>
+      {(() => {
+        switch (name) {
+          case 'audit': return <AuditView />;
+          case 'funnel': return <FunnelTab />;
+          case 'campaigns': return <CampaignsTab />;
+          case 'growth': return <GrowthTab />;
+          case 'growthmetrics': return <GrowthMetricsTab />;
+          case 'compliance': return <ComplianceTab />;
+          case 'roles': return <RolesTab />;
+          case 'infra': return <InfraHealth />;
+          case 'fleet': return <FleetConsole />;
+          case 'flow': return <FlowAnalytics />;
+          case 'teamhub': return <TeamHub />;
+          case 'transactions': return <TransactionsTab />;
+          case 'performance': return <PerformanceTab />;
+          case 'boards': return <BoardsTab />;
+          case 'marketing': return <MarketingTab />;
+          case 'ai': return <AiGovernanceTab />;
+          default: return <NotFoundModule name={name} />;
+        }
+      })()}
+    </Suspense>
+  );
 }
 
 export function WorkspaceRouter() {
   const [match, params] = useRoute('/workspaces/:slug');
   if (match && params?.slug) return <WorkspaceModule name={params.slug} />;
-  return <DashboardHome />;
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-brand-navy/40">Loading workspace...</div>}>
+      <DashboardHome />
+    </Suspense>
+  );
 }

@@ -24,6 +24,7 @@ export default {
           // Motion — hero/funnel only
           if (id.includes('/node_modules/gsap')) return 'motion';
           if (id.includes('/node_modules/qrcode.react')) return 'qr-vendor';
+          if (id.includes('/node_modules/@tanstack/react-query') || id.includes('/node_modules/@tanstack/query-core')) return 'query-vendor';
           // Keep React + vendor together to avoid circular chunk warning (vendors share cross-deps)
           // React cache benefit retained via content-hash — changes only when deps bump
           return undefined; // let Rollup decide (single vendor) — no circular
