@@ -371,13 +371,13 @@ export default function ClientPortal() {
           <button
             type="button"
             onClick={() => setCommandPaletteOpen(true)}
-            className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200 text-xs font-semibold text-slate-700 transition cursor-pointer"
+            className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-xs font-semibold text-slate-700 transition cursor-pointer shadow-2xs"
             title="Press Cmd+K or Ctrl+K to open search"
           >
-            <span>🔍</span>
-            <span className="hidden md:inline">Quick Jump</span>
-            <kbd className="px-2 py-0.5 rounded bg-white border border-slate-200 text-xs font-mono text-slate-600 shadow-2xs">
-              ⌘K
+            <span className="text-sm">🔍</span>
+            <span className="hidden sm:inline text-slate-600">Search services...</span>
+            <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-mono text-slate-600 shadow-2xs">
+              {typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/i.test(navigator.platform || '') ? '⌘K' : 'Ctrl+K'}
             </kbd>
           </button>
           <LanguagePill />

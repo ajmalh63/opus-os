@@ -42,6 +42,7 @@ const TestPaymentPage = lazy(() => import('./pages/TestPaymentPage'));
 const SignAgreementPage = lazy(() => import('./pages/SignAgreementPage'));
 import { HelpdeskCommandCenter } from './pages/HelpdeskCommandCenter';
 import WorkspaceShell from './components/WorkspaceShell';
+import CommandPalette from './components/CommandPalette';
 import ErrorBoundary from './components/ErrorBoundary';
 import { WorkspaceRouter, WorkspaceModule } from './components/WorkspaceRouter';
 import VisibilityHub from './components/VisibilityHub';
@@ -82,6 +83,7 @@ export default function App() {
             Switch: a route-less child inside <Switch> becomes a "*" catch-all
             (wouter matchRoute: route || "*") and swallows every later route. */}
         <TrackInjector />
+        <CommandPalette />
         <Suspense fallback={<RouteFallback />}>
         <Switch>
         {/* Public surface */}

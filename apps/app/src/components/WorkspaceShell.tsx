@@ -4,7 +4,6 @@ import { useLocation } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession, type Me } from '../lib/session';
 import WorkspaceLogo from './WorkspaceLogo';
-import CommandPalette from './CommandPalette';
 import { createSyncClient } from '../lib/syncClient';
 const API = (import.meta as any).env?.VITE_API_URL || '';
 
@@ -171,7 +170,6 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
       try { (c as any).disconnect?.(); } catch {}
     };
   }, [queryClient]);
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const { alerts, newCount, markAllSeen } = useStaffAlerts();
 
@@ -186,21 +184,6 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
     refetchInterval: 60_000,
   });
   const openTasks = myTasks?.openCount || 0;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setPaletteOpen((v) => !v);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    // Staff realtime sync — Hibernatable WS, tenant-prefixed channels, progressive enhancement
-  // Feature flag: VITE_SYNC_ENABLED=false keeps WS disabled (REST poll fallback)
-  // This effect is safe behind flag and does not block render
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return () => window.removeEventListener('keydown', onKey);
-  }, []);
 
   const sections = allowedNavFor(me);
 
@@ -409,14 +392,20 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
               )}
             </div>
 
-            {/* Jump Command Palette Trigger */}
+            {/* Search Bar / Command Palette Trigger */}
             <button
-              onClick={() => setPaletteOpen(true)}
-              className="hidden cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs sm:text-sm text-slate-300 transition-all hover:border-brand-gold/50 hover:bg-white/[0.06] hover:text-white sm:flex active:scale-95 shadow-xs"
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
+              className="hidden cursor-pointer items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs sm:text-sm text-slate-300 transition-all hover:border-brand-gold/50 hover:bg-white/[0.08] hover:text-white sm:flex active:scale-95 shadow-xs"
+              title="Search or Jump (Ctrl+K)"
             >
-              <svg className="h-4 w-4 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" /></svg>
-              <span>Command Bar</span>
-              <kbd className="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 font-mono text-xs font-bold text-slate-200">⌘K</kbd>
+              <svg className="h-4 w-4 text-brand-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" />
+              </svg>
+              <span className="text-slate-400">Search or jump...</span>
+              <kbd className="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 font-mono text-[11px] font-bold text-slate-200">
+                {typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/i.test(navigator.platform || '') ? '⌘K' : 'Ctrl+K'}
+              </kbd>
             </button>
 
             {/* User Chip */}
@@ -444,8 +433,6 @@ export default function WorkspaceShell({ children }: { children?: ReactNode }) {
           </div>
         </main>
       </div>
-
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }
