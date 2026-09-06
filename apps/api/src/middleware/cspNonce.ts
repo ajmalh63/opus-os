@@ -33,7 +33,7 @@ export const cspNonce: MiddlewareHandler = async (c, next) => {
   }
 
   try {
-    const scriptSrc = `'self'${nonce ? ` 'nonce-${nonce}'` : ''} 'strict-dynamic' https: https://challenges.cloudflare.com https://checkout.razorpay.com`;
+    const scriptSrc = `'self'${nonce ? ` 'nonce-${nonce}'` : ''} 'strict-dynamic' https: https://challenges.cloudflare.com https://checkout.razorpay.com https://cdn.razorpay.com https://static.cloudflareinsights.com`;
     const styleSrc = `'self'${nonce ? ` 'nonce-${nonce}'` : ''} https://fonts.googleapis.com`;
     const policy = [
       `default-src 'self'`,
@@ -41,8 +41,8 @@ export const cspNonce: MiddlewareHandler = async (c, next) => {
       `style-src ${styleSrc}`,
       `font-src 'self' https://fonts.gstatic.com`,
       `img-src 'self' data: https:`,
-      `connect-src 'self' https://api.cal.com https://api.razorpay.com https://challenges.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com`,
-      `frame-src 'self' https://challenges.cloudflare.com https://checkout.razorpay.com`,
+      `connect-src 'self' https://api.cal.com https://api.razorpay.com https://challenges.cloudflare.com https://cloudflareinsights.com https://www.googletagmanager.com https://www.google-analytics.com`,
+      `frame-src 'self' https://challenges.cloudflare.com https://checkout.razorpay.com https://chat.opusoverseas.com https://*.opusoverseas.com`,
       `object-src 'none'`,
       `base-uri 'none'`,
       `frame-ancestors 'none'`,
