@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # erp-db-dump.sh — ERPNext (Frappe) DB dump on the VPS → gzip archive → Kuma push
-# Runs on the VPS (100.87.71.38) where the ERP docker stack lives. Uses
+# Runs on the VPS (<internal-ip>) where the ERP docker stack lives. Uses
 # `docker compose exec` against the mariadb container (loopback-only DB).
 # Optional envs: ERP_DB=erpnext (database), ERP_DB_USER (default erpnext),
 # ERP_DB_PASS (required — set in the caller's env), KUMA_PUSH_URL.

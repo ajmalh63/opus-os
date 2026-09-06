@@ -26,6 +26,8 @@ async function runE2ETests() {
   console.log('\n--- STARTING PERSONA E2E TESTS ---\n');
 
   try {
+    const TEST_PASSWORD = process.env.ADMIN_PASSWORD || 'DevOnlyPass#2026!';
+
     // ----------------------------------------
     // STEP 0: Bootstrap DB and Seeding
     // ----------------------------------------
@@ -34,7 +36,7 @@ async function runE2ETests() {
       const bootstrapRes = await fetch('http://127.0.0.1:8787/api/auth/bootstrap-admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'owner@opusoverseas.com', password: 'OwnerPass2026!' })
+        body: JSON.stringify({ email: 'owner@opusoverseas.com', password: TEST_PASSWORD })
       });
       const bootstrapJson = await bootstrapRes.json().catch(() => ({}));
       console.log('Bootstrap completed:', bootstrapRes.status, bootstrapJson);
@@ -56,7 +58,7 @@ async function runE2ETests() {
     }
 
     await page.fill('input[type="email"]', 'owner@opusoverseas.com');
-    await page.fill('input[type="password"]', 'OwnerPass2026!');
+    await page.fill('input[type="password"]', TEST_PASSWORD);
     await page.locator('input[type="password"]').press('Enter');
     await page.waitForTimeout(4000);
 

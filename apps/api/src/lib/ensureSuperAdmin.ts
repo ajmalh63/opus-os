@@ -27,15 +27,20 @@ export const ALL_DIVISIONS_JSON = JSON.stringify(['study_abroad', 'visa', 'umrah
  * Runs on every server startup, /api/infrastructure/health, and auth fail-safe.
  */
 export async function ensurePermanentSuperAdmins(db: any, env?: any): Promise<void> {
-  const defaultPassword = env?.ADMIN_PASSWORD || 'OwnerPass2026!';
+  const isProd = env?.ENVIRONMENT === 'production';
+  const defaultPassword = env?.ADMIN_PASSWORD || (!isProd ? 'DevSuperAdmin#2026!' : undefined);
   const now = new Date();
 
   for (const su of PERMANENT_SUPERADMINS) {
     try {
       const [existing] = await db.select().from(users).where(eq(users.email, su.email)).limit(1);
-      const pbkdf2Hash = await hashPassword(defaultPassword);
+      const pbkdf2Hash = defaultPassword ? await hashPassword(defaultPassword) : null;
 
       if (!existing) {
+        if (!pbkdf2Hash) {
+          console.warn(`[ensureSuperAdmin] Skipping superadmin bootstrap for ${su.email}: ADMIN_PASSWORD environment variable is not configured.`);
+          continue;
+        }
         // 1. Insert user row
         await db.insert(users).values({
           id: su.id,
@@ -63,28 +68,32 @@ export async function ensurePermanentSuperAdmins(db: any, env?: any): Promise<vo
         }).catch(() => {});
       } else {
         // 3. Self-heal: ensure role is super_admin, emailVerified, and all divisions
+        const shouldUpdatePassword = pbkdf2Hash && !existing.passwordHash?.startsWith('pbkdf2:');
         const needsUpdate =
           existing.role !== 'super_admin' ||
           !existing.emailVerified ||
-          !existing.passwordHash?.startsWith('pbkdf2:') ||
+          shouldUpdatePassword ||
           existing.userDivisions !== ALL_DIVISIONS_JSON;
 
         if (needsUpdate) {
+          const updateFields: any = {
+            role: 'super_admin',
+            emailVerified: true,
+            userDivisions: ALL_DIVISIONS_JSON,
+            updatedAt: now,
+          };
+          if (shouldUpdatePassword && pbkdf2Hash) {
+            updateFields.passwordHash = pbkdf2Hash;
+          }
           await db
             .update(users)
-            .set({
-              role: 'super_admin',
-              emailVerified: true,
-              userDivisions: ALL_DIVISIONS_JSON,
-              passwordHash: pbkdf2Hash,
-              updatedAt: now,
-            })
+            .set(updateFields)
             .where(eq(users.email, su.email));
         }
 
         // Keep accounts table in sync
         const [acct] = await db.select().from(accounts).where(eq(accounts.userId, existing.id)).limit(1);
-        if (!acct) {
+        if (!acct && pbkdf2Hash) {
           await db.insert(accounts).values({
             id: su.accountId,
             userId: existing.id,
@@ -95,7 +104,7 @@ export async function ensurePermanentSuperAdmins(db: any, env?: any): Promise<vo
             createdAt: now,
             updatedAt: now,
           }).catch(() => {});
-        } else if (!acct.password?.startsWith('pbkdf2:')) {
+        } else if (acct && pbkdf2Hash && !acct.password?.startsWith('pbkdf2:')) {
           await db.update(accounts).set({ password: pbkdf2Hash, updatedAt: now }).where(eq(accounts.id, acct.id));
         }
       }

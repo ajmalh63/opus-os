@@ -30,21 +30,21 @@
 
 ## 2. Uptime Kuma import (≈10 min)
 
-Open `http://100.87.71.38:3003` → Settings → **Import** → paste:
+Open `http://127.0.0.1:3003` → Settings → **Import** → paste:
 
 ```json
 {
   "version": "1.23.0",
   "monitorList": [
-    { "name": "OS API /health", "type": "http", "url": "http://100.87.71.38:8787/api/health", "interval": 60, "maxretries": 2 },
+    { "name": "OS API /health", "type": "http", "url": "http://127.0.0.1:8787/api/health", "interval": 60, "maxretries": 2 },
     { "name": "OS App", "type": "http", "url": "http://127.0.0.1:5173/", "interval": 300 },
-    { "name": "ERPNext", "type": "http", "url": "http://100.87.71.38:8080/api/method/ping", "interval": 300, "maxretries": 2 },
-    { "name": "Chatwoot", "type": "http", "url": "http://100.87.71.38:3200/packs/js/sdk.js", "interval": 300 },
-    { "name": "OpenWA", "type": "http", "url": "http://100.87.71.38:2785/api/health", "interval": 60 },
-    { "name": "Cal.diy", "type": "http", "url": "http://100.87.71.38:3000/", "interval": 300 },
-    { "name": "Listmonk", "type": "http", "url": "http://100.87.71.38:9009/", "interval": 300 },
-    { "name": "Umami", "type": "http", "url": "http://100.87.71.38:3002/", "interval": 300 },
-    { "name": "n8n", "type": "http", "url": "http://100.87.71.38:5678/healthz", "interval": 300 },
+    { "name": "ERPNext", "type": "http", "url": "http://127.0.0.1:8080/api/method/ping", "interval": 300, "maxretries": 2 },
+    { "name": "Chatwoot", "type": "http", "url": "http://127.0.0.1:3200/packs/js/sdk.js", "interval": 300 },
+    { "name": "OpenWA", "type": "http", "url": "http://127.0.0.1:2785/api/health", "interval": 60 },
+    { "name": "Cal.diy", "type": "http", "url": "http://127.0.0.1:3000/", "interval": 300 },
+    { "name": "Listmonk", "type": "http", "url": "http://127.0.0.1:9009/", "interval": 300 },
+    { "name": "Umami", "type": "http", "url": "http://127.0.0.1:3002/", "interval": 300 },
+    { "name": "n8n", "type": "http", "url": "http://127.0.0.1:5678/healthz", "interval": 300 },
     { "name": "D1 backup heartbeat", "type": "push", "interval": 86400, "heartbeatRetry": 2, "expectedStatus": "healthy" }
   ]
 }
@@ -78,7 +78,7 @@ Verify afterwards with `https://www.mail-tester.com` (score ≥ 9/10 before any 
 
 ## 4. Listmonk setup (≈10 min)
 
-Open `http://100.87.71.38:9009` → complete the wizard:
+Open `http://127.0.0.1:9009` → complete the wizard:
 1. **Admin account** — store credentials in `PENDING-CONFIGS.md` (never plaintext in chat).
 2. **SMTP**: use your provider's SMTP (or the VPS's local sendmail) → **Settings → SMTP**;
    run the built-in send test. Set environment `LISTMONK_*` if needed in
@@ -94,7 +94,7 @@ Open `http://100.87.71.38:9009` → complete the wizard:
 
 ## 5. Umami on the VPS (≈5 min)
 
-Open `http://100.87.71.38:3002` → complete wizard → **Add Website** → name "Opus Overseas",
+Open `http://127.0.0.1:3002` → complete wizard → **Add Website** → name "Opus Overseas",
 domain `opusoverseas.in` → copy the **Website ID** to:
 `apps/app/.env → VITE_UMAMI_WEBSITE_ID=<id>`
 

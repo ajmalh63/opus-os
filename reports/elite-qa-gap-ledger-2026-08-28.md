@@ -48,6 +48,6 @@
 
 - **Workers API** `opusos-api` `Hono v4` + `D1 97 tables` + `R2 opusdocs` + `KV 578e838...` + `Queues opusos-jobs-queue + DLQ` + `Vectorize` + `AI` + `SyncHub DO` + `Native Edge Auth` (`crypto.ts` PBKDF2 100k + `session.ts` 30d/15d + `totp.ts` RFC6238 + `oauth.ts` PKCE)
 - **Pages** `opusos-app` `507c4c87` `BLTEh2YH.js` `uses_functions:true` `aliases: [app, opusoverseas.com, www]`
-- **VPS** `129.159.238.227` 37 containers, 10 apps `wa:2785` `erp:8080` `listmonk:9009` `chat:3200` `umami:3002` `kuma:3003` etc. via `6f1a97cc` Tunnel `*.opusoverseas.com`
+- **VPS** `[REDACTED_HOST_IP]` 37 containers, 10 apps `wa:2785` `erp:8080` `listmonk:9009` `chat:3200` `umami:3002` `kuma:3003` etc. via `6f1a97cc` Tunnel `*.opusoverseas.com`
 - **Emails** 15 Listmonk `type:tx` templates + Titan `info@` + `X-Hub-Signature-256` HMAC + `waOutbox` `queued→read`
 - **Workgroups** `SessionProvider` + `AuthGuard` + `RoleGate` + `WorkspaceShell` + `DivisionsHub` (5 desks 🎓🛂🧳📜👷) + `SyncHub` 16+ channels

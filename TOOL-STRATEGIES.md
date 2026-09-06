@@ -99,7 +99,7 @@ webhooks to OS `conversations` so the single inbox (OS/Inbox) stays canonical.
 | Umami | `analytics-tracking` (measurement-readiness index: event model, funnels, attribution), `analytics-product` (funne/segments/revenue), `alex/data-analyst` style reporting; `growth-engine` (experiments wiring to marketing ideas) | Event taxonomy, funnel design, KPI deck per decision |
 | Uptime Kuma | `observability-monitoring-monitor-setup`, `prometheus-configuration`, `grafana-dashboards` (pair with /metrics, +Alertmanager/Grafana), `incident-responder` (rollback priorities) | Type "probes + push-cron" playbook, alerting quality |
 | Twenty CRM | `crm-alternatives-review` (CRM selection attention, `product-inventor`/`product-manager` for fit decision), `revops` (lead handoffs) | Decision: keep as optional shelf, avoid dual-CRM drift |
-| Oracle VPC / ops | `bash-linux` + `windows-shell-reliability` (scripts), `deployment-procedures`, `12-factor` infra | Runbook hygiene for docker services on 100.87.71.38 |
+| Oracle VPC / ops | `bash-linux` + `windows-shell-reliability` (scripts), `deployment-procedures`, `12-factor` infra | Runbook hygiene for docker services on <internal-ip> |
 
 Every tool workflow must be reviewed with the OS invariants in mind: **n8n = glue, not the
 system of truth**; OS D1 remains canonical; **money math never in n8n** (only carry paise,
@@ -264,7 +264,7 @@ Ranked by business impact (Owner + Manager), scenario namespace:
 - ⏳ **Chatwoot webhook:** API `POST /webhooks` → 404 on this build; needs **one UI click**
   (Inbox Settings → Webhooks → `http://100.69.139.47:8787/api/webhooks/chatwoot`).
 - ⏳ **Cal.diy:** booking slug 404 until SSG wizard clicked in-browser; afterwards set
-  `VITE_BOOKING_URL=http://100.87.71.38:3000/opus-owner/consultation` (verify `/book/…`).
+  `VITE_BOOKING_URL=http://127.0.0.1:3000/opus-owner/consultation` (verify `/book/…`).
 - 🚫 **OpenWA pairing deferred** (no dedicated number; owner confirmed skip — production
   falls back to Meta Cloud API lane when domain is live).
 

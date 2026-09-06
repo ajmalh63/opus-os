@@ -10,7 +10,8 @@ await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' });
 const pwTab = page.locator('button:has-text("Password")');
 if (await pwTab.count()) { await pwTab.first().click(); await page.waitForTimeout(300); }
 await page.fill('input[type="email"]', 'owner@opusoverseas.com');
-await page.locator('input[type="password"]').fill('OwnerPass2026!');
+const testPassword = process.env.ADMIN_PASSWORD || 'DevOnlyPass#2026!';
+await page.locator('input[type="password"]').fill(testPassword);
 await page.locator('input[type="password"]').press('Enter');
 await page.waitForTimeout(3500);
 check('Login via UI redirects into workspace', page.url().includes('/workspaces') || page.url().includes('/dashboard'));

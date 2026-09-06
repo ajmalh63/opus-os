@@ -263,7 +263,7 @@ Components: `AuthGuard`, `TwoFactorSetup`, `StaffTools`, `RolesTab`, `GrowthTab`
 
 ## 9. Integrated Open-Source Applications
 
-### 9.1 Inventory (VPS = Oracle ARM, tailnet `100.87.71.38`)
+### 9.1 Inventory (VPS = Oracle ARM, tailnet `<internal-ip>`)
 
 | App | Version | Port | Auth | OS integration | Status |
 |---|---|---|---|---|---|
@@ -371,7 +371,7 @@ pnpm dev --host 127.0.0.1 --port 5173                        # Terminal 2 (app)
 | `erpnext_sync_log` | embedded in D1 export | same as D1 | replay retry endpoint |
 
 **DR runbook (VPC):**
-1. `ssh ubuntu@100.87.71.38` (tailnet)
+1. `ssh ubuntu@<internal-ip>` (tailnet)
 2. `cd /home/ubuntu/services/<app> && docker compose logs --tail 50`
 3. Restart individual service; full `docker compose up -d --build` if images drifted.
 4. If VPS lost: recreate ARM instance → install docker + tailscale → restore volumes → re-register Tailscale peer → re-open app webhook reg (OpenWA+Chatwoot).
@@ -389,8 +389,8 @@ wrangler d1 export DB --table clients --table engagements --local > backup.sql
 - `ENVIRONMENT=development` · `TURNSTILE_SECRET_KEY` (mock key 1x00… dev)
 - `MANPOWER_AI=mock` (prod must =real)
 - `ADMIN_EMAIL` / `ADMIN_PASSWORD` (bootstrap owner; dev creds only)
-- `WA_PROVIDER=openwa` · `OPENWA_BASE_URL=http://100.87.71.38:2785` · `OPENWA_API_KEY` (DEV ONLY) · `OPENWA_SESSION_ID=main` · `WA_WEBHOOK_SECRET` (dev)
-- `ERPNEXT_BASE_URL=http://100.87.71.38:8080` (owner-only sync past)
+- `WA_PROVIDER=openwa` · `OPENWA_BASE_URL=http://127.0.0.1:2785` · `OPENWA_API_KEY` (DEV ONLY) · `OPENWA_SESSION_ID=main` · `WA_WEBHOOK_SECRET` (dev)
+- `ERPNEXT_BASE_URL=http://127.0.0.1:8080` (owner-only sync past)
 - Bindings: `DB` (D1), `BUCKET` (R2), `KV`, `QUEUE` (JOBS_QUEUE), `VECTOR_INDEX` (768-d)
 
 ### 15.2 apps/app env (`apps/app/.env`)
@@ -405,7 +405,7 @@ wrangler d1 export DB --table clients --table engagements --local > backup.sql
 - `WA_WEBHOOK_SECRET` when locked down; Meta API creds (`META_WHATSAPP_PHONE_ID` etc.) if switching `WA_PROVIDER=meta`.
 
 ### 15.4 Tailscale fabric
-- VPS: `100.87.71.38`, Windows: `100.69.139.47`; VPS offers exit node — set via `ps1` script (`run-vps-tailscale` helper).
+- VPS: `<internal-ip>`, Windows: `100.69.139.47`; VPS offers exit node — set via `ps1` script (`run-vps-tailscale` helper).
 
 ---
 

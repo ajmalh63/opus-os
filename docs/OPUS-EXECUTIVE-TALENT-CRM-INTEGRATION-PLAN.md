@@ -49,7 +49,7 @@ graph TD
     end
 
     %% LAYER 4: VPS PERSISTENT BACKGROUND DAEMONS
-    subgraph VPS_SERVICES["4. Persistent Background Daemons (VPS 129.159.238.227)"]
+    subgraph VPS_SERVICES["4. Persistent Background Daemons (Private Fleet)"]
         MATTERMOST["Mattermost Community Engine<br/>(community.opusoverseas.com)"]
         TELEGRAM_BOT["Telegram Concierge Bot<br/>(@opus_network_bot / 1-Tap Approvals)"]
         IMAP_POLLER["Titan IMAP Inbound Monitor<br/>(info@opusoverseas.com Poller)"]
@@ -251,13 +251,13 @@ Within [`apps/app/src/pages/divisions/ManpowerPortal.tsx`](file:///media/cordial
 
 ---
 
-## 🤖 6. Persistent VPS Infrastructure & Background Daemons (`129.159.238.227`)
+## 🤖 6. Persistent VPS Infrastructure & Background Daemons (Private Fleet)
 
 The Oracle Cloud VPS will execute persistent background jobs and communicate with Opus OS via HTTPS APIs and Webhooks:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                          ORACLE CLOUD VPS (129.159.238.227)                            │
+│                        ORACLE CLOUD VPS (PRIVATE INFRASTRUCTURE FLEET)                 │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ 1. Mattermost Team Engine:                                                             │
 │    • Host: Docker Container `mattermost-app` (v11.10.1) on Port 8065                   │

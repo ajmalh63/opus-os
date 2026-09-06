@@ -219,7 +219,7 @@ Macros execute multi-step automations (labeling, priority assignment, customer n
 1. Counselor in Chatwoot replies using text, canned shortcut, or macro.
 2. Chatwoot fires outgoing webhook `POST /api/webhooks/chatwoot`.
 3. Opus OS Worker calls OpenWA REST API:
-   `POST http://100.87.71.38:2785/api/sessions/main/messages/send-text`
+   `POST http://127.0.0.1:2785/api/sessions/main/messages/send-text`
    Headers: `X-API-Key: [REDACTED]`
    Body: `{ "chatId": "<phone>@c.us", "text": "<message>" }`
 4. OpenWA delivers the message directly to the customer's WhatsApp on their mobile phone.
@@ -240,6 +240,6 @@ All touchpoints are designed to guide prospective leads into scheduling a 1-on-1
 
 * **TypeScript Typecheck**: Passed with 0 errors across `packages/shared`, `apps/api`, and `apps/app`.
 * **Automated Test Suite**: **95 test suites, 623 tests passing ($100\%$ green)**.
-* **Container State**: All VPS containers healthy with `unless-stopped` auto-recovery on private tailnet `100.87.71.38`.
+* **Container State**: All VPS containers healthy with `unless-stopped` auto-recovery on private tailnet `<internal-ip>`.
 
 *Document authored and verified on 2026-08-20.*

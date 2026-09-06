@@ -24,7 +24,7 @@ every finding. **All fixes verified: 86 test files / 557 tests green, typecheck 
 | H2 | **Dead anchor `#counselor-form`** on StudyAbroadRoiCalculator (primary conversion CTA = no-op) | Now links to `/lead-form` with partner-ref forwarding (`leadFormHref()` helper in `config/booking.ts`) |
 | H3 | **"Sign Up on Opus OS" → `/login`** (sign-in page) on PublicHome + AboutUs | → `/signup` |
 | H4 | **Funnel modal "Book 1-on-1" sent Umrah/Attestation users to the study-abroad cal.com scheduler** (contradicted StickyCallBar's consultation/transactional split) | Modal now gates via `isConsultationDivision()`: consultation → cal.com; transactional → "Request Detailed Quote" → lead form |
-| H5 | **ChatWidget default = `http://100.87.71.38:3200`** (LAN IP; mixed-content-blocked on HTTPS → live chat silently dead) | Env-only (`VITE_CHATWOOT_BASE_URL`); widget disabled when unset |
+| H5 | **ChatWidget default = `http://127.0.0.1:3200`** (LAN IP; mixed-content-blocked on HTTPS → live chat silently dead) | Env-only (`VITE_CHATWOOT_BASE_URL`); widget disabled when unset |
 | H6 | **TeamHub Durable Object had zero auth** — reachable via its own workers.dev URL; anyone could read/spoof room messages | Worker→DO calls now carry `X-TeamHub-Auth: HMAC-SHA256(BETTER_AUTH_SECRET, roomId)`; DO verifies with constant-time compare → 401 otherwise |
 | H7 | **`myIncentiveView` parsed cookies for hardcoded test tokens** (`token-counselor`→`counselor-1`, else `'me'`) — real sessions queried `employeeId='me'` | Uses `c.get('user').id` from RBAC session (`routes/incentives.ts`) |
 | H8 | **Razorpay refunds stored negative amounts** → `recomputeBalance` double-errored (balance never restored) | `Math.abs()` at insert (`routes/razorpay.ts`) |

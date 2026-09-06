@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-26 06:40 UTC  
 **Auditor:** Opus OS (OpenWork) — read-only fleet + code + tunnel inspection  
-**Scope:** `INFRASTRUCTURE-COMMAND-CENTER-2026-08-26.md` (the Command Center UI) → actual fleet on `129.159.238.227` (Oracle A1.Flex) + Cloudflare Workers API (`opusos-api` wrangler 4.125, Workers AI/Vectorize/D1/R2/KV/DO), 13 hostnames via tunnel `6f1a97cc-8e9b-4340-a435`  
+**Scope:** `INFRASTRUCTURE-COMMAND-CENTER-2026-08-26.md` (the Command Center UI) → actual fleet on `[REDACTED_HOST_IP]` (Oracle A1.Flex) + Cloudflare Workers API (`opusos-api` wrangler 4.125, Workers AI/Vectorize/D1/R2/KV/DO), 13 hostnames via tunnel `6f1a97cc...`  
 **Verdict:** **Command Center UI ships (828 lines `InfraHealth.tsx`, `infra.ts` 288 lines, 657/657 tests green), fleet truth is safely isolated but **11 H→M gaps remain open** — detailed below; **no data loss observed**.**
 
 > Methodology: `docker ps` 39 containers (Up 2d–17d), `cloudflared.service` active `hyd03/quic`, `/etc/cloudflared/config.yml` 13 ingresses, `apps/api/src/routes/infra.ts:104-207` + `infra/messaging.ts:34-98` + `infra/listmonk.ts:44-187` + `infra/integrations.ts:18-151` + `infra/erpnext.ts:22-84` + `apps/api/src/index.ts:246-247` RBAC mounts, `/apps/api/src/routes/erpnext.ts:22-280`, `wrangler.toml` placement/smart + triggers, `PENDING-CONFIGS.md` historical truth. No secrets printed; all probes timeout-bounded.
@@ -36,7 +36,7 @@
 ### H3 — Public Ports Bypass Tunnel (Host Exposure)
 **Evidence** `docker ps`:
 - `stalwart-mail` `0.0.0.0:25/110/143/465/587/993/995/4190->*` — intended, but **no `sshd` UFW listed**
-- `erpnext-frontend 0.0.0.0:8080`, `chatwoot 0.0.0.0:3200`, `umami 0.0.0.0:3002`, `listmonk 0.0.0.0:9009`, `india-post 100.87.71.38:9888` — **all `0.0.0.0`**. `config.yml` tunnels `127.0.0.1:8080/3200/...` so `0.0.0.0` binding is redundant and leaks if CF Token expires. Should be `127.0.0.1:8080->8080` or firewall `DOCKER-USER iptables` (PENDING-CONFIGS claims tail-scale-only, but current `0.0.0.0` contradicts it).
+- `erpnext-frontend 0.0.0.0:8080`, `chatwoot 0.0.0.0:3200`, `umami 0.0.0.0:3002`, `listmonk 0.0.0.0:9009`, `india-post <internal-ip>:9888` — **all `0.0.0.0`**. `config.yml` tunnels `127.0.0.1:8080/3200/...` so `0.0.0.0` binding is redundant and leaks if CF Token expires. Should be `127.0.0.1:8080->8080` or firewall `DOCKER-USER iptables` (PENDING-CONFIGS claims tail-scale-only, but current `0.0.0.0` contradicts it).
 
 **Fix:** re-create with `ports: ["127.0.0.1:8080:8080"]` etc + `ufw deny 8080/tcp` + nightly `iptables -S DOCKER-USER` check via `runAuditMonitor` cron (`index.ts:470` Mon 04:00).
 
@@ -102,7 +102,7 @@
 
 ## 5) Cross-Check: Tunnel Ingress Audited
 
-`config.yml` **13 tunnels all `127.0.0.1:{port}`** correct; `/robots.txt` stub on `8099` good for scanners. **One catch-all** `http_status:404` (correct, no data leak). **No `warp-routing` enabled** (`tunnel: 6f1a97cc…`), so `Tailscale 100.87.71.38` references in older docs are now aliases to `127.0.0.1` — safe to deprecate `Tailscale IPs` text.
+`config.yml` **13 tunnels all `127.0.0.1:{port}`** correct; `/robots.txt` stub on `8099` good for scanners. **One catch-all** `http_status:404` (correct, no data leak). **No `warp-routing` enabled** (`tunnel: 6f1a97cc…`), so `Tailscale <internal-ip>` references in older docs are now aliases to `127.0.0.1` — safe to deprecate `Tailscale IPs` text.
 
 ---
 
@@ -139,8 +139,8 @@ All 4 PRs keep `secureHeaders HSTS 31536000 preload` (correct) and `placement sm
 ## 8) Verification Command Pack
 
 ```bash
-# Live fleet from any shell with `~/.ssh/cordial_claw.pem`
-ssh ubuntu@129.159.238.227 'docker ps --format "{{.Names}} {{.Status}}" | sort; \
+# Live fleet inspection via secure bastion
+ssh <user>@<internal_fleet_host> 'docker ps --format "{{.Names}} {{.Status}}" | sort; \
   systemctl is-active cloudflared; \
   journalctl -u cloudflared --since "30 min ago" | grep -E "quic|Registered|timeout" | tail -n 20; \
   df -h / | tail -1; free -h | head -2'

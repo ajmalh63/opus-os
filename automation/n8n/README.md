@@ -1,6 +1,6 @@
 # n8n Spine — OpusOS Automation Workflows (Wave 2)
 
-Import these into n8n (`http://100.87.71.38:5678`, wizard login first). They call the
+Import these into n8n (`http://127.0.0.1:5678`, wizard login first). They call the
 scoped OS automation lane (`/api/automation/*`) — **not** the RBAC surfaces.
 
 ## Prerequisites (one-time)

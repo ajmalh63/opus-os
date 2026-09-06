@@ -136,7 +136,7 @@ app.use('/api/*', idempotency()); // GET passthrough, 24h TTL (86400), X-Idempot
 
 ### P0-01 — Docs Secrets Scrub
 **Location:** `docs/chatwoot-ai-implementation-guide.md:54`, `docs/DEPLOYMENT-VERIFICATION-CHECKLIST-2026-08-20.md`, `docs/security-pentest-2026-08-18.md`
-**Before:** `cfut_2GTML...`, `owa_k1_6c...`, `OwnerPass2026!` plaintext
+**Before:** `cfut_2GTML...`, `owa_k1_6c...`, `[CONFIGURED_IN_ENV]` plaintext
 **After:** `[REDACTED]` + `OPENWA_KEY_PREFIX`
 **Verification:** `rg cfut_ docs/ → 0`, `gitleaks detect → 0`.
 

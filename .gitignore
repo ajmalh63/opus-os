@@ -53,3 +53,8 @@ apps/api/secrets.json
 *.secrets.json
 *tokens.json
 *.bak
+*LOGINS*.local.md
+
+# Agent backups, scratchpads, and curriculum docs
+.agents/
+The_Agentic_Architect_Elite_Curriculum_and_Field_Manual.docx

@@ -27,15 +27,15 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 # ★ MASTER — Pending manual actions & Configuration Status
 
 ## A0. Tool-First Control Panel & Integrations
-- [x] **A0.1 Mautic (`100.87.71.38:8085`)** — ✅ LIVE & VERIFIED
-  - Admin login verified (`opusadmin` / `MauticOps2026!`).
+- [x] **A0.1 Mautic (`<internal-ip>:8085`)** — ✅ LIVE & VERIFIED
+  - Admin login verified (`opusadmin` / `[CONFIGURED_IN_ENV]`).
   - `.dev.vars` configured (`MAUTIC_URL="https://mautic.opusoverseas.com"`, `MAUTIC_USER`, `MAUTIC_PASS`).
   - Integration adapter reports `OK` status in Superadmin Marketing Suite.
-- [x] **A0.2 Listmonk (`100.87.71.38:9009`)** — ✅ LIVE & VERIFIED
+- [x] **A0.2 Listmonk (`<internal-ip>:9009`)** — ✅ LIVE & VERIFIED
   - `.dev.vars` configured (`LISTMONK_BASE_URL="https://listmonk.opusoverseas.com"`, `LISTMONK_API_USER="admin"`).
   - Integration adapter reports `OK` status in Superadmin Marketing Suite.
   - Consumer webhook & suppression table operational.
-- [x] **A0.3 Chatwoot (`100.87.71.38:3200`)** — ✅ LIVE & WIRED
+- [x] **A0.3 Chatwoot (`<internal-ip>:3200`)** — ✅ LIVE & WIRED
   - Adapter `chatwootAdapter` active; `ChatWidget.tsx` mounted on public frontend with official SDK and website token.
   - Inbound webhook (`POST /api/webhooks/chatwoot`) persisting to `conversations`.
 - [x] **A0.4 OpenWA / Meta Messaging** — ✅ LIVE & TESTED
@@ -47,11 +47,11 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 
 ## A. Wave 1 — Observability & Infrastructure
 - [ ] **A1. Telegram Ops Bot** — Optional alert forwarder (`TELEGRAM_BOT_TOKEN`, `OPS_TELEGRAM_CHAT_ID`).
-- [x] **A2. Uptime Kuma (`100.87.71.38:3003`)** — ✅ LIVE ON VPS
+- [x] **A2. Uptime Kuma (`<internal-ip>:3003`)** — ✅ LIVE ON VPS
   - Push monitor heartbeat wired in worker cron.
-- [x] **A3. Umami Analytics (`100.87.71.38:3002`)** — ✅ LIVE ON VPS
+- [x] **A3. Umami Analytics (`<internal-ip>:3002`)** — ✅ LIVE ON VPS
   - `VITE_UMAMI_BASE_URL` & event trackers wired in frontend.
-- [x] **A4. Listmonk Engine (`100.87.71.38:9009`)** — ✅ LIVE ON VPS
+- [x] **A4. Listmonk Engine (`<internal-ip>:9009`)** — ✅ LIVE ON VPS
 - [ ] **A5. Sending Domain DNS Records** — SPF, DKIM, DMARC (pending Cloudflare DNS phase Z0).
 - [ ] **A6. Mail-Tester Gate** — Run test before live outbound email blast.
 - [x] **A7. Listmonk Webhooks** — Webhook listener `/api/webhooks/listmonk` active with secret verification.
@@ -158,9 +158,9 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 - **ERP node:** `https://erp.opusoverseas.com` (tailnet only; publicly closed âœ“).
   Containers: `erpnext-backend-1` (bench Â· api on MariaDB), `-frontend-1` (nginxâ†’8080),
   `-queue-long/short`, `-scheduler`, `-websocket`, `-redis-cache/queue`, `-db-1` (mariadb:11).
-- **Credentials:** Admin `Administrator` / `admin` (default docker stack). OS API user:
-  `ops@opusoverseas.com` (Accounts+Item+Sales roles) with `api_key 14a5ec26e5dbcc8b`
-  `api_secret 592c2dac21507f482` â†’ stored in `apps/api/.dev.vars` (gitignored). Lock down
+- **Credentials:** Admin `Administrator` / `[CONFIGURED_IN_ENV]`. OS API user:
+  `ops@opusoverseas.com` (Accounts+Item+Sales roles) with `api_key [CONFIGURED_IN_SECRETS]`
+  `api_secret [CONFIGURED_IN_SECRETS]` → stored in `apps/api/.dev.vars` (gitignored). Lock down
   the admin password + rotate keys before prod.
 - **Item created:** `CONSULTANCY-SV` (services; HSN 9983, taxable, income `Sales - OO`,
   cost center `Main - OO`).
@@ -199,26 +199,26 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 
 ## â˜… Chatwoot â€” PROVISIONED + frontend wired (commit 93e437b)
 - **Provisioned on VPS (chatwoot/chatwoot:latest):**
-  - Super admin: `ops@opusoverseas.com` / `ChatwootOps2026!` (account_id 1)
-  - Agent: `agent@opusoverseas.com` / `AgentPass2026!` â€” API token
-    `Dgx11Tq7HXFoHFwcCk2ShZ2T` (account-scoped, administrator on acc 1)
-  - Platform token (superadmin scope): `CWF9xBB6o6M2X1BKyWKRZZHX`
-  - **Widget inbox:** "Opus Website Chat" (inbox_id 1) â€” channel is
-    `Channel::WebWidget`, **website_token = `f36574fb918873fbba2749b6a2f18ac6`**
+  - Super admin: `ops@opusoverseas.com` / `[CONFIGURED_IN_ENV]` (account_id 1)
+  - Agent: `agent@opusoverseas.com` / `[CONFIGURED_IN_ENV]` — API token
+    `[CONFIGURED_IN_SECRETS]` (account-scoped, administrator on acc 1)
+  - Platform token (superadmin scope): `[CONFIGURED_IN_SECRETS]`
+  - **Widget inbox:** "Opus Website Chat" (inbox_id 1) — channel is
+    `Channel::WebWidget`, **website_token = `[CONFIGURED_IN_PUBLIC_ENV]`**
   - `FRONTEND_URL` fixed to `https://chat.opusoverseas.com` (was localhost)
   - SDK reachable: `https://chat.opusoverseas.com/packs/js/sdk.js` (HTTP 200)
 - **Frontend:** `ChatWidget.tsx` injects the official SDK on PublicHome +
   division pages; token/base URL overridable via
   `VITE_CHATWOOT_BASE_URL` / `VITE_CHATWOOT_WEBSITE_TOKEN`.
-- **TODO (one-time UI step):** open Chatwoot â†’ Inbox Settings â†’ **Webhooks** â†’
+- **TODO (one-time UI step):** open Chatwoot → Inbox Settings → **Webhooks** →
   add `https://api.opusoverseas.com/api/webhooks/chatwoot` (the API route
   `POST /api/webhooks/chatwoot` exists + secret-verified + persists to
-  `conversations`; `register_webhook` API 400'd on this build â€” easiest via UI).
+  `conversations`; `register_webhook` API 400'd on this build — easiest via UI).
 
-## âœ… Cal.diy â€” PROVISIONED end-to-end (login verified, one UI click left)
-- Web `https://cal.opusoverseas.com` Â· API v2 `:3201` Â· studio `:5555` (verified).
+## ✅ Cal.diy — PROVISIONED end-to-end (login verified, one UI click left)
+- Web `https://cal.opusoverseas.com` · API v2 `:3201` · studio `:5555` (verified).
 - **Bootstrapped via API + postgres:**
-  - Super admin: `owner@opusoverseas.com` / `CalDiyOwner2026!` (username `opus-owner`, id 1)
+  - Super admin: `owner@opusoverseas.com` / `[CONFIGURED_IN_ENV]` (username `opus-owner`, id 1)
   - `emailVerified`, `completedOnboarding`, `defaultScheduleId=1`, `timeZone=Asia/Kolkata`
   - **EventType 1:** "Free Consultation" Â· slug `consultation` Â· 30 min
   - Schedule "Working hours" (Monâ€“Fri 9â€“17) + availability row present
@@ -243,7 +243,7 @@ check-dns.ps1 verifier, terraform/ optional). Blocked on CF credentials (F1).
 - **Databases stay loopback-only** (5432/5434/6380/5455) â€” never reachable over tailnet either.
 
 ## 1 âœ… Tailscale test phase
-- VPS tailscale: **`100.87.71.38`** (cordial-local, always-on, offers exit node).
+- VPS tailscale: **`<internal-ip>`** (cordial-local, always-on, offers exit node).
 - Windows machine peer: `100.69.139.47` (`asimhsn`) â€” **must be ONLINE for tests**.
 - Reachable over the tailnet (verified HTTP 200/307):
   - OpenWA gateway `https://wa.opusoverseas.com` (v0.14.2, health OK, API key `owa_k1_â€¦` live, **no WA session linked yet**)

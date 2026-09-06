@@ -29,14 +29,14 @@
                                              │
                         ┌────────────────────┴─────────────────────┐
                         │    CLOUDFLARED TUNNEL (domain-native)     │
-                        │   Tunnel ID: 6f1a97cc-8e9b-4340-a435       │
+                        │   Tunnel ID: 6f1a97cc...                 │
                         │   10 Subdomains → https://*.opusoverseas.com│
                         │   wa · chat · mautic · listmonk · cal      │
                         │   umami · kuma · n8n · erp · crm · api     │
                         └────────────────────┬─────────────────────┘
                                              │
                                  ┌───────────▼──────────────────────────────┐
-                                 │   ORACLE VPS (129.159.238.227)           │
+                                 │   ORACLE VPS (Private Infrastructure)    │
                                  │   37 Docker containers, 10 apps          │
                                  │   • mautic.opusoverseas.com (8085)       │
                                  │   • listmonk.opusoverseas.com (9009)     │
@@ -311,7 +311,7 @@ Every state mutation, financial transaction, staff assignment, and document uplo
 | **Email Relay** | Titan Mail / Listmonk + Resend fallback | Unlimited transactional, Titan DKIM + Resend HTTPS fallback (port 25 free) | `listmonk.opusoverseas.com` 15 `type:tx` templates |
 | **Live Chat & WhatsApp**| Self-Hosted VPS | Unlimited agents & messages | `chat.opusoverseas.com` + `wa.opusoverseas.com` |
 | **Workflow Automation** | Self-Hosted n8n | Unlimited executions | `n8n.opusoverseas.com` Community Edition — **kept as-is (hybrid: Opus = Record, Cloudflare Workflows = 0/3k/day free, not scaffolded per your call)** |
-| **Zero-Trust Network** | Cloudflare Tunnel **Free** | Free for up to 50 users | `6f1a97cc-8e9b-4340-a435` → `https://*.opusoverseas.com` ( + `api` now via **Workers Custom Domain**, not Tunnel) |
+| **Zero-Trust Network** | Cloudflare Tunnel **Free** | Free for up to 50 users | `6f1a97cc...` → `https://*.opusoverseas.com` ( + `api` now via **Workers Custom Domain**, not Tunnel) |
 | **Sync Fabric** | Durable Objects **Free** | 100k req/day, 13k GB-s | `SyncHub` `global` atom HMAC, 20 channels max |
 | **Web Analytics** | Cloudflare Web Analytics **Free** + Umami | Unlimited, cookie-less, DPDP-friendly | **2026-09-01:** `VITE_UMAMI_WEBSITE_ID=bb9a2a45-c5be-4330-bbbf-31eb178d34fb` (was `replace-with-...`), `VITE_UMAMI_BASE_URL=https://analytics.opusoverseas.com` verified `200` + `beacon.min.js` + GA4 `G-DTPJGJ34C5` — no banner needed |
 

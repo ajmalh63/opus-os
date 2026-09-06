@@ -5,9 +5,9 @@ Accounts provisioned through the real auth flow (no mock session tokens):
 
 | Tier | Account | Provisioned via | Result |
 |---|---|---|---|
-| **Super Admin** | owner@opusoverseas.com (OwnerPass2026!) | `POST /api/auth/bootstrap-admin` (env creds) | ✅ 200, session |
-| **Staff — Manager** | qa.manager@opusoverseas.com (QaManager2026!) | `POST /api/admin/register-staff` | ✅ 200, session |
-| **Staff — Counselor** | qa.counselor@opusoverseas.com (QaCounselor2026!) | `POST /api/admin/register-staff` | ✅ 200, session |
+| **Super Admin** | owner@opusoverseas.com (`[CONFIGURED_IN_ENV]`) | `POST /api/auth/bootstrap-admin` (env creds) | ✅ 200, session |
+| **Staff — Manager** | qa.manager@opusoverseas.com (`[CONFIGURED_IN_ENV]`) | `POST /api/admin/register-staff` | ✅ 200, session |
+| **Staff — Counselor** | qa.counselor@opusoverseas.com (`[CONFIGURED_IN_ENV]`) | `POST /api/admin/register-staff` | ✅ 200, session |
 | **Public** | anonymous | — | ✅ 401 on protected |
 | **Client lead** | `OP-2026-4640` | `POST /api/public/leads` | ✅ 200 (+ SLA task, scoring) |
 

@@ -5,7 +5,7 @@
 
 ## 1. Architecture — Opus OS Aware
 
-**Base:** `Hono` + `D1 (drizzle 93 tables)` + `Better Auth` + `R2` + `SyncHub Durable Object` `global` atom `X-SyncHub-Auth` HMAC + `TanStack Query` + `wouter` + `RBAC division-scoped` + `auditEvent` + `rateLimit` + domains `*.opusoverseas.com` (no `100.87.71.38`).
+**Base:** `Hono` + `D1 (drizzle 93 tables)` + `Better Auth` + `R2` + `SyncHub Durable Object` `global` atom `X-SyncHub-Auth` HMAC + `TanStack Query` + `wouter` + `RBAC division-scoped` + `auditEvent` + `rateLimit` + domains `*.opusoverseas.com` (no `<internal-ip>`).
 
 **Pattern reused from `blog` + `family` + `clients` LCC:**
 - Every mutation `await publishSyncEvent(env, {channel, type, payload}, ctx)` → `public:*` + `staff:global:*` + `client:{id}:*`
@@ -118,7 +118,7 @@ Existing tables reused: `clients` (leadScore/assignedTo/slaDueAt), `engagements`
 - `public:attestation`, `client:{id}:attestation`, `staff:global:attestation:prescreen/verify`
 - All `POST/PATCH` already `auditEvent` + `publishSyncEvent` + `rateLimit`
 
-**Domains (as requested, no `100.87.71.38`):**
+**Domains (as requested, no `<internal-ip>`):**
 - `wa.opusoverseas.com` (OpenWA fallback, primary is Cloud API `graph.facebook.com`), `mautic/listmonk/chat/cal/umami/kuma/n8n/erp/crm/api.opusoverseas.com` via `secrets.json` + `PENDING-CONFIGS.md` (tunnel)
 
 **Legal (attestation):** `legal-advisor` skill: GDPR/CCPA for `documents` `R2` + `familyMembers` PII, retention per `reportSchedules`, DPA placeholder — `documents` already `sha256Hex` + `r2Key` non-guessable.

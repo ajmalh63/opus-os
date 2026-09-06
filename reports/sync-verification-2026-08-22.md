@@ -73,7 +73,7 @@ grep TEAM_HUB / SYNC_HUB → both bindings present
 
 ## Output as Expected
 
-- **No separate server:** Reuses `DurableObject` primitive (same as TeamHub) — `placement=smart`, 0 extra hop, Hibernation 0 GB-s idle, 100k req/d free. VPS `100.87.71.38` stays as tunnel, not sync host.
+- **No separate server:** Reuses `DurableObject` primitive (same as TeamHub) — `placement=smart`, 0 extra hop, Hibernation 0 GB-s idle, 100k req/d free. VPS `<internal-ip>` stays as tunnel, not sync host.
 - **Isolation preserved:** TeamHub HMAC + `rbacMiddleware` untouched; SyncHub adds per-plane channel allowlist (`client:${id}:` etc., derived from handshake, never wire `tenantId`), `MAX_FRAME 64KB → 1009`, `SUBSCRIBE` only, no client `PUBLISH`.
 - **Source of truth:** D1 transaction → `publishSyncEvent(...waitUntil...)` after commit (never roll back on publish fail). Replay window 50 msgs + `since` gap → REST fallback if `4410 replay-too-old`.
 - **Phase isolation:** All phases behind `VITE_SYNC_ENABLED` (default false fallback to existing REST poll), progressive enhancement, no breaking change.

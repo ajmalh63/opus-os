@@ -279,7 +279,7 @@ export default function InfraHealth() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-display text-lg font-extrabold text-brand-navy">VPS Docker App Controls & Operational Fields</h2>
-            <p className="text-xs text-brand-navy/50">Comprehensive operational status, parameters, and action triggers for services on Oracle VPS (129.159.238.227).</p>
+            <p className="text-xs text-brand-navy/50">Comprehensive operational status, parameters, and action triggers for services on Oracle VPS (Private Fleet Network).</p>
           </div>
           <a href="/workspaces/fleet" className="rounded-full bg-brand-navy px-3 py-1 font-mono text-[13px] font-bold text-white hover:bg-brand-gold hover:text-brand-navy">Fleet Console (13 apps) →</a>
           <span className="rounded-full bg-brand-navy/[0.05] px-3 py-1 font-mono text-[13px] text-brand-navy/60">Cloudflare Tunnels (TLS 1.3) • No Tailscale IP</span>

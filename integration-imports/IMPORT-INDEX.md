@@ -36,15 +36,15 @@ Copy → Uptime Kuma → Settings → Import:
 {
   "version": "1.23.0",
   "monitorList": [
-    { "name": "OS API /api/health", "type": "http", "url": "http://100.87.71.38:8787/api/health", "interval": 60 },
+    { "name": "OS API /api/health", "type": "http", "url": "http://127.0.0.1:8787/api/health", "interval": 60 },
     { "name": "OS App", "type": "http", "url": "http://127.0.0.1:5173/", "interval": 300 },
-    { "name": "ERPNext", "type": "http", "url": "http://100.87.71.38:8080/api/method/ping", "interval": 300 },
-    { "name": "Chatwoot", "type": "http", "url": "http://100.87.71.38:3200/packs/js/sdk.js", "interval": 300 },
-    { "name": "OpenWA", "type": "http", "url": "http://100.87.71.38:2785/api/health", "interval": 60 },
-    { "name": "Cal.diy", "type": "http", "url": "http://100.87.71.38:3000/", "interval": 300 },
-    { "name": "Listmonk", "type": "http", "url": "http://100.87.71.38:9009/", "interval": 300 },
-    { "name": "Umami", "type": "http", "url": "http://100.87.71.38:3002/", "interval": 300 },
-    { "name": "n8n", "type": "http", "url": "http://100.87.71.38:5678/healthz", "interval": 300 },
+    { "name": "ERPNext", "type": "http", "url": "http://127.0.0.1:8080/api/method/ping", "interval": 300 },
+    { "name": "Chatwoot", "type": "http", "url": "http://127.0.0.1:3200/packs/js/sdk.js", "interval": 300 },
+    { "name": "OpenWA", "type": "http", "url": "http://127.0.0.1:2785/api/health", "interval": 60 },
+    { "name": "Cal.diy", "type": "http", "url": "http://127.0.0.1:3000/", "interval": 300 },
+    { "name": "Listmonk", "type": "http", "url": "http://127.0.0.1:9009/", "interval": 300 },
+    { "name": "Umami", "type": "http", "url": "http://127.0.0.1:3002/", "interval": 300 },
+    { "name": "n8n", "type": "http", "url": "http://127.0.0.1:5678/healthz", "interval": 300 },
     { "name": "D1 backup heartbeat", "type": "push", "interval": 86400, "expectedStatus": "healthy" }
   ]
 }

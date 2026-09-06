@@ -37,7 +37,7 @@ nano secrets.json
   "TURNSTILE_SECRET_KEY": "<real CF Turnstile secret — NOT the 1x mock>",
   "AUTOMATION_TOKEN": "openssl rand -hex 32",
   "OPENWA_API_KEY": "<VPS dashboard key>",
-  "OPENWA_BASE_URL": "http://100.87.71.38:2785",
+  "OPENWA_BASE_URL": "http://127.0.0.1:2785",
   "WA_WEBHOOK_SECRET": "openssl rand -hex 32",
   "N8N_WEBHOOK_URL": "https://n8n.yourdomain.com/webhook/opusos-events",
   "N8N_WEBHOOK_SECRET": "openssl rand -hex 32",

@@ -19,7 +19,7 @@ All 15 Docker apps now on https://*.opusoverseas.com, zero local IPs in runtime.
 - india-post: https://india-post.opusoverseas.com → localhost:9888 (new) ✓
 
 ## Wrangler .dev.vars
-All BASE_URLs now domain, no 100.87.71.38 for external apps. Verified via grep.
+All BASE_URLs now domain, no <internal-ip> for external apps. Verified via grep.
 TSC: 0 errors (filtered), Tests: 647/647
 
 ## BetterAuth

@@ -71,11 +71,11 @@ async function runTestSuite() {
   // ---------------------------------------------------------
   console.log('\n--- TEST GROUP 2: Authentication & RBAC Session ---');
   try {
-    // Bootstrap or login
+    const testPassword = process.env.ADMIN_PASSWORD || 'DevOnlyPass#2026!';
     const loginRes = await fetch(`${API_BASE}/api/auth/sign-in/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'owner@opusoverseas.com', password: 'OwnerPass2026!' }),
+      body: JSON.stringify({ email: 'owner@opusoverseas.com', password: testPassword }),
     });
 
     const setCookie = loginRes.headers.get('set-cookie');

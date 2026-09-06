@@ -68,7 +68,7 @@ Research: 30-40% post-counseling leak + 15-20% walk-in leak + 4-6hr response →
 **Gold standard v21 (Meta 2026):**
 - System User Token permanent, phone-number-id scoping, portfolio-based limits 250→Unlimited (quality-gated), template categories `Marketing / Utility / Authentication` (Utility ~₹0.35 vs Marketing ~₹0.88), 24h service window free, outside window → template only, quality rating 7-day recency-weighted (Green/Yellow/Red) at number + per-template level, opt-in documented, opt-out `STOP`.
 
-**Opus OS today:** `OPENWA_BASE_URL/http://100.87.71.38:2785` (tailnet loopback, X-API-Key, single session `main`) + `WA_PROVIDER=openwa` fallback to Meta. Works for testing but **not portfolio-scalable**, not quality-rated, not template-approved.
+**Opus OS today:** `OPENWA_BASE_URL/http://127.0.0.1:2785` (tailnet loopback, X-API-Key, single session `main`) + `WA_PROVIDER=openwa` fallback to Meta. Works for testing but **not portfolio-scalable**, not quality-rated, not template-approved.
 
 **Brainstorm — Phase A native:**
 - **Dual-provider abstraction:** keep `messaging.ts` `sendWhatsApp(to, body, opts)` → if `WHATSAPP_TOKEN && PHONE_NUMBER_ID` set → Cloud API `https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages` else fallback OpenWA. Means same `sendNotification` path works without code change.

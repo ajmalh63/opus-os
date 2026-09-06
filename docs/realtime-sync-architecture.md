@@ -16,7 +16,7 @@ Add a **`SyncHub` Durable Object fabric** — same primitive as `TeamHubRoom` (`
 * `TeamHubRoom` = stays internal-only (`rbacMiddleware: super_admin/manager/counselor/coordinator/receptionist`) + HMAC `X-TeamHub-Auth` (lines 28-33, 106-112). Do not open it.
 * `SyncHub` = new `DurableObject` class, **per-entity atoms**: `client:{id}`, `departure:{id}`, `partner:{id}`, `staff:division:{key}`. Worker is the only writer (D1 commit → `fetch('/publish')`); browsers are read-only subscribers.
 
-Why not a VPS Node/Redis box (`100.87.71.38` already has 16 services):
+Why not a VPS Node/Redis box (`<internal-ip>` already has 16 services):
 - One extra hop, single point of failure, breaks `placement=smart` and 10ms budget
 - DO hibernation keeps 1000s of idle WS alive at ~0 GB-s (pays only when JS runs)
 - D1 remains sole truth; realtime is fan-out notification only — no split-brain

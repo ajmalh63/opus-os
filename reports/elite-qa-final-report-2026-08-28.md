@@ -1,6 +1,6 @@
 # Elite QA Final Report — OPUS OS Full-Stack — 2026-08-28
 
-**Production:** `https://opusoverseas.com` (`507c4c87` `index-BLTEh2YH.js` `uses_functions:true`) + `https://opusos-api.ajmalsn63.workers.dev` (`2931cd66` `SameSite=None; Partitioned`) + `D1 opusos-db 97 tables` + `R2 opusdocs` + `VPS 129.159.238.227` 37 containers via `6f1a97cc` Tunnel
+**Production:** `https://opusoverseas.com` (`507c4c87` `index-BLTEh2YH.js` `uses_functions:true`) + `https://opusos-api.ajmalsn63.workers.dev` (`2931cd66` `SameSite=None; Partitioned`) + `D1 opusos-db 97 tables` + `R2 opusdocs` + `VPS [REDACTED_HOST_IP]` 37 containers via `6f1a97cc` Tunnel
 
 **Verification:** Playwright `6/6 PASS` on `https://opusoverseas.com` + `curl -b cookie -H Origin` `200` for `fleet`/`docker-overview`/`health` + `npx tsc 0 errors` + `npx vitest 108/108 (689 tests)`
 
@@ -8,7 +8,7 @@
 
 ## Deployed & Verified (P0 fixed)
 
-- **Auth:** `owner@opusoverseas.com` / `OwnerPass2026!` → `200 SameSite=None; Partitioned` + `GET /me` `authenticated:true` → `/dashboard` (was `Failed to fetch` + stuck on `/login`)
+- **Auth:** `owner@opusoverseas.com` / `[CONFIGURED_IN_ENV]` → `200 SameSite=None; Partitioned` + `GET /me` `authenticated:true` → `/dashboard` (was `Failed to fetch` + stuck on `/login`)
 - **Manpower/hire:** `Document-Verified / Skill-Aligned / Employer-Paid` (was `MEA Licensed` etc.)
 - **Homepage:** `🧳 Tours & Travels` (was `Umrah & Travel`)
 - **Fleet:** `10/13 live` (was `0/13`) + `Infra Health` `All systems operational` (was `Probing...`)
