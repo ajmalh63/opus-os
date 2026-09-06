@@ -26,6 +26,9 @@ function loadScript(onReady: () => void) {
   document.head.appendChild(s);
 }
 
+export const TURNSTILE_SITE_KEY =
+  (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) || '0x4AAAAAAEWhovYfefdqk_RI';
+
 export default function TurnstileWidget({ onToken, onExpire }: { onToken: (token: string | null) => void; onExpire?: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
@@ -33,34 +36,55 @@ export default function TurnstileWidget({ onToken, onExpire }: { onToken: (token
   onTokenRef.current = onToken;
 
   useEffect(() => {
-    const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+    const rawKey = TURNSTILE_SITE_KEY;
+    const siteKey =
+      rawKey && rawKey !== 'undefined' && rawKey.trim() !== ''
+        ? rawKey.trim()
+        : '0x4AAAAAAEWhovYfefdqk_RI';
+
     if (!siteKey) {
-      // No key configured — local dev without mock key: auto-pass with null token.
+      // No key configured — auto-pass with null token
       onTokenRef.current(null);
       return;
     }
+
     const render = () => {
       if (!window.turnstile || !ref.current) return;
+      if (widgetId.current) {
+        try { window.turnstile.remove(widgetId.current); } catch { /* noop */ }
+        widgetId.current = null;
+      }
+      if (ref.current.hasChildNodes()) {
+        ref.current.innerHTML = '';
+      }
       try {
         widgetId.current = window.turnstile.render(ref.current, {
           sitekey: siteKey,
           theme: 'light',
+          size: 'flexible',
           callback: (token: string) => onTokenRef.current(token),
           'expired-callback': () => { onTokenRef.current(null); onExpire?.(); },
-          'error-callback': () => { onTokenRef.current(null); onExpire?.(); },
+          'error-callback': (err: any) => {
+            console.warn('[Turnstile] Challenge error:', err);
+            onTokenRef.current(null);
+            onExpire?.();
+          },
         });
-      } catch {
+      } catch (err) {
+        console.warn('[Turnstile] Render error:', err);
         onTokenRef.current(null);
       }
     };
+
     loadScript(render);
     return () => {
       if (widgetId.current && window.turnstile) {
         try { window.turnstile.remove(widgetId.current); } catch { /* noop */ }
+        widgetId.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={ref} className="turnstile-wrap" />;
+  return <div ref={ref} className="turnstile-wrap min-h-[65px] flex items-center justify-center my-2" />;
 }

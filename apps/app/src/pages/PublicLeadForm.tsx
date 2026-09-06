@@ -4,12 +4,12 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import StickyCallBar from '../components/StickyCallBar';
-import TurnstileWidget from '../components/TurnstileWidget';
+import TurnstileWidget, { TURNSTILE_SITE_KEY } from '../components/TurnstileWidget';
 import { track, EVENTS } from '../lib/umami';
 import { prefersReducedMotion, animateHeadlineWords } from '../lib/motion';
 const API = (import.meta as any).env?.VITE_API_URL || '';
 
-const siteKeyConfigured = !!((import.meta.env.VITE_TURNSTILE_SITE_KEY as string) || '');
+const siteKeyConfigured = !!TURNSTILE_SITE_KEY;
 
 type Division = 'study-abroad' | 'visa' | 'umrah' | 'attestation' | 'manpower';
 
