@@ -40,6 +40,7 @@ function getPortalToken(c: any): string | undefined {
 // Anti-abuse on the public journey lookup (Section 18.2.2): 10 lookups / hour / IP.
 portalRouter.use('/lookup', rateLimit({ bucket: 'lookup', windowSeconds: 3600, limit: 10 }));
 portalRouter.use('/consent/withdraw', rateLimit({ bucket: 'consent-withdraw', windowSeconds: 3600, limit: 10 }));
+portalRouter.use('/visa/inquiry', rateLimit({ bucket: 'visa-inquiry', windowSeconds: 3600, limit: 15 }));
 
 function buildJourney(client: any, engs: any[], cons: any[], docs: any[], pays: any[], visaApps: any[] = [], visaMocks: any[] = [], counselor: any = null) {
   return {
@@ -1078,9 +1079,10 @@ portalRouter.post('/visa/inquiry', async (c) => {
   if (!c.env?.DB) return c.json({ error: "DB not available" }, 500);
   const db = getDb(c.env.DB);
   const body = await c.req.json().catch(() => ({})) as {
-    clientId: string;
-    country: string;
-    visaType: string;
+    clientId?: string;
+    token?: string;
+    country?: string;
+    visaType?: string;
     notes?: string;
     email?: string;
     agencyName?: string;
@@ -1088,26 +1090,41 @@ portalRouter.post('/visa/inquiry', async (c) => {
     agreedToTerms?: boolean;
   };
 
-  if (!body.clientId || !body.country || !body.visaType) {
-    return c.json({ error: "Missing required fields: clientId, country, visaType" }, 400);
+  const rawTokenOrId = (body.token || getPortalToken(c) || body.clientId || '').trim();
+  const country = (body.country || '').trim();
+  const visaType = (body.visaType || '').trim();
+
+  if (!rawTokenOrId || !country || !visaType) {
+    return c.json({ error: "Missing required fields: clientId/token, country, visaType" }, 400);
   }
 
+  // Resolve client by token or directly by id
+  let client = await resolveClientByToken(db, rawTokenOrId);
+  if (!client) {
+    client = await db.select().from(clients).where(eq(clients.id, rawTokenOrId)).get();
+  }
+
+  if (!client) {
+    return c.json({ error: "Client not found matching token or id" }, 404);
+  }
+
+  const clientId = client.id;
   const now = Math.floor(Date.now() / 1000);
   const id = crypto.randomUUID();
   try {
     // 1. Create visa applications record
     await db.insert(visaApplications).values({
       id,
-      clientId: body.clientId,
-      country: body.country,
-      visaType: body.visaType,
+      clientId,
+      country,
+      visaType,
       appointmentDate: null,
       appointmentLocation: null,
       status: 'document_prep',
       notes: body.notes || null,
-      email: body.email || null,
+      email: body.email || client.email || null,
       agencyName: body.agencyName || null,
-      registeredMobile: body.registeredMobile || null,
+      registeredMobile: body.registeredMobile || client.phone || null,
       agreedToTerms: body.agreedToTerms || false,
       createdAt: now,
       updatedAt: now
@@ -1117,9 +1134,9 @@ portalRouter.post('/visa/inquiry', async (c) => {
     const taskId = crypto.randomUUID();
     await db.insert(tasks).values({
       id: taskId,
-      clientId: body.clientId,
-      title: `Review Public Visa Inquiry: ${body.country}`,
-      description: `Client requested visa processing support for ${body.country} (${body.visaType}). Custom notes: ${body.notes || 'none'}`,
+      clientId,
+      title: `Review Public Visa Inquiry: ${country}`,
+      description: `Client requested visa processing support for ${country} (${visaType}). Custom notes: ${body.notes || 'none'}`,
       priority: 'medium',
       status: 'open',
       cos: 'standard',
@@ -1127,10 +1144,30 @@ portalRouter.post('/visa/inquiry', async (c) => {
       updatedAt: now
     });
 
-    await createStaffAlert(c.env as any, { division: 'visa', type: 'visa_inquiry', title: `Visa inquiry: ${body.country}`, body: `${body.visaType}${body.notes ? ' — ' + body.notes : ''}`, clientId: body.clientId, payload: { country: body.country, visaType: body.visaType, email: body.email, mobile: body.registeredMobile } });
+    await createStaffAlert(c.env as any, {
+      division: 'visa',
+      type: 'visa_inquiry',
+      title: `Visa inquiry: ${country}`,
+      body: `${visaType}${body.notes ? ' — ' + body.notes : ''}`,
+      clientId,
+      payload: {
+        country,
+        visaType,
+        email: body.email || client.email,
+        mobile: body.registeredMobile || client.phone,
+      },
+    });
+
+    await auditEvent(c as any, {
+      action: 'VISA_INQUIRY_SUBMITTED',
+      entityName: 'visa_applications',
+      entityId: id,
+      afterState: { clientId, country, visaType, notes: body.notes || null },
+    });
+
     return c.json({ success: true, id, message: "Visa inquiry registered successfully." });
   } catch (error: any) {
-    return c.json({ error: "Failed to submit visa inquiry",  }, 500);
+    return c.json({ error: "Failed to submit visa inquiry" }, 500);
   }
 });
 

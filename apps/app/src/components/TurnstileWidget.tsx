@@ -86,5 +86,12 @@ export default function TurnstileWidget({ onToken, onExpire }: { onToken: (token
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={ref} className="turnstile-wrap min-h-[65px] flex items-center justify-center my-2" />;
+  return (
+    <div
+      ref={ref}
+      role="region"
+      aria-label="Cloudflare Turnstile verification"
+      className="turnstile-wrap min-h-[65px] flex items-center justify-center my-2"
+    />
+  );
 }

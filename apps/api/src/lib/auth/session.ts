@@ -10,6 +10,8 @@ export const SECURE_LEGACY_COOKIE_NAME = '__Secure-better-auth.session_token';
 
 export const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days
 export const SESSION_SLIDING_WINDOW_SECONDS = 15 * 24 * 60 * 60; // 15 days
+export const SESSION_ABSOLUTE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days absolute cap (NIST SP 800-63B)
+export const STAFF_SESSION_ABSOLUTE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60; // 7 days absolute cap for staff/admin
 
 export interface AuthSession {
   id: string;
@@ -104,15 +106,33 @@ export async function validateSessionToken(
     return null;
   }
 
-  // 3. Sliding window renewal: If less than 15 days remaining, extend by 30 days
+  // 3. Absolute session timeout cap (NIST SP 800-63B §7.1 / OWASP ASVS V3)
+  // Sessions cannot live indefinitely via sliding renewals.
+  const isPrivileged = user.role === 'super_admin' || user.role === 'admin' || user.role === 'manager';
+  const absoluteMaxAgeSeconds = isPrivileged
+    ? STAFF_SESSION_ABSOLUTE_MAX_AGE_SECONDS
+    : SESSION_ABSOLUTE_MAX_AGE_SECONDS;
+
+  const sessionCreatedAt = session.createdAt ? new Date(session.createdAt).getTime() : now.getTime();
+  if (now.getTime() - sessionCreatedAt > absoluteMaxAgeSeconds * 1000) {
+    await invalidateSession(db, token);
+    return null;
+  }
+
+  // 4. Sliding window renewal: If less than 15 days remaining, extend up to the absolute lifetime cap
   const remainingTime = new Date(session.expiresAt).getTime() - now.getTime();
   if (remainingTime < SESSION_SLIDING_WINDOW_SECONDS * 1000) {
-    const newExpiresAt = new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000);
-    await db
-      .update(sessions)
-      .set({ expiresAt: newExpiresAt, updatedAt: now })
-      .where(eq(sessions.id, session.id));
-    session.expiresAt = newExpiresAt;
+    const maxAllowedExpiresAt = new Date(sessionCreatedAt + absoluteMaxAgeSeconds * 1000);
+    const candidateExpiresAt = new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000);
+    const newExpiresAt = candidateExpiresAt > maxAllowedExpiresAt ? maxAllowedExpiresAt : candidateExpiresAt;
+
+    if (newExpiresAt.getTime() > new Date(session.expiresAt).getTime()) {
+      await db
+        .update(sessions)
+        .set({ expiresAt: newExpiresAt, updatedAt: now })
+        .where(eq(sessions.id, session.id));
+      session.expiresAt = newExpiresAt;
+    }
   }
 
   let userDivisions: string[] = [];
