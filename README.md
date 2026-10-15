@@ -26,7 +26,7 @@
 
 ## 🏛️ System Architecture
 
-OpusOS is engineered as a strictly decoupled, type-safe monorepo workspace conforming to the **ACE Loop Framework (v2.0)** for robust, self-correcting autonomous operations.
+OpusOS is engineered as a strictly decoupled, type-safe monorepo workspace conforming to the **[ACE Loop Framework (v2.0)](https://github.com/ajmalh63/ace-loop-framework)** for robust, self-correcting autonomous operations.
 
 ```mermaid
 flowchart TD
